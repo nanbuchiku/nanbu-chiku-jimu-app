@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>南部地区5単会タスク管理</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background: #F0F2F5; color: #263238; }
+.hover-row:hover { background: #F5F7FA !important; }
+select, input, textarea { outline: none; font-family: inherit; }
+select:focus, input:focus, textarea:focus { border-color: #1A3A6B !important; box-shadow: 0 0 0 2px rgba(26,58,107,.1); }
+@media print {
+  header, nav, .no-print { display: none !important; }
+  #print-doc { box-shadow: none !important; border: none !important; }
+  body { background: white !important; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ── 定数 ─────────────────────────────────────────────────────────
+const CHAPTERS = [
+  { id:"todawarabi",    name:"とだわらび", short:"とだわらび",  day:2, dayName:"火曜日", color:"#1B5E20", light:"#E8F5E9", accent:"#A5D6A7",
+    time:"AM6:00〜7:00", venue:"戸田市商工会館", address:"戸田市上戸田１−２１−２３", venueTel:"０４８−４４１−２６１７", mapUrl:"https://share.google/LBrDQ6899ccNm89hv", staff:"" },
+  { id:"kawaguchi_east",name:"川口東",     short:"川口東",  day:3, dayName:"水曜日", color:"#1A3A6B", light:"#E3F2FD", accent:"#90CAF9",
+    time:"AM6:00〜7:00", venue:"川口緑化センター　樹里安", address:"川口安行領家８４４−２", venueTel:"―", mapUrl:"https://share.google/7QSKHBQCh0the5Cb7", staff:"" },
+  { id:"niizashiki",    name:"新座・志木", short:"新座志木",day:4, dayName:"木曜日", color:"#6D4C9F", light:"#EDE7F6", accent:"#B39DDB",
+    time:"AM6:00〜7:00", venue:"CKスクエア新座　６F", address:"新座市野火止５−２−１０（駐車場：４F無料）", venueTel:"―", mapUrl:"https://share.google/rSXTQ2jqiGDttsCyE", staff:"小林靖会長" },
+  { id:"asaka",         name:"朝霞",       short:"朝霞",    day:5, dayName:"金曜日", color:"#BF360C", light:"#FFF3E0", accent:"#FFCC80",
+    time:"AM6:30〜7:30", venue:"浜崎会館　２Fホール（氷川神社境内）", address:"朝霞市浜崎３丁目９番地", venueTel:"―", mapUrl:"https://maps.app.goo.gl/phdDu7hZSuUbmErN6", staff:"" },
+  { id:"kawaguchi",     name:"川口",       short:"川口",    day:6, dayName:"土曜日", color:"#B71C1C", light:"#FFEBEE", accent:"#EF9A9A",
+    time:"AM6:30〜7:30", venue:"元郷四丁目町会会館", address:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）", venueTel:"―", mapUrl:"https://share.google/nIYPjDL6MsMpt1ek8", staff:"" },
+];
+
+const JIMU = { email:"nanbugoudou.jimu@gmail.com", tel:"" };
+
+const STATUS = {
+  pending:   { label:"依頼中",     color:"#FF8F00", bg:"#FFF8E1" },
+  confirmed: { label:"確定",       color:"#2E7D32", bg:"#E8F5E9" },
+  completed: { label:"終了",       color:"#546E7A", bg:"#ECEFF1" },
+  cancelled: { label:"キャンセル", color:"#B71C1C", bg:"#FFEBEE" },
+};
+
+const SEMINAR_TYPES = [
+  { id:"ms",      label:"モーニングセミナー", short:"MS",   color:"#1A3A6B", venueFixed:true,  hasLodging:true  },
+  { id:"kiso",    label:"倫理経営基礎講座",   short:"基礎", color:"#2E7D32", venueFixed:false, hasLodging:true  },
+  { id:"tsudoi",  label:"経営者の集い",       short:"集い", color:"#4E342E", venueFixed:false, hasLodging:true  },
+  { id:"evening", label:"イブニングセミナー", short:"イブ", color:"#37474F", venueFixed:false, hasLodging:"optional" },
+  { id:"koen",    label:"倫理経営講演会",     short:"倫経", color:"#7B0000", venueFixed:false, hasLodging:true  },
+];
+const getSeminarType = id => SEMINAR_TYPES.find(t => t.id === id) || SEMINAR_TYPES[0];
+
+const INIT_SPEAKERS = [
+  // ── モーニングセミナー（MS）──
+  { id:"s1", seminarType:"ms", chapterId:"kawaguchi",     speakerName:"山田 太郎", speakerKana:"やまだ たろう", speakerUnit:"川口単会",     company:"株式会社山田商事",     role:"代表取締役",    seminarDate:"2026-03-10", topic:"経営と人の和",              status:"confirmed", phone:"090-1234-5678", email:"yamada@example.com",    requestDate:"2026-02-15", notes:"駐車場確保が必要", venue:"", lineNotified:true,  materialUrl:"https://drive.google.com/file/d/sample1", materialName:"経営と人の和_資料.pdf" },
+  { id:"s2", seminarType:"ms", chapterId:"kawaguchi_east",speakerName:"鈴木 花子", speakerKana:"すずき はなこ", speakerUnit:"川口東単会",   company:"鈴木コンサルティング", role:"代表",          seminarDate:"2026-03-11", topic:"人を活かす組織づくり",      status:"confirmed", phone:"080-9876-5432", email:"suzuki@example.com",   requestDate:"2026-02-20", notes:"", venue:"", lineNotified:true },
+  { id:"s3", seminarType:"ms", chapterId:"niizashiki",    speakerName:"佐藤 誠",   speakerKana:"さとう まこと", speakerUnit:"新座・志木単会", company:"佐藤建設",             role:"専務取締役",    seminarDate:"2026-03-09", topic:"地域を支える中小企業の使命", status:"pending",   phone:"070-1111-2222", email:"sato@example.com",     requestDate:"2026-02-28", notes:"日程調整中", venue:"", lineNotified:false },
+  { id:"s4", seminarType:"ms", chapterId:"asaka",         speakerName:"田中 博",   speakerKana:"たなか ひろし", speakerUnit:"朝霞単会",     company:"田中医院",             role:"院長",          seminarDate:"2026-03-13", topic:"健康経営のすすめ",          status:"confirmed", phone:"048-222-3333", email:"tanaka@example.com",   requestDate:"2026-02-10", notes:"", venue:"", lineNotified:false },
+  { id:"s5", seminarType:"ms", chapterId:"todawarabi",    speakerName:"伊藤 幸子", speakerKana:"いとう さちこ", speakerUnit:"とだわらび単会", company:"株式会社伊藤フーズ",   role:"取締役",        seminarDate:"2026-03-12", topic:"食を通じた地域貢献",        status:"confirmed", phone:"048-333-4444", email:"ito@example.com",      requestDate:"2026-02-18", notes:"資料50部印刷依頼", venue:"", lineNotified:true },
+  { id:"s6", seminarType:"ms", chapterId:"kawaguchi",     speakerName:"渡辺 正樹", speakerKana:"わたなべ まさき", speakerUnit:"川口単会",   company:"渡辺不動産",           role:"代表取締役社長", seminarDate:"2026-03-17", topic:"不動産から見る地域の未来",  status:"pending",   phone:"090-5555-6666", email:"watanabe@example.com", requestDate:"2026-03-01", notes:"3月上旬確認", venue:"", lineNotified:false },
+  // ── 倫理経営基礎講座（基礎）──
+  { id:"s7", seminarType:"kiso", chapterId:"kawaguchi_east",speakerName:"中村 義明", speakerKana:"なかむら よしあき", speakerUnit:"川口東単会", company:"中村経営研究所",     role:"所長",          seminarDate:"2026-04-05", topic:"倫理経営の基本と実践",      status:"confirmed", phone:"048-100-2200", email:"nakamura@example.com", requestDate:"2026-03-10", notes:"前泊あり", venue:"川口市産業文化センター", lineNotified:false },
+  { id:"s8", seminarType:"kiso", chapterId:"niizashiki",    speakerName:"小川 美穂", speakerKana:"おがわ みほ",    speakerUnit:"新座・志木単会", company:"小川コンサルタント", role:"代表",          seminarDate:"2026-04-12", topic:"職場の人間関係と倫理",      status:"pending",   phone:"090-3333-4444", email:"ogawa@example.com",   requestDate:"2026-03-15", notes:"", venue:"新座市民会館", lineNotified:false },
+  // ── 経営者の集い（集い）──
+  { id:"s9",  seminarType:"tsudoi", chapterId:"asaka",      speakerName:"高橋 龍一", speakerKana:"たかはし りゅういち", speakerUnit:"朝霞単会",  company:"高橋ホールディングス", role:"代表取締役会長", seminarDate:"2026-04-18", topic:"地域経済の未来を拓く",    status:"confirmed", phone:"048-500-6600", email:"takahashi@example.com", requestDate:"2026-03-20", notes:"来賓あり・懇親会あり", venue:"朝霞市民会館大ホール", lineNotified:false },
+  { id:"s10", seminarType:"tsudoi", chapterId:"todawarabi", speakerName:"加藤 誠司", speakerKana:"かとう せいじ",   speakerUnit:"とだわらび単会", company:"加藤商事グループ",   role:"取締役社長",    seminarDate:"2026-05-10", topic:"中小企業の事業承継",      status:"pending",   phone:"048-200-3300", email:"kato@example.com",      requestDate:"2026-03-25", notes:"", venue:"戸田市文化会館", lineNotified:false },
+  // ── イブニングセミナー（イブ）──
+  { id:"s11", seminarType:"evening", chapterId:"kawaguchi", speakerName:"松本 理恵", speakerKana:"まつもと りえ",   speakerUnit:"川口単会",     company:"株式会社松本設計",   role:"代表取締役",    seminarDate:"2026-04-22", topic:"女性リーダーの時代",      status:"confirmed", phone:"090-7777-8888", email:"matsumoto@example.com", requestDate:"2026-03-18", notes:"宿泊不要", venue:"川口西文化センター", lineNotified:true },
+  { id:"s12", seminarType:"evening", chapterId:"niizashiki",speakerName:"木村 浩二", speakerKana:"きむら こうじ",   speakerUnit:"新座・志木単会", company:"木村法律事務所",     role:"弁護士",        seminarDate:"2026-05-20", topic:"企業リスクと法律対策",    status:"pending",   phone:"03-1234-5678", email:"kimura@example.com",    requestDate:"2026-04-01", notes:"前泊あり", venue:"志木駅前市民センター", lineNotified:false },
+  // ── 倫理経営講演会（倫経）──
+  { id:"s13", seminarType:"koen", chapterId:"kawaguchi",    speakerName:"丸山 敬三", speakerKana:"まるやま けいぞう", speakerUnit:"川口単会",   company:"丸山経営塾",         role:"塾長",          seminarDate:"2026-05-30", topic:"経営者の使命と倫理",      status:"confirmed", phone:"03-9999-0000", email:"maruyama@example.com",  requestDate:"2026-04-10", notes:"懇親会あり・来賓多数", venue:"川口総合文化センターリリア", lineNotified:false },
+];
+
+const INIT_TASKS = [
+  { id:"t1", chapterId:"kawaguchi",     title:"3月の会場予約確認",       dueDate:"2026-03-08", done:false, priority:"high"   },
+  { id:"t2", chapterId:"asaka",         title:"田中先生へお礼状送付",     dueDate:"2026-03-14", done:false, priority:"medium" },
+  { id:"t3", chapterId:"todawarabi",    title:"資料50部印刷",             dueDate:"2026-03-11", done:false, priority:"high"   },
+  { id:"t4", chapterId:"niizashiki",    title:"佐藤先生への日程確認電話", dueDate:"2026-03-09", done:false, priority:"high"   },
+  { id:"t5", chapterId:"kawaguchi_east",title:"4月講師候補リスト作成",    dueDate:"2026-03-20", done:false, priority:"low"    },
+  // 2月完了済みサンプル（ランキング表示用）
+  { id:"d1", chapterId:"kawaguchi_east",title:"2月会場予約",              dueDate:"2026-02-10", done:true, priority:"high",   completedAt:"2026-02-07T09:30:00" },
+  { id:"d2", chapterId:"asaka",         title:"2月講師確認メール",        dueDate:"2026-02-12", done:true, priority:"medium", completedAt:"2026-02-10T14:20:00" },
+  { id:"d3", chapterId:"kawaguchi",     title:"2月資料印刷手配",          dueDate:"2026-02-15", done:true, priority:"high",   completedAt:"2026-02-18T11:00:00" },
+  { id:"d4", chapterId:"todawarabi",    title:"2月お礼状送付",            dueDate:"2026-02-20", done:true, priority:"medium", completedAt:"2026-02-19T16:45:00" },
+  { id:"d5", chapterId:"niizashiki",    title:"2月チラシ原稿確認",        dueDate:"2026-02-18", done:true, priority:"high",   completedAt:"2026-02-22T10:10:00" },
+  { id:"d6", chapterId:"kawaguchi_east",title:"2月お礼状送付",            dueDate:"2026-02-22", done:true, priority:"medium", completedAt:"2026-02-20T09:00:00" },
+  { id:"d7", chapterId:"asaka",         title:"2月会場備品確認",          dueDate:"2026-02-25", done:true, priority:"low",    completedAt:"2026-02-23T15:30:00" },
+  { id:"d8", chapterId:"kawaguchi",     title:"2月チラシ配布",            dueDate:"2026-02-28", done:true, priority:"medium", completedAt:"2026-02-28T17:00:00" },
+  { id:"d9", chapterId:"todawarabi",    title:"2月資料印刷",              dueDate:"2026-02-14", done:true, priority:"high",   completedAt:"2026-02-13T08:30:00" },
+  { id:"d10",chapterId:"niizashiki",    title:"2月講師確認",              dueDate:"2026-02-16", done:true, priority:"high",   completedAt:"2026-02-20T12:00:00" },
+];
+
+// ── ユーティリティ ────────────────────────────────────────────────
+const getChapter = id => CHAPTERS.find(c => c.id === id);
+const realToday  = () => new Date();
+const formatDate = d => {
+  if (!d) return "";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日（${"日月火水木金土"[dt.getDay()]}）`;
+};
+const getWeekDates = (base, offset = 0) => {
+  const d = new Date(base);
+  d.setDate(d.getDate() - d.getDay() + offset * 7);
+  return Array.from({ length: 7 }, (_, i) => {
+    const x = new Date(d); x.setDate(d.getDate() + i); return x;
+  });
+};
+const isSameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth()    === b.getMonth()    &&
+  a.getDate()     === b.getDate();
+
+const loadLS = (key, fallback) => {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+};
+const saveLS = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} };
+
+// ── メインアプリ ──────────────────────────────────────────────────
+function App() {
+  const [tab,         setTab]        = useState("dashboard");
+  const [speakers,    setSpeakers]   = useState(() => loadLS("sp_rinri", INIT_SPEAKERS));
+  const [tasks,       setTasks]      = useState(() => loadLS("tk_rinri", INIT_TASKS));
+  const [weekOffset,  setWeekOffset] = useState(0);
+  const [showForm,    setShowForm]   = useState(false);
+  const [editSpeaker, setEditSpeaker]= useState(null);
+  const [docSpeaker,  setDocSpeaker] = useState(null);
+  const [filterCh,    setFilterCh]   = useState("all");
+  const [filterSt,    setFilterSt]   = useState("all");
+  const [lineModal,   setLineModal]  = useState(null);
+  const [emailModal,  setEmailModal] = useState(null);
+  const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
+  const [toast,       setToast]      = useState(null);
+
+  const today     = realToday();
+  const weekDates = getWeekDates(today, weekOffset);
+
+  const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
+  const saveSpeakers = sp => { setSpeakers(sp); saveLS("sp_rinri", sp); };
+  const saveTasks    = tk => { setTasks(tk);    saveLS("tk_rinri", tk); };
+
+  const updateSpeaker = (id, patch) => saveSpeakers(speakers.map(s => s.id === id ? { ...s, ...patch } : s));
+
+  const deleteSpeaker = id => {
+    if (!confirm("削除しますか？")) return;
+    saveSpeakers(speakers.filter(s => s.id !== id));
+    showToast("削除しました");
+  };
+
+  const addOrUpdateSpeaker = data => {
+    const updated = data.id
+      ? speakers.map(s => s.id === data.id ? data : s)
+      : [...speakers, { ...data, id: `s${Date.now()}`, lineNotified: false }];
+    saveSpeakers(updated);
+    setShowForm(false); setEditSpeaker(null);
+    showToast(data.id ? "変更を保存しました ✓" : "新規登録しました ✓");
+  };
+
+  const openLine = sp => {
+    const ch = getChapter(sp.chapterId);
+    const msg = `【${ch.name}単会 モーニングセミナー講師ご案内】\n\n開催日：${formatDate(sp.seminarDate)}\n会場：${ch.venue}\n時間：${ch.time}\n\n講師：${sp.speakerName} 様\n所属：${sp.company}　${sp.role}\nテーマ：「${sp.topic}」\n\n皆様のご参加をお待ちしております。\n${ch.name}単会事務局`;
+    setLineModal({ msg, speakerId: sp.id });
+  };
+
+  const toggleLine = sp => {
+    updateSpeaker(sp.id, { lineNotified: !sp.lineNotified });
+    showToast(sp.lineNotified ? "未送信に戻しました" : "送信済にしました ✓");
+  };
+
+  const TABS = [
+    { id:"dashboard", label:"ダッシュボード", icon:"⊞" },
+    { id:"calendar",  label:"カレンダー",     icon:"▦" },
+    { id:"speakers",  label:"講師管理",       icon:"♟", badge: speakers.filter(s => s.status === "pending").length },
+    { id:"document",  label:"確認書作成",     icon:"≡" },
+    { id:"flyer",     label:"チラシ管理",     icon:"📋" },
+    { id:"tasks",     label:"タスク管理",     icon:"✓", badge: tasks.filter(t => !t.done).length },
+    { id:"ranking",   label:"完了ランキング", icon:"🏆" },
+  ];
+
+  const hdr = {
+    header:  { background:"linear-gradient(135deg,#0D1B3E 0%,#1A3A6B 100%)", color:"#fff", boxShadow:"0 2px 12px rgba(0,0,0,.3)", position:"sticky", top:0, zIndex:100 },
+    hInner:  { display:"flex", alignItems:"flex-start", justifyContent:"space-between", padding:"13px 22px 6px", flexWrap:"wrap", gap:8 },
+    orgLabel:{ fontSize:11, letterSpacing:"0.15em", opacity:.7, marginBottom:2 },
+    appTitle:{ margin:0, fontSize:18, fontWeight:700, letterSpacing:"0.04em" },
+    chBadges:{ display:"flex", gap:5, flexWrap:"wrap" },
+    badge:   { color:"#fff", fontSize:10, padding:"2px 9px", borderRadius:20, fontWeight:600 },
+    nav:     { display:"flex", padding:"0 14px", gap:2, overflowX:"auto" },
+    navBtn:  { background:"transparent", border:"none", color:"rgba(255,255,255,.7)", padding:"9px 14px", cursor:"pointer", fontSize:12, fontWeight:500, borderBottom:"3px solid transparent", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap", flexShrink:0 },
+    navOn:   { color:"#fff", borderBottomColor:"#64B5F6" },
+    navBadge:{ background:"#EF5350", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10 },
+  };
+
+  return (
+    <div style={{ fontFamily:"'Hiragino Kaku Gothic ProN','Meiryo',sans-serif", background:"#F0F2F5", minHeight:"100vh", color:"#263238" }}>
+      <header style={hdr.header}>
+        <div style={hdr.hInner}>
+          <div>
+            <div style={hdr.orgLabel}>倫理法人会　南部地区事務局</div>
+            <h1 style={hdr.appTitle}>南部地区5単会タスク管理</h1>
+          </div>
+          <div style={hdr.chBadges}>
+            {CHAPTERS.map(ch => (
+              <span key={ch.id} style={{ ...hdr.badge, background: ch.color }}>
+                {ch.short}｜{ch.dayName}
+              </span>
+            ))}
+          </div>
+        </div>
+        <nav style={hdr.nav}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              style={{ ...hdr.navBtn, ...(tab === t.id ? hdr.navOn : {}) }}>
+              <span>{t.icon}</span> {t.label}
+              {!!t.badge && t.badge > 0 && <span style={hdr.navBadge}>{t.badge}</span>}
+            </button>
+          ))}
+        </nav>
+      </header>
+
+      <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
+        {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={sp => { setDocSpeaker(sp); setTab("document"); }} setTab={setTab} />}
+        {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={sp => { setDocSpeaker(sp); setTab("document"); }} />}
+        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onLine={openLine} onToggleLine={toggleLine} onEmail={setEmailModal} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
+        {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
+        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={id => saveTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null } : t))} onDelete={id => saveTasks(tasks.filter(t => t.id !== id))} onAdd={() => { if (!newTask.title || !newTask.dueDate) return; saveTasks([...tasks, { ...newTask, id: `t${Date.now()}`, done: false }]); setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" }); showToast("タスクを追加しました ✓"); }} />}
+        {tab === "flyer"     && <FlyerView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
+        {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
+      </main>
+
+      {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={() => { setShowForm(false); setEditSpeaker(null); }} />}
+      {emailModal && <EmailModal speaker={emailModal} onClose={() => setEmailModal(null)} onDone={() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }} />}
+
+      {lineModal && (
+        <div style={OV} onClick={() => setLineModal(null)}>
+          <div style={{ ...MOD, maxWidth:480 }} onClick={e => e.stopPropagation()}>
+            <div style={MH}><span style={{ color:"#06C755", fontSize:20 }}>●</span> LINEグループ送信プレビュー</div>
+            <pre style={{ background:"#E8F5E9", borderRadius:8, padding:12, fontSize:12, lineHeight:1.8, whiteSpace:"pre-wrap", border:"1px solid #A5D6A7", marginTop:10, maxHeight:260, overflowY:"auto" }}>{lineModal.msg}</pre>
+            <div style={{ display:"flex", gap:8, marginTop:14 }}>
+              <button style={BG} onClick={() => {
+                navigator.clipboard?.writeText(lineModal.msg).catch(() => {});
+                updateSpeaker(lineModal.speakerId, { lineNotified: true });
+                setLineModal(null);
+                showToast("コピーしました！LINEに貼り付けてください");
+              }}>📋 コピーしてLINEへ</button>
+              <button style={BC} onClick={() => setLineModal(null)}>閉じる</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && <div style={{ position:"fixed", bottom:20, right:20, background:"#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000 }}>{toast}</div>}
+    </div>
+  );
+}
+
+// ── 共通スタイル変数 ───────────────────────────────────────────────
+const CARD = { background:"#fff", borderRadius:8, padding:"13px", boxShadow:"0 1px 4px rgba(0,0,0,.08)", marginBottom:12 };
+const OV   = { position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:16 };
+const MOD  = { background:"#fff", borderRadius:10, padding:22, width:"100%", maxWidth:560, maxHeight:"90vh", overflowY:"auto" };
+const MH   = { fontSize:14, fontWeight:700, color:"#1A3A6B", borderBottom:"2px solid #1A3A6B", paddingBottom:7, display:"flex", alignItems:"center", gap:7, marginBottom:8 };
+const BP   = { background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:700, cursor:"pointer" };
+const BC   = { background:"#ECEFF1", color:"#546E7A", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:600, cursor:"pointer" };
+const BG   = { background:"#06C755", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:700, cursor:"pointer" };
+const SEL  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"5px 8px", fontSize:11, background:"#fff", cursor:"pointer" };
+const INP  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"6px 8px", fontSize:12, background:"#fff" };
+const BSM  = { background:"#ECEFF1", border:"none", borderRadius:4, padding:"3px 8px", fontSize:11, cursor:"pointer", fontWeight:600 };
+const TBL  = { width:"100%", borderCollapse:"collapse" };
+const TH   = { padding:"8px 10px", fontSize:11, fontWeight:700, textAlign:"left", color:"#546E7A", background:"#ECEFF1" };
+const TD   = { padding:"8px 10px", fontSize:11, verticalAlign:"middle", borderBottom:"1px solid #F5F5F5" };
+const PILL = (ch) => ({ fontSize:11, padding:"2px 8px", borderRadius:12, fontWeight:700, background: ch.light, color: ch.color });
+
+// ── ダッシュボード ────────────────────────────────────────────────
+function Dashboard({ speakers, tasks, weekDates, today, onView, setTab }) {
+  const thisWeek = speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate))));
+
+  return (
+    <div>
+      <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B", marginBottom:13 }}>ダッシュボード</div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:14 }}>
+        {[
+          { label:"今週の開催",  val: thisWeek.length,                                     sub:"/5単会", color:"#1A3A6B" },
+          { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20" },
+          { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C" },
+          { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A" },
+        ].map((it, i) => (
+          <div key={i} style={{ ...CARD, borderTop:`4px solid ${it.color}`, marginBottom:0 }}>
+            <div style={{ fontSize:28, fontWeight:800, lineHeight:1, color: it.color }}>{it.val}<span style={{ fontSize:11, fontWeight:400, marginLeft:3 }}>{it.sub}</span></div>
+            <div style={{ fontSize:11, color:"#78909C", marginTop:3 }}>{it.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>今週のモーニングセミナー</div>
+          <div style={CARD}>
+            {CHAPTERS.map(ch => {
+              const sp = thisWeek.find(x => x.chapterId === ch.id);
+              return (
+                <div key={ch.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
+                  <div style={{ color:"#fff", fontSize:10, padding:"2px 7px", borderRadius:12, fontWeight:700, background: ch.color, minWidth:26, textAlign:"center" }}>{ch.dayName.replace("曜日","")}</div>
+                  <div style={{ fontWeight:700, fontSize:12, minWidth:70, color: ch.color }}>{ch.name}</div>
+                  {sp ? (
+                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", flex:1 }}>
+                      <span style={{ fontSize:12, fontWeight:600 }}>{sp.speakerName}</span>
+                      <span style={{ fontSize:11, color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
+                      <span style={{ fontSize:11, padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
+                      <button style={BSM} onClick={() => onView(sp)}>確認書</button>
+                    </div>
+                  ) : <span style={{ color:"#9E9E9E", fontSize:11 }}>── 講師未設定</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>優先タスク（期限近い順）</div>
+          <div style={CARD}>
+            {tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5).map(t => {
+              const ch = getChapter(t.chapterId);
+              const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+              return (
+                <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
+                  <span style={PILL(ch)}>{ch.name}</span>
+                  <span style={{ flex:1, fontSize:12 }}>{t.title}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color: dl < 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : "#546E7A" }}>{dl < 0 ? "超過" : `${dl}日`}</span>
+                </div>
+              );
+            })}
+            {tasks.filter(t => !t.done).length === 0 && <div style={{ color:"#90A4AE", fontSize:12, textAlign:"center", padding:12 }}>タスクなし ✓</div>}
+            <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:12, cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("tasks")}>全タスクを見る →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── カレンダー ────────────────────────────────────────────────────
+function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, onSpeaker }) {
+  const a = weekDates[1], b = weekDates[5];
+  const label = `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日 〜 ${b.getMonth()+1}月${b.getDate()}日`;
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>週間カレンダー</div>
+        <div style={{ display:"flex", gap:8, marginLeft:"auto", alignItems:"center" }}>
+          <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setWeekOffset(o => o - 1)}>‹ 前週</button>
+          <span style={{ fontSize:12, color:"#37474F", minWidth:210, textAlign:"center" }}>{label}</span>
+          <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setWeekOffset(o => o + 1)}>次週 ›</button>
+          <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600 }} onClick={() => setWeekOffset(0)}>今週</button>
+        </div>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"96px repeat(7,1fr)", gap:1, background:"#CFD8DC", borderRadius:8, overflow:"hidden" }}>
+        <div style={{ background:"#fff", padding:"6px 3px", textAlign:"center", fontSize:11, fontWeight:700 }}></div>
+        {weekDates.map((d, i) => {
+          const isT = isSameDay(d, today);
+          return (
+            <div key={i} style={{ background: isT ? "#1A3A6B" : "#fff", color: isT ? "#fff" : "#37474F", padding:"6px 3px", textAlign:"center", fontSize:11, fontWeight:700 }}>
+              <div style={{ fontSize:9, opacity:.7 }}>{"日月火水木金土"[d.getDay()]}曜</div>
+              <div style={{ fontSize:16, fontWeight:700 }}>{d.getDate()}</div>
+            </div>
+          );
+        })}
+        {CHAPTERS.map(ch => (
+          <React.Fragment key={ch.id}>
+            <div style={{ background:"#FAFAFA", padding:"6px 8px", display:"flex", flexDirection:"column", justifyContent:"center", gap:1, borderLeft:`3px solid ${ch.color}` }}>
+              <span style={{ color: ch.color, fontWeight:700, fontSize:11 }}>{ch.name}</span>
+              <span style={{ fontSize:9, color:"#90A4AE" }}>{ch.dayName}</span>
+            </div>
+            {weekDates.map((d, i) => {
+              const isChDay = d.getDay() === ch.day;
+              const sp = isChDay ? speakers.find(x => x.chapterId === ch.id && isSameDay(new Date(x.seminarDate), d)) : null;
+              return (
+                <div key={i} style={{ background: isChDay ? ch.light : "#fff", padding:4, minHeight:76, border:`1px solid ${isChDay ? ch.accent : "transparent"}` }}>
+                  {isChDay && (sp ? (
+                    <div style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4 }} onClick={() => onSpeaker(sp)}>
+                      <div style={{ fontSize:10, fontWeight:700, color: ch.color }}>{sp.speakerName}</div>
+                      <div style={{ fontSize:9, color:"#546E7A", marginTop:1 }}>「{sp.topic}」</div>
+                      <span style={{ fontSize:8, padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign:"center", paddingTop:16 }}>
+                      <div style={{ fontSize:9, color: ch.accent }}>MS開催</div>
+                      <div style={{ fontSize:8, color:"#B0BEC5" }}>講師未定</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </div>
+      <div style={{ marginTop:10, padding:"7px 12px", background:"#F5F5F5", borderRadius:6, fontSize:11, color:"#78909C" }}>
+        💡 セルをクリックで確認書を表示　｜　MS = モーニングセミナー（毎週午前6時〜7時）
+      </div>
+    </div>
+  );
+}
+
+// ── 講師管理 ──────────────────────────────────────────────────────
+function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onLine, onToggleLine, onEmail, onAdd }) {
+  const filtered = [...speakers]
+    .filter(sp => (filterCh === "all" || sp.chapterId === filterCh) && (filterSt === "all" || sp.status === filterSt))
+    .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate));
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>講師管理</div>
+        <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap" }}>
+          <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
+            <option value="all">全単会</option>
+            {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+          </select>
+          <select style={SEL} value={filterSt} onChange={e => setFilterSt(e.target.value)}>
+            <option value="all">全ステータス</option>
+            {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+          <button style={BP} onClick={onAdd}>＋ 新規登録</button>
+        </div>
+      </div>
+
+      <div style={CARD}>
+        <div style={{ overflowX:"auto" }}>
+          <table style={TBL}>
+            <thead>
+              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","依頼メール","LINE","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {filtered.map(sp => {
+                const ch = getChapter(sp.chapterId);
+                return (
+                  <tr key={sp.id} className="hover-row">
+                    <td style={TD}><div style={{ fontWeight:600, fontSize:12 }}>{sp.seminarDate}</div><div style={{ fontSize:10, color:"#90A4AE" }}>{ch.dayName}</div></td>
+                    <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
+                    <td style={TD}><div style={{ fontWeight:600, fontSize:12 }}>{sp.speakerName}</div><div style={{ fontSize:10, color:"#78909C" }}>{sp.company}　{sp.role}</div></td>
+                    <td style={{ ...TD, maxWidth:150, fontSize:11 }}>「{sp.topic}」</td>
+                    <td style={TD}>
+                      <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status].color }} value={sp.status} onChange={e => onStatusChange(sp.id, e.target.value)}>
+                        {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      </select>
+                    </td>
+                    <td style={TD}>
+                      {sp.materialUrl ? (
+                        <a href={sp.materialUrl} target="_blank" style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#1565C0", fontWeight:600, textDecoration:"none" }}>
+                          <span style={{ fontSize:13 }}>📄</span>
+                          <span style={{ maxWidth:80, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{sp.materialName || "資料を開く"}</span>
+                        </a>
+                      ) : (
+                        <span style={{ fontSize:10, color:"#B0BEC5", display:"flex", alignItems:"center", gap:3 }}>
+                          <span>📭</span> 未受信
+                        </span>
+                      )}
+                    </td>
+                    <td style={TD}>
+                      <button style={{ ...BSM, background:"#1A3A6B", color:"#fff", fontSize:10 }} onClick={() => onEmail(sp)}>📧 送信</button>
+                    </td>
+                    <td style={TD}>
+                      {sp.lineNotified ? (
+                        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                          <span style={{ color:"#06C755", fontSize:11, fontWeight:600 }}>● 送信済</span>
+                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} onClick={() => onToggleLine(sp)}>↩</button>
+                        </div>
+                      ) : (
+                        <div style={{ display:"flex", gap:3 }}>
+                          <button style={{ ...BSM, background:"#E8F5E9", color:"#2E7D32", border:"1px solid #A5D6A7", fontSize:10 }} onClick={() => onLine(sp)}>📤 送信</button>
+                          <button style={{ ...BSM, fontSize:10, color:"#06C755" }} onClick={() => onToggleLine(sp)}>✓済</button>
+                        </div>
+                      )}
+                    </td>
+                    <td style={TD}>
+                      <div style={{ display:"flex", gap:3 }}>
+                        <button style={BSM} onClick={() => onDoc(sp)}>確認書</button>
+                        <button style={BSM} onClick={() => onEdit(sp)}>編集</button>
+                        <button style={{ ...BSM, color:"#B71C1C" }} onClick={() => onDelete(sp.id)}>削除</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && <tr><td colSpan={9} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:28 }}>該当データなし</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ marginTop:10, padding:"10px 14px", background:"#E8F5E9", borderRadius:6, fontSize:11, color:"#2E7D32", display:"flex", alignItems:"center", gap:8 }}>
+        <span style={{ fontSize:16 }}>🤖</span>
+        <div>
+          <span style={{ fontWeight:700 }}>講話資料の自動格納について（準備中）</span>
+          <span style={{ color:"#546E7A", marginLeft:8 }}>講師からのメール添付ファイルを <strong>nanbugoudou.jimu@gmail.com</strong> で受信すると、Googleドライブに自動保存され、この列にリンクが表示されます。</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+function EmailModal({ speaker: sp, onClose, onDone }) {
+  const ch = getChapter(sp.chapterId);
+  const [mailType, setMailType] = useState("request");
+  const [freeSubject, setFreeSubject] = useState("");
+  const [freeBody,    setFreeBody]    = useState("");
+
+  const d = new Date(sp.seminarDate); d.setDate(d.getDate() - 14);
+  const matDL = d.toISOString().slice(0, 10);
+
+  const TEMPLATES = {
+    request: {
+      label: "📋 講師依頼確認",
+      subject: `【${ch.name}単会 モーニングセミナー】講師依頼のご確認`,
+      body:
+`${sp.speakerName} 様
+
+このたびは、${ch.name}単会 モーニングセミナーの講師をお引き受けいただき、誠にありがとうございます。
+
+開催日：${formatDate(sp.seminarDate)}（毎週${ch.dayName}　午前6時〜7時）
+会　場：${ch.venue}
+
+下記の内容をご確認・ご回答いただけますようお願いいたします。
+
+【ご確認いただきたい内容】
+① 顔写真のご送付（合同チラシ・当日資料に使用いたします）
+② 講話タイトルのご連絡
+③ 当日資料（レジュメ等）の有無
+   ※「あり」の場合は ${matDL} までにデータをご送付ください
+④ 前泊の有無
+   ※「あり」の場合はホテルを手配いたしますのでお知らせください
+
+ご不明な点がございましたら、お気軽にご連絡ください。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区事務局
+${ch.name}単会 担当
+━━━━━━━━━━━━━━━━━`,
+    },
+    thanks: {
+      label: "🙏 講話後お礼",
+      subject: `【${ch.name}単会 モーニングセミナー】ご講話のお礼`,
+      body:
+`${sp.speakerName} 様
+
+先日は、${ch.name}単会 モーニングセミナーにてご講話をいただき、誠にありがとうございました。
+
+開催日：${formatDate(sp.seminarDate)}
+
+${sp.speakerName}様の貴重なお話は、参加者一同にとって大変心に響くものでございました。
+「${sp.topic}」というテーマのもと、深い洞察と温かいお人柄が伝わる講話に、会場全体が感動に包まれました。
+
+お忙しい中、お時間をいただきましたこと、改めて心より感謝申し上げます。
+またの機会にも、ぜひよろしくお願いいたします。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区事務局
+${ch.name}単会 担当
+━━━━━━━━━━━━━━━━━`,
+    },
+    free: {
+      label: "✏️ フリーメール",
+      subject: "",
+      body: "",
+    },
+  };
+
+  const isFree  = mailType === "free";
+  const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
+  const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
+
+  return (
+    <div style={OV} onClick={onClose}>
+      <div style={{ ...MOD, maxWidth:580 }} onClick={e => e.stopPropagation()}>
+        <div style={MH}>📧 メール送信</div>
+
+        {/* 送信先 */}
+        <div style={{ background:"#E3F2FD", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
+          <div style={{ fontSize:11, color:"#546E7A" }}>送信先</div>
+          <div style={{ fontWeight:700, fontSize:14, color:"#1565C0" }}>{sp.email}</div>
+          <div style={{ fontSize:11, color:"#546E7A", marginTop:2 }}>{sp.speakerName}　{formatDate(sp.seminarDate)}</div>
+        </div>
+
+        {/* 種別プルダウン */}
+        <div style={{ fontSize:11, color:"#78909C", marginBottom:4, fontWeight:600 }}>メールの種類</div>
+        <select style={{ ...INP, width:"100%", marginBottom:12, fontSize:12 }} value={mailType} onChange={e => setMailType(e.target.value)}>
+          {Object.entries(TEMPLATES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+
+        {/* 件名 */}
+        <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
+        {isFree
+          ? <input style={{ ...INP, width:"100%", marginBottom:10 }} placeholder="件名を入力..." value={freeSubject} onChange={e => setFreeSubject(e.target.value)} />
+          : <div style={{ fontSize:12, background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{subject}</div>
+        }
+
+        {/* 本文 */}
+        <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>本文</div>
+        {isFree
+          ? <textarea style={{ ...INP, width:"100%", minHeight:180, resize:"vertical", fontSize:11, lineHeight:1.8 }} placeholder="本文を入力..." value={freeBody} onChange={e => setFreeBody(e.target.value)} />
+          : <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:220, overflowY:"auto" }}>{body}</pre>
+        }
+
+        <div style={{ display:"flex", gap:8, marginTop:14 }}>
+          <button style={{ ...BP, flex:1 }} onClick={() => { window.open(`mailto:${sp.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
+          <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${subject}\n\n${body}`).catch(() => {}); onDone(); }}>📋 コピーして手動送信</button>
+          <button style={BC} onClick={onClose}>閉じる</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 確認書サブコンポーネント ──────────────────────────────────────
+function DocSection({ title, color, children }) {
+  const c = color || "#1A3A6B";
+  return (
+    <div style={{ marginBottom:12 }}>
+      <div style={{ fontSize:13, fontWeight:700, color:"#fff", background:c, padding:"4px 10px", marginBottom:0, letterSpacing:"0.08em" }}>{title}</div>
+      <table style={{ width:"100%", borderCollapse:"collapse" }}>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  );
+}
+function DocRow({ label, value, color }) {
+  const c = color || "#1A3A6B";
+  return (
+    <tr>
+      <th style={{ width:110, padding:"5px 10px", background:"#F8F8F8", border:"1px solid #E0E0E0", fontSize:10, fontWeight:700, color:c, textAlign:"left", verticalAlign:"top" }}>{label}</th>
+      <td style={{ padding:"5px 10px", border:"1px solid #E0E0E0", fontSize:11, color:"#263238" }}>{value}</td>
+    </tr>
+  );
+}
+
+// ── 確認書 ────────────────────────────────────────────────────────
+function DocumentView({ speakers, docSpeaker, setDocSpeaker, today }) {
+  const [sel, setSel] = useState(docSpeaker?.id || "");
+  useEffect(() => { if (docSpeaker) setSel(docSpeaker.id); }, [docSpeaker]);
+  const sp = speakers.find(x => x.id === sel);
+  const ch = sp ? getChapter(sp.chapterId) : null;
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>講師依頼確認書</div>
+        <select style={{ ...SEL, minWidth:240 }} value={sel} onChange={e => { setSel(e.target.value); setDocSpeaker(speakers.find(x => x.id === e.target.value) || null); }}>
+          <option value="">── 講師を選択 ──</option>
+          {[...speakers].sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate)).map(sp => {
+            const ch = getChapter(sp.chapterId);
+            return <option key={sp.id} value={sp.id}>{sp.seminarDate} | {ch.name} | {sp.speakerName}</option>;
+          })}
+        </select>
+        {sp && <button style={BP} onClick={() => window.print()}>🖨 印刷 / PDF保存</button>}
+      </div>
+
+      {sp && ch ? (() => { const st = getSeminarType(sp.seminarType || "ms"); return (
+        <div id="print-doc" style={{ background:"#fff", border:"1px solid #CFD8DC", borderRadius:4, padding:"28px 36px", maxWidth:680, margin:"0 auto", boxShadow:"0 2px 12px rgba(0,0,0,.08)", borderTop:`5px solid ${st.color}`, position:"relative", overflow:"hidden" }}>
+          {/* コーナーマーク */}
+          <div style={{ position:"absolute", top:0, right:0, width:0, height:0, borderStyle:"solid", borderWidth:"0 80px 80px 0", borderColor:`transparent ${st.color} transparent transparent` }} />
+          <div style={{ position:"absolute", top:8, right:5, fontSize:15, fontWeight:700, color:"#fff", zIndex:2, lineHeight:1.2, textAlign:"right" }}>{st.short}</div>
+          {/* ヘッダー */}
+          <div style={{ textAlign:"center", marginBottom:16 }}>
+            <div style={{ fontSize:12, color:"#546E7A", marginBottom:4 }}>倫理法人会　南部地区事務局</div>
+            <div style={{ display:"inline-block", fontSize:16, fontWeight:700, color:st.color, border:`2px solid ${st.color}`, padding:"3px 16px", marginBottom:8, letterSpacing:"0.1em" }}>{st.label}</div>
+            <h2 style={{ margin:0, fontSize:22, fontWeight:800, color:"#1a1a1a", letterSpacing:"0.04em" }}>講師依頼確認書</h2>
+            <div style={{ height:1, background:`linear-gradient(to right, ${st.color}, #ccc, transparent)`, margin:"8px 0 4px" }} />
+            <div style={{ fontSize:12, color:"#90A4AE" }}>受付日：　　　　年　　月　　日　　担当：</div>
+          </div>
+
+          {/* ① 開催情報 */}
+          <DocSection title="① 開催情報" color={st.color}>
+            <DocRow label="講話単会名"   value={ch.name} color={st.color} />
+            <DocRow label="開催曜日・時間" value={`${ch.dayName}　${ch.time}`} />
+            <DocRow label="開催場所"     value={ch.venue} />
+            <DocRow label="会場住所"     value={ch.address} />
+            <DocRow label="会場地図" value={<a href={ch.mapUrl} target="_blank" style={{ color:"#1565C0", fontSize:11 }}>Googleマップで開く →</a>} />
+            <DocRow label="会場連絡先"   value={ch.venueTel} />
+            {ch.staff && <DocRow label="担当者" value={ch.staff} />}
+          </DocSection>
+
+          {/* ② 講師情報 */}
+          <DocSection title="② 講師情報" color={st.color}>
+            <DocRow label="お名前（漢字）"    value={`${sp.speakerName}　様`} />
+            <DocRow label="お名前（ふりがな）" value={sp.speakerKana || ""} />
+            <DocRow label="所属法人会名"      value={sp.company} />
+            <DocRow label="役職名"            value={sp.role} />
+            <DocRow label="連絡先TEL"         value={sp.phone} />
+            <DocRow label="メールアドレス"    value={sp.email} />
+          </DocSection>
+
+          {/* ③ 講話内容 */}
+          <DocSection title="③ 講話内容" color={st.color}>
+            <DocRow label="タイトル" value={`「${sp.topic}」`} />
+            <DocRow label="内容要約" value="" />
+          </DocSection>
+
+          {/* ④ 交通・準備 */}
+          <DocSection title="④ 交通・当日の準備" color={st.color}>
+            <DocRow label="交通手段"         value="□ お車　□ 電車　□ その他" />
+            <DocRow label="資料の有無"       value="□ あり　□ なし" />
+            <DocRow label="印刷の要否"       value="□ 要（単会で印刷）　□ 不要（持参）" />
+            <DocRow label="単会で準備するもの" value="□ プロジェクタ　□ パソコン　□ ホワイトボード　□ その他　□ 無し" />
+          </DocSection>
+
+          {/* ⑤ 宿泊 */}
+          <DocSection title="⑤ 宿泊情報" color={st.color}>
+            <DocRow label="前泊要否"     value="□ 要　□ 不要" />
+            <DocRow label="お迎えの要否" value="□ 要　□ 不要" />
+            <DocRow label="お部屋のタイプ" value="□ 禁煙　□ 喫煙" />
+            <DocRow label="領収証の宛名" value="" />
+            <DocRow label="郵便番号"     value="" />
+            <DocRow label="住所"         value="" />
+          </DocSection>
+
+          {/* ⑥ 顔写真・資料 */}
+          <DocSection title="⑥ 顔写真・資料" color={st.color}>
+            <DocRow label="顔写真"          value="□ フォームアップ済　□ メール送付済　□ 未受領" />
+            <DocRow label="講話資料"        value="□ フォームアップ済　□ メール送付済　□ 未受領" />
+            <DocRow label="顔写真の使用範囲" value="" />
+          </DocSection>
+
+          {/* ⑦ 備考 */}
+          <DocSection title="⑦ 備考・特記事項" color="#546E7A">
+            <tr><td colSpan={2} style={{ padding:"6px 10px", border:"1px solid #E0E0E0", fontSize:12, height:56 }}>{sp.notes || ""}</td></tr>
+          </DocSection>
+
+          {/* フッター */}
+          <div style={{ marginTop:18, paddingTop:10, borderTop:`2px solid ${ch.color}`, fontSize:11, color:"#546E7A", display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+            <div>
+              <span style={{ fontWeight:700 }}>【事務局連絡先】　倫理法人会　南部地区合同事務局</span>
+              {JIMU.tel && <span>　TEL：{JIMU.tel}</span>}
+              <span>　Mail：<span style={{ color:"#1565C0" }}>{JIMU.email}</span></span>
+            </div>
+            <div>確認日　　年　　月　　日</div>
+          </div>
+        </div>
+        ); })() : (
+        <div style={{ textAlign:"center", padding:38, color:"#90A4AE", fontSize:13, background:"#fff", borderRadius:8, border:"2px dashed #CFD8DC" }}>
+          ← 上のセレクトボックスから講師を選択してください
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── タスク管理 ────────────────────────────────────────────────────
+function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
+  const [showDone, setShowDone] = useState(false);
+  const visible = tasks.filter(t => showDone || !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>タスク管理</div>
+        <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F", marginLeft:"auto" }} onClick={() => setShowDone(v => !v)}>
+          {showDone ? "完了を隠す" : "完了済も表示"}
+        </button>
+      </div>
+
+      <div style={{ ...CARD, marginBottom:12 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
+        <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
+          <input style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
+          <select style={SEL} value={newTask.chapterId} onChange={e => setNewTask({ ...newTask, chapterId: e.target.value })}>
+            {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+          </select>
+          <input type="date" style={INP} value={newTask.dueDate} onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })} />
+          <select style={SEL} value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value })}>
+            <option value="high">🔴 高</option>
+            <option value="medium">🟡 中</option>
+            <option value="low">🟢 低</option>
+          </select>
+          <button style={BP} onClick={onAdd}>追加</button>
+        </div>
+      </div>
+
+      <div style={CARD}>
+        <div style={{ overflowX:"auto" }}>
+          <table style={TBL}>
+            <thead>
+              <tr>{["","単会","タスク内容","期限","残り","優先","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {visible.map(t => {
+                const ch = getChapter(t.chapterId);
+                const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+                const p  = PRIO[t.priority] || PRIO.medium;
+                return (
+                  <tr key={t.id} className="hover-row" style={{ opacity: t.done ? .5 : 1, background: t.done ? "#FAFAFA" : "white" }}>
+                    <td style={TD}><input type="checkbox" checked={t.done} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
+                    <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
+                    <td style={{ ...TD, fontWeight: t.done ? 400 : 600, textDecoration: t.done ? "line-through" : "none", maxWidth:200 }}>{t.title}</td>
+                    <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
+                    <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? "超過" : `${dl}日`}</span></td>
+                    <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
+                    <td style={TD}>{!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button>}</td>
+                  </tr>
+                );
+              })}
+              {visible.length === 0 && <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>タスクなし</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ランキング ────────────────────────────────────────────────────
+function RankingView({ tasks, today }) {
+  const months = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    months.push({ value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月` });
+  }
+  const [selMonth, setSelMonth] = useState(months[0].value);
+
+  // 選択月の完了タスクを抽出してスコア計算
+  const ranking = CHAPTERS.map(ch => {
+    const done = tasks.filter(t =>
+      t.done && t.completedAt && t.chapterId === ch.id &&
+      t.completedAt.startsWith(selMonth)
+    );
+    if (done.length === 0) return { ch, count:0, avgDays:null, scores:[] };
+
+    const scores = done.map(t => {
+      const due  = new Date(t.dueDate);
+      const comp = new Date(t.completedAt);
+      return Math.ceil((due - comp) / 86400000); // 正=早い、負=遅い
+    });
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    return { ch, count: done.length, avgDays: avg, scores, done };
+  }).sort((a, b) => {
+    // 完了タスクなしは最下位
+    if (a.avgDays === null && b.avgDays === null) return 0;
+    if (a.avgDays === null) return 1;
+    if (b.avgDays === null) return -1;
+    return b.avgDays - a.avgDays;
+  });
+
+  const MEDALS = ["🥇","🥈","🥉","4位","5位"];
+  const maxAbs = Math.max(...ranking.filter(r => r.avgDays !== null).map(r => Math.abs(r.avgDays)), 1);
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>🏆 タスク完了ランキング</div>
+        <select style={{ ...SEL, marginLeft:"auto" }} value={selMonth} onChange={e => setSelMonth(e.target.value)}>
+          {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+        </select>
+      </div>
+
+      {/* ランキングカード */}
+      <div style={{ display:"grid", gap:10, marginBottom:16 }}>
+        {ranking.map((r, i) => {
+          const isTop   = i === 0 && r.avgDays !== null;
+          const noData  = r.avgDays === null;
+          const isEarly = r.avgDays !== null && r.avgDays >= 0;
+          const barW    = noData ? 0 : Math.round(Math.abs(r.avgDays) / maxAbs * 100);
+
+          return (
+            <div key={r.ch.id} style={{ ...CARD, marginBottom:0, border: isTop ? `2px solid ${r.ch.color}` : "2px solid transparent", position:"relative", overflow:"hidden" }}>
+              {isTop && <div style={{ position:"absolute", top:0, left:0, right:0, height:3, background: r.ch.color }} />}
+              <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+
+                {/* 順位 */}
+                <div style={{ fontSize: i < 3 ? 28 : 18, minWidth:40, textAlign:"center", lineHeight:1 }}>
+                  {noData ? "－" : MEDALS[i]}
+                </div>
+
+                {/* 単会名 */}
+                <div style={{ minWidth:90 }}>
+                  <div style={{ fontWeight:800, fontSize:13, color: r.ch.color }}>{r.ch.name}</div>
+                  <div style={{ fontSize:10, color:"#90A4AE" }}>{r.ch.dayName}</div>
+                </div>
+
+                {/* バーグラフ */}
+                <div style={{ flex:1, minWidth:160 }}>
+                  {noData ? (
+                    <div style={{ fontSize:11, color:"#B0BEC5" }}>完了タスクなし</div>
+                  ) : (
+                    <div>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                        <span style={{ fontSize:20, fontWeight:800, color: isEarly ? "#1B5E20" : "#B71C1C" }}>
+                          {isEarly ? "+" : ""}{r.avgDays.toFixed(1)}
+                        </span>
+                        <span style={{ fontSize:11, color:"#78909C" }}>日（平均）</span>
+                        <span style={{ fontSize:11, color:"#546E7A", marginLeft:4 }}>
+                          {isEarly ? "⬆ 期限より早い" : "⬇ 期限より遅い"}
+                        </span>
+                      </div>
+                      <div style={{ background:"#ECEFF1", borderRadius:4, height:10, overflow:"hidden" }}>
+                        <div style={{
+                          height:"100%", borderRadius:4,
+                          width: `${barW}%`,
+                          background: isEarly
+                            ? `linear-gradient(90deg, ${r.ch.color}, ${r.ch.accent})`
+                            : "linear-gradient(90deg, #EF5350, #FFCDD2)",
+                          transition:"width .4s"
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 完了件数 */}
+                <div style={{ textAlign:"center", minWidth:60 }}>
+                  <div style={{ fontSize:22, fontWeight:800, color: r.ch.color }}>{r.count}</div>
+                  <div style={{ fontSize:10, color:"#90A4AE" }}>件完了</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* タスク詳細 */}
+      <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>完了タスク詳細（{months.find(m => m.value === selMonth)?.label}）</div>
+      <div style={CARD}>
+        <div style={{ overflowX:"auto" }}>
+          <table style={TBL}>
+            <thead>
+              <tr>{["単会","タスク内容","期限","完了日時","早/遅"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {tasks
+                .filter(t => t.done && t.completedAt && t.completedAt.startsWith(selMonth))
+                .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+                .map(t => {
+                  const ch   = getChapter(t.chapterId);
+                  const days = Math.ceil((new Date(t.dueDate) - new Date(t.completedAt)) / 86400000);
+                  const comp = new Date(t.completedAt);
+                  const compStr = `${comp.getMonth()+1}/${comp.getDate()} ${String(comp.getHours()).padStart(2,"0")}:${String(comp.getMinutes()).padStart(2,"0")}`;
+                  return (
+                    <tr key={t.id} className="hover-row">
+                      <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
+                      <td style={{ ...TD, maxWidth:200 }}>{t.title}</td>
+                      <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
+                      <td style={{ ...TD, fontSize:11 }}>{compStr}</td>
+                      <td style={TD}>
+                        <span style={{ fontWeight:700, fontSize:12, color: days >= 0 ? "#1B5E20" : "#B71C1C" }}>
+                          {days >= 0 ? `+${days}日早` : `${Math.abs(days)}日遅`}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              {tasks.filter(t => t.done && t.completedAt && t.completedAt.startsWith(selMonth)).length === 0 && (
+                <tr><td colSpan={5} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>この月の完了タスクなし</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ padding:"8px 12px", background:"#E3F2FD", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+        💡 タスク管理タブでチェックを入れると自動でタイムスタンプが記録され、ランキングに反映されます
+      </div>
+    </div>
+  );
+}
+
+// ── チラシ管理 ────────────────────────────────────────────────────
+function FlyerView({ speakers, today, updateSpeaker, showToast }) {
+  // 対象月（デフォルト：来月）
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const months = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    return { value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月号` };
+  });
+  const [selMonth, setSelMonth] = useState(months[1].value); // デフォルト来月
+  const [printEmail, setPrintEmail] = useState(""); // 印刷会社メールアドレス
+  const [showEmailModal, setShowEmailModal] = useState(false);
+
+  // 締め切り計算（毎月10日）
+  const [year, month] = selMonth.split("-").map(Number);
+  const deadline = new Date(year, month - 1, 10);
+  const daysLeft = Math.ceil((deadline - today) / 86400000);
+  const deadlineColor = daysLeft < 0 ? "#B71C1C" : daysLeft <= 3 ? "#E65100" : daysLeft <= 7 ? "#FF8F00" : "#2E7D32";
+
+  // 選択月のMS講師データを単会ごとに取得
+  const flyerData = CHAPTERS.map(ch => {
+    const sp = speakers.find(s =>
+      s.seminarType === "ms" &&
+      s.chapterId === ch.id &&
+      s.seminarDate &&
+      s.seminarDate.startsWith(selMonth)
+    );
+    return { ch, sp };
+  });
+
+  // 流し込みデータの完成度チェック
+  const readyCount = flyerData.filter(({ sp }) =>
+    sp && sp.speakerName && sp.topic && sp.materialUrl
+  ).length;
+
+  // LINE共有テキスト生成
+  const buildLineText = () => {
+    const lines = [
+      `【${selMonth.replace("-","年")}月号　チラシ流し込みデータ】`,
+      `締め切り：${year}年${month}月10日`,
+      ``,
+    ];
+    flyerData.forEach(({ ch, sp }) => {
+      lines.push(`■ ${ch.name}（${ch.dayName}）`);
+      if (sp) {
+        lines.push(`  開催日：${sp.seminarDate}`);
+        lines.push(`  講師：${sp.speakerName}　${sp.company}　${sp.role}`);
+        lines.push(`  テーマ：「${sp.topic}」`);
+        lines.push(`  写真：${sp.materialUrl || "※未受領"}`);
+      } else {
+        lines.push(`  ※講師未登録`);
+      }
+      lines.push(``);
+    });
+    lines.push(`倫理法人会 南部地区合同事務局`);
+    return lines.join("\n");
+  };
+
+  // 印刷会社メール本文生成
+  const buildEmailBody = () => {
+    const lines = [
+      `お世話になっております。`,
+      `倫理法人会 南部地区合同事務局です。`,
+      ``,
+      `${selMonth.replace("-","年")}月号の合同チラシ用データをお送りします。`,
+      ``,
+      `【流し込みデータ一覧】`,
+    ];
+    flyerData.forEach(({ ch, sp }) => {
+      lines.push(`▼ ${ch.name}単会（${ch.dayName} ${ch.time}）`);
+      if (sp) {
+        lines.push(`  開催日：${sp.seminarDate}`);
+        lines.push(`  講師名：${sp.speakerName}`);
+        lines.push(`  ふりがな：${sp.speakerKana || "―"}`);
+        lines.push(`  所属単会：${sp.speakerUnit || "―"}`);
+        lines.push(`  企業名：${sp.company}`);
+        lines.push(`  役職・役目：${sp.role}`);
+        lines.push(`  テーマ：「${sp.topic}」`);
+        lines.push(`  顔写真：${sp.materialUrl || "※別途メール添付"}`);
+      } else {
+        lines.push(`  ※後日送付`);
+      }
+      lines.push(``);
+    });
+    lines.push(`ご不明点がございましたらご連絡ください。`);
+    lines.push(`どうぞよろしくお願いいたします。`);
+    lines.push(``);
+    lines.push(`━━━━━━━━━━━━━━━`);
+    lines.push(`倫理法人会 南部地区合同事務局`);
+    lines.push(`Mail：${JIMU.email}`);
+    lines.push(`━━━━━━━━━━━━━━━`);
+    return lines.join("\n");
+  };
+
+  const emailSubject = `【倫理法人会南部地区】${selMonth.replace("-","年")}月号チラシ流し込みデータ送付`;
+
+  return (
+    <div>
+      {/* ヘッダー */}
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>📋 チラシ流し込みデータ管理</div>
+        <select style={{ ...SEL, fontWeight:700 }} value={selMonth} onChange={e => setSelMonth(e.target.value)}>
+          {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+        </select>
+        <div style={{ marginLeft:"auto", display:"flex", gap:8, flexWrap:"wrap" }}>
+          <button style={BP} onClick={() => {
+            navigator.clipboard?.writeText(buildLineText()).catch(() => {});
+            showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱");
+          }}>📱 LINE共有テキストをコピー</button>
+          <button style={{ ...BP, background:"#1B5E20" }} onClick={() => setShowEmailModal(true)}>📧 印刷会社にメール送信</button>
+        </div>
+      </div>
+
+      {/* 締め切りバナー */}
+      <div style={{ ...CARD, marginBottom:12, borderLeft:`5px solid ${deadlineColor}`, padding:"10px 16px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
+          <div>
+            <div style={{ fontSize:11, color:"#546E7A" }}>データ送付締め切り</div>
+            <div style={{ fontSize:16, fontWeight:800, color: deadlineColor }}>
+              {year}年{month}月10日
+              <span style={{ fontSize:13, marginLeft:10 }}>
+                {daysLeft < 0 ? `⚠ ${Math.abs(daysLeft)}日超過` : daysLeft === 0 ? "⚠ 本日締め切り！" : `残り ${daysLeft}日`}
+              </span>
+            </div>
+          </div>
+          <div style={{ marginLeft:"auto", textAlign:"center" }}>
+            <div style={{ fontSize:24, fontWeight:800, color: readyCount === 5 ? "#1B5E20" : "#E65100" }}>{readyCount}<span style={{ fontSize:13, fontWeight:400 }}>/5単会</span></div>
+            <div style={{ fontSize:11, color:"#78909C" }}>データ揃い</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 流し込みデータ一覧 */}
+      <div style={CARD}>
+        <div style={{ overflowX:"auto" }}>
+        <table style={TBL}>
+          <thead>
+            <tr>
+              {["単会名","開催日","講師名（漢字）","ふりがな","所属単会","企業名","役職・役目","テーマ","顔写真","状態"].map(h =>
+                <th key={h} style={TH}>{h}</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {flyerData.map(({ ch, sp }) => {
+              const ready = sp && sp.speakerName && sp.speakerKana && sp.topic && sp.materialUrl;
+              const partial = sp && (sp.speakerName || sp.topic) && !ready;
+              const statusColor = ready ? "#2E7D32" : partial ? "#FF8F00" : "#B71C1C";
+              const statusBg    = ready ? "#E8F5E9" : partial ? "#FFF8E1" : "#FFEBEE";
+              const statusLabel = ready ? "✓ 完成" : partial ? "▲ 不足あり" : "✗ 未登録";
+              const none = <span style={{ color:"#B0BEC5" }}>―</span>;
+              return (
+                <tr key={ch.id} className="hover-row">
+                  <td style={TD}><span style={PILL(ch)}>{ch.name}</span><div style={{ fontSize:10, color:"#90A4AE", marginTop:2 }}>{ch.dayName}</div></td>
+                  <td style={{ ...TD, fontSize:12, whiteSpace:"nowrap" }}>{sp?.seminarDate || none}</td>
+                  <td style={{ ...TD, fontWeight:700, fontSize:12, whiteSpace:"nowrap" }}>{sp?.speakerName || <span style={{ color:"#B71C1C" }}>未登録</span>}</td>
+                  <td style={{ ...TD, fontSize:11, color:"#546E7A" }}>{sp?.speakerKana || none}</td>
+                  <td style={{ ...TD, fontSize:11 }}>{sp?.speakerUnit || none}</td>
+                  <td style={{ ...TD, fontSize:11 }}>{sp?.company || none}</td>
+                  <td style={{ ...TD, fontSize:11 }}>{sp?.role || none}</td>
+                  <td style={{ ...TD, fontSize:11, maxWidth:160 }}>{sp?.topic ? `「${sp.topic}」` : none}</td>
+                  <td style={TD}>
+                    {sp?.materialUrl ? (
+                      <a href={sp.materialUrl} target="_blank" style={{ fontSize:11, color:"#1565C0", display:"flex", alignItems:"center", gap:4, textDecoration:"none", whiteSpace:"nowrap" }}>
+                        <span>📁</span>フォルダを開く
+                      </a>
+                    ) : <span style={{ fontSize:11, color:"#B0BEC5" }}>📭 未設定</span>}
+                  </td>
+                  <td style={TD}>
+                    <span style={{ fontSize:11, fontWeight:700, color:statusColor, background:statusBg, padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>{statusLabel}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      {/* 注意書き */}
+      <div style={{ padding:"10px 14px", background:"#FFF8E1", borderRadius:6, fontSize:11, color:"#E65100", display:"flex", gap:8, alignItems:"flex-start" }}>
+        <span style={{ fontSize:16 }}>💡</span>
+        <div>
+          <strong>顔写真フォルダURLの登録方法</strong>：講師管理タブの「編集」→「講話資料URL」欄にGoogleドライブのフォルダURLを入力してください。<br/>
+          <span style={{ color:"#78909C" }}>写真URLが未設定の場合は「別途メール添付」として送付文に記載されます。</span>
+        </div>
+      </div>
+
+      {/* 印刷会社メールモーダル */}
+      {showEmailModal && (
+        <div style={OV} onClick={() => setShowEmailModal(false)}>
+          <div style={{ ...MOD, maxWidth:600 }} onClick={e => e.stopPropagation()}>
+            <div style={MH}>📧 印刷会社へのメール送信</div>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>印刷会社のメールアドレス</div>
+            <input
+              style={{ ...INP, width:"100%", marginBottom:12 }}
+              placeholder="print@example.com"
+              value={printEmail}
+              onChange={e => setPrintEmail(e.target.value)}
+            />
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
+            <div style={{ fontSize:12, background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{emailSubject}</div>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>本文プレビュー</div>
+            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:280, overflowY:"auto", marginBottom:12 }}>{buildEmailBody()}</pre>
+            <div style={{ display:"flex", gap:8 }}>
+              <button style={{ ...BP, flex:1 }} onClick={() => {
+                window.open(`mailto:${printEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(buildEmailBody())}`, "_blank");
+                setShowEmailModal(false);
+                showToast("メールアプリを開きました 📧");
+              }}>✉ メールアプリで開く</button>
+              <button style={{ ...BG, flex:1 }} onClick={() => {
+                navigator.clipboard?.writeText(`件名：${emailSubject}\n\n${buildEmailBody()}`).catch(() => {});
+                setShowEmailModal(false);
+                showToast("メール文をコピーしました 📋");
+              }}>📋 コピーして送信</button>
+              <button style={BC} onClick={() => setShowEmailModal(false)}>閉じる</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 講師フォーム ──────────────────────────────────────────────────
+function SpeakerForm({ initial, onSave, onClose }) {
+  const blank = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate: new Date().toISOString().slice(0,10), notes:"", venue:"", seminarType:"ms" };
+  const [form, setForm] = useState(initial || blank);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const ch = getChapter(form.chapterId);
+
+  const st = getSeminarType(form.seminarType || "ms");
+
+  return (
+    <div style={OV} onClick={onClose}>
+      <div style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
+        <div style={{ ...MH, borderBottomColor: st.color }}>{initial ? "講師情報を編集" : "新規講師登録"}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:14 }}>
+          {[
+            { l:"種別 *",      k:"seminarType", t:"select", o: SEMINAR_TYPES.map(t => ({ v:t.id, l:t.label })) },
+            { l:"単会",        k:"chapterId",   t:"select", o: CHAPTERS.map(c => ({ v:c.id, l:c.name })) },
+            { l:"開催日 *",    k:"seminarDate", t:"date" },
+            { l:"講師名 *",    k:"speakerName", t:"text",  p:"山田 太郎" },
+            { l:"ふりがな",    k:"speakerKana", t:"text",  p:"やまだ たろう" },
+            { l:"所属単会",    k:"speakerUnit", t:"text",  p:"川口単会" },
+            { l:"企業名",      k:"company",     t:"text",  p:"株式会社○○" },
+            { l:"役職・役目",  k:"role",        t:"text",  p:"会長・専任幹事など" },
+            { l:"メール *",    k:"email",       t:"email", p:"email@example.com" },
+            { l:"電話",        k:"phone",       t:"text",  p:"090-0000-0000" },
+            { l:"ステータス",  k:"status",      t:"select", o: Object.entries(STATUS).map(([k, v]) => ({ v:k, l:v.label })) },
+            { l:"依頼日",      k:"requestDate", t:"date" },
+          ].map(({ l, k, t, p, o }) => (
+            <div key={k}>
+              <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>{l}</div>
+              {t === "select" ? (
+                <select style={{ ...INP, width:"100%" }} value={form[k] || ""} onChange={e => set(k, e.target.value)}>
+                  {o.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
+                </select>
+              ) : (
+                <input type={t} style={{ ...INP, width:"100%" }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
+              )}
+            </div>
+          ))}
+          {/* 会場：MS固定表示、その他手入力 */}
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>
+              開催場所
+              {st.venueFixed && <span style={{ fontSize:10, color:"#90A4AE", marginLeft:6 }}>※ 単会マスターから自動取得</span>}
+            </div>
+            {st.venueFixed ? (
+              <div style={{ ...INP, background:"#F5F5F5", color:"#90A4AE", cursor:"not-allowed", display:"flex", alignItems:"center" }}>
+                {ch.venue}
+              </div>
+            ) : (
+              <input type="text" style={{ ...INP, width:"100%" }} placeholder="会場名を入力" value={form.venue || ""} onChange={e => set("venue", e.target.value)} />
+            )}
+          </div>
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>テーマ</div>
+            <input type="text" style={{ ...INP, width:"100%" }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
+          </div>
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
+            <textarea style={{ ...INP, width:"100%", minHeight:54, resize:"vertical" }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:8, marginTop:14 }}>
+          <button style={BP} onClick={() => { if (!form.speakerName || !form.seminarDate) return alert("講師名・開催日は必須です"); onSave(form); }}>
+            {initial ? "💾 変更を保存" : "✓ 登録する"}
+          </button>
+          <button style={BC} onClick={onClose}>キャンセル</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
