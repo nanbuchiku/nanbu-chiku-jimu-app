@@ -34,6 +34,13 @@ export default memo(function RankingView({ tasks, today }) {
 
   const maxAbs = useMemo(() => Math.max(...ranking.filter(r => r.avgDays !== null).map(r => Math.abs(r.avgDays)), 1), [ranking]);
 
+  const allTimeStats = useMemo(() => CHAPTERS.map(ch => {
+    const done = tasks.filter(t => t.done && t.completedAt && t.chapterId === ch.id);
+    if (done.length === 0) return { ch, count: 0, avgDays: null };
+    const scores = done.map(t => Math.ceil((new Date(t.dueDate) - new Date(t.completedAt)) / 86400000));
+    return { ch, count: done.length, avgDays: scores.reduce((a, b) => a + b, 0) / scores.length };
+  }).sort((a, b) => (b.count || 0) - (a.count || 0)), [tasks]);
+
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
@@ -117,6 +124,24 @@ export default memo(function RankingView({ tasks, today }) {
           </table>
         </div>
       </div>
+      {allTimeStats.some(s => s.count > 0) && (
+        <div style={{ marginTop:12 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>累計タスク完了数（全期間）</div>
+          <div style={CARD}>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {allTimeStats.filter(s => s.count > 0).map(s => (
+                <div key={s.ch.id} style={{ display:"flex", alignItems:"center", gap:6, background:"#FAFAFA", border:`1px solid ${s.ch.accent}`, borderRadius:8, padding:"7px 12px", minWidth:130 }}>
+                  <span style={{ fontSize:10, fontWeight:700, color:"#fff", background: s.ch.color, padding:"1px 7px", borderRadius:10 }}>{s.ch.short}</span>
+                  <div>
+                    <div style={{ fontSize:20, fontWeight:800, color: s.ch.color, lineHeight:1 }}>{s.count}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
+                    {s.avgDays !== null && <div style={{ fontSize:10, color: s.avgDays >= 0 ? "#2E7D32" : "#B71C1C" }}>{s.avgDays >= 0 ? `+${s.avgDays.toFixed(1)}日` : `${s.avgDays.toFixed(1)}日`}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ padding:"8px 12px", background:"#E3F2FD", borderRadius:6, fontSize:11, color:"#1565C0" }}>
         💡 タスク管理タブでチェックを入れると自動でタイムスタンプが記録され、ランキングに反映されます
       </div>
