@@ -114,13 +114,13 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
 
             <DocSection title="④ 交通・当日の準備" color={st.color}>
               <DocRow label="交通手段"           value="□ お車　□ 電車　□ その他"                               color={st.color} />
-              <DocRow label="資料の有無"         value="□ あり　□ なし"                                         color={st.color} />
-              <DocRow label="印刷の要否"         value="□ 要（単会で印刷）　□ 不要（持参）"                      color={st.color} />
+              <DocRow label="資料の有無"         value={sp.materialUrl ? "☑ あり　□ なし" : "□ あり　□ なし"}  color={st.color} />
+              <DocRow label="印刷の要否"         value={sp.printRequired === "あり" ? "☑ 要（単会で印刷）　□ 不要（持参）" : sp.printRequired === "不要" ? "□ 要（単会で印刷）　☑ 不要（持参）" : "□ 要（単会で印刷）　□ 不要（持参）"} color={st.color} />
               <DocRow label="単会で準備するもの" value="□ プロジェクタ　□ パソコン　□ ホワイトボード　□ その他　□ 無し" color={st.color} />
             </DocSection>
 
             <DocSection title="⑤ 宿泊情報" color={st.color}>
-              <DocRow label="前泊要否"       value="□ 要　□ 不要"  color={st.color} />
+              <DocRow label="前泊要否"       value={sp.lodging === "不要" ? "□ 要　☑ 不要" : sp.lodging ? "☑ 要　□ 不要" : "□ 要　□ 不要"} color={st.color} />
               <DocRow label="お迎えの要否"   value="□ 要　□ 不要"  color={st.color} />
               <DocRow label="お部屋のタイプ" value="□ 禁煙　□ 喫煙" color={st.color} />
               <DocRow label="領収証の宛名"   value=""               color={st.color} />
@@ -129,8 +129,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             </DocSection>
 
             <DocSection title="⑥ 顔写真・資料" color={st.color}>
-              <DocRow label="顔写真"           value="□ フォームアップ済　□ メール送付済　□ 未受領" color={st.color} />
-              <DocRow label="講話資料"         value="□ フォームアップ済　□ メール送付済　□ 未受領" color={st.color} />
+              <DocRow label="顔写真"           value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
+              <DocRow label="講話資料"         value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
               <DocRow label="顔写真の使用範囲" value=""                                               color={st.color} />
             </DocSection>
 
