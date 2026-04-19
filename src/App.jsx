@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, taskFromDB, taskToDB } from './lib/supabase';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks } from './utils';
@@ -50,6 +50,11 @@ export default function App() {
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
 
+  const speakersRef = useRef(speakers);
+  useEffect(() => { speakersRef.current = speakers; }, [speakers]);
+  const tasksRef = useRef(tasks);
+  useEffect(() => { tasksRef.current = tasks; }, [tasks]);
+
   const showToast = useCallback(msg => { setToast(msg); setTimeout(() => setToast(null), 3000); }, []);
 
   useEffect(() => {
@@ -72,13 +77,13 @@ export default function App() {
   }, []);
 
   const updateSpeaker = useCallback(async (id, patch) => {
-    const sp = speakers.find(s => s.id === id);
+    const sp = speakersRef.current.find(s => s.id === id);
     if (!sp) return;
     const updated = { ...sp, ...patch };
     const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
     if (error) { showToast("⚠ 保存に失敗しました"); return; }
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
-  }, [speakers, showToast]);
+  }, [showToast]);
 
   const deleteSpeaker = useCallback(async id => {
     if (!confirm("削除しますか？")) return;
@@ -121,12 +126,12 @@ export default function App() {
   const onStatusChange= useCallback((id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }, [updateSpeaker, showToast]);
 
   const onToggleTask = useCallback(async id => {
-    const t = tasks.find(x => x.id === id);
+    const t = tasksRef.current.find(x => x.id === id);
     const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };
     const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
     if (error) { showToast("⚠ 更新に失敗しました"); return; }
     setTasks(prev => prev.map(x => x.id === id ? updated : x));
-  }, [tasks, showToast]);
+  }, [showToast]);
 
   const onDeleteTask = useCallback(async id => {
     if (!confirm("このタスクを削除しますか？")) return;

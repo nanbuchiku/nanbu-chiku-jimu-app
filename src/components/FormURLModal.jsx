@@ -18,26 +18,30 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast 
 
   const sp = isNew ? { ...form, id: '' } : spProp;
   const ch = getChapter(isNew ? form.chapterId : sp.chapterId);
-  const BASE = 'https://hosina0447-ctrl.github.io/rinri-nanbu/form.html';
-  const params = new URLSearchParams({
-    id:     sp.id || '',
-    name:   (isNew ? form.speakerName : sp.speakerName)  || '',
-    unit:   (isNew ? form.speakerUnit : sp.speakerUnit)  || ch?.name || '',
-    date:   (isNew ? form.seminarDate : sp.seminarDate)  || '',
-    ch:     (isNew ? form.chapterId   : sp.chapterId)    || '',
-    type:   (isNew ? form.seminarType : sp.seminarType)  || 'ms',
-    ethics: (isNew ? form.role        : sp.role)         || '',
-    email:  (isNew ? form.email       : sp.email)        || '',
-  });
-  const formUrl = `${BASE}?${params.toString()}`;
+
+  const formUrl = useMemo(() => {
+    const BASE = 'https://hosina0447-ctrl.github.io/rinri-nanbu/form.html';
+    const params = new URLSearchParams({
+      id:     sp.id || '',
+      name:   (isNew ? form.speakerName : sp.speakerName)  || '',
+      unit:   (isNew ? form.speakerUnit : sp.speakerUnit)  || ch?.name || '',
+      date:   (isNew ? form.seminarDate : sp.seminarDate)  || '',
+      ch:     (isNew ? form.chapterId   : sp.chapterId)    || '',
+      type:   (isNew ? form.seminarType : sp.seminarType)  || 'ms',
+      ethics: (isNew ? form.role        : sp.role)         || '',
+      email:  (isNew ? form.email       : sp.email)        || '',
+    });
+    return `${BASE}?${params.toString()}`;
+  }, [isNew, form, sp, ch]);
+
   const canGenerate = !isNew || (form.speakerName && form.seminarDate && form.email);
 
   const displayName  = isNew ? form.speakerName : sp.speakerName;
   const displayDate  = isNew ? form.seminarDate : sp.seminarDate;
   const displayEmail = isNew ? form.email       : sp.email;
 
-  const mailSubject = `【${ch?.name}単会 モーニングセミナー】講師確認フォームのご案内`;
-  const mailBody =
+  const mailSubject = useMemo(() => `【${ch?.name}単会 モーニングセミナー】講師確認フォームのご案内`, [ch]);
+  const mailBody = useMemo(() =>
 `${displayName || '　　　'} 様
 
 このたびは、${ch?.name}単会 モーニングセミナーの講師をお引き受けいただき、誠にありがとうございます。
@@ -58,11 +62,11 @@ ${formUrl}
 ━━━━━━━━━━━━━━━━━
 倫理法人会 南部地区合同事務局
 Mail：nanbugoudou.jimu@gmail.com
-━━━━━━━━━━━━━━━━━`;
+━━━━━━━━━━━━━━━━━`, [displayName, displayDate, ch, formUrl]);
 
-  const copyUrl  = () => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); };
-  const copyMail = () => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); };
-  const openMail = () => { window.open(`mailto:${displayEmail || ''}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`, '_blank'); onClose(); };
+  const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
+  const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); }, [mailSubject, mailBody, showToast, onClose]);
+  const openMail = useCallback(() => { window.open(`mailto:${displayEmail || ''}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`, '_blank'); onClose(); }, [displayEmail, mailSubject, mailBody, onClose]);
 
   const LB   = { display:"block", fontSize:11, fontWeight:700, color:"#4527A0", marginBottom:3 };
   const INP2 = { width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:12, background:"#fff" };
