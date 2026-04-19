@@ -757,9 +757,10 @@ async function submitForm() {
     print_required: radio('print') || '不要',
     seminar_type: urlType || 'ms',
     seminar_date: urlDate || null,
-    status:       'pending',
     request_date: new Date().toISOString().slice(0, 10),
   };
+  // 新規のみstatus設定（更新時はステータスを変更しない）
+  if (!speakerId) payload.status = 'pending';
 
   try {
     // ファイルアップロード処理（顔写真は必須、資料は任意）
@@ -785,10 +786,12 @@ async function submitForm() {
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
 
     if (speakerId) {
-      await db.from('speakers').update(payload).eq('id', speakerId);
+      const { error } = await db.from('speakers').update(payload).eq('id', speakerId);
+      if (error) throw new Error(error.message);
     } else {
       payload.id = 's' + Date.now();
-      await db.from('speakers').insert(payload);
+      const { error } = await db.from('speakers').insert(payload);
+      if (error) throw new Error(error.message);
     }
     document.getElementById('loadingOverlay').classList.remove('show');
     document.querySelectorAll('#page1,#page2,#page3').forEach(el => el.classList.remove('active'));
