@@ -1,0 +1,14 @@
+export const CARD = { background:"#fff", borderRadius:8, padding:"13px", boxShadow:"0 1px 4px rgba(0,0,0,.08)", marginBottom:12 };
+export const OV   = { position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:16 };
+export const MOD  = { background:"#fff", borderRadius:10, padding:22, width:"100%", maxWidth:560, maxHeight:"90vh", overflowY:"auto" };
+export const MH   = { fontSize:14, fontWeight:700, color:"#1A3A6B", borderBottom:"2px solid #1A3A6B", paddingBottom:7, display:"flex", alignItems:"center", gap:7, marginBottom:8 };
+export const BP   = { background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:700, cursor:"pointer" };
+export const BC   = { background:"#ECEFF1", color:"#546E7A", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:600, cursor:"pointer" };
+export const BG   = { background:"#06C755", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:700, cursor:"pointer" };
+export const SEL  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"5px 8px", fontSize:11, background:"#fff", cursor:"pointer" };
+export const INP  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"6px 8px", fontSize:12, background:"#fff" };
+export const BSM  = { background:"#ECEFF1", border:"none", borderRadius:4, padding:"3px 8px", fontSize:11, cursor:"pointer", fontWeight:600 };
+export const TBL  = { width:"100%", borderCollapse:"collapse" };
+export const TH   = { padding:"8px 10px", fontSize:11, fontWeight:700, textAlign:"left", color:"#546E7A", background:"#ECEFF1" };
+export const TD   = { padding:"8px 10px", fontSize:11, verticalAlign:"middle", borderBottom:"1px solid #F5F5F5" };
+export const PILL = (ch) => ({ fontSize:11, padding:"2px 8px", borderRadius:12, fontWeight:700, background: ch.light, color: ch.color });

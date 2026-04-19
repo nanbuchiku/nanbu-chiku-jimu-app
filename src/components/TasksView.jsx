@@ -1,0 +1,67 @@
+import React, { useState } from 'react';
+import { CHAPTERS } from '../constants';
+import { getChapter } from '../utils';
+import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
+
+export default function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
+  const [showDone, setShowDone] = useState(false);
+  const visible = tasks.filter(t => showDone || !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
+
+  return (
+    <div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>タスク管理</div>
+        <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F", marginLeft:"auto" }} onClick={() => setShowDone(v => !v)}>
+          {showDone ? "完了を隠す" : "完了済も表示"}
+        </button>
+      </div>
+
+      <div style={{ ...CARD, marginBottom:12 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
+        <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
+          <input style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
+          <select style={SEL} value={newTask.chapterId} onChange={e => setNewTask({ ...newTask, chapterId: e.target.value })}>
+            {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+          </select>
+          <input type="date" style={INP} value={newTask.dueDate} onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })} />
+          <select style={SEL} value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value })}>
+            <option value="high">🔴 高</option>
+            <option value="medium">🟡 中</option>
+            <option value="low">🟢 低</option>
+          </select>
+          <button style={BP} onClick={onAdd}>追加</button>
+        </div>
+      </div>
+
+      <div style={CARD}>
+        <div style={{ overflowX:"auto" }}>
+          <table style={TBL}>
+            <thead>
+              <tr>{["","単会","タスク内容","期限","残り","優先","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {visible.map(t => {
+                const ch = getChapter(t.chapterId);
+                const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+                const p  = PRIO[t.priority] || PRIO.medium;
+                return (
+                  <tr key={t.id} className="hover-row" style={{ opacity: t.done ? .5 : 1, background: t.done ? "#FAFAFA" : "white" }}>
+                    <td style={TD}><input type="checkbox" checked={t.done} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
+                    <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
+                    <td style={{ ...TD, fontWeight: t.done ? 400 : 600, textDecoration: t.done ? "line-through" : "none", maxWidth:200 }}>{t.title}</td>
+                    <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
+                    <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? "超過" : `${dl}日`}</span></td>
+                    <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
+                    <td style={TD}>{!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button>}</td>
+                  </tr>
+                );
+              })}
+              {visible.length === 0 && <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>タスクなし</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
