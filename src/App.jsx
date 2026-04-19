@@ -34,6 +34,7 @@ export default function App() {
   const [tasks,       setTasks]      = useState([]);
   const [loading,     setLoading]    = useState(true);
   const [loadError,   setLoadError]  = useState(null);
+  const [lastUpdated, setLastUpdated]= useState(null);
   const [weekOffset,  setWeekOffset] = useState(0);
   const [showForm,    setShowForm]   = useState(false);
   const [editSpeaker, setEditSpeaker]= useState(null);
@@ -78,6 +79,7 @@ export default function App() {
       if (tkErr) throw tkErr;
       if (spData) setSpeakers(spData.map(fromDB));
       if (tkData) setTasks(tkData.map(taskFromDB));
+      setLastUpdated(new Date());
       if (silent) showToast("データを更新しました ✓");
     } catch (e) {
       if (silent) showToast("⚠ データ更新に失敗しました");
@@ -88,6 +90,18 @@ export default function App() {
   }, [showToast]);
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    let lastRefresh = Date.now();
+    const onFocus = () => {
+      if (Date.now() - lastRefresh >= 5 * 60 * 1000) {
+        lastRefresh = Date.now();
+        loadData(true);
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [loadData]);
 
   const updateSpeaker = useCallback(async (id, patch) => {
     const sp = speakersRef.current.find(s => s.id === id);
@@ -309,7 +323,10 @@ export default function App() {
           <div>
             <div style={HDR.orgLabel}>倫理法人会　南部地区事務局</div>
             <h1 style={HDR.appTitle}>南部地区5単会タスク管理</h1>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", marginTop:2 }}>{today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' })}</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", marginTop:2 }}>
+              {today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' })}
+              {lastUpdated && <span style={{ marginLeft:10, opacity:.6 }}>最終更新 {lastUpdated.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' })}</span>}
+            </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
             <div style={HDR.chBadges}>
