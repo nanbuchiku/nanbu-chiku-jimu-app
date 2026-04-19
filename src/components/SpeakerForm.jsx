@@ -3,7 +3,7 @@ import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
-const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"" };
+const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"", materialName:"" };
 
 const DRAFT_KEY = 'speakerFormDraft';
 
@@ -143,6 +143,10 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料フォルダURL</div>
             <input disabled={saving} type="url" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="https://drive.google.com/..." value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
+          </div>
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>資料ファイル名・メモ</div>
+            <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="例：山田太郎_顔写真.jpg　資料あり" value={form.materialName || ""} onChange={e => set("materialName", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>

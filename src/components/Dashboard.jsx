@@ -76,7 +76,17 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       <span style={{ fontSize:11, padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
                       <button style={BSM} onClick={() => onView(sp)}>確認書</button>
                     </div>
-                  ) : <span style={{ color:"#9E9E9E", fontSize:11 }}>── 講師未設定</span>}
+                  ) : (
+                    <div style={{ display:"flex", alignItems:"center", gap:6, flex:1 }}>
+                      <span style={{ color:"#9E9E9E", fontSize:11 }}>── 講師未設定</span>
+                      {onAddForDate && (() => {
+                        const wd = weekDates.find(d => d.getDay() === ch.day);
+                        return wd ? (
+                          <button onClick={() => onAddForDate(toDateStr(wd), ch.id)} style={{ fontSize:10, padding:"2px 8px", borderRadius:10, border:"1px solid #90CAF9", background:"#E3F2FD", color:"#1565C0", cursor:"pointer", fontWeight:700, lineHeight:1.4 }}>＋ 登録</button>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
                 </div>
               );
             })}
