@@ -56,6 +56,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     return result.sort((a, b) => a.date - b.date).slice(0, 10);
   }, [speakers, today]);
 
+  const upcoming14 = useMemo(() => {
+    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14);
+    const endStr = toDateStr(endDate);
+    return speakers
+      .filter(sp => sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= endStr && sp.status !== "cancelled")
+      .sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today, todayStr]);
+
   const stats = useMemo(() => [
     { label:"今週の開催",  val: thisWeek.length,                                      sub:"/5単会", color:"#1A3A6B", action: () => setTab("calendar") },
     { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
@@ -205,6 +213,41 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           </div>
         </div>
       </div>
+
+      {upcoming14.length > 0 && (
+        <div style={{ marginBottom:12 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>
+            今後14日の開催予定
+            <span style={{ fontSize:11, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{upcoming14.length}件</span>
+          </div>
+          <div style={{ ...CARD, marginBottom:0, padding:"8px 12px" }}>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {upcoming14.map(sp => {
+                const ch = getChapter(sp.chapterId);
+                const dl = Math.ceil((new Date(sp.seminarDate) - today) / 86400000);
+                const isToday = dl === 0;
+                const isUrgent = dl <= 3;
+                return (
+                  <div key={sp.id} onClick={() => onView(sp)} style={{ display:"flex", alignItems:"center", gap:6, background: isToday ? "#FFEBEE" : isUrgent ? "#FFF8E1" : "#FAFAFA", border:`1px solid ${isToday ? "#EF9A9A" : isUrgent ? "#FFE082" : ch.accent}`, borderRadius:8, padding:"6px 11px", cursor:"pointer", transition:"box-shadow .1s" }}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,.1)"}
+                    onMouseLeave={e => e.currentTarget.style.boxShadow="none"}
+                  >
+                    <div style={{ textAlign:"center" }}>
+                      <div style={{ fontSize:9, fontWeight:700, color:"#fff", background: ch.color, padding:"1px 5px", borderRadius:8 }}>{ch.short}</div>
+                      <div style={{ fontSize:11, fontWeight:700, color: isToday ? "#B71C1C" : isUrgent ? "#E65100" : "#546E7A", marginTop:2 }}>{isToday ? "今日" : `${dl}日後`}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#263238" }}>{sp.speakerName}</div>
+                      <div style={{ fontSize:9, color:"#78909C" }}>{sp.seminarDate}｜{STATUS[sp.status]?.label}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:12, cursor:"pointer", padding:"6px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("calendar")}>カレンダーで確認 →</button>
+          </div>
+        </div>
+      )}
 
       {unassignedMS.length > 0 && (
         <div>

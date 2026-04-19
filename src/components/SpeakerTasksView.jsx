@@ -153,9 +153,24 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               {Object.entries(byCategory).map(([cat, catTasks]) => {
                 const visibleTasks = isExpanded ? catTasks : catTasks.filter(t => !checks[t.id]);
                 if (visibleTasks.length === 0) return null;
+                const catAllDone = catTasks.every(t => checks[t.id]);
+                const catColor = TASK_CATEGORY_COLOR[cat] || "#546E7A";
                 return (
                   <div key={cat} style={{ marginBottom:8 }}>
-                    <div style={{ fontSize:10, fontWeight:700, color: TASK_CATEGORY_COLOR[cat] || "#546E7A", marginBottom:4, letterSpacing:"0.05em" }}>▸ {cat}</div>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                      <div style={{ fontSize:10, fontWeight:700, color: catColor, letterSpacing:"0.05em" }}>▸ {cat}</div>
+                      {!catAllDone && (
+                        <button style={{ fontSize:8, background: catColor+"18", color: catColor, border:`1px solid ${catColor}44`, borderRadius:8, padding:"1px 6px", cursor:"pointer", fontWeight:700 }}
+                          onClick={() => {
+                            const newChecks = { ...checks };
+                            catTasks.forEach(t => { newChecks[t.id] = true; });
+                            updateSpeaker(sp.id, { speakerChecks: newChecks });
+                            showToast(`${cat}を完了 ✓`);
+                          }}>
+                          {cat}完了
+                        </button>
+                      )}
+                    </div>
                     {visibleTasks.map(t => (
                       <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: checks[t.id] ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${checks[t.id] ? "#C5E1A5" : "#EEEEEE"}` }}>
                         <input type="checkbox" checked={!!checks[t.id]} onChange={() => toggleTask(sp, t.id)} style={{ width:15, height:15, cursor:"pointer", accentColor: TASK_CATEGORY_COLOR[cat] }} />

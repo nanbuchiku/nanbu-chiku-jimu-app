@@ -35,6 +35,21 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
   const sp = useMemo(() => speakers.find(x => x.id === sel), [speakers, sel]);
   const ch = useMemo(() => sp ? getChapter(sp.chapterId) : null, [sp]);
 
+  useEffect(() => {
+    const onKey = e => {
+      if (["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName)) return;
+      const idx = sortedSpeakers.findIndex(x => x.id === sel);
+      if (e.key === "ArrowLeft" && idx > 0) {
+        const prev = sortedSpeakers[idx - 1]; setSel(prev.id); setDocSpeaker(prev);
+      }
+      if (e.key === "ArrowRight" && idx < sortedSpeakers.length - 1) {
+        const next = sortedSpeakers[idx + 1]; setSel(next.id); setDocSpeaker(next);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sel, sortedSpeakers, setDocSpeaker]);
+
   return (
     <div>
       <div className="no-print" style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
