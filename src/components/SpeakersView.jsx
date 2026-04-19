@@ -262,6 +262,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                           onClick={() => { notesRef.current = sp.notes || ""; setNotesModal(sp); }}>
                           {sp.notes ? "📝" : "📝+"}
                         </button>
+                        {sp.postNotes && (
+                          <button style={{ ...BSM, color:"#2E7D32", background:"#E8F5E9", fontSize:9 }} title={`講話後メモ: ${sp.postNotes}`} aria-label="講話後メモあり" onClick={() => onEdit(sp)}>✓後記</button>
+                        )}
                         {(sp.phone || sp.email) && (
                           <button style={{ ...BSM, color:"#1565C0" }} title="連絡先をコピー" aria-label={`${sp.speakerName}の連絡先をコピー`}
                             onClick={() => {

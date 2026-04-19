@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, memo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
