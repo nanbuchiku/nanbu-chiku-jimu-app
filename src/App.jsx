@@ -60,24 +60,28 @@ export default function App() {
   const updateSpeaker = async (id, patch) => {
     const sp = speakers.find(s => s.id === id);
     const updated = { ...sp, ...patch };
-    await db.from('speakers').update(toDB(updated)).eq('id', id);
+    const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
+    if (error) { showToast("⚠ 保存に失敗しました"); return; }
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
   };
 
   const deleteSpeaker = async id => {
     if (!confirm("削除しますか？")) return;
-    await db.from('speakers').delete().eq('id', id);
+    const { error } = await db.from('speakers').delete().eq('id', id);
+    if (error) { showToast("⚠ 削除に失敗しました"); return; }
     setSpeakers(prev => prev.filter(s => s.id !== id));
     showToast("削除しました");
   };
 
   const addOrUpdateSpeaker = async data => {
     if (data.id) {
-      await db.from('speakers').update(toDB(data)).eq('id', data.id);
+      const { error } = await db.from('speakers').update(toDB(data)).eq('id', data.id);
+      if (error) { showToast("⚠ 保存に失敗しました"); return; }
       setSpeakers(prev => prev.map(s => s.id === data.id ? data : s));
     } else {
       const newSp = { ...data, id: `s${Date.now()}`, lineNotified: false };
-      await db.from('speakers').insert(toDB(newSp));
+      const { error } = await db.from('speakers').insert(toDB(newSp));
+      if (error) { showToast("⚠ 登録に失敗しました"); return; }
       setSpeakers(prev => [...prev, newSp]);
     }
     setShowForm(false); setEditSpeaker(null);
@@ -209,7 +213,7 @@ export default function App() {
         </div>
       )}
 
-      {toast && <div style={{ position:"fixed", bottom:20, right:20, background:"#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000 }}>{toast}</div>}
+      {toast && <div style={{ position:"fixed", bottom:20, right:20, background: toast.startsWith("⚠") ? "#B71C1C" : "#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000 }}>{toast}</div>}
     </div>
   );
 }

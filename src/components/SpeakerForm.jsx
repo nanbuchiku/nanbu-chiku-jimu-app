@@ -6,7 +6,8 @@ import { OV, MOD, MH, BP, BC, INP } from '../styles';
 export default function SpeakerForm({ initial, onSave, onClose }) {
   const blank = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate: new Date().toISOString().slice(0,10), notes:"", venue:"", seminarType:"ms" };
   const [form, setForm] = useState(initial || blank);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const [err, setErr] = useState("");
+  const set = (k, v) => { setErr(""); setForm(f => ({ ...f, [k]: v })); };
   const ch = getChapter(form.chapterId);
   const st = getSeminarType(form.seminarType || "ms");
 
@@ -88,8 +89,13 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
             </div>
           </div>
         </div>
-        <div style={{ display:"flex", gap:8, marginTop:14 }}>
-          <button style={BP} onClick={() => { if (!form.speakerName || !form.seminarDate) return alert("講師名・開催日は必須です"); onSave(form); }}>
+        {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:12, color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
+        <div style={{ display:"flex", gap:8, marginTop:10 }}>
+          <button style={BP} onClick={() => {
+            if (!form.speakerName) return setErr("講師名は必須です");
+            if (!form.seminarDate) return setErr("開催日は必須です");
+            onSave(form);
+          }}>
             {initial ? "💾 変更を保存" : "✓ 登録する"}
           </button>
           <button style={BC} onClick={onClose}>キャンセル</button>
