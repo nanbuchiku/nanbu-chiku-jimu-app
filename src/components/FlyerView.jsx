@@ -133,7 +133,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
         <div style={{ overflowX:"auto" }}>
           <table style={TBL}>
             <thead>
-              <tr>{["単会名","開催日","講師名（漢字）","ふりがな","所属単会","企業名","役職・役目","テーマ","顔写真","状態"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+              <tr>{["単会名","開催日","講師名（漢字）","ふりがな","所属単会","企業名","役職・役目","テーマ","顔写真","状態","コピー"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {flyerData.map(({ ch, sp }) => {
@@ -168,6 +168,22 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                           {!sp.topic && <div>• テーマ未入力</div>}
                           {!sp.materialUrl && <div>• 顔写真URL未設定</div>}
                         </div>
+                      )}
+                    </td>
+                    <td style={TD}>
+                      {sp && (
+                        <button style={{ fontSize:10, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"3px 8px", cursor:"pointer", color:"#1565C0", fontWeight:700, whiteSpace:"nowrap" }}
+                          onClick={() => {
+                            const lines = [
+                              `■ ${ch.name}（${ch.dayName}）`,
+                              `  開催日：${sp.seminarDate}`,
+                              `  講師：${sp.speakerName}　${sp.company}　${sp.role}`,
+                              `  テーマ：「${sp.topic}」`,
+                              `  写真：${sp.materialUrl || "※未受領"}`,
+                            ];
+                            navigator.clipboard?.writeText(lines.join("\n")).catch(() => {});
+                            showToast(`${ch.name}のデータをコピーしました 📋`);
+                          }}>📋 コピー</button>
                       )}
                     </td>
                   </tr>
