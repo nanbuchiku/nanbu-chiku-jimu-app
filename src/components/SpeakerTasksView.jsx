@@ -11,7 +11,7 @@ const TASK_CATEGORY_COLOR = {
   "講話後": "#546E7A",
 };
 
-export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast }) {
+export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail }) {
   const [filterCh,    setFilterCh]   = useState("all");
   const [filterDone,  setFilterDone] = useState("undone");
   const [filterPast,  setFilterPast] = useState(false);
@@ -125,9 +125,14 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                   {isExpanded ? "▲" : "▼"}
                 </button>
               </div>
-              <div style={{ fontWeight:700, fontSize:18, marginBottom:2, lineHeight:1.3,
-                ...(sp.speakerName && sp.speakerName.length > 6 ? { fontSize:"clamp(14px,3vw,18px)" } : {}) }}>
-                {sp.speakerName} 様
+              <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:2 }}>
+                <div style={{ fontWeight:700, fontSize:18, lineHeight:1.3,
+                  ...(sp.speakerName && sp.speakerName.length > 6 ? { fontSize:"clamp(14px,3vw,18px)" } : {}) }}>
+                  {sp.speakerName} 様
+                </div>
+                {onEmail && sp.email && (
+                  <button title="メール送信" style={{ background:"none", border:"1px solid #90CAF9", borderRadius:4, padding:"2px 6px", fontSize:10, cursor:"pointer", color:"#1565C0" }} onClick={() => onEmail(sp)}>📧</button>
+                )}
               </div>
               <div style={{ fontSize:12, color:"#546E7A", marginBottom:8, display:"flex", gap:6, flexWrap:"wrap" }}>
                 {sp.speakerUnit && <span style={{ background:"#E8EAF6", color:"#3949AB", padding:"1px 7px", borderRadius:10, fontWeight:600 }}>{sp.speakerUnit}</span>}

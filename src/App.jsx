@@ -61,6 +61,9 @@ export default function App() {
   const tasksRef = useRef(tasks);
   useEffect(() => { tasksRef.current = tasks; }, [tasks]);
 
+  useEffect(() => { try { localStorage.setItem('cachedSpeakers', JSON.stringify(speakers)); } catch {} }, [speakers]);
+  useEffect(() => { try { localStorage.setItem('cachedTasks', JSON.stringify(tasks)); } catch {} }, [tasks]);
+
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg, opts) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -399,7 +402,7 @@ export default function App() {
           {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
           {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
           {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
-          {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
+          {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} />}
           {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} />}
           {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
         </ErrorBoundary>
