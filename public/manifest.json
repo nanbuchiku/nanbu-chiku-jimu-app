@@ -1,0 +1,19 @@
+{
+  "name": "南部地区5単会タスク管理",
+  "short_name": "南部タスク管理",
+  "description": "倫理法人会 南部地区合同事務局 — 講師管理・タスク管理・チラシデータ管理",
+  "start_url": "/rinri-nanbu/",
+  "scope": "/rinri-nanbu/",
+  "display": "standalone",
+  "background_color": "#F0F2F5",
+  "theme_color": "#1A3A6B",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/rinri-nanbu/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}

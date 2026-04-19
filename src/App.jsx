@@ -146,6 +146,11 @@ export default function App() {
     showToast("タスクを追加しました ✓");
   }, [newTask, showToast]);
 
+  const onCloseForm   = useCallback(() => { setShowForm(false); setEditSpeaker(null); }, []);
+  const onCloseEmail  = useCallback(() => setEmailModal(null), []);
+  const onDoneEmail   = useCallback(() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }, [showToast]);
+  const onCloseFormUrl = useCallback(() => setFormUrlModal(undefined), []);
+
   const sptasksBadge = useMemo(() => {
     const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 90);
     let n = 0;
@@ -236,9 +241,9 @@ export default function App() {
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
       </main>
 
-      {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={() => { setShowForm(false); setEditSpeaker(null); }} saving={isSaving} />}
-      {emailModal && <EmailModal speaker={emailModal} onClose={() => setEmailModal(null)} onDone={() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }} />}
-      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={() => setFormUrlModal(undefined)} showToast={showToast} />}
+      {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
+      {emailModal && <EmailModal speaker={emailModal} onClose={onCloseEmail} onDone={onDoneEmail} />}
+      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} />}
 
       {lineModal && (
         <div style={OV} onClick={() => setLineModal(null)}>

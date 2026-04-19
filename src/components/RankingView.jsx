@@ -11,7 +11,7 @@ export default memo(function RankingView({ tasks, today }) {
       arr.push({ value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月` });
     }
     return arr;
-  }, [today.getFullYear(), today.getMonth()]);
+  }, [today]);
   const [selMonth, setSelMonth] = useState(() => months[0].value);
 
   const ranking = useMemo(() => CHAPTERS.map(ch => {

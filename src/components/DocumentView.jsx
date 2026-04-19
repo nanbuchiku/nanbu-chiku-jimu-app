@@ -32,8 +32,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
     () => [...speakers].sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate)),
     [speakers]
   );
-  const sp = speakers.find(x => x.id === sel);
-  const ch = sp ? getChapter(sp.chapterId) : null;
+  const sp = useMemo(() => speakers.find(x => x.id === sel), [speakers, sel]);
+  const ch = useMemo(() => sp ? getChapter(sp.chapterId) : null, [sp]);
 
   return (
     <div>
