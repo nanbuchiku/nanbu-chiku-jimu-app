@@ -156,7 +156,16 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                         </a>
                       ) : <span style={{ fontSize:11, color:"#B0BEC5" }}>📭 未設定</span>}
                     </td>
-                    <td style={TD}><span style={{ fontSize:11, fontWeight:700, color:statusColor, background:statusBg, padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>{statusLabel}</span></td>
+                    <td style={TD}>
+                      <span style={{ fontSize:11, fontWeight:700, color:statusColor, background:statusBg, padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>{statusLabel}</span>
+                      {partial && (
+                        <div style={{ marginTop:4, fontSize:9, color:"#FF8F00", lineHeight:1.6 }}>
+                          {!sp.speakerKana && <div>• ふりがな未入力</div>}
+                          {!sp.topic && <div>• テーマ未入力</div>}
+                          {!sp.materialUrl && <div>• 顔写真URL未設定</div>}
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

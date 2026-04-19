@@ -308,6 +308,11 @@ export default function App() {
         else if (formUrlModal !== undefined) { setFormUrlModal(undefined); }
         return;
       }
+      if (e.key === "Enter" && confirm && !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        confirm.onOk(); setConfirm(null);
+        return;
+      }
       const noModals = !confirm && !showForm && !lineModal && !emailModal && formUrlModal === undefined;
       const notInInput = !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName);
       if (e.key === "n" && noModals && notInInput && tab === "speakers") {

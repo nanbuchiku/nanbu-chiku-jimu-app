@@ -67,6 +67,13 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       .sort((a, b) => new Date(b.seminarDate) - new Date(a.seminarDate));
   }, [form.speakerName, form.id, speakers]);
 
+  const isPastDate = useMemo(() => {
+    if (!form.seminarDate || initial?.id) return false;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    return form.seminarDate < todayStr;
+  }, [form.seminarDate, initial?.id]);
+
   return (
     <div style={OV} onClick={onClose} role="presentation">
       <div role="dialog" aria-modal="true" aria-label={initial ? "講師情報を編集" : "新規講師登録"} style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
@@ -191,6 +198,11 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           <div style={{ marginTop:8, padding:"6px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:11, color:"#E65100", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <span>📝 前回の入力内容を復元しました</span>
             <button style={{ background:"none", border:"none", fontSize:10, color:"#90A4AE", cursor:"pointer", textDecoration:"underline" }} onClick={() => { clearDraft(); setForm({ ...BLANK, chapterId: form.chapterId, requestDate: form.requestDate }); }}>クリア</button>
+          </div>
+        )}
+        {isPastDate && (
+          <div style={{ marginTop:8, padding:"6px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+            ℹ 過去の日付が入力されています。終了済み講師を記録する場合はそのまま登録できます。
           </div>
         )}
         {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:12, color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
