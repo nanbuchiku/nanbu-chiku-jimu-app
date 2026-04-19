@@ -46,6 +46,7 @@ export default function App() {
   const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
   const [toast,       setToast]      = useState(null);
   const [isSaving,    setIsSaving]   = useState(false);
+  const [confirm,     setConfirm]    = useState(null);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -56,6 +57,7 @@ export default function App() {
   useEffect(() => { tasksRef.current = tasks; }, [tasks]);
 
   const showToast = useCallback(msg => { setToast(msg); setTimeout(() => setToast(null), 3000); }, []);
+  const showConfirm = useCallback((msg, onOk) => setConfirm({ msg, onOk }), []);
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -88,13 +90,14 @@ export default function App() {
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
   }, [showToast]);
 
-  const deleteSpeaker = useCallback(async id => {
-    if (!confirm("削除しますか？")) return;
-    const { error } = await db.from('speakers').delete().eq('id', id);
-    if (error) { showToast("⚠ 削除に失敗しました"); return; }
-    setSpeakers(prev => prev.filter(s => s.id !== id));
-    showToast("削除しました");
-  }, [showToast]);
+  const deleteSpeaker = useCallback(id => {
+    showConfirm("この講師データを削除しますか？", async () => {
+      const { error } = await db.from('speakers').delete().eq('id', id);
+      if (error) { showToast("⚠ 削除に失敗しました"); return; }
+      setSpeakers(prev => prev.filter(s => s.id !== id));
+      showToast("削除しました");
+    });
+  }, [showConfirm, showToast]);
 
   const addOrUpdateSpeaker = useCallback(async data => {
     setIsSaving(true);
@@ -136,12 +139,13 @@ export default function App() {
     setTasks(prev => prev.map(x => x.id === id ? updated : x));
   }, [showToast]);
 
-  const onDeleteTask = useCallback(async id => {
-    if (!confirm("このタスクを削除しますか？")) return;
-    const { error } = await db.from('tasks').delete().eq('id', id);
-    if (error) { showToast("⚠ 削除に失敗しました"); return; }
-    setTasks(prev => prev.filter(t => t.id !== id));
-  }, [showToast]);
+  const onDeleteTask = useCallback(id => {
+    showConfirm("このタスクを削除しますか？", async () => {
+      const { error } = await db.from('tasks').delete().eq('id', id);
+      if (error) { showToast("⚠ 削除に失敗しました"); return; }
+      setTasks(prev => prev.filter(t => t.id !== id));
+    });
+  }, [showConfirm, showToast]);
 
   const onAddTask = useCallback(async () => {
     if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
@@ -190,14 +194,15 @@ export default function App() {
   useEffect(() => {
     const onKey = e => {
       if (e.key !== "Escape") return;
-      if (showForm) { setShowForm(false); setEditSpeaker(null); }
+      if (confirm) { setConfirm(null); }
+      else if (showForm) { setShowForm(false); setEditSpeaker(null); }
       else if (lineModal) { setLineModal(null); }
       else if (emailModal) { setEmailModal(null); }
       else if (formUrlModal !== undefined) { setFormUrlModal(undefined); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showForm, lineModal, emailModal, formUrlModal]);
+  }, [confirm, showForm, lineModal, emailModal, formUrlModal]);
 
   if (loading) return (
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
@@ -276,6 +281,19 @@ export default function App() {
                 showToast("コピーしました！LINEに貼り付けてください");
               }}>📋 コピーしてLINEへ</button>
               <button style={BC} onClick={() => setLineModal(null)}>閉じる</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirm && (
+        <div style={OV} role="presentation">
+          <div role="alertdialog" aria-modal="true" aria-label="確認" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth:360, width:"100%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
+            <div style={{ fontSize:15, fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>⚠ 確認</div>
+            <div style={{ fontSize:13, color:"#37474F", marginBottom:20 }}>{confirm.msg}</div>
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+              <button style={BC} onClick={() => setConfirm(null)}>キャンセル</button>
+              <button style={{ ...BP, background:"#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>削除する</button>
             </div>
           </div>
         </div>
