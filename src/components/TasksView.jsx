@@ -56,6 +56,16 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
 
   const hasFilter = filterCh !== "all" || filterPrio !== "all";
 
+  const chapterStats = useMemo(() => {
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    return CHAPTERS.map(ch => {
+      const chTasks = tasks.filter(t => t.chapterId === ch.id && !t.done);
+      const overdue = chTasks.filter(t => t.dueDate && t.dueDate < todayStr).length;
+      const thisWeek = chTasks.filter(t => { if (!t.dueDate) return false; const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000); return dl >= 0 && dl <= 7; }).length;
+      return { ch, total: chTasks.length, overdue, thisWeek };
+    }).filter(s => s.total > 0);
+  }, [tasks, today]);
+
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
@@ -92,6 +102,26 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
           <button style={{ background:"#2E7D32", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:700 }} onClick={exportCSV}>📥 CSV</button>
         </div>
       </div>
+
+      {chapterStats.length > 0 && (
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:10 }}>
+          {chapterStats.map(({ ch, total, overdue, thisWeek }) => (
+            <div key={ch.id} onClick={() => setFilterCh(ch.id)} style={{ background: filterCh === ch.id ? ch.light : "#fff", border:`2px solid ${filterCh === ch.id ? ch.color : ch.accent}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", transition:"all .15s", minWidth:110 }}>
+              <div style={{ fontSize:10, fontWeight:700, color: ch.color, marginBottom:2 }}>{ch.name}</div>
+              <div style={{ fontSize:18, fontWeight:800, color: overdue > 0 ? "#B71C1C" : "#37474F", lineHeight:1 }}>{total}<span style={{ fontSize:9, fontWeight:400, marginLeft:2 }}>件</span></div>
+              <div style={{ fontSize:9, color:"#90A4AE", marginTop:2, display:"flex", gap:6 }}>
+                {overdue > 0 && <span style={{ color:"#B71C1C", fontWeight:700 }}>超過{overdue}</span>}
+                {thisWeek > 0 && <span style={{ color:"#E65100", fontWeight:600 }}>今週{thisWeek}</span>}
+              </div>
+            </div>
+          ))}
+          {filterCh !== "all" && (
+            <div onClick={() => setFilterCh("all")} style={{ background:"#F5F5F5", border:"2px solid #ECEFF1", borderRadius:8, padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", fontSize:11, color:"#78909C", fontWeight:600 }}>
+              全て表示
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
