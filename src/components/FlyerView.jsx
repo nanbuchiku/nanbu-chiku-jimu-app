@@ -3,19 +3,20 @@ import { CHAPTERS, JIMU } from '../constants';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL } from '../styles';
 
 export default memo(function FlyerView({ speakers, today, updateSpeaker, showToast }) {
-  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-  const months = Array.from({ length: 6 }, (_, i) => {
+  const months = useMemo(() => Array.from({ length: 6 }, (_, i) => {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     return { value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月号` };
-  });
-  const [selMonth, setSelMonth] = useState(months[1].value);
+  }), [today]);
+  const [selMonth, setSelMonth] = useState(() => months[1].value);
   const [printEmail, setPrintEmail] = useState("");
   const [showEmailModal, setShowEmailModal] = useState(false);
 
-  const [year, month] = selMonth.split("-").map(Number);
-  const deadline = new Date(year, month - 1, 10);
-  const daysLeft = Math.ceil((deadline - today) / 86400000);
-  const deadlineColor = daysLeft < 0 ? "#B71C1C" : daysLeft <= 3 ? "#E65100" : daysLeft <= 7 ? "#FF8F00" : "#2E7D32";
+  const { year, month, deadline, daysLeft, deadlineColor } = useMemo(() => {
+    const [y, m] = selMonth.split("-").map(Number);
+    const dl = new Date(y, m - 1, 10);
+    const days = Math.ceil((dl - today) / 86400000);
+    return { year: y, month: m, deadline: dl, daysLeft: days, deadlineColor: days < 0 ? "#B71C1C" : days <= 3 ? "#E65100" : days <= 7 ? "#FF8F00" : "#2E7D32" };
+  }, [selMonth, today]);
 
   const flyerData = useMemo(() => CHAPTERS.map(ch => {
     const sp = speakers.find(s =>
@@ -29,7 +30,7 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
 
   const readyCount = useMemo(() => flyerData.filter(({ sp }) => sp && sp.speakerName && sp.topic && sp.materialUrl).length, [flyerData]);
 
-  const buildLineText = () => {
+  const buildLineText = useMemo(() => {
     const lines = [
       `【${selMonth.replace("-","年")}月号　チラシ流し込みデータ】`,
       `締め切り：${year}年${month}月10日`,
@@ -49,9 +50,9 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
     });
     lines.push(`倫理法人会 南部地区合同事務局`);
     return lines.join("\n");
-  };
+  }, [selMonth, year, month, flyerData]);
 
-  const buildEmailBody = () => {
+  const buildEmailBody = useMemo(() => {
     const lines = [
       `お世話になっております。`,
       `倫理法人会 南部地区合同事務局です。`,
@@ -84,9 +85,9 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
     lines.push(`Mail：${JIMU.email}`);
     lines.push(`━━━━━━━━━━━━━━━`);
     return lines.join("\n");
-  };
+  }, [selMonth, flyerData]);
 
-  const emailSubject = `【倫理法人会南部地区】${selMonth.replace("-","年")}月号チラシ流し込みデータ送付`;
+  const emailSubject = useMemo(() => `【倫理法人会南部地区】${selMonth.replace("-","年")}月号チラシ流し込みデータ送付`, [selMonth]);
 
   return (
     <div>
@@ -96,7 +97,7 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
           {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
         <div style={{ marginLeft:"auto", display:"flex", gap:8, flexWrap:"wrap" }}>
-          <button style={BP} onClick={() => { navigator.clipboard?.writeText(buildLineText()).catch(() => {}); showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱"); }}>📱 LINE共有テキストをコピー</button>
+          <button style={BP} onClick={() => { navigator.clipboard?.writeText(buildLineText).catch(() => {}); showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱"); }}>📱 LINE共有テキストをコピー</button>
           <button style={{ ...BP, background:"#1B5E20" }} onClick={() => setShowEmailModal(true)}>📧 印刷会社にメール送信</button>
         </div>
       </div>
@@ -176,10 +177,10 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
             <div style={{ fontSize:12, background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{emailSubject}</div>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>本文プレビュー</div>
-            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:280, overflowY:"auto", marginBottom:12 }}>{buildEmailBody()}</pre>
+            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:280, overflowY:"auto", marginBottom:12 }}>{buildEmailBody}</pre>
             <div style={{ display:"flex", gap:8 }}>
-              <button style={{ ...BP, flex:1 }} onClick={() => { window.open(`mailto:${printEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(buildEmailBody())}`, "_blank"); setShowEmailModal(false); showToast("メールアプリを開きました 📧"); }}>✉ メールアプリで開く</button>
-              <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${emailSubject}\n\n${buildEmailBody()}`).catch(() => {}); setShowEmailModal(false); showToast("メール文をコピーしました 📋"); }}>📋 コピーして送信</button>
+              <button style={{ ...BP, flex:1 }} onClick={() => { window.open(`mailto:${printEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(buildEmailBody)}`, "_blank"); setShowEmailModal(false); showToast("メールアプリを開きました 📧"); }}>✉ メールアプリで開く</button>
+              <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${emailSubject}\n\n${buildEmailBody}`).catch(() => {}); setShowEmailModal(false); showToast("メール文をコピーしました 📋"); }}>📋 コピーして送信</button>
               <button style={BC} onClick={() => setShowEmailModal(false)}>閉じる</button>
             </div>
           </div>

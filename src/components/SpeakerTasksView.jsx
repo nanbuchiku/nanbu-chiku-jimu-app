@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter, buildSpeakerTasks } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
@@ -36,12 +36,12 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     });
   }, [filtered, filterDone]);
 
-  const toggleTask = (sp, taskId) => {
+  const toggleTask = useCallback((sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
     checks[taskId] = !checks[taskId];
     updateSpeaker(sp.id, { speakerChecks: checks });
     showToast(checks[taskId] ? "✓ 完了にしました" : "未完了に戻しました");
-  };
+  }, [updateSpeaker, showToast]);
 
   const getProgress = sp => {
     const tasks = buildSpeakerTasks(sp);

@@ -3,9 +3,10 @@ import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
+const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
+
 export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
   const [showDone, setShowDone] = useState(false);
-  const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
 
   const visible = useMemo(
     () => tasks.filter(t => showDone || !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)),
