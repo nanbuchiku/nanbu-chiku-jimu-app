@@ -5,10 +5,12 @@ import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
 
-export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd, showToast }) {
-  const [showDone,   setShowDone]   = useState(false);
-  const [filterCh,   setFilterCh]   = useState("all");
-  const [filterPrio, setFilterPrio] = useState("all");
+export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd, onUpdate, onDeleteDone, showToast }) {
+  const [showDone,    setShowDone]    = useState(false);
+  const [filterCh,   setFilterCh]    = useState("all");
+  const [filterPrio, setFilterPrio]  = useState("all");
+  const [editingId,  setEditingId]   = useState(null);
+  const [editForm,   setEditForm]    = useState({});
 
   const visible = useMemo(
     () => tasks
@@ -21,6 +23,19 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
     [tasks, showDone, filterCh, filterPrio]
   );
   const undoneCount = useMemo(() => tasks.filter(t => !t.done).length, [tasks]);
+  const doneCount   = useMemo(() => tasks.filter(t => t.done).length, [tasks]);
+
+  const startEdit = useCallback(t => {
+    setEditingId(t.id);
+    setEditForm({ title: t.title, dueDate: t.dueDate, priority: t.priority, chapterId: t.chapterId });
+  }, []);
+
+  const saveEdit = useCallback(id => {
+    if (!editForm.title?.trim()) { showToast?.("⚠ タスク内容を入力してください"); return; }
+    if (!editForm.dueDate) { showToast?.("⚠ 期限を入力してください"); return; }
+    onUpdate?.(id, editForm);
+    setEditingId(null);
+  }, [editForm, onUpdate, showToast]);
 
   const exportCSV = useCallback(() => {
     const headers = ["単会","タスク内容","期限","優先度","ステータス","完了日時"];
@@ -63,6 +78,11 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
           <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setShowDone(v => !v)}>
             {showDone ? "完了を隠す" : "完了済も表示"}
           </button>
+          {doneCount > 0 && (
+            <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#B71C1C" }} onClick={onDeleteDone}>
+              🗑 完了済みを削除
+            </button>
+          )}
           <button style={{ background:"#2E7D32", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:700 }} onClick={exportCSV}>📥 CSV</button>
         </div>
       </div>
@@ -96,6 +116,42 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                 const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
                 const p  = PRIO[t.priority] || PRIO.medium;
                 const isOverdue = !t.done && dl < 0;
+                const isEditing = editingId === t.id;
+
+                if (isEditing) {
+                  const eCh = getChapter(editForm.chapterId);
+                  return (
+                    <tr key={t.id} style={{ background:"#E3F2FD" }}>
+                      <td style={TD}><input type="checkbox" checked={t.done} disabled style={{ cursor:"not-allowed", opacity:.4 }} /></td>
+                      <td style={TD}>
+                        <select style={{ ...SEL, fontSize:11 }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>
+                          {CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </td>
+                      <td style={{ ...TD, maxWidth:200 }}>
+                        <input autoFocus style={{ ...INP, width:"100%", fontSize:12 }} value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }} />
+                      </td>
+                      <td style={TD}>
+                        <input type="date" style={{ ...INP, fontSize:11 }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} />
+                      </td>
+                      <td style={TD} />
+                      <td style={TD}>
+                        <select style={{ ...SEL, fontSize:11 }} value={editForm.priority} onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))}>
+                          <option value="high">🔴 高</option>
+                          <option value="medium">🟡 中</option>
+                          <option value="low">🟢 低</option>
+                        </select>
+                      </td>
+                      <td style={TD}>
+                        <div style={{ display:"flex", gap:3 }}>
+                          <button style={{ ...BSM, background:"#1A3A6B", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button>
+                          <button style={{ ...BSM, color:"#546E7A" }} onClick={() => setEditingId(null)}>取消</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+
                 return (
                   <tr key={t.id} className="hover-row" style={{ opacity: t.done ? .5 : 1, background: t.done ? "#FAFAFA" : isOverdue ? "#FFF5F5" : "white" }}>
                     <td style={TD}><input type="checkbox" aria-label={`${t.title}を完了にする`} checked={t.done} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
@@ -104,7 +160,12 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                     <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
                     <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
                     <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
-                    <td style={TD}>{!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} title="タスクを削除" aria-label={`${t.title}を削除`} onClick={() => onDelete(t.id)}>×</button>}</td>
+                    <td style={TD}>
+                      <div style={{ display:"flex", gap:3 }}>
+                        {!t.done && <button style={{ ...BSM, color:"#1565C0" }} title="タスクを編集" aria-label={`${t.title}を編集`} onClick={() => startEdit(t)}>編集</button>}
+                        {!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} title="タスクを削除" aria-label={`${t.title}を削除`} onClick={() => onDelete(t.id)}>×</button>}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

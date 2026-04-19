@@ -147,6 +147,28 @@ export default function App() {
     });
   }, [showConfirm, showToast]);
 
+  const onUpdateTask = useCallback(async (id, patch) => {
+    const t = tasksRef.current.find(x => x.id === id);
+    if (!t) return;
+    const updated = { ...t, ...patch };
+    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+    if (error) { showToast("⚠ 更新に失敗しました"); return; }
+    setTasks(prev => prev.map(x => x.id === id ? updated : x));
+    showToast("タスクを更新しました ✓");
+  }, [showToast]);
+
+  const onDeleteDoneTasks = useCallback(() => {
+    const doneTasks = tasksRef.current.filter(t => t.done);
+    if (doneTasks.length === 0) return;
+    showConfirm(`完了済みタスク ${doneTasks.length}件を削除しますか？`, async () => {
+      const ids = doneTasks.map(t => t.id);
+      const { error } = await db.from('tasks').delete().in('id', ids);
+      if (error) { showToast("⚠ 削除に失敗しました"); return; }
+      setTasks(prev => prev.filter(t => !t.done));
+      showToast(`完了済み ${doneTasks.length}件を削除しました`);
+    });
+  }, [showConfirm, showToast]);
+
   const onAddTask = useCallback(async () => {
     if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
     if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
@@ -272,7 +294,7 @@ export default function App() {
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
-        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} showToast={showToast} />}
+        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
         {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "flyer"     && <FlyerView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
