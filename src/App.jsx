@@ -47,6 +47,7 @@ export default function App() {
   const [toast,       setToast]      = useState(null);
   const [isSaving,    setIsSaving]   = useState(false);
   const [confirm,     setConfirm]    = useState(null);
+  const [showHelp,    setShowHelp]   = useState(false);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -262,7 +263,8 @@ export default function App() {
   useEffect(() => {
     const onKey = e => {
       if (e.key === "Escape") {
-        if (confirm) { setConfirm(null); }
+        if (showHelp) { setShowHelp(false); }
+        else if (confirm) { setConfirm(null); }
         else if (showForm) { setShowForm(false); setEditSpeaker(null); }
         else if (lineModal) { setLineModal(null); }
         else if (emailModal) { setEmailModal(null); }
@@ -275,10 +277,14 @@ export default function App() {
         e.preventDefault();
         setEditSpeaker(null); setShowForm(true);
       }
+      if (e.key === "?" && noModals && notInInput) {
+        e.preventDefault();
+        setShowHelp(h => !h);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [confirm, showForm, lineModal, emailModal, formUrlModal, tab]);
+  }, [confirm, showForm, showHelp, lineModal, emailModal, formUrlModal, tab]);
 
   if (loading) return (
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
@@ -313,6 +319,7 @@ export default function App() {
                 </span>
               ))}
             </div>
+            <button aria-label="キーボードショートカット一覧" title="ショートカット (?)" onClick={() => setShowHelp(h => !h)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.7)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>?</button>
             <button aria-label="データをバックアップ" title="全データをJSONでエクスポート" onClick={exportBackup} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.8)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>📤 BK</button>
             <button aria-label="データを更新" title="データを再読み込み" onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>⟳ 更新</button>
           </div>
@@ -382,6 +389,29 @@ export default function App() {
               <button style={BC} onClick={() => setConfirm(null)}>キャンセル</button>
               <button style={{ ...BP, background:"#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>削除する</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showHelp && (
+        <div style={OV} role="presentation" onClick={() => setShowHelp(false)}>
+          <div role="dialog" aria-modal="true" aria-label="キーボードショートカット" style={{ ...MOD, maxWidth:420 }} onClick={e => e.stopPropagation()}>
+            <div style={MH}>⌨ キーボードショートカット</div>
+            <table style={{ width:"100%", borderCollapse:"collapse", marginTop:8 }}>
+              <tbody>
+                {[
+                  ["?", "このヘルプを表示 / 非表示"],
+                  ["N（講師管理タブ）", "新規講師登録フォームを開く"],
+                  ["Esc", "モーダル・ダイアログを閉じる"],
+                ].map(([key, desc]) => (
+                  <tr key={key} style={{ borderBottom:"1px solid #F5F5F5" }}>
+                    <td style={{ padding:"8px 12px", width:180 }}><kbd style={{ background:"#ECEFF1", border:"1px solid #CFD8DC", borderRadius:4, padding:"2px 8px", fontSize:12, fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
+                    <td style={{ padding:"8px 12px", fontSize:12, color:"#546E7A" }}>{desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button style={{ ...BC, marginTop:14, display:"block", width:"100%" }} onClick={() => setShowHelp(false)}>閉じる</button>
           </div>
         </div>
       )}

@@ -38,6 +38,14 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     ) || null;
   }, [form.chapterId, form.seminarDate, form.id, speakers]);
 
+  const pastTalks = useMemo(() => {
+    const name = form.speakerName?.trim();
+    if (!name || !speakers) return [];
+    return speakers
+      .filter(sp => sp.speakerName === name && sp.id !== form.id)
+      .sort((a, b) => new Date(b.seminarDate) - new Date(a.seminarDate));
+  }, [form.speakerName, form.id, speakers]);
+
   return (
     <div style={OV} onClick={onClose} role="presentation">
       <div role="dialog" aria-modal="true" aria-label={initial ? "講師情報を編集" : "新規講師登録"} style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
@@ -137,6 +145,20 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             </div>
           </div>
         </div>
+        {pastTalks.length > 0 && (
+          <div style={{ marginTop:10, padding:"8px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+            <div style={{ fontWeight:700, marginBottom:5 }}>📚 この講師の過去講話（{pastTalks.length}件）</div>
+            {pastTalks.slice(0, 3).map(sp => {
+              const ch = getChapter(sp.chapterId);
+              return (
+                <div key={sp.id} style={{ fontSize:11, color:"#37474F", marginBottom:2 }}>
+                  {sp.seminarDate} ｜ {ch.name} ｜「{sp.topic}」
+                </div>
+              );
+            })}
+            {pastTalks.length > 3 && <div style={{ fontSize:10, color:"#90A4AE" }}>…他{pastTalks.length - 3}件</div>}
+          </div>
+        )}
         {duplicate && (
           <div style={{ marginTop:10, padding:"8px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:12, color:"#E65100", fontWeight:600 }}>
             ⚠ 同じ単会・開催日の講師が既に登録されています（{duplicate.speakerName}）。続けて登録することもできます。
