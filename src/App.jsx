@@ -471,7 +471,7 @@ export default function App() {
 
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
         <ErrorBoundary key={tab}>
-          {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} />}
+          {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} />}
           {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
           {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
           {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}

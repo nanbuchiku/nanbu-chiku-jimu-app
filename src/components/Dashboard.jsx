@@ -3,7 +3,7 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
-export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate }) {
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast }) {
   const thisWeek = useMemo(() => {
     const weekStrs = new Set(weekDates.map(toDateStr));
     return speakers.filter(sp => sp.seminarDate && weekStrs.has(sp.seminarDate));
@@ -270,18 +270,26 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                 const isToday = dl === 0;
                 const isUrgent = dl <= 3;
                 return (
-                  <div key={sp.id} onClick={() => onView(sp)} style={{ display:"flex", alignItems:"center", gap:6, background: isToday ? "#FFEBEE" : isUrgent ? "#FFF8E1" : "#FAFAFA", border:`1px solid ${isToday ? "#EF9A9A" : isUrgent ? "#FFE082" : ch.accent}`, borderRadius:8, padding:"6px 11px", cursor:"pointer", transition:"box-shadow .1s" }}
+                  <div key={sp.id} style={{ display:"flex", alignItems:"center", gap:6, background: isToday ? "#FFEBEE" : isUrgent ? "#FFF8E1" : "#FAFAFA", border:`1px solid ${isToday ? "#EF9A9A" : isUrgent ? "#FFE082" : ch.accent}`, borderRadius:8, padding:"6px 11px", transition:"box-shadow .1s" }}
                     onMouseEnter={e => e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,.1)"}
                     onMouseLeave={e => e.currentTarget.style.boxShadow="none"}
                   >
-                    <div style={{ textAlign:"center" }}>
-                      <div style={{ fontSize:9, fontWeight:700, color:"#fff", background: ch.color, padding:"1px 5px", borderRadius:8 }}>{ch.short}</div>
-                      <div style={{ fontSize:11, fontWeight:700, color: isToday ? "#B71C1C" : isUrgent ? "#E65100" : "#546E7A", marginTop:2 }}>{isToday ? "今日" : `${dl}日後`}</div>
+                    <div onClick={() => onView(sp)} style={{ cursor:"pointer", display:"flex", alignItems:"center", gap:6, flex:1 }}>
+                      <div style={{ textAlign:"center" }}>
+                        <div style={{ fontSize:9, fontWeight:700, color:"#fff", background: ch.color, padding:"1px 5px", borderRadius:8 }}>{ch.short}</div>
+                        <div style={{ fontSize:11, fontWeight:700, color: isToday ? "#B71C1C" : isUrgent ? "#E65100" : "#546E7A", marginTop:2 }}>{isToday ? "今日" : `${dl}日後`}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#263238" }}>{sp.speakerName}</div>
+                        <div style={{ fontSize:9, color:"#78909C" }}>{sp.seminarDate}｜{STATUS[sp.status]?.label}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize:12, fontWeight:700, color:"#263238" }}>{sp.speakerName}</div>
-                      <div style={{ fontSize:9, color:"#78909C" }}>{sp.seminarDate}｜{STATUS[sp.status]?.label}</div>
-                    </div>
+                    {sp.status === "pending" && updateSpeaker && (
+                      <button onClick={() => { updateSpeaker(sp.id, { status:"confirmed" }); showToast?.(`${sp.speakerName} 様を確定にしました ✓`); }}
+                        style={{ fontSize:9, fontWeight:700, background:"#E8F5E9", color:"#2E7D32", border:"1px solid #A5D6A7", borderRadius:6, padding:"2px 7px", cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
+                        確定 →
+                      </button>
+                    )}
                   </div>
                 );
               })}
