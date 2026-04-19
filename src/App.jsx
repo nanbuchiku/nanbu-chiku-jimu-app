@@ -50,6 +50,7 @@ export default function App() {
   const [isSaving,    setIsSaving]   = useState(false);
   const [confirm,     setConfirm]    = useState(null);
   const [showHelp,    setShowHelp]   = useState(false);
+  const [isOnline,    setIsOnline]   = useState(() => navigator.onLine);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -91,6 +92,14 @@ export default function App() {
   }, [showToast]);
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
+  }, []);
 
   useEffect(() => {
     let lastRefresh = Date.now();
@@ -205,7 +214,13 @@ export default function App() {
       const { error } = await db.from('tasks').delete().in('id', ids);
       if (error) { showToast("⚠ 削除に失敗しました"); return; }
       setTasks(prev => prev.filter(t => !t.done));
-      showToast(`完了済み ${doneTasks.length}件を削除しました`);
+      showToast(`完了済み ${doneTasks.length}件を削除しました`, {
+        actionLabel: "取り消し",
+        action: async () => {
+          const { error: re } = await db.from('tasks').insert(doneTasks.map(taskToDB));
+          if (!re) { setTasks(prev => [...prev, ...doneTasks]); showToast("削除を取り消しました ✓"); }
+        }
+      });
     });
   }, [showConfirm, showToast]);
 
@@ -353,6 +368,13 @@ export default function App() {
           ))}
         </nav>
       </header>
+
+      {!isOnline && (
+        <div role="status" style={{ background:"#37474F", color:"#fff", padding:"6px 22px", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
+          <span>📡</span>
+          <span>オフライン — キャッシュデータを表示しています。保存操作はオンライン復帰後に反映されます。</span>
+        </div>
+      )}
 
       {todaysSpeakers.length > 0 && (
         <div role="banner" style={{ background:"linear-gradient(90deg,#B71C1C,#C62828)", color:"#fff", padding:"8px 22px", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
