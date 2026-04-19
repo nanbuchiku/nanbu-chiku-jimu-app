@@ -45,6 +45,7 @@ export default function App() {
   const [formUrlModal,setFormUrlModal]=useState(undefined);
   const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
   const [toast,       setToast]      = useState(null);
+  const [isSaving,    setIsSaving]   = useState(false);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -70,52 +71,60 @@ export default function App() {
     })();
   }, []);
 
-  const updateSpeaker = async (id, patch) => {
+  const updateSpeaker = useCallback(async (id, patch) => {
     const sp = speakers.find(s => s.id === id);
     if (!sp) return;
     const updated = { ...sp, ...patch };
     const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
     if (error) { showToast("⚠ 保存に失敗しました"); return; }
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
-  };
+  }, [speakers, showToast]);
 
-  const deleteSpeaker = async id => {
+  const deleteSpeaker = useCallback(async id => {
     if (!confirm("削除しますか？")) return;
     const { error } = await db.from('speakers').delete().eq('id', id);
     if (error) { showToast("⚠ 削除に失敗しました"); return; }
     setSpeakers(prev => prev.filter(s => s.id !== id));
     showToast("削除しました");
-  };
+  }, [showToast]);
 
-  const addOrUpdateSpeaker = async data => {
-    if (data.id) {
-      const { error } = await db.from('speakers').update(toDB(data)).eq('id', data.id);
-      if (error) { showToast("⚠ 保存に失敗しました"); return; }
-      setSpeakers(prev => prev.map(s => s.id === data.id ? data : s));
-    } else {
-      const newSp = { ...data, id: `s${Date.now()}`, lineNotified: false };
-      const { error } = await db.from('speakers').insert(toDB(newSp));
-      if (error) { showToast("⚠ 登録に失敗しました"); return; }
-      setSpeakers(prev => [...prev, newSp]);
+  const addOrUpdateSpeaker = useCallback(async data => {
+    setIsSaving(true);
+    try {
+      if (data.id) {
+        const { error } = await db.from('speakers').update(toDB(data)).eq('id', data.id);
+        if (error) { showToast("⚠ 保存に失敗しました"); return; }
+        setSpeakers(prev => prev.map(s => s.id === data.id ? data : s));
+      } else {
+        const newSp = { ...data, id: `s${Date.now()}`, lineNotified: false };
+        const { error } = await db.from('speakers').insert(toDB(newSp));
+        if (error) { showToast("⚠ 登録に失敗しました"); return; }
+        setSpeakers(prev => [...prev, newSp]);
+      }
+      setShowForm(false); setEditSpeaker(null);
+      showToast(data.id ? "変更を保存しました ✓" : "新規登録しました ✓");
+    } finally {
+      setIsSaving(false);
     }
-    setShowForm(false); setEditSpeaker(null);
-    showToast(data.id ? "変更を保存しました ✓" : "新規登録しました ✓");
-  };
+  }, [showToast]);
 
-  const openLine = sp => {
+  const openLine = useCallback(sp => {
     const ch = getChapter(sp.chapterId);
     const msg = `【${ch.name}単会 モーニングセミナー講師ご案内】\n\n開催日：${formatDate(sp.seminarDate)}\n会場：${ch.venue}\n時間：${ch.time}\n\n講師：${sp.speakerName} 様\n所属：${sp.company}　${sp.role}\nテーマ：「${sp.topic}」\n\n皆様のご参加をお待ちしております。\n${ch.name}単会事務局`;
     setLineModal({ msg, speakerId: sp.id });
-  };
+  }, []);
 
   const sptasksBadge = useMemo(() => {
+    const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 90);
     let n = 0;
-    speakers.filter(s => s.status !== "cancelled").forEach(s => {
-      const checks = s.speakerChecks || {};
-      buildSpeakerTasks(s).forEach(t => { if (!checks[t.id]) n++; });
-    });
+    speakers
+      .filter(s => s.status !== "cancelled" && s.seminarDate && new Date(s.seminarDate) <= cutoff)
+      .forEach(s => {
+        const checks = s.speakerChecks || {};
+        buildSpeakerTasks(s).forEach(t => { if (!checks[t.id]) n++; });
+      });
     return n;
-  }, [speakers]);
+  }, [speakers, today]);
 
   const TABS = useMemo(() => [
     { id:"dashboard", label:"ダッシュボード", icon:"⊞" },
@@ -185,7 +194,7 @@ export default function App() {
       </header>
 
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
-        {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={sp => { setDocSpeaker(sp); setTab("document"); }} setTab={setTab} onFormUrl={setFormUrlModal} />}
+        {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={sp => { setDocSpeaker(sp); setTab("document"); }} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={(status) => { setTab("speakers"); if (status) setFilterSt(status); }} />}
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={sp => { setDocSpeaker(sp); setTab("document"); }} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
@@ -218,7 +227,7 @@ export default function App() {
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
       </main>
 
-      {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={() => { setShowForm(false); setEditSpeaker(null); }} />}
+      {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={() => { setShowForm(false); setEditSpeaker(null); }} saving={isSaving} />}
       {emailModal && <EmailModal speaker={emailModal} onClose={() => setEmailModal(null)} onDone={() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }} />}
       {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={() => setFormUrlModal(undefined)} showToast={showToast} />}
 
@@ -240,7 +249,7 @@ export default function App() {
         </div>
       )}
 
-      {toast && <div style={{ position:"fixed", bottom:20, right:20, background: toast.startsWith("⚠") ? "#B71C1C" : "#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000 }}>{toast}</div>}
+      {toast && <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom:20, right:20, background: toast.startsWith("⚠") ? "#B71C1C" : "#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000 }}>{toast}</div>}
     </div>
   );
 }

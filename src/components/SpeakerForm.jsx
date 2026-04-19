@@ -5,7 +5,7 @@ import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
 const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"" };
 
-export default function SpeakerForm({ initial, onSave, onClose }) {
+export default function SpeakerForm({ initial, onSave, onClose, saving }) {
   const [form, setForm] = useState(() => initial || { ...BLANK, requestDate: new Date().toISOString().slice(0,10) });
   const [err, setErr] = useState("");
   const set = (k, v) => {
@@ -124,14 +124,14 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
         </div>
         {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:12, color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
         <div style={{ display:"flex", gap:8, marginTop:10 }}>
-          <button style={BP} onClick={() => {
+          <button style={{ ...BP, opacity: saving ? .6 : 1 }} disabled={saving} onClick={() => {
             if (!form.speakerName) return setErr("講師名は必須です");
             if (!form.seminarDate) return setErr("開催日は必須です");
             onSave(form);
           }}>
-            {initial ? "💾 変更を保存" : "✓ 登録する"}
+            {saving ? "⏳ 保存中..." : initial ? "💾 変更を保存" : "✓ 登録する"}
           </button>
-          <button style={BC} onClick={onClose}>キャンセル</button>
+          <button style={BC} disabled={saving} onClick={onClose}>キャンセル</button>
         </div>
       </div>
     </div>

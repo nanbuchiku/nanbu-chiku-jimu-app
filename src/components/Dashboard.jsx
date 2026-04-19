@@ -3,7 +3,7 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, isSameDay } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
-export default function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl }) {
+export default function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers }) {
   const thisWeek = useMemo(
     () => speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate)))),
     [speakers, weekDates]
@@ -12,21 +12,25 @@ export default function Dashboard({ speakers, tasks, weekDates, today, onView, s
     () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
     [tasks]
   );
+  const stats = useMemo(() => [
+    { label:"今週の開催",  val: thisWeek.length,                                      sub:"/5単会", color:"#1A3A6B", action: () => setTab("calendar") },
+    { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
+    { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
+    { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A", action: () => setTab("tasks") },
+  ], [thisWeek, speakers, tasks, setTab, onGoSpeakers]);
 
   return (
     <div>
       <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B", marginBottom:13 }}>ダッシュボード</div>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:10, marginBottom:14 }}>
-        {[
-          { label:"今週の開催",  val: thisWeek.length,                                     sub:"/5単会", color:"#1A3A6B" },
-          { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20" },
-          { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C" },
-          { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A" },
-        ].map((it, i) => (
-          <div key={i} style={{ ...CARD, borderTop:`4px solid ${it.color}`, marginBottom:0 }}>
+        {stats.map((it, i) => (
+          <div key={i} onClick={it.action} style={{ ...CARD, borderTop:`4px solid ${it.color}`, marginBottom:0, cursor:"pointer", transition:"box-shadow .15s" }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,.14)"}
+            onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.08)"}>
             <div style={{ fontSize:28, fontWeight:800, lineHeight:1, color: it.color }}>{it.val}<span style={{ fontSize:11, fontWeight:400, marginLeft:3 }}>{it.sub}</span></div>
             <div style={{ fontSize:11, color:"#78909C", marginTop:3 }}>{it.label}</div>
+            <div style={{ fontSize:10, color: it.color, marginTop:4, fontWeight:600, opacity:.7 }}>クリックで詳細 →</div>
           </div>
         ))}
       </div>
