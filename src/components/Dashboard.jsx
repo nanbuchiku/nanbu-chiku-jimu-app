@@ -1,11 +1,7 @@
 import React, { useMemo, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, isSameDay } from '../utils';
+import { getChapter, isSameDay, toDateStr } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
-
-function toDateStr(d) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
 
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate }) {
   const thisWeek = useMemo(
@@ -16,9 +12,10 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
     [tasks]
   );
-  const overdueCount = useMemo(() =>
-    tasks.filter(t => !t.done && t.dueDate && new Date(t.dueDate) < today).length,
-  [tasks, today]);
+  const overdueCount = useMemo(() => {
+    const todayStr = toDateStr(today);
+    return tasks.filter(t => !t.done && t.dueDate && t.dueDate < todayStr).length;
+  }, [tasks, today]);
 
   const unassignedMS = useMemo(() => {
     const assigned = new Set(speakers.filter(sp => sp.seminarType === "ms" || !sp.seminarType).map(sp => `${sp.chapterId}|${sp.seminarDate}`));

@@ -4,6 +4,10 @@ const FALLBACK_CHAPTER = { id:"", name:"不明", short:"?", color:"#90A4AE", acc
 export const getChapter = id => CHAPTERS.find(c => c.id === id) || FALLBACK_CHAPTER;
 export const getSeminarType = id => SEMINAR_TYPES.find(t => t.id === id) || SEMINAR_TYPES[0];
 export const realToday = () => new Date();
+export const toDateStr = d => {
+  const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : d;
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+};
 
 export const formatDate = d => {
   if (!d) return "";

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks } from '../utils';
+import { getChapter, buildSpeakerTasks, toDateStr } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
@@ -44,8 +44,9 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       });
     }
     if (filterPast) {
+      const todayStr = toDateStr(today);
       base = base.filter(sp => {
-        const isPast = sp.seminarDate && new Date(sp.seminarDate) < today;
+        const isPast = sp.seminarDate && sp.seminarDate < todayStr;
         const checks = sp.speakerChecks || {};
         const tasks = buildSpeakerTasks(sp);
         const allDone = tasks.every(t => checks[t.id]);
