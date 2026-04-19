@@ -3,10 +3,10 @@ import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
-const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate: new Date().toISOString().slice(0,10), notes:"", venue:"", seminarType:"ms" };
+const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"" };
 
 export default function SpeakerForm({ initial, onSave, onClose }) {
-  const [form, setForm] = useState(initial || BLANK);
+  const [form, setForm] = useState(() => initial || { ...BLANK, requestDate: new Date().toISOString().slice(0,10) });
   const [err, setErr] = useState("");
   const set = (k, v) => {
     setErr("");
@@ -53,6 +53,23 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
               )}
             </div>
           ))}
+
+          <div>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>前泊・宿泊</div>
+            <select style={{ ...INP, width:"100%" }} value={form.lodging || "不要"} onChange={e => set("lodging", e.target.value)}>
+              <option value="不要">不要</option>
+              <option value="あり（前泊）">あり（前泊）</option>
+              <option value="あり（当日のみ）">あり（当日のみ）</option>
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>資料印刷</div>
+            <select style={{ ...INP, width:"100%" }} value={form.printRequired || "不要"} onChange={e => set("printRequired", e.target.value)}>
+              <option value="不要">不要（持参 or なし）</option>
+              <option value="あり">あり（単会で印刷）</option>
+            </select>
+          </div>
+
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>
               開催場所
@@ -69,6 +86,10 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>テーマ</div>
             <input type="text" style={{ ...INP, width:"100%" }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
+          </div>
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料フォルダURL</div>
+            <input type="url" style={{ ...INP, width:"100%" }} placeholder="https://drive.google.com/..." value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>

@@ -46,8 +46,8 @@ export default function App() {
   const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
   const [toast,       setToast]      = useState(null);
 
-  const today     = realToday();
-  const weekDates = getWeekDates(today, weekOffset);
+  const today     = useMemo(() => realToday(), []);
+  const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
 
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 

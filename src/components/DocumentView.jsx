@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { JIMU } from '../constants';
 import { getChapter, getSeminarType, formatDate } from '../utils';
 import { BP, SEL } from '../styles';
@@ -27,7 +27,11 @@ function DocRow({ label, value, color }) {
 
 export default function DocumentView({ speakers, docSpeaker, setDocSpeaker, today }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
-  useEffect(() => { if (docSpeaker) setSel(docSpeaker.id); }, [docSpeaker]);
+  useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
+  const sortedSpeakers = useMemo(
+    () => [...speakers].sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate)),
+    [speakers]
+  );
   const sp = speakers.find(x => x.id === sel);
   const ch = sp ? getChapter(sp.chapterId) : null;
 
@@ -37,7 +41,7 @@ export default function DocumentView({ speakers, docSpeaker, setDocSpeaker, toda
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>講師依頼確認書</div>
         <select style={{ ...SEL, minWidth:260 }} value={sel} onChange={e => { setSel(e.target.value); setDocSpeaker(speakers.find(x => x.id === e.target.value) || null); }}>
           <option value="">── 講師を選択 ──</option>
-          {[...speakers].sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate)).map(sp => {
+          {sortedSpeakers.map(sp => {
             const ch = getChapter(sp.chapterId);
             return <option key={sp.id} value={sp.id}>{sp.seminarDate} | {ch.name} | {sp.speakerName}</option>;
           })}

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, isSameDay, formatDate } from '../utils';
+import { getChapter, isSameDay } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
 export default function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl }) {
