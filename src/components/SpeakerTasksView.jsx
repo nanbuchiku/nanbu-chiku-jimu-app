@@ -1,7 +1,7 @@
 import React, { useState, useMemo, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter, buildSpeakerTasks } from '../utils';
-import { CARD, BP, BC, SEL, PILL } from '../styles';
+import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
   "依頼": "#1A3A6B",
@@ -15,14 +15,16 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const [filterCh,   setFilterCh]   = useState("all");
   const [filterDone, setFilterDone] = useState("undone");
   const [expandedId, setExpandedId] = useState(null);
+  const [search,     setSearch]     = useState("");
 
-  const filtered = useMemo(() =>
-    speakers
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return speakers
       .filter(sp => sp.status !== "cancelled")
       .filter(sp => filterCh === "all" || sp.chapterId === filterCh)
-      .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || "")),
-    [speakers, filterCh]
-  );
+      .filter(sp => !q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q))
+      .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || ""));
+  }, [speakers, filterCh, search]);
 
   const visible = useMemo(() => {
     if (filterDone === "all") return filtered;
@@ -52,6 +54,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理</div>
+        <input style={{ ...INP, width:140, fontSize:11 }} placeholder="🔍 名前・会社検索" value={search} onChange={e => setSearch(e.target.value)} />
         <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
           <option value="all">全単会</option>
           {CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}

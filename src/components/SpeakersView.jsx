@@ -1,10 +1,23 @@
-import React, { useMemo, useState, memo } from 'react';
+import React, { useMemo, useState, useCallback, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
   const [search, setSearch] = useState("");
+
+  const exportCSV = useCallback(() => {
+    const headers = ["開催日","単会","講師名","ふりがな","所属単会","企業名","役職","テーマ","ステータス","メール","電話"];
+    const rows = filtered.map(sp => {
+      const ch = getChapter(sp.chapterId);
+      return [sp.seminarDate, ch.name, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.company, sp.role, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone];
+    });
+    const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("CSVをエクスポートしました 📥");
+  }, [filtered, showToast]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -34,6 +47,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             <option value="all">全ステータス</option>
             {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
+          <button style={{ ...BP, background:"#2E7D32" }} onClick={exportCSV}>📥 CSV出力</button>
           <button style={BP} onClick={onAdd}>＋ 新規登録</button>
         </div>
       </div>
