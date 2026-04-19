@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType } from '../utils';
+import { getChapter, getSeminarType, toDateStr } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
 const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"", materialName:"" };
@@ -67,6 +67,19 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       .sort((a, b) => new Date(b.seminarDate) - new Date(a.seminarDate));
   }, [form.speakerName, form.id, speakers]);
 
+  const suggestDates = useMemo(() => {
+    const chapter = getChapter(form.chapterId);
+    if (!chapter || chapter.day < 0) return [];
+    const now = new Date();
+    const todayDay = now.getDay();
+    const baseOffset = (chapter.day - todayDay + 7) % 7 || 7;
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() + baseOffset + i * 7);
+      return toDateStr(d);
+    });
+  }, [form.chapterId]);
+
   const isPastDate = useMemo(() => {
     if (!form.seminarDate || initial?.id) return false;
     const today = new Date();
@@ -103,6 +116,14 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 </select>
               ) : (
                 <input disabled={saving} autoFocus={k === "speakerName"} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
+              )}
+              {k === "seminarDate" && !form.seminarDate && suggestDates.length > 0 && (
+                <div style={{ marginTop:5, display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
+                  <span style={{ fontSize:9, color:"#90A4AE", fontWeight:600 }}>次回：</span>
+                  {suggestDates.map(d => (
+                    <button key={d} type="button" style={{ fontSize:10, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:10, padding:"2px 8px", color:"#1565C0", cursor:"pointer", fontWeight:700 }} onClick={() => set("seminarDate", d)}>{d}</button>
+                  ))}
+                </div>
               )}
             </div>
           ))}

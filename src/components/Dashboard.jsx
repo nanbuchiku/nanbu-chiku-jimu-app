@@ -16,14 +16,16 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     }));
     return speakers.filter(sp => sp.seminarDate && nextStrs.has(sp.seminarDate));
   }, [speakers, weekDates]);
+  const todayStr = useMemo(() => toDateStr(today), [today]);
   const topTasks = useMemo(
     () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
     [tasks]
   );
-  const overdueCount = useMemo(() => {
-    const todayStr = toDateStr(today);
-    return tasks.filter(t => !t.done && t.dueDate && t.dueDate < todayStr).length;
-  }, [tasks, today]);
+  const overdueTasks = useMemo(
+    () => tasks.filter(t => !t.done && t.dueDate && t.dueDate < todayStr).sort((a, b) => a.dueDate.localeCompare(b.dueDate)),
+    [tasks, todayStr]
+  );
+  const overdueCount = overdueTasks.length;
 
   const materialPending = useMemo(() => {
     const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14);
@@ -77,6 +79,29 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           </div>
         ))}
       </div>
+
+      {overdueTasks.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #B71C1C", padding:"10px 14px", background:"#FFEBEE" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#B71C1C" }}>⚠ 期限超過タスク　{overdueTasks.length}件</div>
+            <button onClick={() => setTab("tasks")} style={{ fontSize:10, background:"#B71C1C", color:"#fff", border:"none", borderRadius:10, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}>タスク管理へ →</button>
+          </div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            {overdueTasks.slice(0, 6).map(t => {
+              const ch = getChapter(t.chapterId);
+              const overDays = Math.ceil((today - new Date(t.dueDate)) / 86400000);
+              return (
+                <span key={t.id} style={{ fontSize:11, background:"#FFCDD2", border:"1px solid #EF9A9A", borderRadius:6, padding:"3px 9px", color:"#B71C1C", display:"flex", gap:5, alignItems:"center" }}>
+                  <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
+                  <span style={{ fontWeight:600 }}>{t.title}</span>
+                  <span style={{ fontSize:9, opacity:.8 }}>({overDays}日超過)</span>
+                </span>
+              );
+            })}
+            {overdueTasks.length > 6 && <span style={{ fontSize:11, color:"#B71C1C", fontWeight:600 }}>…他{overdueTasks.length - 6}件</span>}
+          </div>
+        </div>
+      )}
 
       {materialPending.length > 0 && (
         <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #E65100", padding:"10px 14px", background:"#FFF8E1" }}>

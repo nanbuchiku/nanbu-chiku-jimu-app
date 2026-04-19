@@ -25,10 +25,11 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
 
   const flyerData = useMemo(() => CHAPTERS.map(ch => {
     const sp = speakers.find(s =>
-      s.seminarType === "ms" &&
+      (!s.seminarType || s.seminarType === "ms") &&
       s.chapterId === ch.id &&
       s.seminarDate &&
-      s.seminarDate.startsWith(selMonth)
+      s.seminarDate.startsWith(selMonth) &&
+      s.status !== "cancelled"
     );
     return { ch, sp };
   }), [speakers, selMonth]);
