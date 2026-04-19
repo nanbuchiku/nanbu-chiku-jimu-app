@@ -52,6 +52,7 @@ export default function App() {
   const [confirm,     setConfirm]    = useState(null);
   const [showHelp,    setShowHelp]   = useState(false);
   const [isOnline,    setIsOnline]   = useState(() => navigator.onLine);
+  const [refreshing,  setRefreshing] = useState(false);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -76,6 +77,7 @@ export default function App() {
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
+    else setRefreshing(true);
     try {
       const [{ data: spData, error: spErr }, { data: tkData, error: tkErr }] = await Promise.all([
         db.from('speakers').select('*').eq('district_id', DISTRICT_ID).order('seminar_date'),
@@ -83,8 +85,8 @@ export default function App() {
       ]);
       if (spErr) throw spErr;
       if (tkErr) throw tkErr;
-      if (spData) { const mapped = spData.map(fromDB); setSpeakers(mapped); try { localStorage.setItem('cachedSpeakers', JSON.stringify(mapped)); } catch {} }
-      if (tkData) { const mapped = tkData.map(taskFromDB); setTasks(mapped); try { localStorage.setItem('cachedTasks', JSON.stringify(mapped)); } catch {} }
+      if (spData) { const mapped = spData.map(fromDB); setSpeakers(mapped); }
+      if (tkData) { const mapped = tkData.map(taskFromDB); setTasks(mapped); }
       setLastUpdated(new Date());
       if (silent) showToast("データを更新しました ✓");
     } catch (e) {
@@ -92,6 +94,7 @@ export default function App() {
       else setLoadError(e.message || "データの読み込みに失敗しました");
     } finally {
       if (!silent) setLoading(false);
+      else setRefreshing(false);
     }
   }, [showToast]);
 
@@ -347,9 +350,10 @@ export default function App() {
           <div>
             <div style={HDR.orgLabel}>倫理法人会　南部地区事務局</div>
             <h1 style={HDR.appTitle}>南部地区5単会タスク管理</h1>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", marginTop:2 }}>
-              {today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' })}
-              {lastUpdated && <span style={{ marginLeft:10, opacity:.6 }}>最終更新 {lastUpdated.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' })}</span>}
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", marginTop:2, display:"flex", alignItems:"center", gap:8 }}>
+              <span>{today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' })}</span>
+              {lastUpdated && <span style={{ opacity:.6 }}>最終更新 {lastUpdated.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' })}</span>}
+              {refreshing && <span aria-label="更新中" style={{ display:"inline-block", animation:"spin 1s linear infinite", fontSize:12 }}>⟳</span>}
             </div>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
