@@ -600,11 +600,14 @@ function FormURLModal({ speaker: sp, onClose, showToast }) {
   const ch = getChapter(sp.chapterId);
   const BASE = 'https://hosina0447-ctrl.github.io/rinri-nanbu/form.html';
   const params = new URLSearchParams({
-    id:   sp.id,
-    name: sp.speakerName || '',
-    unit: sp.speakerUnit || ch?.name || '',
-    date: sp.seminarDate || '',
-    ch:   sp.chapterId   || '',
+    id:     sp.id,
+    name:   sp.speakerName  || '',
+    unit:   sp.speakerUnit  || ch?.name || '',
+    date:   sp.seminarDate  || '',
+    ch:     sp.chapterId    || '',
+    type:   sp.seminarType  || 'ms',
+    ethics: sp.role         || '',
+    email:  sp.email        || '',
   });
   const formUrl = `${BASE}?${params.toString()}`;
 
