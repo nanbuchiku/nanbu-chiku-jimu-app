@@ -278,7 +278,7 @@ export default function App() {
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
       </main>
 
-      {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
+      {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
       {emailModal && <EmailModal speaker={emailModal} onClose={onCloseEmail} onDone={onDoneEmail} />}
       {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} />}
 

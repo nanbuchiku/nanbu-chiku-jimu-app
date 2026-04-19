@@ -6,11 +6,19 @@ import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
 
 export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd, showToast }) {
-  const [showDone, setShowDone] = useState(false);
+  const [showDone,   setShowDone]   = useState(false);
+  const [filterCh,   setFilterCh]   = useState("all");
+  const [filterPrio, setFilterPrio] = useState("all");
 
   const visible = useMemo(
-    () => tasks.filter(t => showDone || !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)),
-    [tasks, showDone]
+    () => tasks
+      .filter(t =>
+        (showDone || !t.done) &&
+        (filterCh === "all" || t.chapterId === filterCh) &&
+        (filterPrio === "all" || t.priority === filterPrio)
+      )
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)),
+    [tasks, showDone, filterCh, filterPrio]
   );
   const undoneCount = useMemo(() => tasks.filter(t => !t.done).length, [tasks]);
 
@@ -27,14 +35,31 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
     showToast?.("CSVをエクスポートしました 📥");
   }, [visible, showToast]);
 
+  const hasFilter = filterCh !== "all" || filterPrio !== "all";
+
   return (
     <div>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>
           タスク管理
           {undoneCount > 0 && <span style={{ fontSize:12, fontWeight:400, color:"#BF360C", marginLeft:8 }}>未完了 {undoneCount}件</span>}
         </div>
-        <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
+        <div style={{ display:"flex", gap:6, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
+          <select aria-label="単会フィルター" style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
+            <option value="all">全単会</option>
+            {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+          </select>
+          <select aria-label="優先度フィルター" style={SEL} value={filterPrio} onChange={e => setFilterPrio(e.target.value)}>
+            <option value="all">全優先度</option>
+            <option value="high">🔴 高</option>
+            <option value="medium">🟡 中</option>
+            <option value="low">🟢 低</option>
+          </select>
+          {hasFilter && (
+            <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#546E7A" }} onClick={() => { setFilterCh("all"); setFilterPrio("all"); }}>
+              リセット
+            </button>
+          )}
           <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setShowDone(v => !v)}>
             {showDone ? "完了を隠す" : "完了済も表示"}
           </button>
@@ -83,7 +108,11 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                   </tr>
                 );
               })}
-              {visible.length === 0 && <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>{showDone ? "タスクなし" : "未完了タスクなし ✓"}</td></tr>}
+              {visible.length === 0 && (
+                <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>
+                  {hasFilter ? "条件に一致するタスクがありません" : showDone ? "タスクなし" : "未完了タスクなし ✓"}
+                </td></tr>
+              )}
             </tbody>
           </table>
         </div>

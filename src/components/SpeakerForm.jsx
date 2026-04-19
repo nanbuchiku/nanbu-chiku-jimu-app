@@ -1,11 +1,11 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
 const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"" };
 
-export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
+export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, saving }) {
   const [form, setForm] = useState(() => {
     if (initial) return initial;
     const savedChapter = (() => { try { return localStorage.getItem('form_lastChapter') || "kawaguchi"; } catch { return "kawaguchi"; } })();
@@ -27,6 +27,15 @@ export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
   };
   const ch = getChapter(form.chapterId);
   const st = getSeminarType(form.seminarType || "ms");
+
+  const duplicate = useMemo(() => {
+    if (!form.chapterId || !form.seminarDate || !speakers) return null;
+    return speakers.find(sp =>
+      sp.chapterId === form.chapterId &&
+      sp.seminarDate === form.seminarDate &&
+      sp.id !== form.id
+    ) || null;
+  }, [form.chapterId, form.seminarDate, form.id, speakers]);
 
   return (
     <div style={OV} onClick={onClose} role="presentation">
@@ -127,6 +136,11 @@ export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
             </div>
           </div>
         </div>
+        {duplicate && (
+          <div style={{ marginTop:10, padding:"8px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:12, color:"#E65100", fontWeight:600 }}>
+            ⚠ 同じ単会・開催日の講師が既に登録されています（{duplicate.speakerName}）。続けて登録することもできます。
+          </div>
+        )}
         {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:12, color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
         <div style={{ display:"flex", gap:8, marginTop:10 }}>
           <button style={{ ...BP, opacity: saving ? .6 : 1 }} disabled={saving} onClick={() => {
