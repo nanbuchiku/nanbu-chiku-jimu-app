@@ -265,11 +265,13 @@ export default function App() {
   }, [showToast]);
 
   const sptasksBadge = useMemo(() => {
-    const cutoffDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 90);
-    const cutoffStr = toDateStr(cutoffDate);
+    const fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14);
+    const toDate   = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 90);
+    const fromStr  = toDateStr(fromDate);
+    const toStr    = toDateStr(toDate);
     let n = 0;
     speakers
-      .filter(s => s.status !== "cancelled" && s.seminarDate && s.seminarDate <= cutoffStr)
+      .filter(s => s.status !== "cancelled" && s.seminarDate && s.seminarDate >= fromStr && s.seminarDate <= toStr)
       .forEach(s => {
         const checks = s.speakerChecks || {};
         buildSpeakerTasks(s).forEach(t => { if (!checks[t.id]) n++; });

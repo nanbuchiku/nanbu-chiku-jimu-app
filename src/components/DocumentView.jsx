@@ -136,6 +136,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocSection title="⑥ 顔写真・資料" color={st.color}>
               <DocRow label="顔写真"           value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
               <DocRow label="講話資料"         value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
+              {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={st.color} />}
               <DocRow label="顔写真の使用範囲" value=""                                               color={st.color} />
             </DocSection>
 
