@@ -198,8 +198,13 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                 </button>
               )}
 
+              {sp.notes && (
+                <div style={{ marginTop:6, padding:"5px 8px", background:"#F3E5F5", borderRadius:5, borderLeft:"3px solid #CE93D8", fontSize:10, color:"#4A148C", whiteSpace:"pre-wrap" }}>
+                  <span style={{ fontWeight:700 }}>📝 メモ：</span>{sp.notes}
+                </div>
+              )}
               {(sp.postNotes || sp.drinksAlcohol || sp.shioriArticle) && (
-                <div style={{ marginTop:10, padding:"8px 10px", background:"#F8F9FA", borderRadius:6, borderLeft:"3px solid #78909C" }}>
+                <div style={{ marginTop:6, padding:"8px 10px", background:"#F8F9FA", borderRadius:6, borderLeft:"3px solid #78909C" }}>
                   <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:4 }}>📝 講話後メモ</div>
                   {sp.drinksAlcohol && <div style={{ fontSize:11, color:"#546E7A" }}>お酒：{sp.drinksAlcohol}</div>}
                   {sp.shioriArticle && <div style={{ fontSize:11, color:"#546E7A" }}>栞：{sp.shioriArticle}</div>}

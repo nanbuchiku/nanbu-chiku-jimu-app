@@ -64,6 +64,13 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       .sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
   }, [speakers, today, todayStr]);
 
+  const tasksByChapter = useMemo(() => CHAPTERS.map(ch => {
+    const total  = tasks.filter(t => t.chapterId === ch.id).length;
+    const done   = tasks.filter(t => t.chapterId === ch.id && t.done).length;
+    const undone = total - done;
+    return { ch, total, done, undone, pct: total > 0 ? Math.round(done / total * 100) : 100 };
+  }).filter(s => s.total > 0), [tasks]);
+
   const stats = useMemo(() => [
     { label:"今週の開催",  val: thisWeek.length,                                      sub:"/5単会", color:"#1A3A6B", action: () => setTab("calendar") },
     { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
@@ -200,6 +207,23 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             {topTasks.length === 0 && <div style={{ color:"#90A4AE", fontSize:12, textAlign:"center", padding:12 }}>タスクなし ✓</div>}
             <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:12, cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("tasks")}>全タスクを見る →</button>
           </div>
+
+          {tasksByChapter.length > 0 && (
+            <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:8 }}>単会別タスク達成率</div>
+              {tasksByChapter.map(({ ch, done, total, pct }) => (
+                <div key={ch.id} style={{ marginBottom:7 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:10, marginBottom:2 }}>
+                    <span style={{ color: ch.color, fontWeight:700 }}>{ch.name}</span>
+                    <span style={{ color: pct === 100 ? "#2E7D32" : "#546E7A" }}>{done}/{total}件 ({pct}%)</span>
+                  </div>
+                  <div style={{ background:"#E0E0E0", borderRadius:4, height:7, overflow:"hidden" }}>
+                    <div style={{ width:`${pct}%`, background: pct === 100 ? "#2E7D32" : ch.color, borderRadius:4, height:7, transition:"width .4s" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div style={{ marginTop:12, background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
