@@ -3,13 +3,55 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
+const DATE_RANGES = [
+  { value: "all", label: "すべて" },
+  { value: "7",   label: "今後7日" },
+  { value: "30",  label: "今後30日" },
+];
+
 export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState("all");
+  const [sortCol, setSortCol] = useState("date");
+  const [sortDir, setSortDir] = useState("asc");
+
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  const toggleSort = useCallback(col => {
+    setSortCol(prev => {
+      if (prev === col) {
+        setSortDir(d => d === "asc" ? "desc" : "asc");
+        return col;
+      }
+      setSortDir("asc");
+      return col;
+    });
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const cutoff = dateRange !== "all"
+      ? new Date(today.getTime() + parseInt(dateRange, 10) * 86400000)
+      : null;
+    return [...speakers]
+      .filter(sp =>
+        (filterCh === "all" || sp.chapterId === filterCh) &&
+        (filterSt === "all" || sp.status === filterSt) &&
+        (!q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q)) &&
+        (dateRange === "all" || (sp.seminarDate && new Date(sp.seminarDate) >= today && new Date(sp.seminarDate) <= cutoff))
+      )
+      .sort((a, b) => {
+        let cmp = 0;
+        if (sortCol === "date")    cmp = new Date(a.seminarDate) - new Date(b.seminarDate);
+        else if (sortCol === "name")    cmp = (a.speakerName || "").localeCompare(b.speakerName || "", "ja");
+        else if (sortCol === "chapter") cmp = a.chapterId.localeCompare(b.chapterId);
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+  }, [speakers, filterCh, filterSt, search, dateRange, sortCol, sortDir, today]);
 
   const exportCSV = useCallback(() => {
     const headers = ["開催日","単会","講師名","ふりがな","所属単会","企業名","役職","テーマ","ステータス","メール","電話"];
@@ -24,20 +66,16 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     showToast("CSVをエクスポートしました 📥");
   }, [filtered, showToast]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return [...speakers]
-      .filter(sp =>
-        (filterCh === "all" || sp.chapterId === filterCh) &&
-        (filterSt === "all" || sp.status === filterSt) &&
-        (!q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q))
-      )
-      .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate));
-  }, [speakers, filterCh, filterSt, search]);
+  const sortIcon = col => sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : " ⇅";
+  const sortTH = (col, label) => (
+    <th style={{ ...TH, cursor:"pointer", userSelect:"none", whiteSpace:"nowrap" }} onClick={() => toggleSort(col)}>
+      {label}<span style={{ fontSize:9, opacity: sortCol === col ? 1 : 0.4 }}>{sortIcon(col)}</span>
+    </th>
+  );
 
   return (
     <div>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>
           講師管理
           <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{filtered.length}/{speakers.length}件</span>
@@ -57,11 +95,32 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         </div>
       </div>
 
+      <div style={{ display:"flex", gap:5, marginBottom:10, flexWrap:"wrap", alignItems:"center" }}>
+        <span style={{ fontSize:11, color:"#78909C", fontWeight:600 }}>期間：</span>
+        {DATE_RANGES.map(r => (
+          <button key={r.value} onClick={() => setDateRange(r.value)}
+            style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:`1px solid ${dateRange === r.value ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange === r.value ? "#1A3A6B" : "#fff", color: dateRange === r.value ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: dateRange === r.value ? 700 : 400, transition:"all .15s" }}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       <div style={CARD}>
         <div style={{ overflowX:"auto" }}>
           <table style={TBL}>
             <thead>
-              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","連絡","📅 カレンダー","📝 確認フォーム","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+              <tr>
+                {sortTH("date", "開催日")}
+                {sortTH("chapter", "単会")}
+                {sortTH("name", "講師名・所属")}
+                <th style={TH}>テーマ</th>
+                <th style={TH}>ステータス</th>
+                <th style={TH}>講話資料</th>
+                <th style={TH}>連絡</th>
+                <th style={TH}>📅 カレンダー</th>
+                <th style={TH}>📝 確認フォーム</th>
+                <th style={TH}>操作</th>
+              </tr>
             </thead>
             <tbody>
               {filtered.map(sp => {
@@ -141,11 +200,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               {filtered.length === 0 && (
                 <tr><td colSpan={10} style={{ ...TD, textAlign:"center", padding:32 }}>
                   <div style={{ color:"#90A4AE", fontSize:13, marginBottom:10 }}>
-                    {search || filterCh !== "all" || filterSt !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
+                    {search || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
                   </div>
-                  {(searchInput || filterCh !== "all" || filterSt !== "all") && (
+                  {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
                     <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 14px", fontSize:12, cursor:"pointer", color:"#546E7A", fontWeight:600 }}
-                      onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); }}>
+                      onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRange("all"); }}>
                       フィルターをリセット
                     </button>
                   )}
