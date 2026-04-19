@@ -88,7 +88,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });
     a.click();
     URL.revokeObjectURL(a.href);
-    showToast("CSVをエクスポートしました 📥");
+    showToast(`CSVをエクスポートしました 📥（${filtered.length}件）`);
   }, [filtered, showToast]);
 
   const sortIcon = col => sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : " ⇅";
