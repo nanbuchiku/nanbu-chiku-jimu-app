@@ -76,10 +76,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   }, [speakers, filterCh, filterSt, search, dateRange, sortCol, sortDir, today]);
 
   const exportCSV = useCallback(() => {
-    const headers = ["開催日","単会","講師名","ふりがな","所属単会","企業名","役職","テーマ","ステータス","メール","電話"];
+    const headers = ["開催日","単会","講師名","ふりがな","所属単会","企業名","役職","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","備考"];
     const rows = filtered.map(sp => {
       const ch = getChapter(sp.chapterId);
-      return [sp.seminarDate, ch.name, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.company, sp.role, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone];
+      return [sp.seminarDate, ch.name, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.company, sp.role, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.notes || ""];
     });
     const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });

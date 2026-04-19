@@ -32,8 +32,10 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
         <div style={{ background:"#fff", padding:"6px 3px", textAlign:"center", fontSize:11, fontWeight:700 }}></div>
         {weekDates.map((d, i) => {
           const isT = isSameDay(d, today);
+          const showMonth = d.getDate() === 1 || i === 0;
           return (
             <div key={i} style={{ background: isT ? "#1A3A6B" : "#fff", color: isT ? "#fff" : "#37474F", padding:"6px 3px", textAlign:"center", fontSize:11, fontWeight:700 }}>
+              {showMonth && <div style={{ fontSize:8, opacity:.6, letterSpacing:"0.05em" }}>{d.getMonth()+1}月</div>}
               <div style={{ fontSize:9, opacity:.7 }}>{"日月火水木金土"[d.getDay()]}曜</div>
               <div style={{ fontSize:16, fontWeight:700 }}>{d.getDate()}</div>
             </div>
