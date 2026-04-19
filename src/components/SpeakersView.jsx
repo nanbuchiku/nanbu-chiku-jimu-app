@@ -48,9 +48,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               {filtered.map(sp => {
                 const ch = getChapter(sp.chapterId);
                 const daysUntil = sp.seminarDate ? Math.ceil((new Date(sp.seminarDate) - today) / 86400000) : null;
+                const isPast = daysUntil !== null && daysUntil < 0;
                 const rowBg = daysUntil === 0 ? "#FFEBEE" : daysUntil !== null && daysUntil > 0 && daysUntil <= 3 ? "#FFF8E1" : "white";
                 return (
-                  <tr key={sp.id} className="hover-row" style={{ background: rowBg }}>
+                  <tr key={sp.id} className="hover-row" style={{ background: rowBg, opacity: isPast ? 0.6 : 1 }}>
                     <td style={TD}>
                       <div style={{ fontWeight:600, fontSize:12 }}>{sp.seminarDate}</div>
                       <div style={{ fontSize:10, color:"#90A4AE" }}>{ch.dayName}</div>
