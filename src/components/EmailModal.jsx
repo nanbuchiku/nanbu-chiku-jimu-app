@@ -9,8 +9,10 @@ export default memo(function EmailModal({ speaker: sp, onClose, onDone }) {
   const [freeBody,    setFreeBody]    = useState("");
 
   const matDL = useMemo(() => {
-    const d = new Date(sp.seminarDate); d.setDate(d.getDate() - 14);
-    return d.toISOString().slice(0, 10);
+    if (!sp.seminarDate) return '';
+    const [y, m, d] = sp.seminarDate.split('-').map(Number);
+    const dt = new Date(y, m - 1, d - 14);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
   }, [sp.seminarDate]);
 
   const TEMPLATES = useMemo(() => ({

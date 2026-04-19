@@ -76,7 +76,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
 
   return (
     <div style={OV} onClick={onClose} role="presentation">
-      <div role="dialog" aria-modal="true" aria-label={initial ? "講師情報を編集" : "新規講師登録"} style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label={initial ? "講師情報を編集" : "新規講師登録"} style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !saving) { e.preventDefault(); if (!form.speakerName) return setErr("講師名は必須です"); if (!form.seminarDate) return setErr("開催日は必須です"); if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("メールアドレスの形式が正しくありません"); clearDraft(); onSave(form); } }}>
         <div style={{ ...MH, borderBottomColor: st.color }}>
           {initial?.id ? `📝 ${initial.speakerName} を編集` : "新規講師登録"}
         </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, taskFromDB, taskToDB } from './lib/supabase';
-import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks } from './utils';
+import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr } from './utils';
 import { OV, MOD, MH, BC, BG, BP } from './styles';
 import Dashboard from './components/Dashboard';
 import CalendarView from './components/CalendarView';
@@ -265,10 +265,11 @@ export default function App() {
   }, [showToast]);
 
   const sptasksBadge = useMemo(() => {
-    const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 90);
+    const cutoffDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 90);
+    const cutoffStr = toDateStr(cutoffDate);
     let n = 0;
     speakers
-      .filter(s => s.status !== "cancelled" && s.seminarDate && new Date(s.seminarDate) <= cutoff)
+      .filter(s => s.status !== "cancelled" && s.seminarDate && s.seminarDate <= cutoffStr)
       .forEach(s => {
         const checks = s.speakerChecks || {};
         buildSpeakerTasks(s).forEach(t => { if (!checks[t.id]) n++; });
@@ -276,9 +277,10 @@ export default function App() {
     return n;
   }, [speakers, today]);
 
-  const todaysSpeakers = useMemo(() =>
-    speakers.filter(sp => sp.seminarDate === today.toISOString().slice(0,10) && sp.status !== "cancelled"),
-  [speakers, today]);
+  const todaysSpeakers = useMemo(() => {
+    const todayStr = toDateStr(today);
+    return speakers.filter(sp => sp.seminarDate === todayStr && sp.status !== "cancelled");
+  }, [speakers, today]);
 
   const TABS = useMemo(() => [
     { id:"dashboard", label:"ダッシュボード", icon:"⊞" },
@@ -463,6 +465,7 @@ export default function App() {
                   ["?", "このヘルプを表示 / 非表示"],
                   ["R", "データを再読み込み"],
                   ["N（講師管理タブ）", "新規講師登録フォームを開く"],
+                  ["Ctrl + Enter（フォーム内）", "講師フォームを保存"],
                   ["Esc", "モーダル・ダイアログを閉じる"],
                   ["1", "ダッシュボードへ"],
                   ["2", "カレンダーへ"],
