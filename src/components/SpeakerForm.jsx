@@ -7,7 +7,18 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
   const blank = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate: new Date().toISOString().slice(0,10), notes:"", venue:"", seminarType:"ms" };
   const [form, setForm] = useState(initial || blank);
   const [err, setErr] = useState("");
-  const set = (k, v) => { setErr(""); setForm(f => ({ ...f, [k]: v })); };
+  const set = (k, v) => {
+    setErr("");
+    setForm(f => {
+      const next = { ...f, [k]: v };
+      if (k === 'seminarType' || k === 'chapterId') {
+        const newSt = getSeminarType(k === 'seminarType' ? v : f.seminarType);
+        const newCh = getChapter(k === 'chapterId' ? v : f.chapterId);
+        if (newSt?.venueFixed && newCh) next.venue = newCh.venue;
+      }
+      return next;
+    });
+  };
   const ch = getChapter(form.chapterId);
   const st = getSeminarType(form.seminarType || "ms");
 

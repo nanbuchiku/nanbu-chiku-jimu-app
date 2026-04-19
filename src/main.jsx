@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const style = document.createElement('style');
 style.textContent = `
@@ -20,4 +21,6 @@ select:focus, input:focus, textarea:focus { border-color: #1A3A6B !important; bo
 `;
 document.head.appendChild(style);
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <ErrorBoundary><App /></ErrorBoundary>
+);

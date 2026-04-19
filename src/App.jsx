@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, taskFromDB, taskToDB } from './lib/supabase';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks } from './utils';
@@ -59,6 +59,7 @@ export default function App() {
 
   const updateSpeaker = async (id, patch) => {
     const sp = speakers.find(s => s.id === id);
+    if (!sp) return;
     const updated = { ...sp, ...patch };
     const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
     if (error) { showToast("⚠ 保存に失敗しました"); return; }
@@ -94,12 +95,21 @@ export default function App() {
     setLineModal({ msg, speakerId: sp.id });
   };
 
+  const sptasksBadge = useMemo(() => {
+    let n = 0;
+    speakers.filter(s => s.status !== "cancelled").forEach(s => {
+      const checks = s.speakerChecks || {};
+      buildSpeakerTasks(s).forEach(t => { if (!checks[t.id]) n++; });
+    });
+    return n;
+  }, [speakers]);
+
   const TABS = [
     { id:"dashboard", label:"ダッシュボード", icon:"⊞" },
     { id:"calendar",  label:"カレンダー",     icon:"▦" },
     { id:"speakers",  label:"講師管理",       icon:"♟", badge: speakers.filter(s => s.status === "pending").length },
     { id:"document",  label:"確認書作成",     icon:"≡" },
-    { id:"sptasks",   label:"講師タスク",     icon:"☑", badge: (() => { let n=0; speakers.filter(s=>s.status!=="cancelled").forEach(s=>{ const checks = s.speakerChecks||{}; buildSpeakerTasks(s).forEach(t=>{ if(!checks[t.id]) n++; }); }); return n; })() },
+    { id:"sptasks",   label:"講師タスク",     icon:"☑", badge: sptasksBadge },
     { id:"flyer",     label:"チラシ管理",     icon:"📋" },
     { id:"tasks",     label:"タスク管理",     icon:"✓", badge: tasks.filter(t => !t.done).length },
     { id:"ranking",   label:"完了ランキング", icon:"🏆" },

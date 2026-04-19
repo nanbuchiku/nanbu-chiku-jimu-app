@@ -367,9 +367,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
             <button type="button" class="btn-zip" onclick="lookupZip()">住所を自動入力</button>
           </div>
           <div class="zip-help">
-            📮 <a href="javascript:void(0)" onclick="lookupZipByAddress()">住所から郵便番号を調べる</a>
-            ・
-            <a href="https://www.post.japanpost.jp/zipcode/" target="_blank">郵便局公式検索</a>
+            📮 <a href="https://www.post.japanpost.jp/zipcode/" target="_blank">郵便番号が不明な場合はこちら →</a>
           </div>
         </div>
 
@@ -479,23 +477,6 @@ async function lookupZip() {
 }
 
 // 住所から郵便番号を検索
-async function lookupZipByAddress() {
-  const addr = prompt('調べたい住所を入力してください\n（例：埼玉県川口市元郷）');
-  if (!addr) return;
-  try {
-    const res = await fetch(`https://zipcoda.net/api?address=${encodeURIComponent(addr)}`);
-    const j   = await res.json();
-    if (j.items && j.items.length) {
-      const list = j.items.slice(0,5).map(x => `〒${x.zipcode}  ${x.address}`).join('\n');
-      alert('検索結果（上位5件）:\n\n' + list + '\n\n該当の郵便番号を入力してください');
-    } else {
-      alert('該当する郵便番号が見つかりませんでした');
-    }
-  } catch(e) {
-    alert('検索に失敗しました。郵便局公式サイトをご利用ください');
-  }
-}
-
 // ページ遷移
 function goPage(n) {
   if (n === 2 && !validatePage1()) return;
