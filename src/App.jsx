@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, taskFromDB, taskToDB } from './lib/supabase';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks } from './utils';
-import { OV, MOD, MH, BC, BG } from './styles';
+import { OV, MOD, MH, BC, BG, BP } from './styles';
 import Dashboard from './components/Dashboard';
 import CalendarView from './components/CalendarView';
 import SpeakersView from './components/SpeakersView';
@@ -334,7 +334,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight:"100vh" }}>
-      <header style={HDR.header}>
+      <header className="no-print" style={HDR.header}>
         <div style={HDR.hInner}>
           <div>
             <div style={HDR.orgLabel}>倫理法人会　南部地区事務局</div>
@@ -388,13 +388,13 @@ export default function App() {
       )}
 
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
-        {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} />}
+        {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} />}
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
         {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
         {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
-        {tab === "flyer"     && <FlyerView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
+        {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} />}
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
       </main>
 

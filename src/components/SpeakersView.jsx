@@ -46,15 +46,18 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const cutoff = dateRange !== "all"
-      ? new Date(today.getTime() + parseInt(dateRange, 10) * 86400000)
-      : null;
+    const pad = n => String(n).padStart(2, "0");
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+    const cutoffStr = dateRange !== "all" ? (() => {
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + parseInt(dateRange, 10));
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    })() : null;
     return [...speakers]
       .filter(sp =>
         (filterCh === "all" || sp.chapterId === filterCh) &&
         (filterSt === "all" || sp.status === filterSt) &&
         (!q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q)) &&
-        (dateRange === "all" || (sp.seminarDate && new Date(sp.seminarDate) >= today && new Date(sp.seminarDate) <= cutoff))
+        (dateRange === "all" || (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr))
       )
       .sort((a, b) => {
         let cmp = 0;

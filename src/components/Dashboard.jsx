@@ -7,7 +7,7 @@ function toDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
-export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers }) {
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate }) {
   const thisWeek = useMemo(
     () => speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate)))),
     [speakers, weekDates]
@@ -128,7 +128,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               {unassignedMS.map(({ ch, dateStr, date }) => {
                 const dl = Math.ceil((date - today) / 86400000);
                 return (
-                  <div key={`${ch.id}|${dateStr}`} style={{ display:"flex", alignItems:"center", gap:6, background:"#FAFAFA", border:"1px solid #ECEFF1", borderRadius:6, padding:"5px 10px", cursor:"pointer" }} onClick={() => setTab("speakers")}>
+                  <div key={`${ch.id}|${dateStr}`} style={{ display:"flex", alignItems:"center", gap:6, background:"#FAFAFA", border:"1px solid #ECEFF1", borderRadius:6, padding:"5px 10px", cursor:"pointer" }} title="クリックで講師を新規登録" onClick={() => onAddForDate ? onAddForDate(dateStr, ch.id) : setTab("speakers")}>
                     <span style={{ fontSize:10, fontWeight:700, color:"#fff", background: ch.color, padding:"1px 6px", borderRadius:10 }}>{ch.short}</span>
                     <span style={{ fontSize:11, fontWeight:600, color:"#37474F" }}>{dateStr}</span>
                     <span style={{ fontSize:10, color: dl <= 14 ? "#E65100" : "#90A4AE" }}>あと{dl}日</span>
