@@ -38,8 +38,8 @@ export default function App() {
   const [showForm,    setShowForm]   = useState(false);
   const [editSpeaker, setEditSpeaker]= useState(null);
   const [docSpeaker,  setDocSpeaker] = useState(null);
-  const [filterCh,    setFilterCh]   = useState("all");
-  const [filterSt,    setFilterSt]   = useState("all");
+  const [filterCh,    setFilterCh]   = useState(() => { try { return localStorage.getItem('spFilterCh') || "all"; } catch { return "all"; } });
+  const [filterSt,    setFilterSt]   = useState(() => { try { return localStorage.getItem('spFilterSt') || "all"; } catch { return "all"; } });
   const [lineModal,   setLineModal]  = useState(null);
   const [emailModal,  setEmailModal] = useState(null);
   const [formUrlModal,setFormUrlModal]=useState(undefined);
@@ -56,7 +56,14 @@ export default function App() {
   const tasksRef = useRef(tasks);
   useEffect(() => { tasksRef.current = tasks; }, [tasks]);
 
-  const showToast = useCallback(msg => { setToast(msg); setTimeout(() => setToast(null), 3000); }, []);
+  const toastTimerRef = useRef(null);
+  const showToast = useCallback((msg, opts) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    const t = typeof msg === "string" ? { msg } : msg;
+    if (opts) Object.assign(t, opts);
+    setToast(t);
+    toastTimerRef.current = setTimeout(() => setToast(null), t.action ? 5000 : 3000);
+  }, []);
   const showConfirm = useCallback((msg, onOk) => setConfirm({ msg, onOk }), []);
 
   const loadData = useCallback(async (silent = false) => {
@@ -92,10 +99,17 @@ export default function App() {
 
   const deleteSpeaker = useCallback(id => {
     showConfirm("この講師データを削除しますか？", async () => {
+      const sp = speakersRef.current.find(s => s.id === id);
       const { error } = await db.from('speakers').delete().eq('id', id);
       if (error) { showToast("⚠ 削除に失敗しました"); return; }
       setSpeakers(prev => prev.filter(s => s.id !== id));
-      showToast("削除しました");
+      showToast("削除しました", {
+        actionLabel: "取り消し",
+        action: async () => {
+          const { error: re } = await db.from('speakers').insert(toDB(sp));
+          if (!re) { setSpeakers(prev => [...prev, sp].sort((a,b) => (a.seminarDate||"").localeCompare(b.seminarDate||""))); showToast("削除を取り消しました ✓"); }
+        }
+      });
     });
   }, [showConfirm, showToast]);
 
@@ -127,6 +141,8 @@ export default function App() {
 
   const onViewDoc     = useCallback(sp => { setDocSpeaker(sp); setTab("document"); }, []);
   const onGoSpeakers  = useCallback((status) => { setTab("speakers"); if (status) setFilterSt(status); }, []);
+  const onSetFilterCh = useCallback(v => { setFilterCh(v); try { localStorage.setItem('spFilterCh', v); } catch {} }, []);
+  const onSetFilterSt = useCallback(v => { setFilterSt(v); try { localStorage.setItem('spFilterSt', v); } catch {} }, []);
   const onEditSpeaker = useCallback(sp => { setEditSpeaker(sp); setShowForm(true); }, []);
   const onAddSpeaker  = useCallback(() => { setEditSpeaker(null); setShowForm(true); }, []);
   const onStatusChange= useCallback((id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }, [updateSpeaker, showToast]);
@@ -141,9 +157,17 @@ export default function App() {
 
   const onDeleteTask = useCallback(id => {
     showConfirm("このタスクを削除しますか？", async () => {
+      const task = tasksRef.current.find(x => x.id === id);
       const { error } = await db.from('tasks').delete().eq('id', id);
       if (error) { showToast("⚠ 削除に失敗しました"); return; }
       setTasks(prev => prev.filter(t => t.id !== id));
+      showToast("タスクを削除しました", {
+        actionLabel: "取り消し",
+        action: async () => {
+          const { error: re } = await db.from('tasks').insert(taskToDB(task));
+          if (!re) { setTasks(prev => [...prev, task]); showToast("削除を取り消しました ✓"); }
+        }
+      });
     });
   }, [showConfirm, showToast]);
 
@@ -319,7 +343,7 @@ export default function App() {
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
         {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} />}
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
-        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
+        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
         {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
         {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
@@ -362,7 +386,14 @@ export default function App() {
         </div>
       )}
 
-      {toast && <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom:20, right:20, background: toast.startsWith("⚠") ? "#B71C1C" : "#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000 }}>{toast}</div>}
+      {toast && (
+        <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom:20, right:20, background: toast.msg?.startsWith("⚠") ? "#B71C1C" : "#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000, display:"flex", alignItems:"center", gap:10 }}>
+          <span>{toast.msg}</span>
+          {toast.action && (
+            <button onClick={() => { setToast(null); toast.action(); }} style={{ background:"rgba(255,255,255,.25)", border:"none", borderRadius:4, color:"#fff", padding:"3px 9px", fontSize:11, cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>{toast.actionLabel || "取り消し"}</button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
