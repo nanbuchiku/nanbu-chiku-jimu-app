@@ -32,12 +32,16 @@
       @media (max-width: 600px) { main { padding: 10px !important; } }
       @keyframes spin { to { transform: rotate(360deg); } }
       nav::-webkit-scrollbar { display: none; }
+      .sp-print-only { display: none; }
       @media print {
         .no-print { display: none !important; }
+        .sp-screen-main { display: none !important; }
+        .sp-print-only { display: block !important; }
         body { background: white !important; }
-        main { padding: 0 !important; max-width: 100% !important; }
+        main { padding: 8px !important; max-width: 100% !important; }
         #print-doc { box-shadow: none !important; border: none !important; max-width: 100% !important; padding: 20px 24px !important; margin: 0 !important; }
         [role="alert"], [role="status"], [role="banner"] { display: none !important; }
+        * { box-shadow: none !important; }
       }
     </style>
   </head>
