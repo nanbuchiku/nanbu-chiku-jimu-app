@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background: #F0F2F5; color: #263238; }
@@ -59,45 +60,47 @@ const SEMINAR_TYPES = [
 ];
 const getSeminarType = id => SEMINAR_TYPES.find(t => t.id === id) || SEMINAR_TYPES[0];
 
-const INIT_SPEAKERS = [
-  // ── モーニングセミナー（MS）──
-  { id:"s1", seminarType:"ms", chapterId:"kawaguchi",     speakerName:"山田 太郎", speakerKana:"やまだ たろう", speakerUnit:"川口単会",     company:"株式会社山田商事",     role:"代表取締役",    seminarDate:"2026-03-10", topic:"経営と人の和",              status:"confirmed", phone:"090-1234-5678", email:"yamada@example.com",    requestDate:"2026-02-15", notes:"駐車場確保が必要", venue:"", lineNotified:true,  materialUrl:"https://drive.google.com/file/d/sample1", materialName:"経営と人の和_資料.pdf" },
-  { id:"s2", seminarType:"ms", chapterId:"kawaguchi_east",speakerName:"鈴木 花子", speakerKana:"すずき はなこ", speakerUnit:"川口東単会",   company:"鈴木コンサルティング", role:"代表",          seminarDate:"2026-03-11", topic:"人を活かす組織づくり",      status:"confirmed", phone:"080-9876-5432", email:"suzuki@example.com",   requestDate:"2026-02-20", notes:"", venue:"", lineNotified:true },
-  { id:"s3", seminarType:"ms", chapterId:"niizashiki",    speakerName:"佐藤 誠",   speakerKana:"さとう まこと", speakerUnit:"新座・志木単会", company:"佐藤建設",             role:"専務取締役",    seminarDate:"2026-03-09", topic:"地域を支える中小企業の使命", status:"pending",   phone:"070-1111-2222", email:"sato@example.com",     requestDate:"2026-02-28", notes:"日程調整中", venue:"", lineNotified:false },
-  { id:"s4", seminarType:"ms", chapterId:"asaka",         speakerName:"田中 博",   speakerKana:"たなか ひろし", speakerUnit:"朝霞単会",     company:"田中医院",             role:"院長",          seminarDate:"2026-03-13", topic:"健康経営のすすめ",          status:"confirmed", phone:"048-222-3333", email:"tanaka@example.com",   requestDate:"2026-02-10", notes:"", venue:"", lineNotified:false },
-  { id:"s5", seminarType:"ms", chapterId:"todawarabi",    speakerName:"伊藤 幸子", speakerKana:"いとう さちこ", speakerUnit:"とだわらび単会", company:"株式会社伊藤フーズ",   role:"取締役",        seminarDate:"2026-03-12", topic:"食を通じた地域貢献",        status:"confirmed", phone:"048-333-4444", email:"ito@example.com",      requestDate:"2026-02-18", notes:"資料50部印刷依頼", venue:"", lineNotified:true },
-  { id:"s6", seminarType:"ms", chapterId:"kawaguchi",     speakerName:"渡辺 正樹", speakerKana:"わたなべ まさき", speakerUnit:"川口単会",   company:"渡辺不動産",           role:"代表取締役社長", seminarDate:"2026-03-17", topic:"不動産から見る地域の未来",  status:"pending",   phone:"090-5555-6666", email:"watanabe@example.com", requestDate:"2026-03-01", notes:"3月上旬確認", venue:"", lineNotified:false },
-  // ── 倫理経営基礎講座（基礎）──
-  { id:"s7", seminarType:"kiso", chapterId:"kawaguchi_east",speakerName:"中村 義明", speakerKana:"なかむら よしあき", speakerUnit:"川口東単会", company:"中村経営研究所",     role:"所長",          seminarDate:"2026-04-05", topic:"倫理経営の基本と実践",      status:"confirmed", phone:"048-100-2200", email:"nakamura@example.com", requestDate:"2026-03-10", notes:"前泊あり", venue:"川口市産業文化センター", lineNotified:false },
-  { id:"s8", seminarType:"kiso", chapterId:"niizashiki",    speakerName:"小川 美穂", speakerKana:"おがわ みほ",    speakerUnit:"新座・志木単会", company:"小川コンサルタント", role:"代表",          seminarDate:"2026-04-12", topic:"職場の人間関係と倫理",      status:"pending",   phone:"090-3333-4444", email:"ogawa@example.com",   requestDate:"2026-03-15", notes:"", venue:"新座市民会館", lineNotified:false },
-  // ── 経営者の集い（集い）──
-  { id:"s9",  seminarType:"tsudoi", chapterId:"asaka",      speakerName:"高橋 龍一", speakerKana:"たかはし りゅういち", speakerUnit:"朝霞単会",  company:"高橋ホールディングス", role:"代表取締役会長", seminarDate:"2026-04-18", topic:"地域経済の未来を拓く",    status:"confirmed", phone:"048-500-6600", email:"takahashi@example.com", requestDate:"2026-03-20", notes:"来賓あり・懇親会あり", venue:"朝霞市民会館大ホール", lineNotified:false },
-  { id:"s10", seminarType:"tsudoi", chapterId:"todawarabi", speakerName:"加藤 誠司", speakerKana:"かとう せいじ",   speakerUnit:"とだわらび単会", company:"加藤商事グループ",   role:"取締役社長",    seminarDate:"2026-05-10", topic:"中小企業の事業承継",      status:"pending",   phone:"048-200-3300", email:"kato@example.com",      requestDate:"2026-03-25", notes:"", venue:"戸田市文化会館", lineNotified:false },
-  // ── イブニングセミナー（イブ）──
-  { id:"s11", seminarType:"evening", chapterId:"kawaguchi", speakerName:"松本 理恵", speakerKana:"まつもと りえ",   speakerUnit:"川口単会",     company:"株式会社松本設計",   role:"代表取締役",    seminarDate:"2026-04-22", topic:"女性リーダーの時代",      status:"confirmed", phone:"090-7777-8888", email:"matsumoto@example.com", requestDate:"2026-03-18", notes:"宿泊不要", venue:"川口西文化センター", lineNotified:true },
-  { id:"s12", seminarType:"evening", chapterId:"niizashiki",speakerName:"木村 浩二", speakerKana:"きむら こうじ",   speakerUnit:"新座・志木単会", company:"木村法律事務所",     role:"弁護士",        seminarDate:"2026-05-20", topic:"企業リスクと法律対策",    status:"pending",   phone:"03-1234-5678", email:"kimura@example.com",    requestDate:"2026-04-01", notes:"前泊あり", venue:"志木駅前市民センター", lineNotified:false },
-  // ── 倫理経営講演会（倫経）──
-  { id:"s13", seminarType:"koen", chapterId:"kawaguchi",    speakerName:"丸山 敬三", speakerKana:"まるやま けいぞう", speakerUnit:"川口単会",   company:"丸山経営塾",         role:"塾長",          seminarDate:"2026-05-30", topic:"経営者の使命と倫理",      status:"confirmed", phone:"03-9999-0000", email:"maruyama@example.com",  requestDate:"2026-04-10", notes:"懇親会あり・来賓多数", venue:"川口総合文化センターリリア", lineNotified:false },
-];
+// ダミーデータ削除済み - データはSupabaseから取得
 
-const INIT_TASKS = [
-  { id:"t1", chapterId:"kawaguchi",     title:"3月の会場予約確認",       dueDate:"2026-03-08", done:false, priority:"high"   },
-  { id:"t2", chapterId:"asaka",         title:"田中先生へお礼状送付",     dueDate:"2026-03-14", done:false, priority:"medium" },
-  { id:"t3", chapterId:"todawarabi",    title:"資料50部印刷",             dueDate:"2026-03-11", done:false, priority:"high"   },
-  { id:"t4", chapterId:"niizashiki",    title:"佐藤先生への日程確認電話", dueDate:"2026-03-09", done:false, priority:"high"   },
-  { id:"t5", chapterId:"kawaguchi_east",title:"4月講師候補リスト作成",    dueDate:"2026-03-20", done:false, priority:"low"    },
-  // 2月完了済みサンプル（ランキング表示用）
-  { id:"d1", chapterId:"kawaguchi_east",title:"2月会場予約",              dueDate:"2026-02-10", done:true, priority:"high",   completedAt:"2026-02-07T09:30:00" },
-  { id:"d2", chapterId:"asaka",         title:"2月講師確認メール",        dueDate:"2026-02-12", done:true, priority:"medium", completedAt:"2026-02-10T14:20:00" },
-  { id:"d3", chapterId:"kawaguchi",     title:"2月資料印刷手配",          dueDate:"2026-02-15", done:true, priority:"high",   completedAt:"2026-02-18T11:00:00" },
-  { id:"d4", chapterId:"todawarabi",    title:"2月お礼状送付",            dueDate:"2026-02-20", done:true, priority:"medium", completedAt:"2026-02-19T16:45:00" },
-  { id:"d5", chapterId:"niizashiki",    title:"2月チラシ原稿確認",        dueDate:"2026-02-18", done:true, priority:"high",   completedAt:"2026-02-22T10:10:00" },
-  { id:"d6", chapterId:"kawaguchi_east",title:"2月お礼状送付",            dueDate:"2026-02-22", done:true, priority:"medium", completedAt:"2026-02-20T09:00:00" },
-  { id:"d7", chapterId:"asaka",         title:"2月会場備品確認",          dueDate:"2026-02-25", done:true, priority:"low",    completedAt:"2026-02-23T15:30:00" },
-  { id:"d8", chapterId:"kawaguchi",     title:"2月チラシ配布",            dueDate:"2026-02-28", done:true, priority:"medium", completedAt:"2026-02-28T17:00:00" },
-  { id:"d9", chapterId:"todawarabi",    title:"2月資料印刷",              dueDate:"2026-02-14", done:true, priority:"high",   completedAt:"2026-02-13T08:30:00" },
-  { id:"d10",chapterId:"niizashiki",    title:"2月講師確認",              dueDate:"2026-02-16", done:true, priority:"high",   completedAt:"2026-02-20T12:00:00" },
-];
+// ダミーデータ削除済み - データはSupabaseから取得
+
+// ── Supabase設定 ──────────────────────────────────────────────────
+const SUPABASE_URL = 'https://leqavpnmtylmankbcdkd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_sAahVVEPRHnLDsOxawsI5w_XtGZe25O';
+const DISTRICT_ID  = '11111111-1111-1111-1111-111111111111';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const fromDB = r => ({
+  id: r.id, chapterId: r.chapter_id, seminarType: r.seminar_type,
+  speakerName: r.speaker_name, speakerKana: r.speaker_kana, speakerUnit: r.speaker_unit,
+  company: r.company, role: r.role, seminarDate: r.seminar_date, topic: r.topic,
+  status: r.status, phone: r.phone, email: r.email, requestDate: r.request_date,
+  notes: r.notes, venue: r.venue, lineNotified: r.line_notified,
+  materialUrl: r.material_url, materialName: r.material_name,
+  lodging: r.lodging, printRequired: r.print_required,
+  speakerChecks: r.speaker_checks || {}, calendarAdded: r.calendar_added,
+  drinksAlcohol: r.drinks_alcohol, shioriArticle: r.shiori_article, postNotes: r.post_notes,
+});
+const toDB = o => ({
+  id: o.id, chapter_id: o.chapterId, district_id: DISTRICT_ID,
+  seminar_type: o.seminarType, speaker_name: o.speakerName, speaker_kana: o.speakerKana,
+  speaker_unit: o.speakerUnit, company: o.company, role: o.role,
+  seminar_date: o.seminarDate, topic: o.topic, status: o.status,
+  phone: o.phone, email: o.email, request_date: o.requestDate, notes: o.notes,
+  venue: o.venue, line_notified: o.lineNotified, material_url: o.materialUrl,
+  material_name: o.materialName, lodging: o.lodging, print_required: o.printRequired,
+  speaker_checks: o.speakerChecks || {}, calendar_added: o.calendarAdded,
+  drinks_alcohol: o.drinksAlcohol, shiori_article: o.shioriArticle, post_notes: o.postNotes,
+});
+const taskFromDB = r => ({
+  id: r.id, chapterId: r.chapter_id, title: r.title, dueDate: r.due_date,
+  done: r.done, priority: r.priority, completedAt: r.completed_at,
+});
+const taskToDB = o => ({
+  id: o.id, chapter_id: o.chapterId, district_id: DISTRICT_ID,
+  title: o.title, due_date: o.dueDate, done: o.done,
+  priority: o.priority, completed_at: o.completedAt,
+});
 
 // ── ユーティリティ ────────────────────────────────────────────────
 const getChapter = id => CHAPTERS.find(c => c.id === id);
@@ -119,10 +122,7 @@ const isSameDay = (a, b) =>
   a.getMonth()    === b.getMonth()    &&
   a.getDate()     === b.getDate();
 
-const loadLS = (key, fallback) => {
-  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
-};
-const saveLS = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} };
+// localStorage廃止 - Supabaseを使用
 
 // ── 講師ごとのタスク自動生成（フォーム回答に基づく）──────────────
 function buildSpeakerTasks(sp) {
@@ -163,8 +163,9 @@ function buildSpeakerTasks(sp) {
 // ── メインアプリ ──────────────────────────────────────────────────
 function App() {
   const [tab,         setTab]        = useState("dashboard");
-  const [speakers,    setSpeakers]   = useState(() => loadLS("sp_rinri", INIT_SPEAKERS));
-  const [tasks,       setTasks]      = useState(() => loadLS("tk_rinri", INIT_TASKS));
+  const [speakers,    setSpeakers]   = useState([]);
+  const [tasks,       setTasks]      = useState([]);
+  const [loading,     setLoading]    = useState(true);
   const [weekOffset,  setWeekOffset] = useState(0);
   const [showForm,    setShowForm]   = useState(false);
   const [editSpeaker, setEditSpeaker]= useState(null);
@@ -181,22 +182,41 @@ function App() {
 
   const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-  const saveSpeakers = sp => { setSpeakers(sp); saveLS("sp_rinri", sp); };
-  const saveTasks    = tk => { setTasks(tk);    saveLS("tk_rinri", tk); };
+  useEffect(() => {
+    (async () => {
+      const [{ data: spData }, { data: tkData }] = await Promise.all([
+        db.from('speakers').select('*').eq('district_id', DISTRICT_ID).order('seminar_date'),
+        db.from('tasks').select('*').eq('district_id', DISTRICT_ID).order('due_date'),
+      ]);
+      if (spData) setSpeakers(spData.map(fromDB));
+      if (tkData) setTasks(tkData.map(taskFromDB));
+      setLoading(false);
+    })();
+  }, []);
 
-  const updateSpeaker = (id, patch) => saveSpeakers(speakers.map(s => s.id === id ? { ...s, ...patch } : s));
+  const updateSpeaker = async (id, patch) => {
+    const sp = speakers.find(s => s.id === id);
+    const updated = { ...sp, ...patch };
+    await db.from('speakers').update(toDB(updated)).eq('id', id);
+    setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
+  };
 
-  const deleteSpeaker = id => {
+  const deleteSpeaker = async id => {
     if (!confirm("削除しますか？")) return;
-    saveSpeakers(speakers.filter(s => s.id !== id));
+    await db.from('speakers').delete().eq('id', id);
+    setSpeakers(prev => prev.filter(s => s.id !== id));
     showToast("削除しました");
   };
 
-  const addOrUpdateSpeaker = data => {
-    const updated = data.id
-      ? speakers.map(s => s.id === data.id ? data : s)
-      : [...speakers, { ...data, id: `s${Date.now()}`, lineNotified: false }];
-    saveSpeakers(updated);
+  const addOrUpdateSpeaker = async data => {
+    if (data.id) {
+      await db.from('speakers').update(toDB(data)).eq('id', data.id);
+      setSpeakers(prev => prev.map(s => s.id === data.id ? data : s));
+    } else {
+      const newSp = { ...data, id: `s${Date.now()}`, lineNotified: false };
+      await db.from('speakers').insert(toDB(newSp));
+      setSpeakers(prev => [...prev, newSp]);
+    }
     setShowForm(false); setEditSpeaker(null);
     showToast(data.id ? "変更を保存しました ✓" : "新規登録しました ✓");
   };
@@ -236,6 +256,14 @@ function App() {
     navBadge:{ background:"#EF5350", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10 },
   };
 
+  if (loading) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
+      <div style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #1A3A6B", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
+      <div style={{ color:"#1A3A6B", fontSize:14, fontWeight:600 }}>データを読み込み中...</div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+
   return (
     <div style={{ fontFamily:"'Hiragino Kaku Gothic ProN','Meiryo',sans-serif", background:"#F0F2F5", minHeight:"100vh", color:"#263238" }}>
       <header style={hdr.header}>
@@ -268,7 +296,25 @@ function App() {
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={sp => { setDocSpeaker(sp); setTab("document"); }} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
-        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={id => saveTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null } : t))} onDelete={id => saveTasks(tasks.filter(t => t.id !== id))} onAdd={() => { if (!newTask.title || !newTask.dueDate) return; saveTasks([...tasks, { ...newTask, id: `t${Date.now()}`, done: false }]); setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" }); showToast("タスクを追加しました ✓"); }} />}
+        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask}
+            onToggle={async id => {
+              const t = tasks.find(x => x.id === id);
+              const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };
+              await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+              setTasks(prev => prev.map(x => x.id === id ? updated : x));
+            }}
+            onDelete={async id => {
+              await db.from('tasks').delete().eq('id', id);
+              setTasks(prev => prev.filter(t => t.id !== id));
+            }}
+            onAdd={async () => {
+              if (!newTask.title || !newTask.dueDate) return;
+              const t = { ...newTask, id: `t${Date.now()}`, done: false };
+              await db.from('tasks').insert(taskToDB(t));
+              setTasks(prev => [...prev, t]);
+              setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
+              showToast("タスクを追加しました ✓");
+            }} />}
         {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "flyer"     && <FlyerView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
