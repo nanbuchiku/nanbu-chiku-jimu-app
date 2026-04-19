@@ -23,11 +23,15 @@
       button:active:not(:disabled) { opacity: .75; }
       select, input, textarea { outline: none; font-family: inherit; }
       select:focus, input:focus, textarea:focus { border-color: #1A3A6B !important; box-shadow: 0 0 0 2px rgba(26,58,107,.1); }
+      button:focus-visible { outline: 2px solid #64B5F6; outline-offset: 2px; }
+      html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
       ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: #F5F5F5; }
       ::-webkit-scrollbar-thumb { background: #CFD8DC; border-radius: 3px; }
       ::-webkit-scrollbar-thumb:hover { background: #90A4AE; }
       @media (max-width: 600px) { main { padding: 10px !important; } }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      nav::-webkit-scrollbar { display: none; }
       @media print {
         .no-print { display: none !important; }
         body { background: white !important; }

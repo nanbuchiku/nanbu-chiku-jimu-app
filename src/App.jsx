@@ -22,7 +22,7 @@ const HDR = {
   appTitle:{ margin:0, fontSize:18, fontWeight:700, letterSpacing:"0.04em" },
   chBadges:{ display:"flex", gap:5, flexWrap:"wrap" },
   badge:   { color:"#fff", fontSize:10, padding:"2px 9px", borderRadius:20, fontWeight:600 },
-  nav:     { display:"flex", padding:"0 14px", gap:2, overflowX:"auto" },
+  nav:     { display:"flex", padding:"0 14px", gap:2, overflowX:"auto", WebkitOverflowScrolling:"touch", scrollbarWidth:"none" },
   navBtn:  { background:"transparent", border:"none", color:"rgba(255,255,255,.7)", padding:"9px 14px", cursor:"pointer", fontSize:12, fontWeight:500, borderBottom:"3px solid transparent", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap", flexShrink:0 },
   navOn:   { color:"#fff", borderBottomColor:"#64B5F6" },
   navBadge:{ background:"#EF5350", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10 },
@@ -208,7 +208,6 @@ export default function App() {
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
       <div aria-hidden="true" style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #1A3A6B", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
       <div style={{ color:"#1A3A6B", fontSize:14, fontWeight:600 }}>データを読み込み中...</div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 

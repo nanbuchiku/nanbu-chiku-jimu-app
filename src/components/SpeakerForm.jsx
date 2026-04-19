@@ -6,10 +6,15 @@ import { OV, MOD, MH, BP, BC, INP } from '../styles';
 const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"" };
 
 export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
-  const [form, setForm] = useState(() => initial || { ...BLANK, requestDate: new Date().toISOString().slice(0,10) });
+  const [form, setForm] = useState(() => {
+    if (initial) return initial;
+    const savedChapter = (() => { try { return localStorage.getItem('form_lastChapter') || "kawaguchi"; } catch { return "kawaguchi"; } })();
+    return { ...BLANK, chapterId: savedChapter, requestDate: new Date().toISOString().slice(0,10) };
+  });
   const [err, setErr] = useState("");
   const set = (k, v) => {
     setErr("");
+    if (k === 'chapterId') { try { localStorage.setItem('form_lastChapter', v); } catch {} }
     setForm(f => {
       const next = { ...f, [k]: v };
       if (k === 'seminarType' || k === 'chapterId') {
