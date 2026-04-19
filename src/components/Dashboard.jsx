@@ -17,6 +17,19 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     return tasks.filter(t => !t.done && t.dueDate && t.dueDate < todayStr).length;
   }, [tasks, today]);
 
+  const materialPending = useMemo(() => {
+    const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14);
+    const cutoffStr = toDateStr(cutoff);
+    const todayStr = toDateStr(today);
+    return speakers.filter(sp =>
+      sp.status !== "cancelled" &&
+      sp.seminarDate &&
+      sp.seminarDate >= todayStr &&
+      sp.seminarDate <= cutoffStr &&
+      !sp.materialUrl
+    ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today]);
+
   const unassignedMS = useMemo(() => {
     const assigned = new Set(speakers.filter(sp => sp.seminarType === "ms" || !sp.seminarType).map(sp => `${sp.chapterId}|${sp.seminarDate}`));
     const result = [];
@@ -56,6 +69,24 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           </div>
         ))}
       </div>
+
+      {materialPending.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #E65100", padding:"10px 14px", background:"#FFF8E1" }}>
+          <div style={{ fontSize:12, fontWeight:700, color:"#E65100", marginBottom:6 }}>
+            📭 顔写真・資料未受領（14日以内の開催）　{materialPending.length}件
+          </div>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            {materialPending.map(sp => {
+              const ch = getChapter(sp.chapterId);
+              return (
+                <span key={sp.id} style={{ fontSize:11, background:"#FFF3CD", border:"1px solid #FFE082", borderRadius:6, padding:"3px 9px", color:"#E65100", fontWeight:600 }}>
+                  {sp.seminarDate} {ch.name} {sp.speakerName}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
         <div>
