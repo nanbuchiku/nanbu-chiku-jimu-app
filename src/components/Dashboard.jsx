@@ -10,7 +10,7 @@ export default function Dashboard({ speakers, tasks, weekDates, today, onView, s
     <div>
       <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B", marginBottom:13 }}>ダッシュボード</div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:10, marginBottom:14 }}>
         {[
           { label:"今週の開催",  val: thisWeek.length,                                     sub:"/5単会", color:"#1A3A6B" },
           { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20" },
@@ -24,7 +24,7 @@ export default function Dashboard({ speakers, tasks, weekDates, today, onView, s
         ))}
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
         <div>
           <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>今週のモーニングセミナー</div>
           <div style={CARD}>

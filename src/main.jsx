@@ -14,6 +14,9 @@ select:focus, input:focus, textarea:focus { border-color: #1A3A6B !important; bo
   #print-doc { box-shadow: none !important; border: none !important; }
   body { background: white !important; }
 }
+@media (max-width: 600px) {
+  main { padding: 10px 10px !important; }
+}
 `;
 document.head.appendChild(style);
 
