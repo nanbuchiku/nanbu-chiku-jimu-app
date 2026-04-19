@@ -130,7 +130,16 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
           <select aria-label="担当単会" style={SEL} value={newTask.chapterId} onChange={e => setNewTask({ ...newTask, chapterId: e.target.value })}>
             {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
           </select>
-          <input aria-label="期限" type="date" style={INP} value={newTask.dueDate} onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })} />
+          <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+            <input aria-label="期限" type="date" style={INP} value={newTask.dueDate} onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })} />
+            <div style={{ display:"flex", gap:3 }}>
+              {[["今日",0],["明日",1],["1週",7],["2週",14]].map(([label, days]) => {
+                const d = new Date(today); d.setDate(d.getDate() + days);
+                const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                return <button key={label} type="button" onClick={() => setNewTask(t => ({ ...t, dueDate: ds }))} style={{ fontSize:9, padding:"1px 5px", borderRadius:8, border:`1px solid ${newTask.dueDate===ds?"#1A3A6B":"#CFD8DC"}`, background: newTask.dueDate===ds?"#1A3A6B":"#fff", color: newTask.dueDate===ds?"#fff":"#546E7A", cursor:"pointer", fontWeight:700 }}>{label}</button>;
+              })}
+            </div>
+          </div>
           <select aria-label="優先度" style={SEL} value={newTask.priority} onChange={e => setNewTask({ ...newTask, priority: e.target.value })}>
             <option value="high">🔴 高</option>
             <option value="medium">🟡 中</option>
