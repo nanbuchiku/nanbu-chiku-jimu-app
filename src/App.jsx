@@ -272,7 +272,7 @@ export default function App() {
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
-        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} />}
+        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} showToast={showToast} />}
         {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "flyer"     && <FlyerView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}

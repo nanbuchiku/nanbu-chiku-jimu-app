@@ -1,11 +1,11 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
 
-export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
+export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd, showToast }) {
   const [showDone, setShowDone] = useState(false);
 
   const visible = useMemo(
@@ -14,6 +14,19 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
   );
   const undoneCount = useMemo(() => tasks.filter(t => !t.done).length, [tasks]);
 
+  const exportCSV = useCallback(() => {
+    const headers = ["単会","タスク内容","期限","優先度","ステータス","完了日時"];
+    const rows = visible.map(t => {
+      const ch = getChapter(t.chapterId);
+      return [ch.name, t.title, t.dueDate, PRIO[t.priority]?.label || t.priority, t.done ? "完了" : "未完了", t.completedAt ? t.completedAt.slice(0,16).replace("T"," ") : ""];
+    });
+    const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"})), download:`タスク一覧_${new Date().toISOString().slice(0,10)}.csv` });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast?.("CSVをエクスポートしました 📥");
+  }, [visible, showToast]);
+
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
@@ -21,9 +34,12 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
           タスク管理
           {undoneCount > 0 && <span style={{ fontSize:12, fontWeight:400, color:"#BF360C", marginLeft:8 }}>未完了 {undoneCount}件</span>}
         </div>
-        <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F", marginLeft:"auto" }} onClick={() => setShowDone(v => !v)}>
-          {showDone ? "完了を隠す" : "完了済も表示"}
-        </button>
+        <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
+          <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setShowDone(v => !v)}>
+            {showDone ? "完了を隠す" : "完了済も表示"}
+          </button>
+          <button style={{ background:"#2E7D32", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:700 }} onClick={exportCSV}>📥 CSV</button>
+        </div>
       </div>
 
       <div style={{ ...CARD, marginBottom:12 }}>

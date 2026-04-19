@@ -12,12 +12,17 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
     [tasks]
   );
+  const overdueCount = useMemo(() =>
+    tasks.filter(t => !t.done && t.dueDate && new Date(t.dueDate) < today).length,
+  [tasks, today]);
+
   const stats = useMemo(() => [
     { label:"今週の開催",  val: thisWeek.length,                                      sub:"/5単会", color:"#1A3A6B", action: () => setTab("calendar") },
     { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
     { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
     { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A", action: () => setTab("tasks") },
-  ], [thisWeek, speakers, tasks, setTab, onGoSpeakers]);
+    ...(overdueCount > 0 ? [{ label:"期限超過",    val: overdueCount,                 sub:"件 ⚠",  color:"#B71C1C", action: () => setTab("tasks") }] : []),
+  ], [thisWeek, speakers, tasks, overdueCount, setTab, onGoSpeakers]);
 
   return (
     <div>
