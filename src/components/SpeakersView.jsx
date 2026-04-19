@@ -150,6 +150,13 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           </table>
         </div>
       </div>
+      <div style={{ marginTop:8, display:"flex", gap:6, flexWrap:"wrap" }}>
+        {Object.entries(STATUS).map(([k, v]) => {
+          const count = speakers.filter(sp => sp.status === k).length;
+          if (count === 0) return null;
+          return <span key={k} style={{ fontSize:11, padding:"3px 10px", borderRadius:12, fontWeight:600, color: v.color, background: v.bg, border:`1px solid ${v.color}33` }}>{v.label} {count}件</span>;
+        })}
+      </div>
       <div style={{ marginTop:10, padding:"10px 14px", background:"#E8F5E9", borderRadius:6, fontSize:11, color:"#2E7D32", display:"flex", alignItems:"center", gap:8 }}>
         <span style={{ fontSize:16 }}>🤖</span>
         <div>

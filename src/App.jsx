@@ -175,6 +175,11 @@ export default function App() {
   ], [speakers, tasks, sptasksBadge]);
 
   useEffect(() => {
+    const tabLabel = TABS.find(t => t.id === tab)?.label;
+    document.title = tabLabel ? `${tabLabel} | 南部地区5単会タスク管理` : "南部地区5単会タスク管理";
+  }, [tab, TABS]);
+
+  useEffect(() => {
     const onKey = e => {
       if (e.key !== "Escape") return;
       if (showForm) { setShowForm(false); setEditSpeaker(null); }

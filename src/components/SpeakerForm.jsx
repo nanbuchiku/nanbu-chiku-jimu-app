@@ -49,7 +49,7 @@ export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
                   {o.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
                 </select>
               ) : (
-                <input disabled={saving} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
+                <input disabled={saving} autoFocus={k === "speakerName"} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
               )}
             </div>
           ))}
