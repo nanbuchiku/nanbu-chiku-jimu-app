@@ -28,7 +28,7 @@ export default function App() {
   const [filterSt,    setFilterSt]   = useState("all");
   const [lineModal,   setLineModal]  = useState(null);
   const [emailModal,  setEmailModal] = useState(null);
-  const [formUrlModal,setFormUrlModal]=useState(null);
+  const [formUrlModal,setFormUrlModal]=useState(undefined);
   const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
   const [toast,       setToast]      = useState(null);
 
@@ -172,7 +172,7 @@ export default function App() {
 
       {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={() => { setShowForm(false); setEditSpeaker(null); }} />}
       {emailModal && <EmailModal speaker={emailModal} onClose={() => setEmailModal(null)} onDone={() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }} />}
-      {formUrlModal !== undefined && formUrlModal !== false && <FormURLModal speaker={formUrlModal} onClose={() => setFormUrlModal(null)} showToast={showToast} />}
+      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={() => setFormUrlModal(undefined)} showToast={showToast} />}
 
       {lineModal && (
         <div style={OV} onClick={() => setLineModal(null)}>
