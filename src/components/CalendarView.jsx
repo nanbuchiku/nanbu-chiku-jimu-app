@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { isSameDay } from '../utils';
 
-export default function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, onSpeaker }) {
+export default memo(function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, onSpeaker }) {
   const label = useMemo(() => {
     const a = weekDates[1], b = weekDates[5];
     return `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日 〜 ${b.getMonth()+1}月${b.getDate()}日`;
@@ -74,4 +74,4 @@ export default function CalendarView({ speakers, weekDates, weekOffset, setWeekO
       </div>
     </div>
   );
-}
+});

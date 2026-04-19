@@ -1,21 +1,31 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter } from '../utils';
-import { CARD, BP, BSM, SEL, TBL, TH, TD, PILL } from '../styles';
+import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
-export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
-  const filtered = useMemo(() =>
-    [...speakers]
-      .filter(sp => (filterCh === "all" || sp.chapterId === filterCh) && (filterSt === "all" || sp.status === filterSt))
-      .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate)),
-    [speakers, filterCh, filterSt]
-  );
+export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return [...speakers]
+      .filter(sp =>
+        (filterCh === "all" || sp.chapterId === filterCh) &&
+        (filterSt === "all" || sp.status === filterSt) &&
+        (!q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q))
+      )
+      .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate));
+  }, [speakers, filterCh, filterSt, search]);
 
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>講師管理</div>
-        <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>
+          講師管理
+          <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{filtered.length}/{speakers.length}件</span>
+        </div>
+        <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
+          <input style={{ ...INP, width:160, fontSize:11 }} placeholder="🔍 名前・会社・テーマ検索" value={search} onChange={e => setSearch(e.target.value)} />
           <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
             <option value="all">全単会</option>
             {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
@@ -62,14 +72,14 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
                     </td>
                     <td style={TD}>
                       <div style={{ display:"flex", gap:3, flexDirection:"column" }}>
-                        <button style={{ ...BSM, background:"#1A3A6B", color:"#fff", fontSize:10 }} onClick={() => onEmail(sp)}>📧 メール</button>
+                        <button style={{ ...BSM, background:"#1A3A6B", color:"#fff", fontSize:10 }} title="メール送信" onClick={() => onEmail(sp)}>📧 メール</button>
                         {sp.lineNotified ? (
                           <div style={{ display:"flex", alignItems:"center", gap:3 }}>
                             <span style={{ color:"#06C755", fontSize:10, fontWeight:600 }}>✓LINE済</span>
-                            <button style={{ ...BSM, fontSize:9, color:"#78909C", padding:"1px 4px" }} onClick={() => { updateSpeaker(sp.id,{lineNotified:false}); showToast("LINE未送信に戻しました"); }}>↩</button>
+                            <button style={{ ...BSM, fontSize:9, color:"#78909C", padding:"1px 4px" }} title="LINE送信済をリセット" onClick={() => { updateSpeaker(sp.id,{lineNotified:false}); showToast("LINE未送信に戻しました"); }}>↩</button>
                           </div>
                         ) : (
-                          <button style={{ ...BSM, background:"#06C755", color:"#fff", fontSize:10 }} onClick={() => onLine(sp)}>📱 LINE</button>
+                          <button style={{ ...BSM, background:"#06C755", color:"#fff", fontSize:10 }} title="LINEメッセージを作成" onClick={() => onLine(sp)}>📱 LINE</button>
                         )}
                       </div>
                     </td>
@@ -77,7 +87,7 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
                       {sp.calendarAdded ? (
                         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
                           <span style={{ color:"#2E7D32", fontSize:11, fontWeight:600 }}>✓ 転記済</span>
-                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} onClick={() => { updateSpeaker(sp.id,{calendarAdded:false}); showToast("未転記に戻しました"); }}>↩</button>
+                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} title="未転記に戻す" onClick={() => { updateSpeaker(sp.id,{calendarAdded:false}); showToast("未転記に戻しました"); }}>↩</button>
                         </div>
                       ) : (
                         <button style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", border:"1px solid #90CAF9", fontSize:10 }} onClick={() => { updateSpeaker(sp.id,{calendarAdded:true}); showToast("カレンダー転記済にしました 📅"); }}>📅 転記済にする</button>
@@ -98,7 +108,19 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
                   </tr>
                 );
               })}
-              {filtered.length === 0 && <tr><td colSpan={10} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:28 }}>該当データなし</td></tr>}
+              {filtered.length === 0 && (
+                <tr><td colSpan={10} style={{ ...TD, textAlign:"center", padding:32 }}>
+                  <div style={{ color:"#90A4AE", fontSize:13, marginBottom:10 }}>
+                    {search || filterCh !== "all" || filterSt !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
+                  </div>
+                  {(search || filterCh !== "all" || filterSt !== "all") && (
+                    <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 14px", fontSize:12, cursor:"pointer", color:"#546E7A", fontWeight:600 }}
+                      onClick={() => { setSearch(""); setFilterCh("all"); setFilterSt("all"); }}>
+                      フィルターをリセット
+                    </button>
+                  )}
+                </td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -112,4 +134,4 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
       </div>
     </div>
   );
-}
+});

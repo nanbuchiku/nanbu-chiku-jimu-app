@@ -114,6 +114,12 @@ export default function App() {
     setLineModal({ msg, speakerId: sp.id });
   }, []);
 
+  const onViewDoc     = useCallback(sp => { setDocSpeaker(sp); setTab("document"); }, []);
+  const onGoSpeakers  = useCallback((status) => { setTab("speakers"); if (status) setFilterSt(status); }, []);
+  const onEditSpeaker = useCallback(sp => { setEditSpeaker(sp); setShowForm(true); }, []);
+  const onAddSpeaker  = useCallback(() => { setEditSpeaker(null); setShowForm(true); }, []);
+  const onStatusChange= useCallback((id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }, [updateSpeaker, showToast]);
+
   const sptasksBadge = useMemo(() => {
     const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 90);
     let n = 0;
@@ -194,9 +200,9 @@ export default function App() {
       </header>
 
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
-        {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={sp => { setDocSpeaker(sp); setTab("document"); }} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={(status) => { setTab("speakers"); if (status) setFilterSt(status); }} />}
-        {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={sp => { setDocSpeaker(sp); setTab("document"); }} />}
-        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
+        {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} />}
+        {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} />}
+        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
         {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask}
             onToggle={async id => {

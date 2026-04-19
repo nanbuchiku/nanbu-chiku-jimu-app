@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
-export default function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
+export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
   const [showDone, setShowDone] = useState(false);
-  const visible = tasks.filter(t => showDone || !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
+
+  const visible = useMemo(
+    () => tasks.filter(t => showDone || !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)),
+    [tasks, showDone]
+  );
+  const undoneCount = useMemo(() => tasks.filter(t => !t.done).length, [tasks]);
 
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>タスク管理</div>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>
+          タスク管理
+          {undoneCount > 0 && <span style={{ fontSize:12, fontWeight:400, color:"#BF360C", marginLeft:8 }}>未完了 {undoneCount}件</span>}
+        </div>
         <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F", marginLeft:"auto" }} onClick={() => setShowDone(v => !v)}>
           {showDone ? "完了を隠す" : "完了済も表示"}
         </button>
@@ -53,15 +61,15 @@ export default function TasksView({ tasks, today, newTask, setNewTask, onToggle,
                     <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
                     <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? "超過" : `${dl}日`}</span></td>
                     <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
-                    <td style={TD}>{!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button>}</td>
+                    <td style={TD}>{!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} title="タスクを削除" onClick={() => onDelete(t.id)}>×</button>}</td>
                   </tr>
                 );
               })}
-              {visible.length === 0 && <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>タスクなし</td></tr>}
+              {visible.length === 0 && <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>{showDone ? "タスクなし" : "未完了タスクなし ✓"}</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   );
-}
+});
