@@ -134,13 +134,15 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
         })}
       </div>
 
-      {filtered.filter(sp => {
-        const allDone = getProgress(sp).done === getProgress(sp).total;
-        if (filterDone === "done"   && !allDone) return false;
-        if (filterDone === "undone" && allDone)  return false;
-        return true;
-      }).length === 0 && (
+      {filtered.every(sp => {
+        const { done, total } = getProgress(sp);
+        const allDone = done === total;
+        return (filterDone === "done" && !allDone) || (filterDone === "undone" && allDone);
+      }) && filtered.length > 0 && (
         <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>該当する講師タスクがありません</div>
+      )}
+      {filtered.length === 0 && (
+        <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>講師データがありません</div>
       )}
     </div>
   );
