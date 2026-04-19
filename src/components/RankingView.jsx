@@ -1,7 +1,7 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
-import { CARD, TBL, TH, TD, SEL, PILL } from '../styles';
+import { CARD, TBL, TH, TD, SEL, PILL, BC } from '../styles';
 
 const MEDALS = ["🥇","🥈","🥉","4位","5位"];
 
@@ -34,6 +34,25 @@ export default memo(function RankingView({ tasks, today }) {
 
   const maxAbs = useMemo(() => Math.max(...ranking.filter(r => r.avgDays !== null).map(r => Math.abs(r.avgDays)), 1), [ranking]);
 
+  const exportCSV = useCallback(() => {
+    const headers = ["単会","開催日","タスク内容","期限","完了日時","早/遅（日）"];
+    const rows = tasks
+      .filter(t => t.done && t.completedAt && t.completedAt.startsWith(selMonth))
+      .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+      .map(t => {
+        const ch = getChapter(t.chapterId);
+        const days = Math.ceil((new Date(t.dueDate) - new Date(t.completedAt)) / 86400000);
+        return [ch.name, t.dueDate, t.title, t.dueDate, t.completedAt?.slice(0,16).replace("T"," "), days >= 0 ? `+${days}` : `${days}`];
+      });
+    const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(new Blob(["\ufeff"+csv], { type:"text/csv;charset=utf-8;" })),
+      download: `完了ランキング_${selMonth}.csv`,
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, [tasks, selMonth]);
+
   const allTimeStats = useMemo(() => CHAPTERS.map(ch => {
     const done = tasks.filter(t => t.done && t.completedAt && t.chapterId === ch.id);
     if (done.length === 0) return { ch, count: 0, avgDays: null };
@@ -48,6 +67,7 @@ export default memo(function RankingView({ tasks, today }) {
         <select style={{ ...SEL, marginLeft:"auto" }} value={selMonth} onChange={e => setSelMonth(e.target.value)}>
           {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
+        <button style={{ ...BC, fontSize:11 }} onClick={exportCSV}>📥 CSV</button>
       </div>
 
       <div style={{ display:"grid", gap:10, marginBottom:16 }}>

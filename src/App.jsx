@@ -30,8 +30,27 @@ const HDR = {
 };
 
 export default function App() {
-  const [tab,         setTabRaw]     = useState(() => { try { return localStorage.getItem('lastTab') || "dashboard"; } catch { return "dashboard"; } });
-  const setTab = useCallback(t => { setTabRaw(t); try { localStorage.setItem('lastTab', t); } catch {} }, []);
+  const [tab, setTabRaw] = useState(() => {
+    try {
+      const hash = window.location.hash.slice(1);
+      if (["dashboard","calendar","speakers","document","sptasks","flyer","tasks","ranking"].includes(hash)) return hash;
+      return localStorage.getItem('lastTab') || "dashboard";
+    } catch { return "dashboard"; }
+  });
+  const setTab = useCallback(t => {
+    setTabRaw(t);
+    try { localStorage.setItem('lastTab', t); } catch {}
+    try { window.location.hash = t; } catch {}
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash.slice(1);
+      if (["dashboard","calendar","speakers","document","sptasks","flyer","tasks","ranking"].includes(hash)) setTabRaw(hash);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   const [speakers,    setSpeakers]   = useState(() => { try { const c = localStorage.getItem('cachedSpeakers'); return c ? JSON.parse(c) : []; } catch { return []; } });
   const [tasks,       setTasks]      = useState(() => { try { const c = localStorage.getItem('cachedTasks'); return c ? JSON.parse(c) : []; } catch { return []; } });
   const [loading,     setLoading]    = useState(() => { try { return !localStorage.getItem('cachedSpeakers'); } catch { return true; } });
