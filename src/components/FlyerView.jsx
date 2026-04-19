@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { CHAPTERS, JIMU } from '../constants';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL } from '../styles';
 
-export default function FlyerView({ speakers, today, updateSpeaker, showToast }) {
+export default memo(function FlyerView({ speakers, today, updateSpeaker, showToast }) {
   const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
@@ -187,4 +187,4 @@ export default function FlyerView({ speakers, today, updateSpeaker, showToast })
       )}
     </div>
   );
-}
+});

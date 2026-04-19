@@ -127,6 +127,7 @@ export default function SpeakerForm({ initial, onSave, onClose, saving }) {
           <button style={{ ...BP, opacity: saving ? .6 : 1 }} disabled={saving} onClick={() => {
             if (!form.speakerName) return setErr("講師名は必須です");
             if (!form.seminarDate) return setErr("開催日は必須です");
+            if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("メールアドレスの形式が正しくありません");
             onSave(form);
           }}>
             {saving ? "⏳ 保存中..." : initial ? "💾 変更を保存" : "✓ 登録する"}

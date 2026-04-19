@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter, buildSpeakerTasks } from '../utils';
 import { CARD, BP, BC, SEL, PILL } from '../styles';
@@ -11,7 +11,7 @@ const TASK_CATEGORY_COLOR = {
   "講話後": "#546E7A",
 };
 
-export default function SpeakerTasksView({ speakers, today, updateSpeaker, showToast }) {
+export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast }) {
   const [filterCh,   setFilterCh]   = useState("all");
   const [filterDone, setFilterDone] = useState("undone");
   const [expandedId, setExpandedId] = useState(null);
@@ -152,4 +152,4 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
       )}
     </div>
   );
-}
+});

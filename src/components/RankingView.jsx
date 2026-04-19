@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, TBL, TH, TD, SEL, PILL } from '../styles';
 
-export default function RankingView({ tasks, today }) {
+export default memo(function RankingView({ tasks, today }) {
   const months = useMemo(() => {
     const arr = [];
     for (let i = 0; i < 6; i++) {
@@ -14,7 +14,7 @@ export default function RankingView({ tasks, today }) {
   }, [today.getFullYear(), today.getMonth()]);
   const [selMonth, setSelMonth] = useState(() => months[0].value);
 
-  const ranking = CHAPTERS.map(ch => {
+  const ranking = useMemo(() => CHAPTERS.map(ch => {
     const done = tasks.filter(t =>
       t.done && t.completedAt && t.chapterId === ch.id &&
       t.completedAt.startsWith(selMonth)
@@ -28,7 +28,7 @@ export default function RankingView({ tasks, today }) {
     if (a.avgDays === null) return 1;
     if (b.avgDays === null) return -1;
     return b.avgDays - a.avgDays;
-  });
+  }), [tasks, selMonth]);
 
   const MEDALS = ["🥇","🥈","🥉","4位","5位"];
   const maxAbs = Math.max(...ranking.filter(r => r.avgDays !== null).map(r => Math.abs(r.avgDays)), 1);
@@ -121,4 +121,4 @@ export default function RankingView({ tasks, today }) {
       </div>
     </div>
   );
-}
+});
