@@ -54,7 +54,8 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     return speakers.find(sp =>
       sp.chapterId === form.chapterId &&
       sp.seminarDate === form.seminarDate &&
-      sp.id !== form.id
+      sp.id !== form.id &&
+      sp.status !== "cancelled"
     ) || null;
   }, [form.chapterId, form.seminarDate, form.id, speakers]);
 

@@ -24,6 +24,10 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
   );
   const undoneCount = useMemo(() => tasks.filter(t => !t.done).length, [tasks]);
   const doneCount   = useMemo(() => tasks.filter(t => t.done).length, [tasks]);
+  const overdueCount = useMemo(() => {
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    return tasks.filter(t => !t.done && t.dueDate && t.dueDate < todayStr).length;
+  }, [tasks, today]);
 
   const startEdit = useCallback(t => {
     setEditingId(t.id);
@@ -55,9 +59,11 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
           タスク管理
-          {undoneCount > 0 && <span style={{ fontSize:12, fontWeight:400, color:"#BF360C", marginLeft:8 }}>未完了 {undoneCount}件</span>}
+          {overdueCount > 0 && <span style={{ fontSize:11, fontWeight:700, background:"#FFEBEE", color:"#B71C1C", padding:"2px 8px", borderRadius:10 }}>⚠ 超過 {overdueCount}件</span>}
+          {undoneCount > 0 && <span style={{ fontSize:11, fontWeight:400, color:"#BF360C" }}>未完了 {undoneCount}件</span>}
+          {doneCount > 0 && <span style={{ fontSize:11, fontWeight:400, color:"#78909C" }}>完了 {doneCount}件</span>}
         </div>
         <div style={{ display:"flex", gap:6, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
           <select aria-label="単会フィルター" style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
