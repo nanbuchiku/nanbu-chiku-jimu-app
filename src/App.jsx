@@ -154,9 +154,9 @@ export default function App() {
         setSpeakers(prev => prev.map(s => s.id === data.id ? data : s));
       } else {
         const newSp = { ...data, id: `s${Date.now()}`, lineNotified: false };
-        const { error } = await db.from('speakers').insert(toDB(newSp));
+        const { data: inserted, error } = await db.from('speakers').insert(toDB(newSp)).select().single();
         if (error) { showToast("⚠ 登録に失敗しました"); return; }
-        setSpeakers(prev => [...prev, newSp]);
+        setSpeakers(prev => [...prev, inserted ? fromDB(inserted) : newSp]);
       }
       setShowForm(false); setEditSpeaker(null);
       showToast(data.id ? "変更を保存しました ✓" : "新規登録しました ✓");
@@ -235,9 +235,9 @@ export default function App() {
     if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
     if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
     const t = { ...newTask, id: `t${Date.now()}`, done: false };
-    const { error } = await db.from('tasks').insert(taskToDB(t));
+    const { data: inserted, error } = await db.from('tasks').insert(taskToDB(t)).select().single();
     if (error) { showToast("⚠ 追加に失敗しました"); return; }
-    setTasks(prev => [...prev, t]);
+    setTasks(prev => [...prev, inserted ? taskFromDB(inserted) : t]);
     setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
     showToast("タスクを追加しました ✓");
   }, [newTask, showToast]);
