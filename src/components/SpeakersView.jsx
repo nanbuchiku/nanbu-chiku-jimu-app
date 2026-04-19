@@ -12,7 +12,8 @@ const DATE_RANGES = [
 export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [dateRange, setDateRange] = useState("all");
+  const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
+  const setDateRangePersist = useCallback(v => { setDateRange(v); try { localStorage.setItem('sp_dateRange', v); } catch {} }, []);
   const [sortCol, setSortCol] = useState(() => { try { return localStorage.getItem('sp_sortCol') || "date"; } catch { return "date"; } });
   const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('sp_sortDir') || "asc"; } catch { return "asc"; } });
 
@@ -120,11 +121,17 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       <div style={{ display:"flex", gap:5, marginBottom:10, flexWrap:"wrap", alignItems:"center" }}>
         <span style={{ fontSize:11, color:"#78909C", fontWeight:600 }}>期間：</span>
         {DATE_RANGES.map(r => (
-          <button key={r.value} onClick={() => setDateRange(r.value)}
+          <button key={r.value} onClick={() => setDateRangePersist(r.value)}
             style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:`1px solid ${dateRange === r.value ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange === r.value ? "#1A3A6B" : "#fff", color: dateRange === r.value ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: dateRange === r.value ? 700 : 400, transition:"all .15s" }}>
             {r.label}
           </button>
         ))}
+        {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
+          <button onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); }}
+            style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:"1px solid #EF5350", background:"#FFEBEE", color:"#B71C1C", cursor:"pointer", fontWeight:700, marginLeft:4 }}>
+            ✕ フィルターをすべてリセット
+          </button>
+        )}
       </div>
 
       <div style={CARD}>
@@ -242,7 +249,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   </div>
                   {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
                     <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 14px", fontSize:12, cursor:"pointer", color:"#546E7A", fontWeight:600 }}
-                      onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRange("all"); }}>
+                      onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); }}>
                       フィルターをリセット
                     </button>
                   )}
