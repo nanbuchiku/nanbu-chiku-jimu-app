@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, TBL, TH, TD, PILL } from '../styles';
 
 export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
-  const filtered = [...speakers]
-    .filter(sp => (filterCh === "all" || sp.chapterId === filterCh) && (filterSt === "all" || sp.status === filterSt))
-    .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate));
+  const filtered = useMemo(() =>
+    [...speakers]
+      .filter(sp => (filterCh === "all" || sp.chapterId === filterCh) && (filterSt === "all" || sp.status === filterSt))
+      .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate)),
+    [speakers, filterCh, filterSt]
+  );
 
   return (
     <div>

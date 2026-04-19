@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { isSameDay } from '../utils';
 
 export default function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, onSpeaker }) {
-  const a = weekDates[1], b = weekDates[5];
-  const label = `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日 〜 ${b.getMonth()+1}月${b.getDate()}日`;
+  const label = useMemo(() => {
+    const a = weekDates[1], b = weekDates[5];
+    return `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日 〜 ${b.getMonth()+1}月${b.getDate()}日`;
+  }, [weekDates]);
+
+  const speakerByKey = useMemo(() => {
+    const map = new Map();
+    speakers.forEach(sp => {
+      if (sp.seminarDate) map.set(`${sp.chapterId}|${sp.seminarDate}`, sp);
+    });
+    return map;
+  }, [speakers]);
 
   return (
     <div>
@@ -37,7 +47,8 @@ export default function CalendarView({ speakers, weekDates, weekOffset, setWeekO
             </div>
             {weekDates.map((d, i) => {
               const isChDay = d.getDay() === ch.day;
-              const sp = isChDay ? speakers.find(x => x.chapterId === ch.id && isSameDay(new Date(x.seminarDate), d)) : null;
+              const dKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+              const sp = isChDay ? (speakerByKey.get(`${ch.id}|${dKey}`) || null) : null;
               return (
                 <div key={i} style={{ background: isChDay ? ch.light : "#fff", padding:4, minHeight:76, border:`1px solid ${isChDay ? ch.accent : "transparent"}` }}>
                   {isChDay && (sp ? (

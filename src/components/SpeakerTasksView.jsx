@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter, buildSpeakerTasks } from '../utils';
 import { CARD, BP, BC, SEL, PILL } from '../styles';
@@ -16,10 +16,23 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
   const [filterDone, setFilterDone] = useState("undone");
   const [expandedId, setExpandedId] = useState(null);
 
-  const filtered = speakers
-    .filter(sp => sp.status !== "cancelled")
-    .filter(sp => filterCh === "all" || sp.chapterId === filterCh)
-    .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || ""));
+  const filtered = useMemo(() =>
+    speakers
+      .filter(sp => sp.status !== "cancelled")
+      .filter(sp => filterCh === "all" || sp.chapterId === filterCh)
+      .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || "")),
+    [speakers, filterCh]
+  );
+
+  const visible = useMemo(() => {
+    if (filterDone === "all") return filtered;
+    return filtered.filter(sp => {
+      const checks = sp.speakerChecks || {};
+      const tasks = buildSpeakerTasks(sp);
+      const allDone = tasks.every(t => checks[t.id]);
+      return filterDone === "done" ? allDone : !allDone;
+    });
+  }, [filtered, filterDone]);
 
   const toggleTask = (sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
@@ -51,16 +64,13 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:14 }}>
-        {filtered.map(sp => {
+        {visible.map(sp => {
           const ch = getChapter(sp.chapterId);
           const tasks = buildSpeakerTasks(sp);
           const checks = sp.speakerChecks || {};
           const prog = getProgress(sp);
           const allDone = prog.done === prog.total;
           const isExpanded = expandedId === sp.id;
-
-          if (filterDone === "done"   && !allDone) return null;
-          if (filterDone === "undone" && allDone)  return null;
 
           const byCategory = {};
           tasks.forEach(t => {
@@ -134,11 +144,7 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
         })}
       </div>
 
-      {filtered.every(sp => {
-        const { done, total } = getProgress(sp);
-        const allDone = done === total;
-        return (filterDone === "done" && !allDone) || (filterDone === "undone" && allDone);
-      }) && filtered.length > 0 && (
+      {visible.length === 0 && filtered.length > 0 && (
         <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>該当する講師タスクがありません</div>
       )}
       {filtered.length === 0 && (

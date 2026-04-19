@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, isSameDay, formatDate } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
 export default function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl }) {
-  const thisWeek = speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate))));
+  const thisWeek = useMemo(
+    () => speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate)))),
+    [speakers, weekDates]
+  );
+  const topTasks = useMemo(
+    () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
+    [tasks]
+  );
 
   return (
     <div>
@@ -51,7 +58,7 @@ export default function Dashboard({ speakers, tasks, weekDates, today, onView, s
         <div>
           <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>優先タスク（期限近い順）</div>
           <div style={CARD}>
-            {tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5).map(t => {
+            {topTasks.map(t => {
               const ch = getChapter(t.chapterId);
               const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
               return (
@@ -62,7 +69,7 @@ export default function Dashboard({ speakers, tasks, weekDates, today, onView, s
                 </div>
               );
             })}
-            {tasks.filter(t => !t.done).length === 0 && <div style={{ color:"#90A4AE", fontSize:12, textAlign:"center", padding:12 }}>タスクなし ✓</div>}
+            {topTasks.length === 0 && <div style={{ color:"#90A4AE", fontSize:12, textAlign:"center", padding:12 }}>タスクなし ✓</div>}
             <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:12, cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("tasks")}>全タスクを見る →</button>
           </div>
 
