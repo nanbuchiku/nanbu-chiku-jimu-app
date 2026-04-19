@@ -56,6 +56,22 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
 .info-box { background: #E3F2FD; border-left: 4px solid #1565C0; border-radius: 6px; padding: 11px 14px; font-size: 12px; color: #1565C0; line-height: 1.7; }
 
+.event-banner { background: linear-gradient(135deg,#EDE7F6,#E8EAF6); border: 2px solid #7E57C2; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+.event-banner-label { font-size: 11px; font-weight: 700; color: #5E35B1; letter-spacing: .1em; margin-bottom: 8px; }
+.event-banner-body { display: grid; gap: 6px; }
+.event-item { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+.event-label { font-size: 10px; font-weight: 700; color: #7E57C2; min-width: 110px; }
+.event-value { font-size: 13px; color: #311B92; font-weight: 600; }
+.event-note { font-size: 10px; color: #78909C; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #CE93D8; }
+
+.checkbox-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 4px; }
+.zip-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+.btn-zip { background: #5C35CC; color: #fff; border: none; border-radius: 7px; padding: 9px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.btn-zip:hover { background: #4527A0; }
+.btn-zip:disabled { background: #B39DDB; cursor: wait; }
+.zip-help { font-size: 11px; margin-top: 4px; }
+.zip-help a { color: #1565C0; text-decoration: underline; }
+
 .btn-row { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
 .btn-next { background: #1A3A6B; color: #fff; border: none; border-radius: 8px; padding: 12px 32px; font-size: 14px; font-weight: 700; cursor: pointer; letter-spacing: .05em; transition: background .2s; }
 .btn-next:hover { background: #0D2550; }
@@ -104,11 +120,24 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
 <header>
   <div class="org">倫理法人会　南部地区合同事務局</div>
-  <h1>講師依頼確認フォーム</h1>
+  <h1>講話依頼確認フォーム</h1>
   <div class="sub">ご記入いただいた情報はチラシ・確認書に使用します</div>
 </header>
 
 <div class="container">
+
+  <!-- 事務局が入力したイベント情報（確認用） -->
+  <div class="event-banner" id="eventBanner" style="display:none;">
+    <div class="event-banner-label">📅 ご依頼内容の確認</div>
+    <div class="event-banner-body">
+      <div class="event-item"><span class="event-label">講師名</span><span class="event-value" id="ev-name">—</span></div>
+      <div class="event-item"><span class="event-label">所属組織</span><span class="event-value" id="ev-unit">—</span></div>
+      <div class="event-item"><span class="event-label">倫理法人会の役職</span><span class="event-value" id="ev-ethics">—</span></div>
+      <div class="event-item"><span class="event-label">セミナー種別</span><span class="event-value" id="ev-type">—</span></div>
+      <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date">—</span></div>
+    </div>
+    <div class="event-note">※ 記載内容に誤りがある場合は事務局までご連絡ください</div>
+  </div>
 
   <!-- プログレスバー -->
   <div class="progress">
@@ -122,68 +151,34 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
   <div id="page1" class="active">
     <div class="info-box" style="margin-bottom:16px;">
       📋 このフォームはモーニングセミナー講師依頼の確認用です。<br>
-      ご入力いただいた情報は担当事務局が確認いたします。
+      ご入力いただいた情報はチラシ・当日資料として使用いたします。
     </div>
 
     <div class="section-card">
       <div class="section-header">👤 講師プロフィール</div>
       <div class="section-body">
-        <div class="two-col">
-          <div class="field" id="f-name">
-            <label>お名前<span class="req">*</span><span class="hint">フルネーム</span></label>
-            <input type="text" id="speakerName" placeholder="山田 太郎" autocomplete="name">
-            <div class="error-msg">お名前を入力してください</div>
-          </div>
-          <div class="field" id="f-kana">
-            <label>ふりがな<span class="req">*</span><span class="hint">ひらがな</span></label>
-            <input type="text" id="speakerKana" placeholder="やまだ たろう">
-            <div class="error-msg">ふりがなを入力してください</div>
-          </div>
-        </div>
-
-        <div class="two-col">
-          <div class="field">
-            <label>連絡先TEL<span class="hint">半角数字</span></label>
-            <input type="tel" id="phone" placeholder="09012345678">
-          </div>
-          <div class="field" id="f-email">
-            <label>メールアドレス<span class="req">*</span></label>
-            <input type="email" id="email" placeholder="example@email.com" autocomplete="email">
-            <div class="error-msg">メールアドレスを入力してください</div>
-          </div>
-        </div>
-
-        <div class="field" id="f-unit">
-          <label>所属単会<span class="req">*</span><span class="hint">例：川口単会</span></label>
-          <input type="text" id="speakerUnit" placeholder="○○単会">
-          <div class="error-msg">所属単会を入力してください</div>
+        <div class="field" id="f-kana">
+          <label>お名前（ふりがな）<span class="req">*</span><span class="hint">ひらがな</span></label>
+          <input type="text" id="speakerKana" placeholder="やまだ たろう">
+          <div class="error-msg">ふりがなを入力してください</div>
         </div>
 
         <div class="field" id="f-company">
-          <label>企業名<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <label>企業名・法人名<span class="req">*</span><span class="hint">チラシに記載します</span></label>
           <input type="text" id="company" placeholder="株式会社○○">
           <div class="error-msg">企業名を入力してください</div>
         </div>
 
-        <div class="two-col">
-          <div class="field">
-            <label>倫理法人会の役職<span class="hint">会長・幹事など</span></label>
-            <input type="text" id="ethicsRole" placeholder="会長">
-          </div>
-          <div class="field">
-            <label>企業での役職<span class="hint">チラシに記載します</span></label>
-            <input type="text" id="role" placeholder="代表取締役">
-          </div>
+        <div class="field" id="f-role">
+          <label>企業での役職<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <input type="text" id="role" placeholder="代表取締役">
+          <div class="error-msg">役職を入力してください</div>
         </div>
 
-        <div class="field" id="f-transport">
-          <label>交通手段<span class="req">*</span></label>
-          <div class="radio-group" id="transport-group">
-            <label class="radio-item"><input type="radio" name="transport" value="お車"> お車</label>
-            <label class="radio-item"><input type="radio" name="transport" value="電車"> 電車</label>
-            <label class="radio-item"><input type="radio" name="transport" value="その他"> その他</label>
-          </div>
-          <div class="error-msg" id="transport-error">交通手段を選択してください</div>
+        <div class="field" id="f-phone">
+          <label>連絡先TEL<span class="req">*</span><span class="hint">半角数字</span></label>
+          <input type="tel" id="phone" placeholder="09012345678">
+          <div class="error-msg">連絡先TELを入力してください</div>
         </div>
       </div>
     </div>
@@ -193,10 +188,10 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
     </div>
   </div>
 
-  <!-- ===== PAGE 2: 講話について ===== -->
+  <!-- ===== PAGE 2: 講話・当日準備 ===== -->
   <div id="page2">
     <div class="section-card">
-      <div class="section-header">🎤 講話について</div>
+      <div class="section-header">🎤 講話内容</div>
       <div class="section-body">
         <div class="field" id="f-topic">
           <label>講話タイトル<span class="req">*</span></label>
@@ -210,33 +205,36 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
           <div class="char-count" id="charCount">0 / 300文字</div>
           <div class="error-msg">内容要約を入力してください</div>
         </div>
+      </div>
+    </div>
 
-        <div class="field">
-          <label>資料の有無</label>
-          <div class="radio-group">
-            <label class="radio-item"><input type="radio" name="material" value="あり"> あり</label>
-            <label class="radio-item"><input type="radio" name="material" value="なし"> なし</label>
+    <div class="section-card">
+      <div class="section-header">🚗 当日のご準備</div>
+      <div class="section-body">
+        <div class="field" id="f-transport">
+          <label>交通手段<span class="req">*</span></label>
+          <div class="radio-group" id="transport-group">
+            <label class="radio-item"><input type="radio" name="transport" value="お車"> お車</label>
+            <label class="radio-item"><input type="radio" name="transport" value="電車"> 電車</label>
+            <label class="radio-item"><input type="radio" name="transport" value="その他"> その他</label>
           </div>
+          <div class="error-msg" id="transport-error">交通手段を選択してください</div>
         </div>
 
-        <div class="field" id="material-print-field" style="display:none;">
-          <label>資料印刷の要否<span class="hint">「あり」の場合</span></label>
-          <div class="radio-group">
-            <label class="radio-item"><input type="radio" name="print" value="要（単会で印刷）"> 要（単会で印刷）</label>
-            <label class="radio-item"><input type="radio" name="print" value="不要（持参）"> 不要（持参）</label>
+        <div class="field" id="f-prepare">
+          <label>単会で準備するもの<span class="req">*</span><span class="hint">複数選択可</span></label>
+          <div class="checkbox-group" id="prepare-group">
+            <label class="check-item"><input type="checkbox" name="prepare" value="プロジェクタ"> プロジェクタ</label>
+            <label class="check-item"><input type="checkbox" name="prepare" value="パソコン"> パソコン</label>
+            <label class="check-item"><input type="checkbox" name="prepare" value="ホワイトボード"> ホワイトボード</label>
+            <label class="check-item"><input type="checkbox" name="prepare" value="その他"> その他</label>
+            <label class="check-item"><input type="checkbox" name="prepare" value="無し"> 無し</label>
           </div>
+          <div class="error-msg" id="prepare-error">1つ以上選択してください</div>
         </div>
       </div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn-back" onclick="goPage(1)">← 戻る</button>
-      <button class="btn-next" onclick="goPage(3)">次へ →</button>
-    </div>
-  </div>
-
-  <!-- ===== PAGE 3: 宿泊・その他 ===== -->
-  <div id="page3">
     <div class="section-card">
       <div class="section-header">🏨 宿泊について</div>
       <div class="section-body">
@@ -252,77 +250,149 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
         <div id="lodging-detail" style="display:none;">
           <div class="two-col">
             <div class="field">
+              <label>禁煙ルーム希望</label>
+              <div class="radio-group">
+                <label class="radio-item"><input type="radio" name="room" value="禁煙"> 禁煙</label>
+                <label class="radio-item"><input type="radio" name="room" value="喫煙"> 喫煙</label>
+                <label class="radio-item"><input type="radio" name="room" value="どちらでも"> どちらでも</label>
+              </div>
+            </div>
+            <div class="field">
               <label>お迎えの要否</label>
               <div class="radio-group">
                 <label class="radio-item"><input type="radio" name="pickup" value="要"> 要</label>
                 <label class="radio-item"><input type="radio" name="pickup" value="不要"> 不要</label>
               </div>
             </div>
-            <div class="field">
-              <label>お部屋タイプ</label>
-              <div class="radio-group">
-                <label class="radio-item"><input type="radio" name="room" value="禁煙"> 禁煙</label>
-                <label class="radio-item"><input type="radio" name="room" value="喫煙"> 喫煙</label>
-              </div>
-            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <div class="section-card">
+      <div class="section-header">📄 講話資料</div>
+      <div class="section-body">
+        <div class="field" id="f-material">
+          <label>資料の有無<span class="req">*</span></label>
+          <div class="radio-group" id="material-group">
+            <label class="radio-item"><input type="radio" name="material" value="あり"> あり</label>
+            <label class="radio-item"><input type="radio" name="material" value="なし"> なし</label>
+          </div>
+          <div class="error-msg" id="material-error">選択してください</div>
+        </div>
+
+        <div class="field" id="material-print-field" style="display:none;">
+          <label>資料印刷の要否<span class="req">*</span><span class="hint">「あり」の場合</span></label>
+          <div class="radio-group" id="print-group">
+            <label class="radio-item"><input type="radio" name="print" value="要（単会で印刷）"> 要（単会で印刷）</label>
+            <label class="radio-item"><input type="radio" name="print" value="不要（持参）"> 不要（持参）</label>
+          </div>
+          <div class="error-msg" id="print-error">選択してください</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-back" onclick="goPage(1)">← 戻る</button>
+      <button class="btn-next" onclick="goPage(3)">次へ →</button>
+    </div>
+  </div>
+
+  <!-- ===== PAGE 3: ファイル・領収証・写真権利 ===== -->
+  <div id="page3">
     <div class="section-card">
       <div class="section-header">📷 顔写真・講話資料の提出</div>
       <div class="section-body">
         <div class="file-info-box">
-          <strong>【写真・資料のご提出方法について】</strong><br>
+          <strong>【写真・資料のご提出方法】</strong><br>
           ▼ このフォームから直接アップロードする場合<br>
           　下のアップロードエリアからファイルを選択してください。<br><br>
           ▼ メールで送付する場合<br>
           　<a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#5C35CC;">nanbugoudou.jimu@gmail.com</a> へ添付してお送りください。<br>
-          　件名：【講話資料】氏名<br><br>
-          ※ファイル名は「氏名_顔写真」「氏名_資料」としてください。
+          　件名：【講話資料】氏名
+        </div>
+
+        <div class="field" id="f-photo">
+          <label>顔写真<span class="req">*</span><span class="hint">JPEG・PNG（自動で700KB以下に圧縮）</span></label>
+          <div class="file-upload-area" id="photo-drop">
+            <input type="file" id="photoFile" accept="image/*" onchange="onFileSelect('photo')">
+            <div class="upload-icon">🖼</div>
+            <div class="upload-text" id="photo-label">クリックまたはドラッグ＆ドロップ</div>
+            <div class="upload-hint">写真の大きさは調整いたします</div>
+            <div class="upload-progress" id="photo-progress"><div class="upload-progress-bar" id="photo-progress-bar"></div></div>
+          </div>
+          <div class="error-msg" id="photo-error">顔写真をアップロードしてください</div>
         </div>
 
         <div class="field">
-          <label>提出方法<span class="req">*</span></label>
-          <div class="radio-group" id="submit-method-group">
-            <label class="radio-item"><input type="radio" name="submitMethod" value="upload"> このフォームからアップロードする</label>
-            <label class="radio-item"><input type="radio" name="submitMethod" value="email"> メールで送付する（アップロードしない）</label>
+          <label>講話資料①<span class="hint">PDF・Word・PowerPoint（任意）</span></label>
+          <div class="file-upload-area" id="material-drop">
+            <input type="file" id="materialFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.key" onchange="onFileSelect('material')">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text" id="material-label">クリックまたはドラッグ＆ドロップ</div>
+            <div class="upload-hint">資料がない場合は空欄で構いません</div>
+            <div class="upload-progress" id="material-progress"><div class="upload-progress-bar" id="material-progress-bar"></div></div>
           </div>
         </div>
 
-        <div id="upload-section" style="display:none;">
-          <div class="field">
-            <label>顔写真<span class="hint">JPEG・PNG・最大10MB</span></label>
-            <div class="file-upload-area" id="photo-drop">
-              <input type="file" id="photoFile" accept="image/*" onchange="onFileSelect('photo')">
-              <div class="upload-icon">🖼</div>
-              <div class="upload-text" id="photo-label">クリックまたはドラッグ＆ドロップ</div>
-              <div class="upload-hint">自動で700KB以下に圧縮します</div>
-              <div class="upload-progress" id="photo-progress"><div class="upload-progress-bar" id="photo-progress-bar"></div></div>
-            </div>
-          </div>
-
-          <div class="field">
-            <label>講話資料<span class="hint">PDF・Word・PowerPoint・最大20MB</span></label>
-            <div class="file-upload-area" id="material-drop">
-              <input type="file" id="materialFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.key" onchange="onFileSelect('material')">
-              <div class="upload-icon">📄</div>
-              <div class="upload-text" id="material-label">クリックまたはドラッグ＆ドロップ</div>
-              <div class="upload-hint">資料がない場合は空欄で構いません</div>
-              <div class="upload-progress" id="material-progress"><div class="upload-progress-bar" id="material-progress-bar"></div></div>
-            </div>
+        <div class="field">
+          <label>講話資料②<span class="hint">追加資料（任意）</span></label>
+          <div class="file-upload-area" id="material2-drop">
+            <input type="file" id="material2File" accept=".pdf,.doc,.docx,.ppt,.pptx,.key" onchange="onFileSelect('material2')">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text" id="material2-label">クリックまたはドラッグ＆ドロップ</div>
+            <div class="upload-hint">追加資料がある場合のみ</div>
+            <div class="upload-progress" id="material2-progress"><div class="upload-progress-bar" id="material2-progress-bar"></div></div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="section-card">
-      <div class="section-header">📝 備考</div>
+      <div class="section-header">🧾 領収証</div>
       <div class="section-body">
+        <div class="field" id="f-receipt">
+          <label>領収証の宛名<span class="req">*</span></label>
+          <div class="radio-group" id="receipt-group">
+            <label class="radio-item"><input type="radio" name="receiptType" value="個人宛"> 個人宛</label>
+            <label class="radio-item"><input type="radio" name="receiptType" value="会社宛"> 会社宛</label>
+          </div>
+          <div class="error-msg" id="receipt-error">選択してください</div>
+        </div>
+
         <div class="field">
-          <label>その他・特記事項<span class="hint">アレルギー・ご要望など</span></label>
-          <textarea id="notes" placeholder="特記事項があればご記入ください"></textarea>
+          <label>郵便番号<span class="hint">半角数字7桁・ハイフン有無どちらでも可</span></label>
+          <div class="zip-row">
+            <input type="text" id="zipcode" placeholder="3330801" maxlength="8">
+            <button type="button" class="btn-zip" onclick="lookupZip()">住所を自動入力</button>
+          </div>
+          <div class="zip-help">
+            📮 <a href="javascript:void(0)" onclick="lookupZipByAddress()">住所から郵便番号を調べる</a>
+            ・
+            <a href="https://www.post.japanpost.jp/zipcode/" target="_blank">郵便局公式検索</a>
+          </div>
+        </div>
+
+        <div class="field" id="f-address">
+          <label>領収証の住所<span class="req">*</span></label>
+          <input type="text" id="address" placeholder="埼玉県○○市○○1-2-3">
+          <div class="error-msg">住所を入力してください</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header">📸 顔写真の使用範囲</div>
+      <div class="section-body">
+        <div class="field" id="f-photouse">
+          <label>使用範囲<span class="req">*</span><span class="hint">チラシ・広報物での使用範囲</span></label>
+          <div class="radio-group" id="photouse-group" style="flex-direction:column;">
+            <label class="radio-item"><input type="radio" name="photoUse" value="全媒体承諾"> 全ての媒体を承諾します</label>
+            <label class="radio-item"><input type="radio" name="photoUse" value="公式HPのみ"> 公式ホームページのみ</label>
+            <label class="radio-item"><input type="radio" name="photoUse" value="Facebookのみ"> Facebookのみ</label>
+            <label class="radio-item"><input type="radio" name="photoUse" value="要相談"> 要相談</label>
+          </div>
+          <div class="error-msg" id="photouse-error">選択してください</div>
         </div>
       </div>
     </div>
@@ -360,19 +430,71 @@ const SUPABASE_KEY = 'sb_publishable_sAahVVEPRHnLDsOxawsI5w_XtGZe25O';
 const DISTRICT_ID  = '11111111-1111-1111-1111-111111111111';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// URLパラメータから情報を取得（事務局が送付するURL用）
+// URLパラメータから事務局入力情報を取得
 const urlParams  = new URLSearchParams(location.search);
-const speakerId  = urlParams.get('id')  || '';
-const chapterId  = urlParams.get('ch')  || '';
-const urlName    = urlParams.get('name')|| '';
-const urlUnit    = urlParams.get('unit')|| '';
-const urlDate    = urlParams.get('date')|| '';
+const speakerId  = urlParams.get('id')    || '';
+const chapterId  = urlParams.get('ch')    || '';
+const urlName    = urlParams.get('name')  || '';
+const urlUnit    = urlParams.get('unit')  || '';
+const urlDate    = urlParams.get('date')  || '';
+const urlType    = urlParams.get('type')  || '';
+const urlEthics  = urlParams.get('ethics')|| '';
+const urlEmail   = urlParams.get('email') || '';
 
-// URLパラメータで氏名・所属単会を事前入力
-if (urlName) document.addEventListener('DOMContentLoaded', () => {
-  const n = document.getElementById('speakerName'); if (n) n.value = urlName;
-  const u = document.getElementById('speakerUnit'); if (u) u.value = urlUnit;
+const SEMINAR_LABELS = { ms:'モーニングセミナー', kiso:'倫理経営基礎講座', koen:'倫理経営講演会', tsudoi:'経営者の集い', evening:'イブニングセミナー', other:'その他セミナー' };
+
+// イベントバナーに事務局入力情報を表示
+document.addEventListener('DOMContentLoaded', () => {
+  if (urlName || urlUnit || urlDate || urlType) {
+    const fmt = d => { if (!d) return '—'; const dt=new Date(d); return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日（${"日月火水木金土"[dt.getDay()]}）`; };
+    const set = (id, v) => { const el=document.getElementById(id); if (el) el.textContent = v || '—'; };
+    set('ev-name',   urlName ? urlName + ' 様' : '');
+    set('ev-unit',   urlUnit);
+    set('ev-ethics', urlEthics);
+    set('ev-type',   SEMINAR_LABELS[urlType] || urlType);
+    set('ev-date',   urlDate ? fmt(urlDate) : '');
+    document.getElementById('eventBanner').style.display = 'block';
+  }
 });
+
+// 郵便番号から住所を自動入力
+async function lookupZip() {
+  const zip = document.getElementById('zipcode').value.replace(/[^\d]/g,'');
+  if (zip.length !== 7) { alert('郵便番号は7桁で入力してください'); return; }
+  const btn = document.querySelector('.btn-zip');
+  btn.disabled = true; btn.textContent = '検索中...';
+  try {
+    const res = await fetch(`https://zipcoda.net/api?zipcode=${zip}`);
+    const j   = await res.json();
+    if (j.items && j.items[0]) {
+      document.getElementById('address').value = j.items[0].address || '';
+    } else {
+      alert('該当する住所が見つかりませんでした');
+    }
+  } catch(e) {
+    alert('検索に失敗しました。郵便局公式サイトをご利用ください');
+  } finally {
+    btn.disabled = false; btn.textContent = '住所を自動入力';
+  }
+}
+
+// 住所から郵便番号を検索
+async function lookupZipByAddress() {
+  const addr = prompt('調べたい住所を入力してください\n（例：埼玉県川口市元郷）');
+  if (!addr) return;
+  try {
+    const res = await fetch(`https://zipcoda.net/api?address=${encodeURIComponent(addr)}`);
+    const j   = await res.json();
+    if (j.items && j.items.length) {
+      const list = j.items.slice(0,5).map(x => `〒${x.zipcode}  ${x.address}`).join('\n');
+      alert('検索結果（上位5件）:\n\n' + list + '\n\n該当の郵便番号を入力してください');
+    } else {
+      alert('該当する郵便番号が見つかりませんでした');
+    }
+  } catch(e) {
+    alert('検索に失敗しました。郵便局公式サイトをご利用ください');
+  }
+}
 
 // ページ遷移
 function goPage(n) {
@@ -401,35 +523,60 @@ function required(id, wrapperId) {
   return true;
 }
 
+function requiredRadio(name, errId, wrapperId) {
+  const v = document.querySelector(`input[name="${name}"]:checked`);
+  const e = document.getElementById(errId);
+  const w = document.getElementById(wrapperId);
+  if (!v) { e.style.display='block'; w?.classList.add('has-error'); return false; }
+  e.style.display='none'; w?.classList.remove('has-error'); return true;
+}
+
 function validatePage1() {
   let ok = true;
-  ok = required('speakerName', 'f-name') && ok;
-  ok = required('speakerKana', 'f-kana') && ok;
-  ok = required('email', 'f-email') && ok;
-  ok = required('speakerUnit', 'f-unit') && ok;
-  ok = required('company', 'f-company') && ok;
-  const transport = document.querySelector('input[name="transport"]:checked');
-  const te = document.getElementById('transport-error');
-  const tf = document.getElementById('f-transport');
-  if (!transport) { te.style.display = 'block'; tf.classList.add('has-error'); ok = false; }
-  else { te.style.display = 'none'; tf.classList.remove('has-error'); }
+  ok = required('speakerKana','f-kana')   && ok;
+  ok = required('company',    'f-company')&& ok;
+  ok = required('role',       'f-role')   && ok;
+  ok = required('phone',      'f-phone')  && ok;
   return ok;
 }
 
 function validatePage2() {
   let ok = true;
-  ok = required('topic', 'f-topic') && ok;
-  ok = required('summary', 'f-summary') && ok;
+  ok = required('topic',  'f-topic')   && ok;
+  ok = required('summary','f-summary') && ok;
+  ok = requiredRadio('transport','transport-error','f-transport') && ok;
+
+  // 単会で準備するもの（1つ以上）
+  const prep = document.querySelectorAll('input[name="prepare"]:checked');
+  const pe   = document.getElementById('prepare-error');
+  const pf   = document.getElementById('f-prepare');
+  if (prep.length === 0) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
+  else                   { pe.style.display='none';  pf.classList.remove('has-error'); }
+
+  ok = requiredRadio('lodging', 'lodging-error', 'f-lodging') && ok;
+  ok = requiredRadio('material','material-error','f-material') && ok;
+
+  // 資料ありの場合は印刷要否が必須
+  if (document.querySelector('input[name="material"]:checked')?.value === 'あり') {
+    ok = requiredRadio('print','print-error','material-print-field') && ok;
+  }
   return ok;
 }
 
 function validatePage3() {
-  const lodging = document.querySelector('input[name="lodging"]:checked');
-  const le = document.getElementById('lodging-error');
-  const lf = document.getElementById('f-lodging');
-  if (!lodging) { le.style.display = 'block'; lf.classList.add('has-error'); return false; }
-  le.style.display = 'none'; lf.classList.remove('has-error');
-  return true;
+  let ok = true;
+
+  // 顔写真アップロード必須
+  const photoFile = document.getElementById('photoFile').files[0];
+  const pe = document.getElementById('photo-error');
+  const pf = document.getElementById('f-photo');
+  if (!photoFile) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
+  else            { pe.style.display='none';  pf.classList.remove('has-error'); }
+
+  ok = requiredRadio('receiptType','receipt-error', 'f-receipt')  && ok;
+  ok = required('address','f-address') && ok;
+  ok = requiredRadio('photoUse',  'photouse-error','f-photouse')  && ok;
+  return ok;
 }
 
 // 文字数カウント
@@ -465,15 +612,6 @@ document.querySelectorAll('.radio-item input').forEach(inp => {
   });
 });
 
-// 提出方法の選択でアップロード欄の表示切替
-document.querySelectorAll('input[name="submitMethod"]').forEach(r => {
-  r.addEventListener('change', () => {
-    document.getElementById('upload-section').style.display =
-      r.value === 'upload' ? 'grid' : 'none';
-    if (r.value === 'upload') document.getElementById('upload-section').style.gap = '14px';
-  });
-});
-
 // ファイル選択時のUI更新
 function onFileSelect(type) {
   const input = document.getElementById(type + 'File');
@@ -488,7 +626,7 @@ function onFileSelect(type) {
 }
 
 // ドラッグ＆ドロップ
-['photo-drop','material-drop'].forEach(id => {
+['photo-drop','material-drop','material2-drop'].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
   el.addEventListener('dragleave', () => el.classList.remove('dragover'));
@@ -536,13 +674,17 @@ async function compressImage(file, maxKB = 700) {
   });
 }
 
-// ファイル名生成ルール: 写真＝名前_単会名_講話日 / 資料01＝資料01_名前_単会名_講話日
+// ファイル名生成ルール
+//   写真   : 名前_単会名_講話日.jpg
+//   資料01 : 資料01_名前_単会名_講話日.ext
+//   資料02 : 資料02_名前_単会名_講話日.ext
 function buildFileName(type, ext, speakerName, unit, date) {
   const d = date ? date.replace(/-/g, '') : 'nodate'; // 20260506
   const n = (speakerName || '').replace(/\s/g, '');
   const u = (unit || '').replace(/\s/g, '');
   if (type === '顔写真') return `${n}_${u}_${d}.jpg`;
-  return `資料01_${n}_${u}_${d}.${ext}`;
+  // 資料01 / 資料02 どちらにも対応
+  return `${type}_${n}_${u}_${d}.${ext}`;
 }
 
 // Supabase Storageへのアップロード
@@ -583,60 +725,68 @@ async function submitForm() {
   btn.disabled = true;
   document.getElementById('loadingOverlay').classList.add('show');
 
-  const val = id => document.getElementById(id)?.value.trim() || '';
+  const val   = id   => document.getElementById(id)?.value.trim() || '';
   const radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+  const checks= name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(x=>x.value).join('・');
 
-  // 倫理法人会の役職と企業役職を結合
-  const ethicsRole = val('ethicsRole');
-  const bizRole = val('role');
-  const combinedRole = [ethicsRole, bizRole].filter(Boolean).join('・');
+  // 備考にまとめる情報（DBに余計なカラムを増やさないため）
+  const notesLines = [
+    `【内容要約】\n${val('summary')}`,
+    `【交通手段】${radio('transport')}`,
+    `【単会で準備】${checks('prepare')}`,
+    radio('lodging') === '要' ? `【禁煙ルーム】${radio('room')||'未回答'}／【お迎え】${radio('pickup')||'未回答'}` : '',
+    `【領収証宛名】${radio('receiptType')}`,
+    `【領収証郵便番号】${val('zipcode')}`,
+    `【領収証住所】${val('address')}`,
+    `【顔写真の使用範囲】${radio('photoUse')}`,
+  ].filter(Boolean).join('\n');
 
   const payload = {
-    district_id: DISTRICT_ID,
-    chapter_id: chapterId || null,
-    speaker_name: val('speakerName'),
+    district_id:  DISTRICT_ID,
+    chapter_id:   chapterId || null,
+    speaker_name: urlName,
     speaker_kana: val('speakerKana'),
-    phone: val('phone'),
-    email: val('email'),
-    speaker_unit: val('speakerUnit'),
+    speaker_unit: urlUnit,
+    phone:   val('phone'),
+    email:   urlEmail,
     company: val('company'),
-    role: combinedRole,
-    topic: val('topic'),
-    notes: [val('summary'), val('notes')].filter(Boolean).join('\n\n【備考】\n'),
+    role:    [urlEthics, val('role')].filter(Boolean).join('・'),
+    topic:   val('topic'),
+    notes:   notesLines,
     lodging: radio('lodging'),
     print_required: radio('print') || '不要',
-    status: 'pending',
+    seminar_type: urlType || 'ms',
+    seminar_date: urlDate || null,
+    status:       'pending',
     request_date: new Date().toISOString().slice(0, 10),
   };
 
   try {
-    // ファイルアップロード処理
-    const submitMethod = document.querySelector('input[name="submitMethod"]:checked')?.value;
-    if (submitMethod === 'upload') {
-      const speakerName = val('speakerName');
-      const photoFile    = document.getElementById('photoFile').files[0];
-      const materialFile = document.getElementById('materialFile').files[0];
-      if (photoFile) {
-        const url = await uploadToStorage(photoFile, speakerName, '顔写真');
-        payload.material_url  = url;
-        payload.material_name = photoFile.name;
-      }
-      if (materialFile) {
-        const url = await uploadToStorage(materialFile, speakerName, '資料');
-        if (!payload.material_url) {
-          payload.material_url  = url;
-          payload.material_name = materialFile.name;
-        } else {
-          payload.notes = (payload.notes || '') + '\n\n【資料URL】' + url;
-        }
-      }
+    // ファイルアップロード処理（顔写真は必須、資料は任意）
+    const speakerName = urlName || val('speakerKana');
+    const photoFile     = document.getElementById('photoFile').files[0];
+    const materialFile  = document.getElementById('materialFile').files[0];
+    const material2File = document.getElementById('material2File').files[0];
+
+    if (photoFile) {
+      const url = await uploadToStorage(photoFile, speakerName, '顔写真');
+      payload.material_url  = url;
+      payload.material_name = '顔写真';
     }
+    const extraUrls = [];
+    if (materialFile) {
+      const url = await uploadToStorage(materialFile, speakerName, '資料01');
+      extraUrls.push('【資料01】' + url);
+    }
+    if (material2File) {
+      const url = await uploadToStorage(material2File, speakerName, '資料02');
+      extraUrls.push('【資料02】' + url);
+    }
+    if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
 
     if (speakerId) {
-      // 既存の講師レコードを更新
       await db.from('speakers').update(payload).eq('id', speakerId);
     } else {
-      // 新規レコードを作成
       payload.id = 's' + Date.now();
       await db.from('speakers').insert(payload);
     }
