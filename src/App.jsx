@@ -147,6 +147,7 @@ export default function App() {
 
   const addOrUpdateSpeaker = useCallback(async data => {
     setIsSaving(true);
+    let savedSp = null;
     try {
       if (data.id) {
         const { error } = await db.from('speakers').update(toDB(data)).eq('id', data.id);
@@ -156,10 +157,18 @@ export default function App() {
         const newSp = { ...data, id: `s${Date.now()}`, lineNotified: false };
         const { data: inserted, error } = await db.from('speakers').insert(toDB(newSp)).select().single();
         if (error) { showToast("⚠ 登録に失敗しました"); return; }
-        setSpeakers(prev => [...prev, inserted ? fromDB(inserted) : newSp]);
+        savedSp = inserted ? fromDB(inserted) : newSp;
+        setSpeakers(prev => [...prev, savedSp]);
       }
       setShowForm(false); setEditSpeaker(null);
-      showToast(data.id ? "変更を保存しました ✓" : "新規登録しました ✓");
+      if (data.id) {
+        showToast("変更を保存しました ✓");
+      } else {
+        showToast("新規登録しました ✓", {
+          actionLabel: "フォームURLを発行",
+          action: () => setFormUrlModal(savedSp),
+        });
+      }
     } finally {
       setIsSaving(false);
     }
