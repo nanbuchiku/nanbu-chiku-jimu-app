@@ -1,4 +1,4 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, useCallback, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
@@ -63,6 +63,24 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       .filter(sp => sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= endStr && sp.status !== "cancelled")
       .sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
   }, [speakers, today, todayStr]);
+
+  const monthCoverage = useMemo(() => Array.from({ length: 3 }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    return {
+      label: `${d.getFullYear()}年${d.getMonth()+1}月`,
+      ym,
+      chapters: CHAPTERS.map(ch => {
+        const sp = speakers.find(s =>
+          s.chapterId === ch.id &&
+          s.seminarDate?.startsWith(ym) &&
+          s.status !== "cancelled" &&
+          (!s.seminarType || s.seminarType === "ms")
+        );
+        return { ch, sp };
+      }),
+    };
+  }), [speakers, today]);
 
   const tasksByChapter = useMemo(() => CHAPTERS.map(ch => {
     const total  = tasks.filter(t => t.chapterId === ch.id).length;
@@ -272,6 +290,45 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           </div>
         </div>
       )}
+
+      <div style={{ marginBottom:12 }}>
+        <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>今後3ヶ月 MS講師カバレッジ</div>
+        <div style={{ ...CARD, marginBottom:0, padding:"10px 14px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:`120px repeat(${CHAPTERS.length},1fr)`, gap:1, minWidth:400 }}>
+            <div />
+            {CHAPTERS.map(ch => (
+              <div key={ch.id} style={{ textAlign:"center", fontSize:9, fontWeight:700, color:"#fff", background: ch.color, padding:"3px 2px", borderRadius:4 }}>{ch.short||ch.name}</div>
+            ))}
+            {monthCoverage.map(({ label, ym, chapters }) => {
+              const covered = chapters.filter(c => c.sp).length;
+              return (
+                <React.Fragment key={ym}>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#37474F", display:"flex", alignItems:"center", gap:5 }}>
+                    {label}
+                    <span style={{ fontSize:9, fontWeight:600, color: covered === 5 ? "#2E7D32" : covered >= 3 ? "#E65100" : "#B71C1C" }}>{covered}/5</span>
+                  </div>
+                  {chapters.map(({ ch, sp }) => (
+                    <div key={ch.id} onClick={() => sp && onView(sp)} style={{ textAlign:"center", padding:"6px 2px", borderRadius:4, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor: sp ? "pointer" : "default", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}`, title: sp ? sp.speakerName : "未登録" }}>
+                      {sp ? (
+                        <span style={{ fontSize:9, fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }} title={`${sp.speakerName}「${sp.topic}」`}>
+                          {sp.speakerName ? "✓" : "▲"}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize:9, color:"#EF9A9A", fontWeight:700 }}>×</span>
+                      )}
+                    </div>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </div>
+          <div style={{ marginTop:8, fontSize:10, color:"#90A4AE", display:"flex", gap:12, flexWrap:"wrap" }}>
+            <span><span style={{ fontWeight:700, color:"#2E7D32" }}>✓</span> 講師・テーマ登録済</span>
+            <span><span style={{ fontWeight:700, color:"#E65100" }}>▲</span> 登録不足</span>
+            <span><span style={{ fontWeight:700, color:"#B71C1C" }}>×</span> 未登録</span>
+          </div>
+        </div>
+      </div>
 
       {unassignedMS.length > 0 && (
         <div>

@@ -78,16 +78,23 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
             const ch = chapterByDay[dow];
             const sp = ch ? speakerByKey.get(`${ch.id}|${dStr}`) : null;
             const isSun = dow === 0, isSat = dow === 6;
+            const jumpToWeek = () => {
+              const todayMon = new Date(today); todayMon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+              const dMon = new Date(d); dMon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+              setWeekOffset(Math.round((dMon - todayMon) / (7 * 86400000)));
+              setViewMode("week");
+            };
             return (
-              <div key={dStr} style={{ background: isT ? "#EDE7F6" : "#fff", minHeight:90, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative" }}>
+              <div key={dStr} onClick={jumpToWeek} style={{ background: isT ? "#EDE7F6" : "#fff", minHeight:90, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative", cursor:"pointer" }}
+                title="クリックで週表示へ">
                 <div style={{ fontSize:12, fontWeight:700, color: isT ? "#7E57C2" : isSun ? "#E65100" : isSat ? "#1565C0" : "#37474F", marginBottom:3 }}>
                   {d.getDate()}
                   {isT && <span style={{ fontSize:8, background:"#7E57C2", color:"#fff", borderRadius:6, padding:"1px 4px", marginLeft:4, fontWeight:700, verticalAlign:"middle" }}>今日</span>}
                 </div>
                 {ch && (
                   <div
-                    style={{ background: sp ? ch.light : "#FAFAFA", border:`1px solid ${sp ? ch.accent : "#ECEFF1"}`, borderRadius:5, padding:"3px 5px", cursor: (sp || onAddForDate) ? "pointer" : "default", transition:"box-shadow .1s" }}
-                    onClick={() => sp ? onSpeaker(sp) : (onAddForDate && onAddForDate(dStr, ch.id))}
+                    style={{ background: sp ? ch.light : "#FAFAFA", border:`1px solid ${sp ? ch.accent : "#ECEFF1"}`, borderRadius:5, padding:"3px 5px", cursor: "pointer", transition:"box-shadow .1s" }}
+                    onClick={e => { e.stopPropagation(); sp ? onSpeaker(sp) : (onAddForDate && onAddForDate(dStr, ch.id)); }}
                     title={sp ? `${sp.speakerName}「${sp.topic}」` : `${ch.name} — クリックして講師を登録`}
                   >
                     <div style={{ fontSize:9, fontWeight:700, color: ch.color, marginBottom:1 }}>{ch.name}</div>
@@ -124,7 +131,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
           })}
         </div>
         <div style={{ marginTop:8, padding:"7px 12px", background:"#F5F5F5", borderRadius:6, fontSize:11, color:"#78909C" }}>
-          💡 MS日程セルをクリック → 確認書を表示 / 未登録セルをクリック → 新規登録
+          💡 日付セルをクリック → 週表示へ移動　｜　MS日程セルをクリック → 確認書を表示 / 未登録セルをクリック → 新規登録
         </div>
       </div>
     );
