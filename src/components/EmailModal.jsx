@@ -75,8 +75,8 @@ ${ch.name}単会 担当
   const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
 
   return (
-    <div style={OV} onClick={onClose}>
-      <div style={{ ...MOD, maxWidth:580 }} onClick={e => e.stopPropagation()}>
+    <div style={OV} onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-label="メール送信" style={{ ...MOD, maxWidth:580 }} onClick={e => e.stopPropagation()}>
         <div style={MH}>📧 メール送信</div>
 
         <div style={{ background: sp.email ? "#E3F2FD" : "#FFEBEE", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>

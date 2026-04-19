@@ -169,8 +169,8 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
       </div>
 
       {showEmailModal && (
-        <div style={OV} onClick={() => setShowEmailModal(false)}>
-          <div style={{ ...MOD, maxWidth:600 }} onClick={e => e.stopPropagation()}>
+        <div style={OV} onClick={() => setShowEmailModal(false)} role="presentation">
+          <div role="dialog" aria-modal="true" aria-label="印刷会社へのメール送信" style={{ ...MOD, maxWidth:600 }} onClick={e => e.stopPropagation()}>
             <div style={MH}>📧 印刷会社へのメール送信</div>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>印刷会社のメールアドレス</div>
             <input style={{ ...INP, width:"100%", marginBottom:12 }} placeholder="print@example.com" value={printEmail} onChange={e => setPrintEmail(e.target.value)} />

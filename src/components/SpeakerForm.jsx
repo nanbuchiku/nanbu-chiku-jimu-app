@@ -24,8 +24,8 @@ export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
   const st = getSeminarType(form.seminarType || "ms");
 
   return (
-    <div style={OV} onClick={onClose}>
-      <div style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
+    <div style={OV} onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-label={initial ? "講師情報を編集" : "新規講師登録"} style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
         <div style={{ ...MH, borderBottomColor: st.color }}>{initial ? "講師情報を編集" : "新規講師登録"}</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:14 }}>
           {[

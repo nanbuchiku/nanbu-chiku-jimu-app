@@ -72,8 +72,8 @@ Mail：nanbugoudou.jimu@gmail.com
   const INP2 = { width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:12, background:"#fff" };
 
   return (
-    <div style={OV} onClick={onClose}>
-      <div style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
+    <div style={OV} onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-label="講話依頼確認フォーム作成" style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
         <div style={MH}>📝 講話依頼確認フォーム作成</div>
 
         {isNew && !generated && (
