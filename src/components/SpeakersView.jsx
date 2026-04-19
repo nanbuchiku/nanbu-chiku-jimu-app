@@ -1,10 +1,15 @@
-import React, { useMemo, useState, useCallback, memo } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const exportCSV = useCallback(() => {
     const headers = ["開催日","単会","講師名","ふりがな","所属単会","企業名","役職","テーマ","ステータス","メール","電話"];
@@ -38,7 +43,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{filtered.length}/{speakers.length}件</span>
         </div>
         <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
-          <input style={{ ...INP, width:160, fontSize:11 }} placeholder="🔍 名前・会社・テーマ検索" value={search} onChange={e => setSearch(e.target.value)} />
+          <input style={{ ...INP, width:160, fontSize:11 }} placeholder="🔍 名前・会社・テーマ検索" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
           <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
             <option value="all">全単会</option>
             {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
@@ -125,9 +130,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                     </td>
                     <td style={TD}>
                       <div style={{ display:"flex", gap:3 }}>
-                        <button style={BSM} onClick={() => onDoc(sp)}>確認書</button>
-                        <button style={BSM} onClick={() => onEdit(sp)}>編集</button>
-                        <button style={{ ...BSM, color:"#B71C1C" }} onClick={() => onDelete(sp.id)}>削除</button>
+                        <button style={BSM} aria-label={`${sp.speakerName}の確認書を表示`} onClick={() => onDoc(sp)}>確認書</button>
+                        <button style={BSM} aria-label={`${sp.speakerName}を編集`} onClick={() => onEdit(sp)}>編集</button>
+                        <button style={{ ...BSM, color:"#B71C1C" }} aria-label={`${sp.speakerName}を削除`} onClick={() => onDelete(sp.id)}>削除</button>
                       </div>
                     </td>
                   </tr>
@@ -138,9 +143,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   <div style={{ color:"#90A4AE", fontSize:13, marginBottom:10 }}>
                     {search || filterCh !== "all" || filterSt !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
                   </div>
-                  {(search || filterCh !== "all" || filterSt !== "all") && (
+                  {(searchInput || filterCh !== "all" || filterSt !== "all") && (
                     <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 14px", fontSize:12, cursor:"pointer", color:"#546E7A", fontWeight:600 }}
-                      onClick={() => { setSearch(""); setFilterCh("all"); setFilterSt("all"); }}>
+                      onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); }}>
                       フィルターをリセット
                     </button>
                   )}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS, JIMU } from '../constants';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL } from '../styles';
 
@@ -8,8 +8,13 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
     return { value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月号` };
   }), [today]);
   const [selMonth, setSelMonth] = useState(() => months[1].value);
-  const [printEmail, setPrintEmail] = useState("");
+  const [printEmail, setPrintEmail] = useState(() => localStorage.getItem('flyer_printEmail') || "");
   const [showEmailModal, setShowEmailModal] = useState(false);
+
+  const savePrintEmail = useCallback(v => {
+    setPrintEmail(v);
+    try { localStorage.setItem('flyer_printEmail', v); } catch {}
+  }, []);
 
   const { year, month, deadline, daysLeft, deadlineColor } = useMemo(() => {
     const [y, m] = selMonth.split("-").map(Number);
@@ -173,7 +178,7 @@ export default memo(function FlyerView({ speakers, today, updateSpeaker, showToa
           <div role="dialog" aria-modal="true" aria-label="印刷会社へのメール送信" style={{ ...MOD, maxWidth:600 }} onClick={e => e.stopPropagation()}>
             <div style={MH}>📧 印刷会社へのメール送信</div>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>印刷会社のメールアドレス</div>
-            <input style={{ ...INP, width:"100%", marginBottom:12 }} placeholder="print@example.com" value={printEmail} onChange={e => setPrintEmail(e.target.value)} />
+            <input style={{ ...INP, width:"100%", marginBottom:12 }} placeholder="print@example.com" value={printEmail} onChange={e => savePrintEmail(e.target.value)} />
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
             <div style={{ fontSize:12, background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{emailSubject}</div>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>本文プレビュー</div>

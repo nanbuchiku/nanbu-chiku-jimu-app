@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter, buildSpeakerTasks } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
@@ -12,10 +12,15 @@ const TASK_CATEGORY_COLOR = {
 };
 
 export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast }) {
-  const [filterCh,   setFilterCh]   = useState("all");
-  const [filterDone, setFilterDone] = useState("undone");
-  const [expandedId, setExpandedId] = useState(null);
-  const [search,     setSearch]     = useState("");
+  const [filterCh,    setFilterCh]   = useState("all");
+  const [filterDone,  setFilterDone] = useState("undone");
+  const [expandedId,  setExpandedId] = useState(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [search,      setSearch]     = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -54,7 +59,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理 <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE" }}>{visible.length}件</span></div>
-        <input style={{ ...INP, width:140, fontSize:11 }} placeholder="🔍 名前・会社検索" value={search} onChange={e => setSearch(e.target.value)} />
+        <input style={{ ...INP, width:140, fontSize:11 }} placeholder="🔍 名前・会社検索" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
         <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
           <option value="all">全単会</option>
           {CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -139,6 +144,17 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                 <div style={{ fontSize:11, color:"#90A4AE", textAlign:"center", marginTop:4 }}>
                   ✓ 完了済み {prog.done}件を非表示 <span style={{ cursor:"pointer", color:"#1565C0" }} onClick={() => setExpandedId(sp.id)}>すべて見る</span>
                 </div>
+              )}
+              {!allDone && (
+                <button style={{ marginTop:8, width:"100%", background:"#F1F8E9", border:"1px solid #C5E1A5", borderRadius:6, color:"#2E7D32", fontSize:11, fontWeight:700, cursor:"pointer", padding:"6px" }}
+                  onClick={() => {
+                    const allChecks = {};
+                    tasks.forEach(t => { allChecks[t.id] = true; });
+                    updateSpeaker(sp.id, { speakerChecks: allChecks });
+                    showToast(`${sp.speakerName} 様のタスクをすべて完了にしました ✓`);
+                  }}>
+                  ✓ すべて完了にする
+                </button>
               )}
 
               {(sp.postNotes || sp.drinksAlcohol || sp.shioriArticle) && (

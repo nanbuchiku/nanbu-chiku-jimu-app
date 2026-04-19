@@ -3,6 +3,8 @@ import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, TBL, TH, TD, SEL, PILL } from '../styles';
 
+const MEDALS = ["🥇","🥈","🥉","4位","5位"];
+
 export default memo(function RankingView({ tasks, today }) {
   const months = useMemo(() => {
     const arr = [];
@@ -30,8 +32,7 @@ export default memo(function RankingView({ tasks, today }) {
     return b.avgDays - a.avgDays;
   }), [tasks, selMonth]);
 
-  const MEDALS = ["🥇","🥈","🥉","4位","5位"];
-  const maxAbs = Math.max(...ranking.filter(r => r.avgDays !== null).map(r => Math.abs(r.avgDays)), 1);
+  const maxAbs = useMemo(() => Math.max(...ranking.filter(r => r.avgDays !== null).map(r => Math.abs(r.avgDays)), 1), [ranking]);
 
   return (
     <div>
