@@ -14,7 +14,9 @@ const TASK_CATEGORY_COLOR = {
 export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast }) {
   const [filterCh,    setFilterCh]   = useState("all");
   const [filterDone,  setFilterDone] = useState("undone");
+  const [filterPast,  setFilterPast] = useState(false);
   const [expandedId,  setExpandedId] = useState(null);
+  const [expandAll,   setExpandAll]  = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search,      setSearch]     = useState("");
   useEffect(() => {
@@ -32,14 +34,26 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   }, [speakers, filterCh, search]);
 
   const visible = useMemo(() => {
-    if (filterDone === "all") return filtered;
-    return filtered.filter(sp => {
-      const checks = sp.speakerChecks || {};
-      const tasks = buildSpeakerTasks(sp);
-      const allDone = tasks.every(t => checks[t.id]);
-      return filterDone === "done" ? allDone : !allDone;
-    });
-  }, [filtered, filterDone]);
+    let base = filtered;
+    if (filterDone !== "all") {
+      base = base.filter(sp => {
+        const checks = sp.speakerChecks || {};
+        const tasks = buildSpeakerTasks(sp);
+        const allDone = tasks.every(t => checks[t.id]);
+        return filterDone === "done" ? allDone : !allDone;
+      });
+    }
+    if (filterPast) {
+      base = base.filter(sp => {
+        const isPast = sp.seminarDate && new Date(sp.seminarDate) < today;
+        const checks = sp.speakerChecks || {};
+        const tasks = buildSpeakerTasks(sp);
+        const allDone = tasks.every(t => checks[t.id]);
+        return isPast && !allDone;
+      });
+    }
+    return base;
+  }, [filtered, filterDone, filterPast, today]);
 
   const toggleTask = useCallback((sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
@@ -64,11 +78,17 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
           <option value="all">全単会</option>
           {CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <div style={{ display:"flex", gap:4 }}>
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
           {[["undone","未完了のみ"],["all","すべて"],["done","完了のみ"]].map(([v,l]) => (
             <button key={v} style={{ ...(filterDone===v ? BP : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterDone(v)}>{l}</button>
           ))}
         </div>
+        <button style={{ ...(filterPast ? { ...BP, background:"#B71C1C" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterPast(v => !v)}>
+          {filterPast ? "⚠ 未完了超過" : "超過のみ"}
+        </button>
+        <button style={{ ...BC, padding:"5px 12px", fontSize:11 }} onClick={() => setExpandAll(v => !v)}>
+          {expandAll ? "▲ すべて折りたたむ" : "▼ すべて展開"}
+        </button>
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:14 }}>
@@ -78,7 +98,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
           const checks = sp.speakerChecks || {};
           const prog = getProgress(sp);
           const allDone = prog.done === prog.total;
-          const isExpanded = expandedId === sp.id;
+          const isExpanded = expandAll || expandedId === sp.id;
 
           const byCategory = {};
           tasks.forEach(t => {
@@ -101,7 +121,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                   })()}
                   {allDone && <span style={{ fontSize:10, background:"#E8F5E9", color:"#2E7D32", fontWeight:700, padding:"2px 7px", borderRadius:10, marginLeft:6 }}>✓ 完了</span>}
                 </div>
-                <button aria-label={isExpanded ? "折りたたむ" : "すべてのタスクを表示"} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#90A4AE" }} onClick={() => setExpandedId(isExpanded ? null : sp.id)}>
+                <button aria-label={isExpanded ? "折りたたむ" : "すべてのタスクを表示"} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#90A4AE" }} onClick={() => { if (expandAll) { setExpandAll(false); setExpandedId(null); } else setExpandedId(isExpanded ? null : sp.id); }}>
                   {isExpanded ? "▲" : "▼"}
                 </button>
               </div>
