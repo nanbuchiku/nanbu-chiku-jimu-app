@@ -298,7 +298,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
               <input type="file" id="photoFile" accept="image/*" onchange="onFileSelect('photo')">
               <div class="upload-icon">🖼</div>
               <div class="upload-text" id="photo-label">クリックまたはドラッグ＆ドロップ</div>
-              <div class="upload-hint">写真の大きさは調整いたします</div>
+              <div class="upload-hint">自動で700KB以下に圧縮します</div>
               <div class="upload-progress" id="photo-progress"><div class="upload-progress-bar" id="photo-progress-bar"></div></div>
             </div>
           </div>
@@ -492,18 +492,64 @@ function onFileSelect(type) {
   });
 });
 
+// 画像を700KB以下に自動圧縮（Canvas API使用）
+async function compressImage(file, maxKB = 700) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      const maxDim = 1400;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else        { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+      let quality = 0.88;
+      const compress = () => {
+        canvas.toBlob(blob => {
+          if (blob.size <= maxKB * 1024 || quality <= 0.15) {
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+          } else {
+            quality = Math.max(quality - 0.10, 0.15);
+            compress();
+          }
+        }, 'image/jpeg', quality);
+      };
+      compress();
+    };
+    img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(file); };
+    img.src = objUrl;
+  });
+}
+
 // Supabase Storageへのアップロード
 async function uploadToStorage(file, speakerName, type) {
-  const ext = file.name.split('.').pop();
+  const isImage = file.type.startsWith('image/');
   const safeName = speakerName.replace(/\s/g, '_');
-  const path = `${safeName}_${type}.${ext}`;
   const progressBar = document.getElementById(type + '-progress-bar');
   const progressEl  = document.getElementById(type + '-progress');
+  const label       = document.getElementById(type + '-label');
   progressEl.style.display = 'block';
-  progressBar.style.width = '30%';
+  progressBar.style.width = '20%';
 
-  const { error } = await db.storage.from('speaker-files').upload(path, file, { upsert: true });
-  if (error) throw new Error('ファイルのアップロードに失敗しました: ' + error.message);
+  let uploadFile = file;
+  if (isImage) {
+    label.textContent = '🔄 圧縮中...';
+    uploadFile = await compressImage(file, 700);
+    const sizeMB = (uploadFile.size / 1024 / 1024).toFixed(2);
+    label.textContent = `✓ 圧縮完了（${sizeMB} MB）`;
+    progressBar.style.width = '50%';
+  }
+
+  const ext = uploadFile.name.split('.').pop();
+  const path = `${safeName}_${type}.${ext}`;
+  const { error } = await db.storage.from('speaker-files').upload(path, uploadFile, { upsert: true });
+  if (error) throw new Error('アップロード失敗: ' + error.message);
 
   progressBar.style.width = '100%';
   const { data } = db.storage.from('speaker-files').getPublicUrl(path);
