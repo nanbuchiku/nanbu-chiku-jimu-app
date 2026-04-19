@@ -20,6 +20,7 @@ export default function App() {
   const [speakers,    setSpeakers]   = useState([]);
   const [tasks,       setTasks]      = useState([]);
   const [loading,     setLoading]    = useState(true);
+  const [loadError,   setLoadError]  = useState(null);
   const [weekOffset,  setWeekOffset] = useState(0);
   const [showForm,    setShowForm]   = useState(false);
   const [editSpeaker, setEditSpeaker]= useState(null);
@@ -39,13 +40,20 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: spData }, { data: tkData }] = await Promise.all([
-        db.from('speakers').select('*').eq('district_id', DISTRICT_ID).order('seminar_date'),
-        db.from('tasks').select('*').eq('district_id', DISTRICT_ID).order('due_date'),
-      ]);
-      if (spData) setSpeakers(spData.map(fromDB));
-      if (tkData) setTasks(tkData.map(taskFromDB));
-      setLoading(false);
+      try {
+        const [{ data: spData, error: spErr }, { data: tkData, error: tkErr }] = await Promise.all([
+          db.from('speakers').select('*').eq('district_id', DISTRICT_ID).order('seminar_date'),
+          db.from('tasks').select('*').eq('district_id', DISTRICT_ID).order('due_date'),
+        ]);
+        if (spErr) throw spErr;
+        if (tkErr) throw tkErr;
+        if (spData) setSpeakers(spData.map(fromDB));
+        if (tkData) setTasks(tkData.map(taskFromDB));
+      } catch (e) {
+        setLoadError(e.message || "データの読み込みに失敗しました");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -114,6 +122,15 @@ export default function App() {
     </div>
   );
 
+  if (loadError) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
+      <div style={{ fontSize:40 }}>⚠️</div>
+      <div style={{ color:"#B71C1C", fontSize:15, fontWeight:700 }}>データの読み込みに失敗しました</div>
+      <div style={{ color:"#78909C", fontSize:12 }}>{loadError}</div>
+      <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontSize:14, cursor:"pointer", fontWeight:600 }} onClick={() => window.location.reload()}>再読み込み</button>
+    </div>
+  );
+
   return (
     <div style={{ fontFamily:"'Hiragino Kaku Gothic ProN','Meiryo',sans-serif", background:"#F0F2F5", minHeight:"100vh", color:"#263238" }}>
       <header style={hdr.header}>
@@ -144,7 +161,7 @@ export default function App() {
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
         {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={sp => { setDocSpeaker(sp); setTab("document"); }} setTab={setTab} onFormUrl={setFormUrlModal} />}
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={sp => { setDocSpeaker(sp); setTab("document"); }} />}
-        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} onFormUrl={setFormUrlModal} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
+        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
         {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask}
             onToggle={async id => {

@@ -3,7 +3,7 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, TBL, TH, TD, PILL } from '../styles';
 
-export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, updateSpeaker, showToast, onAdd }) {
+export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
   const filtered = [...speakers]
     .filter(sp => (filterCh === "all" || sp.chapterId === filterCh) && (filterSt === "all" || sp.status === filterSt))
     .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate));
@@ -29,7 +29,7 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
         <div style={{ overflowX:"auto" }}>
           <table style={TBL}>
             <thead>
-              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","依頼メール","📅 カレンダー","📝 確認フォーム","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","依頼メール","LINE通知","📅 カレンダー","📝 確認フォーム","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(sp => {
@@ -61,6 +61,16 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
                       <button style={{ ...BSM, background:"#1A3A6B", color:"#fff", fontSize:10 }} onClick={() => onEmail(sp)}>📧 送信</button>
                     </td>
                     <td style={TD}>
+                      {sp.lineNotified ? (
+                        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+                          <span style={{ color:"#06C755", fontSize:11, fontWeight:600 }}>✓ 送信済</span>
+                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} onClick={() => { updateSpeaker(sp.id,{lineNotified:false}); showToast("LINE未送信に戻しました"); }}>↩</button>
+                        </div>
+                      ) : (
+                        <button style={{ ...BSM, background:"#06C755", color:"#fff", fontSize:10 }} onClick={() => onLine(sp)}>📱 LINE</button>
+                      )}
+                    </td>
+                    <td style={TD}>
                       {sp.calendarAdded ? (
                         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
                           <span style={{ color:"#2E7D32", fontSize:11, fontWeight:600 }}>✓ 転記済</span>
@@ -85,7 +95,7 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
                   </tr>
                 );
               })}
-              {filtered.length === 0 && <tr><td colSpan={9} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:28 }}>該当データなし</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={11} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:28 }}>該当データなし</td></tr>}
             </tbody>
           </table>
         </div>
