@@ -174,6 +174,7 @@ function App() {
   const [filterSt,    setFilterSt]   = useState("all");
   const [lineModal,   setLineModal]  = useState(null);
   const [emailModal,  setEmailModal] = useState(null);
+  const [formUrlModal,setFormUrlModal]=useState(null);
   const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
   const [toast,       setToast]      = useState(null);
 
@@ -294,7 +295,7 @@ function App() {
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
         {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={sp => { setDocSpeaker(sp); setTab("document"); }} setTab={setTab} />}
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={sp => { setDocSpeaker(sp); setTab("document"); }} />}
-        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
+        {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} onFormUrl={setFormUrlModal} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
         {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask}
             onToggle={async id => {
@@ -322,6 +323,7 @@ function App() {
 
       {showForm && <SpeakerForm initial={editSpeaker} onSave={addOrUpdateSpeaker} onClose={() => { setShowForm(false); setEditSpeaker(null); }} />}
       {emailModal && <EmailModal speaker={emailModal} onClose={() => setEmailModal(null)} onDone={() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }} />}
+      {formUrlModal && <FormURLModal speaker={formUrlModal} onClose={() => setFormUrlModal(null)} showToast={showToast} />}
 
       {lineModal && (
         <div style={OV} onClick={() => setLineModal(null)}>
@@ -496,7 +498,7 @@ function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, o
 }
 
 // ── 講師管理 ──────────────────────────────────────────────────────
-function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, updateSpeaker, showToast, onAdd }) {
+function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, updateSpeaker, showToast, onAdd }) {
   const filtered = [...speakers]
     .filter(sp => (filterCh === "all" || sp.chapterId === filterCh) && (filterSt === "all" || sp.status === filterSt))
     .sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate));
@@ -522,7 +524,7 @@ function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, 
         <div style={{ overflowX:"auto" }}>
           <table style={TBL}>
             <thead>
-              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","依頼メール","📅 カレンダー","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","依頼メール","📅 カレンダー","📝 確認フォーム","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(sp => {
@@ -564,6 +566,11 @@ function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, 
                       )}
                     </td>
                     <td style={TD}>
+                      <button style={{ ...BSM, background:"#EDE7F6", color:"#4527A0", border:"1px solid #B39DDB", fontSize:10, whiteSpace:"nowrap" }} onClick={() => onFormUrl(sp)}>
+                        📝 フォーム作成
+                      </button>
+                    </td>
+                    <td style={TD}>
                       <div style={{ display:"flex", gap:3 }}>
                         <button style={BSM} onClick={() => onDoc(sp)}>確認書</button>
                         <button style={BSM} onClick={() => onEdit(sp)}>編集</button>
@@ -588,6 +595,93 @@ function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, 
     </div>
   );
 }
+// ── 講話依頼確認フォーム作成モーダル ─────────────────────────────
+function FormURLModal({ speaker: sp, onClose, showToast }) {
+  const ch = getChapter(sp.chapterId);
+  const BASE = 'https://hosina0447-ctrl.github.io/rinri-nanbu/form.html';
+  const params = new URLSearchParams({
+    id:   sp.id,
+    name: sp.speakerName || '',
+    unit: sp.speakerUnit || ch?.name || '',
+    date: sp.seminarDate || '',
+    ch:   sp.chapterId   || '',
+  });
+  const formUrl = `${BASE}?${params.toString()}`;
+
+  const mailSubject = `【${ch?.name}単会 モーニングセミナー】講師確認フォームのご案内`;
+  const mailBody =
+`${sp.speakerName} 様
+
+このたびは、${ch?.name}単会 モーニングセミナーの講師をお引き受けいただき、誠にありがとうございます。
+
+以下のURLより、講師情報のご入力と顔写真・資料のご提出をお願いいたします。
+
+──────────────────────
+▼ 講話依頼確認フォーム
+${formUrl}
+──────────────────────
+
+開催日：${sp.seminarDate ? formatDate(sp.seminarDate) : '　　　年　　月　　日'}
+会　場：${ch?.venue || ''}
+時　間：${ch?.time  || ''}
+
+ご不明な点がございましたら、お気軽にご連絡ください。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区合同事務局
+Mail：nanbugoudou.jimu@gmail.com
+━━━━━━━━━━━━━━━━━`;
+
+  const copyUrl   = () => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); };
+  const copyMail  = () => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); };
+  const openMail  = () => { window.open(`mailto:${sp.email || ''}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`, '_blank'); onClose(); };
+
+  return (
+    <div style={OV} onClick={onClose}>
+      <div style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
+        <div style={MH}>📝 講話依頼確認フォーム作成</div>
+
+        {/* 大きなカード */}
+        <div style={{ background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:12, padding:"20px 22px", marginTop:12 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+            <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>📝</div>
+            <div>
+              <div style={{ fontSize:16, fontWeight:800, color:"#4527A0" }}>{sp.speakerName} 様への確認フォーム</div>
+              <div style={{ fontSize:12, color:"#7E57C2", marginTop:2 }}>{ch?.name}単会　{sp.seminarDate ? formatDate(sp.seminarDate) : '日程未定'}</div>
+            </div>
+          </div>
+
+          {/* フォームURL */}
+          <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", marginBottom:12, border:"1px solid #CE93D8" }}>
+            <div style={{ fontSize:10, color:"#9C27B0", fontWeight:700, marginBottom:4 }}>フォームURL</div>
+            <div style={{ fontSize:11, color:"#37474F", wordBreak:"break-all", lineHeight:1.6 }}>{formUrl}</div>
+          </div>
+
+          {/* アクションボタン */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:12, fontWeight:700, cursor:"pointer" }}
+              onClick={copyUrl}>📋 URLだけコピー</button>
+            <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:12, fontWeight:700, cursor:"pointer" }}
+              onClick={openMail}>✉ メールアプリで開く</button>
+            <button style={{ background:"#fff", color:"#4527A0", border:"2px solid #7E57C2", borderRadius:8, padding:"11px", fontSize:12, fontWeight:700, cursor:"pointer", gridColumn:"1/-1" }}
+              onClick={copyMail}>📋 メール文ごとコピー（手動送信）</button>
+          </div>
+        </div>
+
+        {/* メール本文プレビュー */}
+        <div style={{ marginTop:14 }}>
+          <div style={{ fontSize:11, color:"#78909C", fontWeight:700, marginBottom:5 }}>送付メール本文プレビュー</div>
+          <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:200, overflowY:"auto", border:"1px solid #E0E0E0" }}>{mailBody}</pre>
+        </div>
+
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:12 }}>
+          <button style={BC} onClick={onClose}>閉じる</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EmailModal({ speaker: sp, onClose, onDone }) {
   const ch = getChapter(sp.chapterId);
   const [mailType, setMailType] = useState("request");

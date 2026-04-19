@@ -360,10 +360,19 @@ const SUPABASE_KEY = 'sb_publishable_sAahVVEPRHnLDsOxawsI5w_XtGZe25O';
 const DISTRICT_ID  = '11111111-1111-1111-1111-111111111111';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// URLパラメータから講師IDを取得（事務局が送付するURL用）
-const urlParams = new URLSearchParams(location.search);
-const speakerId = urlParams.get('id');
-const chapterId = urlParams.get('ch') || '';
+// URLパラメータから情報を取得（事務局が送付するURL用）
+const urlParams  = new URLSearchParams(location.search);
+const speakerId  = urlParams.get('id')  || '';
+const chapterId  = urlParams.get('ch')  || '';
+const urlName    = urlParams.get('name')|| '';
+const urlUnit    = urlParams.get('unit')|| '';
+const urlDate    = urlParams.get('date')|| '';
+
+// URLパラメータで氏名・所属単会を事前入力
+if (urlName) document.addEventListener('DOMContentLoaded', () => {
+  const n = document.getElementById('speakerName'); if (n) n.value = urlName;
+  const u = document.getElementById('speakerUnit'); if (u) u.value = urlUnit;
+});
 
 // ページ遷移
 function goPage(n) {
@@ -527,10 +536,20 @@ async function compressImage(file, maxKB = 700) {
   });
 }
 
+// ファイル名生成ルール: 写真＝名前_単会名_講話日 / 資料01＝資料01_名前_単会名_講話日
+function buildFileName(type, ext, speakerName, unit, date) {
+  const d = date ? date.replace(/-/g, '') : 'nodate'; // 20260506
+  const n = (speakerName || '').replace(/\s/g, '');
+  const u = (unit || '').replace(/\s/g, '');
+  if (type === '顔写真') return `${n}_${u}_${d}.jpg`;
+  return `資料01_${n}_${u}_${d}.${ext}`;
+}
+
 // Supabase Storageへのアップロード
 async function uploadToStorage(file, speakerName, type) {
   const isImage = file.type.startsWith('image/');
-  const safeName = speakerName.replace(/\s/g, '_');
+  const unit    = document.getElementById('speakerUnit')?.value.trim() || urlUnit;
+  const date    = urlDate;
   const progressBar = document.getElementById(type + '-progress-bar');
   const progressEl  = document.getElementById(type + '-progress');
   const label       = document.getElementById(type + '-label');
@@ -546,13 +565,13 @@ async function uploadToStorage(file, speakerName, type) {
     progressBar.style.width = '50%';
   }
 
-  const ext = uploadFile.name.split('.').pop();
-  const path = `${safeName}_${type}.${ext}`;
-  const { error } = await db.storage.from('speaker-files').upload(path, uploadFile, { upsert: true });
+  const ext      = isImage ? 'jpg' : file.name.split('.').pop();
+  const fileName = buildFileName(type, ext, speakerName, unit, date);
+  const { error } = await db.storage.from('speaker-files').upload(fileName, uploadFile, { upsert: true });
   if (error) throw new Error('アップロード失敗: ' + error.message);
 
   progressBar.style.width = '100%';
-  const { data } = db.storage.from('speaker-files').getPublicUrl(path);
+  const { data } = db.storage.from('speaker-files').getPublicUrl(fileName);
   return data.publicUrl;
 }
 
