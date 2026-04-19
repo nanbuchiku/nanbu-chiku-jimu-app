@@ -5,7 +5,7 @@ import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
 
-export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd, onUpdate, onDeleteDone, showToast }) {
+export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, showToast }) {
   const [showDone,    setShowDone]    = useState(false);
   const [filterCh,   setFilterCh]    = useState("all");
   const [filterPrio, setFilterPrio]  = useState("all");
@@ -146,6 +146,11 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
             <option value="low">🟢 低</option>
           </select>
           <button style={BP} onClick={onAdd}>追加</button>
+          {onAddBatch && (
+            <button style={{ background:"#546E7A", color:"#fff", border:"none", borderRadius:6, padding:"7px 12px", fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }} title="全5単会に同じタスクを追加" onClick={onAddBatch}>
+              ＋全単会
+            </button>
+          )}
         </div>
       </div>
 

@@ -269,6 +269,18 @@ export default function App() {
     showToast("タスクを追加しました ✓");
   }, [newTask, showToast]);
 
+  const onAddBatchTask = useCallback(async () => {
+    if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
+    if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
+    const batch = CHAPTERS.map((ch, i) => ({ ...newTask, id: `t${Date.now()}${i}`, chapterId: ch.id, done: false }));
+    const { data: inserted, error } = await db.from('tasks').insert(batch.map(taskToDB)).select();
+    if (error) { showToast("⚠ 追加に失敗しました"); return; }
+    const newTasks = inserted ? inserted.map(taskFromDB) : batch;
+    setTasks(prev => [...prev, ...newTasks]);
+    setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
+    showToast(`全5単会にタスクを追加しました ✓`);
+  }, [newTask, showToast]);
+
   const onCloseForm   = useCallback(() => { setShowForm(false); setEditSpeaker(null); }, []);
   const onCloseEmail  = useCallback(() => setEmailModal(null), []);
   const onDoneEmail   = useCallback(() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }, [showToast]);
@@ -475,7 +487,7 @@ export default function App() {
           {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
           {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
           {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
-          {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
+          {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
           {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
           {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} />}
           {tab === "ranking"   && <RankingView tasks={tasks} speakers={speakers} today={today} />}
