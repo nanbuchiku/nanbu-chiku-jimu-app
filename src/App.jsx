@@ -479,7 +479,7 @@ export default function App() {
           {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
           {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
           {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} />}
-          {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}
+          {tab === "ranking"   && <RankingView tasks={tasks} speakers={speakers} today={today} />}
         </ErrorBoundary>
       </main>
 

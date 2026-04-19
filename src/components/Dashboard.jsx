@@ -307,17 +307,29 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                     {label}
                     <span style={{ fontSize:9, fontWeight:600, color: covered === 5 ? "#2E7D32" : covered >= 3 ? "#E65100" : "#B71C1C" }}>{covered}/5</span>
                   </div>
-                  {chapters.map(({ ch, sp }) => (
-                    <div key={ch.id} onClick={() => sp && onView(sp)} style={{ textAlign:"center", padding:"6px 2px", borderRadius:4, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor: sp ? "pointer" : "default", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}`, title: sp ? sp.speakerName : "未登録" }}>
-                      {sp ? (
-                        <span style={{ fontSize:9, fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }} title={`${sp.speakerName}「${sp.topic}」`}>
-                          {sp.speakerName ? "✓" : "▲"}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize:9, color:"#EF9A9A", fontWeight:700 }}>×</span>
-                      )}
-                    </div>
-                  ))}
+                  {chapters.map(({ ch, sp }) => {
+                    const handleClick = () => {
+                      if (sp) { onView(sp); return; }
+                      if (!onAddForDate) return;
+                      const [y, m] = ym.split("-").map(Number);
+                      const d = new Date(y, m - 1, 1);
+                      const daysToNext = (ch.day - d.getDay() + 7) % 7;
+                      d.setDate(d.getDate() + daysToNext);
+                      if (d.getMonth() + 1 === m) onAddForDate(toDateStr(d), ch.id);
+                    };
+                    return (
+                      <div key={ch.id} onClick={handleClick} style={{ textAlign:"center", padding:"6px 2px", borderRadius:4, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor:"pointer", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}` }}
+                        title={sp ? `${sp.speakerName}「${sp.topic}」クリックで確認書` : `未登録 — クリックして登録`}>
+                        {sp ? (
+                          <span style={{ fontSize:9, fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }}>
+                            {sp.speakerName ? "✓" : "▲"}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize:9, color:"#EF9A9A", fontWeight:700 }}>＋</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </React.Fragment>
               );
             })}

@@ -5,7 +5,7 @@ import { CARD, TBL, TH, TD, SEL, PILL, BC } from '../styles';
 
 const MEDALS = ["🥇","🥈","🥉","4位","5位"];
 
-export default memo(function RankingView({ tasks, today }) {
+export default memo(function RankingView({ tasks, speakers = [], today }) {
   const months = useMemo(() => {
     const arr = [];
     for (let i = 0; i < 6; i++) {
@@ -162,9 +162,39 @@ export default memo(function RankingView({ tasks, today }) {
           </div>
         </div>
       )}
-      <div style={{ padding:"8px 12px", background:"#E3F2FD", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+      <div style={{ padding:"8px 12px", background:"#E3F2FD", borderRadius:6, fontSize:11, color:"#1565C0", marginBottom:12 }}>
         💡 タスク管理タブでチェックを入れると自動でタイムスタンプが記録され、ランキングに反映されます
       </div>
+
+      {speakers.some(s => s.shioriArticle) && (() => {
+        const counts = {};
+        speakers.forEach(s => { if (s.shioriArticle) counts[s.shioriArticle] = (counts[s.shioriArticle] || 0) + 1; });
+        const arts = Array.from({length:17},(_,i)=>`第${i+1}条`).map(art => ({ art, count: counts[art] || 0 }));
+        const maxCount = Math.max(...arts.map(a => a.count), 1);
+        return (
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>📖 栞・条の使用回数（全期間）</div>
+            <div style={{ ...CARD, padding:"12px 14px" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
+                {arts.map(({ art, count }) => (
+                  <div key={art} style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 0" }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:"#37474F", minWidth:52 }}>{art}</span>
+                    <div style={{ flex:1, background:"#ECEFF1", borderRadius:3, height:8, overflow:"hidden" }}>
+                      <div style={{ height:8, borderRadius:3, width:`${(count/maxCount)*100}%`, background: count === 0 ? "transparent" : count >= 3 ? "#FF8F00" : "#1A3A6B", transition:"width .3s" }} />
+                    </div>
+                    <span style={{ fontSize:10, fontWeight:700, minWidth:20, textAlign:"right", color: count === 0 ? "#B0BEC5" : count >= 3 ? "#E65100" : "#546E7A" }}>{count}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop:8, fontSize:10, color:"#90A4AE", display:"flex", gap:12 }}>
+                <span><span style={{ color:"#B0BEC5", fontWeight:700 }}>0</span> 未使用</span>
+                <span><span style={{ color:"#1A3A6B", fontWeight:700 }}>1-2</span> 使用済</span>
+                <span><span style={{ color:"#E65100", fontWeight:700 }}>3+</span> 要注意（多用）</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 });
