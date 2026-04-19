@@ -57,24 +57,27 @@ export default function App() {
 
   const showToast = useCallback(msg => { setToast(msg); setTimeout(() => setToast(null), 3000); }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [{ data: spData, error: spErr }, { data: tkData, error: tkErr }] = await Promise.all([
-          db.from('speakers').select('*').eq('district_id', DISTRICT_ID).order('seminar_date'),
-          db.from('tasks').select('*').eq('district_id', DISTRICT_ID).order('due_date'),
-        ]);
-        if (spErr) throw spErr;
-        if (tkErr) throw tkErr;
-        if (spData) setSpeakers(spData.map(fromDB));
-        if (tkData) setTasks(tkData.map(taskFromDB));
-      } catch (e) {
-        setLoadError(e.message || "データの読み込みに失敗しました");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const loadData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const [{ data: spData, error: spErr }, { data: tkData, error: tkErr }] = await Promise.all([
+        db.from('speakers').select('*').eq('district_id', DISTRICT_ID).order('seminar_date'),
+        db.from('tasks').select('*').eq('district_id', DISTRICT_ID).order('due_date'),
+      ]);
+      if (spErr) throw spErr;
+      if (tkErr) throw tkErr;
+      if (spData) setSpeakers(spData.map(fromDB));
+      if (tkData) setTasks(tkData.map(taskFromDB));
+      if (silent) showToast("データを更新しました ✓");
+    } catch (e) {
+      if (silent) showToast("⚠ データ更新に失敗しました");
+      else setLoadError(e.message || "データの読み込みに失敗しました");
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => { loadData(); }, []);
 
   const updateSpeaker = useCallback(async (id, patch) => {
     const sp = speakersRef.current.find(s => s.id === id);
@@ -222,12 +225,15 @@ export default function App() {
             <h1 style={HDR.appTitle}>南部地区5単会タスク管理</h1>
             <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", marginTop:2 }}>{today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' })}</div>
           </div>
-          <div style={HDR.chBadges}>
-            {CHAPTERS.map(ch => (
-              <span key={ch.id} style={{ ...HDR.badge, background: ch.color }}>
-                {ch.short}｜{ch.dayName}
-              </span>
-            ))}
+          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+            <div style={HDR.chBadges}>
+              {CHAPTERS.map(ch => (
+                <span key={ch.id} style={{ ...HDR.badge, background: ch.color }}>
+                  {ch.short}｜{ch.dayName}
+                </span>
+              ))}
+            </div>
+            <button aria-label="データを更新" title="データを再読み込み" onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>⟳ 更新</button>
           </div>
         </div>
         <nav style={HDR.nav}>
