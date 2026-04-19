@@ -49,7 +49,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         {sp && (
           <>
             <button style={BP} onClick={() => window.print()}>🖨 印刷 / PDF保存</button>
-            <div style={{ marginLeft:"auto", display:"flex", gap:6 }}>
+            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
+              {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:11, color:"#90A4AE", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
               <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }}
                 disabled={sortedSpeakers.findIndex(x => x.id === sel) <= 0}
                 onClick={() => { const i = sortedSpeakers.findIndex(x => x.id === sel); if (i > 0) { const prev = sortedSpeakers[i-1]; setSel(prev.id); setDocSpeaker(prev); } }}>‹ 前</button>

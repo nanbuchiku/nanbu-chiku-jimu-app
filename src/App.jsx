@@ -321,6 +321,7 @@ export default function App() {
       if (noModals && notInInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const tabKeys = { "1":"dashboard","2":"calendar","3":"speakers","4":"document","5":"sptasks","6":"flyer","7":"tasks","8":"ranking" };
         if (tabKeys[e.key]) { e.preventDefault(); setTab(tabKeys[e.key]); }
+        if (e.key === "r") { e.preventDefault(); loadData(true); }
       }
     };
     window.addEventListener("keydown", onKey);
@@ -455,6 +456,7 @@ export default function App() {
               <tbody>
                 {[
                   ["?", "このヘルプを表示 / 非表示"],
+                  ["R", "データを再読み込み"],
                   ["N（講師管理タブ）", "新規講師登録フォームを開く"],
                   ["Esc", "モーダル・ダイアログを閉じる"],
                   ["1", "ダッシュボードへ"],
