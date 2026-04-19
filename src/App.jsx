@@ -15,6 +15,19 @@ import SpeakerTasksView from './components/SpeakerTasksView';
 import FlyerView from './components/FlyerView';
 import SpeakerForm from './components/SpeakerForm';
 
+const HDR = {
+  header:  { background:"linear-gradient(135deg,#0D1B3E 0%,#1A3A6B 100%)", color:"#fff", boxShadow:"0 2px 12px rgba(0,0,0,.3)", position:"sticky", top:0, zIndex:100 },
+  hInner:  { display:"flex", alignItems:"flex-start", justifyContent:"space-between", padding:"13px 22px 6px", flexWrap:"wrap", gap:8 },
+  orgLabel:{ fontSize:11, letterSpacing:"0.15em", opacity:.7, marginBottom:2 },
+  appTitle:{ margin:0, fontSize:18, fontWeight:700, letterSpacing:"0.04em" },
+  chBadges:{ display:"flex", gap:5, flexWrap:"wrap" },
+  badge:   { color:"#fff", fontSize:10, padding:"2px 9px", borderRadius:20, fontWeight:600 },
+  nav:     { display:"flex", padding:"0 14px", gap:2, overflowX:"auto" },
+  navBtn:  { background:"transparent", border:"none", color:"rgba(255,255,255,.7)", padding:"9px 14px", cursor:"pointer", fontSize:12, fontWeight:500, borderBottom:"3px solid transparent", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap", flexShrink:0 },
+  navOn:   { color:"#fff", borderBottomColor:"#64B5F6" },
+  navBadge:{ background:"#EF5350", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10 },
+};
+
 export default function App() {
   const [tab,         setTab]        = useState("dashboard");
   const [speakers,    setSpeakers]   = useState([]);
@@ -115,19 +128,6 @@ export default function App() {
     { id:"ranking",   label:"完了ランキング", icon:"🏆" },
   ];
 
-  const hdr = {
-    header:  { background:"linear-gradient(135deg,#0D1B3E 0%,#1A3A6B 100%)", color:"#fff", boxShadow:"0 2px 12px rgba(0,0,0,.3)", position:"sticky", top:0, zIndex:100 },
-    hInner:  { display:"flex", alignItems:"flex-start", justifyContent:"space-between", padding:"13px 22px 6px", flexWrap:"wrap", gap:8 },
-    orgLabel:{ fontSize:11, letterSpacing:"0.15em", opacity:.7, marginBottom:2 },
-    appTitle:{ margin:0, fontSize:18, fontWeight:700, letterSpacing:"0.04em" },
-    chBadges:{ display:"flex", gap:5, flexWrap:"wrap" },
-    badge:   { color:"#fff", fontSize:10, padding:"2px 9px", borderRadius:20, fontWeight:600 },
-    nav:     { display:"flex", padding:"0 14px", gap:2, overflowX:"auto" },
-    navBtn:  { background:"transparent", border:"none", color:"rgba(255,255,255,.7)", padding:"9px 14px", cursor:"pointer", fontSize:12, fontWeight:500, borderBottom:"3px solid transparent", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap", flexShrink:0 },
-    navOn:   { color:"#fff", borderBottomColor:"#64B5F6" },
-    navBadge:{ background:"#EF5350", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10 },
-  };
-
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
       <div style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #1A3A6B", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
@@ -147,26 +147,26 @@ export default function App() {
 
   return (
     <div style={{ fontFamily:"'Hiragino Kaku Gothic ProN','Meiryo',sans-serif", background:"#F0F2F5", minHeight:"100vh", color:"#263238" }}>
-      <header style={hdr.header}>
-        <div style={hdr.hInner}>
+      <header style={HDR.header}>
+        <div style={HDR.hInner}>
           <div>
-            <div style={hdr.orgLabel}>倫理法人会　南部地区事務局</div>
-            <h1 style={hdr.appTitle}>南部地区5単会タスク管理</h1>
+            <div style={HDR.orgLabel}>倫理法人会　南部地区事務局</div>
+            <h1 style={HDR.appTitle}>南部地区5単会タスク管理</h1>
           </div>
-          <div style={hdr.chBadges}>
+          <div style={HDR.chBadges}>
             {CHAPTERS.map(ch => (
-              <span key={ch.id} style={{ ...hdr.badge, background: ch.color }}>
+              <span key={ch.id} style={{ ...HDR.badge, background: ch.color }}>
                 {ch.short}｜{ch.dayName}
               </span>
             ))}
           </div>
         </div>
-        <nav style={hdr.nav}>
+        <nav style={HDR.nav}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              style={{ ...hdr.navBtn, ...(tab === t.id ? hdr.navOn : {}) }}>
+              style={{ ...HDR.navBtn, ...(tab === t.id ? HDR.navOn : {}) }}>
               <span>{t.icon}</span> {t.label}
-              {!!t.badge && t.badge > 0 && <span style={hdr.navBadge}>{t.badge}</span>}
+              {!!t.badge && t.badge > 0 && <span style={HDR.navBadge}>{t.badge}</span>}
             </button>
           ))}
         </nav>
@@ -186,6 +186,7 @@ export default function App() {
               setTasks(prev => prev.map(x => x.id === id ? updated : x));
             }}
             onDelete={async id => {
+              if (!confirm("このタスクを削除しますか？")) return;
               const { error } = await db.from('tasks').delete().eq('id', id);
               if (error) { showToast("⚠ 削除に失敗しました"); return; }
               setTasks(prev => prev.filter(t => t.id !== id));

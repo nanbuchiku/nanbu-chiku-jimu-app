@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, TBL, TH, TD, SEL, PILL } from '../styles';
 
 export default function RankingView({ tasks, today }) {
-  const months = [];
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    months.push({ value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月` });
-  }
-  const [selMonth, setSelMonth] = useState(months[0].value);
+  const months = useMemo(() => {
+    const arr = [];
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      arr.push({ value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月` });
+    }
+    return arr;
+  }, [today.getFullYear(), today.getMonth()]);
+  const [selMonth, setSelMonth] = useState(() => months[0].value);
 
   const ranking = CHAPTERS.map(ch => {
     const done = tasks.filter(t =>

@@ -77,9 +77,12 @@ ${ch.name}単会 担当
       <div style={{ ...MOD, maxWidth:580 }} onClick={e => e.stopPropagation()}>
         <div style={MH}>📧 メール送信</div>
 
-        <div style={{ background:"#E3F2FD", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
+        <div style={{ background: sp.email ? "#E3F2FD" : "#FFEBEE", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
           <div style={{ fontSize:11, color:"#546E7A" }}>送信先</div>
-          <div style={{ fontWeight:700, fontSize:14, color:"#1565C0" }}>{sp.email}</div>
+          {sp.email
+            ? <div style={{ fontWeight:700, fontSize:14, color:"#1565C0" }}>{sp.email}</div>
+            : <div style={{ fontWeight:700, fontSize:13, color:"#B71C1C" }}>⚠ メールアドレスが未登録です</div>
+          }
           <div style={{ fontSize:11, color:"#546E7A", marginTop:2 }}>{sp.speakerName}　{formatDate(sp.seminarDate)}</div>
         </div>
 
@@ -101,7 +104,7 @@ ${ch.name}単会 担当
         }
 
         <div style={{ display:"flex", gap:8, marginTop:14 }}>
-          <button style={{ ...BP, flex:1 }} onClick={() => { window.open(`mailto:${sp.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
+          <button style={{ ...BP, flex:1, opacity: sp.email ? 1 : .4, cursor: sp.email ? "pointer" : "not-allowed" }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
           <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${subject}\n\n${body}`).catch(() => {}); onDone(); }}>📋 コピーして手動送信</button>
           <button style={BC} onClick={onClose}>閉じる</button>
         </div>

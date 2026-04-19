@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CHAPTERS, JIMU } from '../constants';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL } from '../styles';
 
@@ -17,7 +17,7 @@ export default function FlyerView({ speakers, today, updateSpeaker, showToast })
   const daysLeft = Math.ceil((deadline - today) / 86400000);
   const deadlineColor = daysLeft < 0 ? "#B71C1C" : daysLeft <= 3 ? "#E65100" : daysLeft <= 7 ? "#FF8F00" : "#2E7D32";
 
-  const flyerData = CHAPTERS.map(ch => {
+  const flyerData = useMemo(() => CHAPTERS.map(ch => {
     const sp = speakers.find(s =>
       s.seminarType === "ms" &&
       s.chapterId === ch.id &&
@@ -25,9 +25,9 @@ export default function FlyerView({ speakers, today, updateSpeaker, showToast })
       s.seminarDate.startsWith(selMonth)
     );
     return { ch, sp };
-  });
+  }), [speakers, selMonth]);
 
-  const readyCount = flyerData.filter(({ sp }) => sp && sp.speakerName && sp.topic && sp.materialUrl).length;
+  const readyCount = useMemo(() => flyerData.filter(({ sp }) => sp && sp.speakerName && sp.topic && sp.materialUrl).length, [flyerData]);
 
   const buildLineText = () => {
     const lines = [

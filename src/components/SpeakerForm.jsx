@@ -3,9 +3,10 @@ import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
+const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate: new Date().toISOString().slice(0,10), notes:"", venue:"", seminarType:"ms" };
+
 export default function SpeakerForm({ initial, onSave, onClose }) {
-  const blank = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate: new Date().toISOString().slice(0,10), notes:"", venue:"", seminarType:"ms" };
-  const [form, setForm] = useState(initial || blank);
+  const [form, setForm] = useState(initial || BLANK);
   const [err, setErr] = useState("");
   const set = (k, v) => {
     setErr("");
