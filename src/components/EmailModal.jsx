@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 
@@ -8,10 +8,12 @@ export default function EmailModal({ speaker: sp, onClose, onDone }) {
   const [freeSubject, setFreeSubject] = useState("");
   const [freeBody,    setFreeBody]    = useState("");
 
-  const d = new Date(sp.seminarDate); d.setDate(d.getDate() - 14);
-  const matDL = d.toISOString().slice(0, 10);
+  const matDL = useMemo(() => {
+    const d = new Date(sp.seminarDate); d.setDate(d.getDate() - 14);
+    return d.toISOString().slice(0, 10);
+  }, [sp.seminarDate]);
 
-  const TEMPLATES = {
+  const TEMPLATES = useMemo(() => ({
     request: {
       label: "📋 講師依頼確認",
       subject: `【${ch.name}単会 モーニングセミナー】講師依頼のご確認`,
@@ -66,7 +68,7 @@ ${ch.name}単会 担当
       subject: "",
       body: "",
     },
-  };
+  }), [sp.speakerName, sp.seminarDate, sp.topic, ch.name, ch.venue, ch.dayName, matDL]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;

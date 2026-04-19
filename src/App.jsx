@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, taskFromDB, taskToDB } from './lib/supabase';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks } from './utils';
@@ -49,7 +49,7 @@ export default function App() {
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
 
-  const showToast = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const showToast = useCallback(msg => { setToast(msg); setTimeout(() => setToast(null), 3000); }, []);
 
   useEffect(() => {
     (async () => {
@@ -117,7 +117,7 @@ export default function App() {
     return n;
   }, [speakers]);
 
-  const TABS = [
+  const TABS = useMemo(() => [
     { id:"dashboard", label:"ダッシュボード", icon:"⊞" },
     { id:"calendar",  label:"カレンダー",     icon:"▦" },
     { id:"speakers",  label:"講師管理",       icon:"♟", badge: speakers.filter(s => s.status === "pending").length },
@@ -126,7 +126,19 @@ export default function App() {
     { id:"flyer",     label:"チラシ管理",     icon:"📋" },
     { id:"tasks",     label:"タスク管理",     icon:"✓", badge: tasks.filter(t => !t.done).length },
     { id:"ranking",   label:"完了ランキング", icon:"🏆" },
-  ];
+  ], [speakers, tasks, sptasksBadge]);
+
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key !== "Escape") return;
+      if (showForm) { setShowForm(false); setEditSpeaker(null); }
+      else if (lineModal) { setLineModal(null); }
+      else if (emailModal) { setEmailModal(null); }
+      else if (formUrlModal !== undefined) { setFormUrlModal(undefined); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showForm, lineModal, emailModal, formUrlModal]);
 
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
@@ -192,7 +204,8 @@ export default function App() {
               setTasks(prev => prev.filter(t => t.id !== id));
             }}
             onAdd={async () => {
-              if (!newTask.title || !newTask.dueDate) return;
+              if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
+              if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
               const t = { ...newTask, id: `t${Date.now()}`, done: false };
               const { error } = await db.from('tasks').insert(taskToDB(t));
               if (error) { showToast("⚠ 追加に失敗しました"); return; }
