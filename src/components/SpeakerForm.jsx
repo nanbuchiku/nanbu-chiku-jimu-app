@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
 const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"" };
 
-export default function SpeakerForm({ initial, onSave, onClose, saving }) {
+export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
   const [form, setForm] = useState(() => initial || { ...BLANK, requestDate: new Date().toISOString().slice(0,10) });
   const [err, setErr] = useState("");
   const set = (k, v) => {
@@ -137,4 +137,4 @@ export default function SpeakerForm({ initial, onSave, onClose, saving }) {
       </div>
     </div>
   );
-}
+});

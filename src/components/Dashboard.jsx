@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, isSameDay } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
-export default function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers }) {
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers }) {
   const thisWeek = useMemo(
     () => speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate)))),
     [speakers, weekDates]
@@ -91,4 +91,4 @@ export default function Dashboard({ speakers, tasks, weekDates, today, onView, s
       </div>
     </div>
   );
-}
+});

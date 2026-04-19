@@ -120,6 +120,32 @@ export default function App() {
   const onAddSpeaker  = useCallback(() => { setEditSpeaker(null); setShowForm(true); }, []);
   const onStatusChange= useCallback((id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }, [updateSpeaker, showToast]);
 
+  const onToggleTask = useCallback(async id => {
+    const t = tasks.find(x => x.id === id);
+    const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };
+    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+    if (error) { showToast("⚠ 更新に失敗しました"); return; }
+    setTasks(prev => prev.map(x => x.id === id ? updated : x));
+  }, [tasks, showToast]);
+
+  const onDeleteTask = useCallback(async id => {
+    if (!confirm("このタスクを削除しますか？")) return;
+    const { error } = await db.from('tasks').delete().eq('id', id);
+    if (error) { showToast("⚠ 削除に失敗しました"); return; }
+    setTasks(prev => prev.filter(t => t.id !== id));
+  }, [showToast]);
+
+  const onAddTask = useCallback(async () => {
+    if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
+    if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
+    const t = { ...newTask, id: `t${Date.now()}`, done: false };
+    const { error } = await db.from('tasks').insert(taskToDB(t));
+    if (error) { showToast("⚠ 追加に失敗しました"); return; }
+    setTasks(prev => [...prev, t]);
+    setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
+    showToast("タスクを追加しました ✓");
+  }, [newTask, showToast]);
+
   const sptasksBadge = useMemo(() => {
     const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 90);
     let n = 0;
@@ -204,30 +230,7 @@ export default function App() {
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
-        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask}
-            onToggle={async id => {
-              const t = tasks.find(x => x.id === id);
-              const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };
-              const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
-              if (error) { showToast("⚠ 更新に失敗しました"); return; }
-              setTasks(prev => prev.map(x => x.id === id ? updated : x));
-            }}
-            onDelete={async id => {
-              if (!confirm("このタスクを削除しますか？")) return;
-              const { error } = await db.from('tasks').delete().eq('id', id);
-              if (error) { showToast("⚠ 削除に失敗しました"); return; }
-              setTasks(prev => prev.filter(t => t.id !== id));
-            }}
-            onAdd={async () => {
-              if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
-              if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
-              const t = { ...newTask, id: `t${Date.now()}`, done: false };
-              const { error } = await db.from('tasks').insert(taskToDB(t));
-              if (error) { showToast("⚠ 追加に失敗しました"); return; }
-              setTasks(prev => [...prev, t]);
-              setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
-              showToast("タスクを追加しました ✓");
-            }} />}
+        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} />}
         {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "flyer"     && <FlyerView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} />}
         {tab === "ranking"   && <RankingView tasks={tasks} today={today} />}

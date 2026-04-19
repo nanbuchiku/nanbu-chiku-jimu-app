@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS, SEMINAR_TYPES } from '../constants';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 
-export default function FormURLModal({ speaker: spProp, onClose, showToast }) {
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast }) {
   const isNew = !spProp;
   const [form, setForm] = useState({
     chapterId:   spProp?.chapterId   || 'kawaguchi',
@@ -153,4 +153,4 @@ Mail：nanbugoudou.jimu@gmail.com
       </div>
     </div>
   );
-}
+});

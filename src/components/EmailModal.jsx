@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 
-export default function EmailModal({ speaker: sp, onClose, onDone }) {
+export default memo(function EmailModal({ speaker: sp, onClose, onDone }) {
   const ch = getChapter(sp.chapterId);
   const [mailType, setMailType] = useState("request");
   const [freeSubject, setFreeSubject] = useState("");
@@ -113,4 +113,4 @@ ${ch.name}単会 担当
       </div>
     </div>
   );
-}
+});

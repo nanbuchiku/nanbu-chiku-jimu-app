@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { JIMU } from '../constants';
 import { getChapter, getSeminarType, formatDate } from '../utils';
 import { BP, SEL } from '../styles';
@@ -25,7 +25,7 @@ function DocRow({ label, value, color }) {
   );
 }
 
-export default function DocumentView({ speakers, docSpeaker, setDocSpeaker, today }) {
+export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
   useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
   const sortedSpeakers = useMemo(
@@ -150,4 +150,4 @@ export default function DocumentView({ speakers, docSpeaker, setDocSpeaker, toda
       )}
     </div>
   );
-}
+});
