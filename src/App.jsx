@@ -205,7 +205,6 @@ export default function App() {
   const onSetFilterSt = useCallback(v => { setFilterSt(v); try { localStorage.setItem('spFilterSt', v); } catch {} }, []);
   const onEditSpeaker = useCallback(sp => { setEditSpeaker(sp); setShowForm(true); }, []);
   const onAddSpeaker  = useCallback(() => { setEditSpeaker(null); setShowForm(true); }, []);
-  const onStatusChange= useCallback((id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }, [updateSpeaker, showToast]);
 
   const onToggleTask = useCallback(async id => {
     const t = tasksRef.current.find(x => x.id === id);
