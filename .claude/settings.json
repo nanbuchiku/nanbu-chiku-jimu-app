@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "zipcoda-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "github:mach3/zipcoda-mcp"
+      ]
+    }
+  }
+}
