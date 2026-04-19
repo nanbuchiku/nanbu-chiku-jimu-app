@@ -29,10 +29,11 @@ const HDR = {
 };
 
 export default function App() {
-  const [tab,         setTab]        = useState("dashboard");
-  const [speakers,    setSpeakers]   = useState([]);
-  const [tasks,       setTasks]      = useState([]);
-  const [loading,     setLoading]    = useState(true);
+  const [tab,         setTabRaw]     = useState(() => { try { return localStorage.getItem('lastTab') || "dashboard"; } catch { return "dashboard"; } });
+  const setTab = useCallback(t => { setTabRaw(t); try { localStorage.setItem('lastTab', t); } catch {} }, []);
+  const [speakers,    setSpeakers]   = useState(() => { try { const c = localStorage.getItem('cachedSpeakers'); return c ? JSON.parse(c) : []; } catch { return []; } });
+  const [tasks,       setTasks]      = useState(() => { try { const c = localStorage.getItem('cachedTasks'); return c ? JSON.parse(c) : []; } catch { return []; } });
+  const [loading,     setLoading]    = useState(() => { try { return !localStorage.getItem('cachedSpeakers'); } catch { return true; } });
   const [loadError,   setLoadError]  = useState(null);
   const [lastUpdated, setLastUpdated]= useState(null);
   const [weekOffset,  setWeekOffset] = useState(0);
@@ -77,8 +78,8 @@ export default function App() {
       ]);
       if (spErr) throw spErr;
       if (tkErr) throw tkErr;
-      if (spData) setSpeakers(spData.map(fromDB));
-      if (tkData) setTasks(tkData.map(taskFromDB));
+      if (spData) { const mapped = spData.map(fromDB); setSpeakers(mapped); try { localStorage.setItem('cachedSpeakers', JSON.stringify(mapped)); } catch {} }
+      if (tkData) { const mapped = tkData.map(taskFromDB); setTasks(mapped); try { localStorage.setItem('cachedTasks', JSON.stringify(mapped)); } catch {} }
       setLastUpdated(new Date());
       if (silent) showToast("データを更新しました ✓");
     } catch (e) {
