@@ -210,6 +210,7 @@ export default function App() {
           <div>
             <div style={HDR.orgLabel}>倫理法人会　南部地区事務局</div>
             <h1 style={HDR.appTitle}>南部地区5単会タスク管理</h1>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", marginTop:2 }}>{today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' })}</div>
           </div>
           <div style={HDR.chBadges}>
             {CHAPTERS.map(ch => (

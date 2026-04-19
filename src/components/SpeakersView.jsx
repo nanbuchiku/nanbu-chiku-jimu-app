@@ -47,9 +47,19 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             <tbody>
               {filtered.map(sp => {
                 const ch = getChapter(sp.chapterId);
+                const daysUntil = sp.seminarDate ? Math.ceil((new Date(sp.seminarDate) - today) / 86400000) : null;
+                const rowBg = daysUntil === 0 ? "#FFEBEE" : daysUntil !== null && daysUntil > 0 && daysUntil <= 3 ? "#FFF8E1" : "white";
                 return (
-                  <tr key={sp.id} className="hover-row">
-                    <td style={TD}><div style={{ fontWeight:600, fontSize:12 }}>{sp.seminarDate}</div><div style={{ fontSize:10, color:"#90A4AE" }}>{ch.dayName}</div></td>
+                  <tr key={sp.id} className="hover-row" style={{ background: rowBg }}>
+                    <td style={TD}>
+                      <div style={{ fontWeight:600, fontSize:12 }}>{sp.seminarDate}</div>
+                      <div style={{ fontSize:10, color:"#90A4AE" }}>{ch.dayName}</div>
+                      {daysUntil !== null && daysUntil >= 0 && daysUntil <= 7 && (
+                        <div style={{ fontSize:9, fontWeight:700, color: daysUntil === 0 ? "#B71C1C" : daysUntil <= 3 ? "#E65100" : "#FF8F00" }}>
+                          {daysUntil === 0 ? "今日！" : `あと${daysUntil}日`}
+                        </div>
+                      )}
+                    </td>
                     <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
                     <td style={TD}><div style={{ fontWeight:600, fontSize:12 }}>{sp.speakerName}</div><div style={{ fontSize:10, color:"#78909C" }}>{sp.company}　{sp.role}</div></td>
                     <td style={{ ...TD, maxWidth:150, fontSize:11 }}>「{sp.topic}」</td>

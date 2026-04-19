@@ -59,7 +59,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                     <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
                     <td style={{ ...TD, fontWeight: t.done ? 400 : 600, textDecoration: t.done ? "line-through" : "none", maxWidth:200 }}>{t.title}</td>
                     <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
-                    <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? "超過" : `${dl}日`}</span></td>
+                    <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
                     <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
                     <td style={TD}>{!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} title="タスクを削除" onClick={() => onDelete(t.id)}>×</button>}</td>
                   </tr>
