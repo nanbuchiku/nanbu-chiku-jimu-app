@@ -312,6 +312,10 @@ export default function App() {
         e.preventDefault();
         setShowHelp(h => !h);
       }
+      if (noModals && notInInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tabKeys = { "1":"dashboard","2":"calendar","3":"speakers","4":"document","5":"sptasks","6":"flyer","7":"tasks","8":"ranking" };
+        if (tabKeys[e.key]) { e.preventDefault(); setTab(tabKeys[e.key]); }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -446,6 +450,14 @@ export default function App() {
                   ["?", "このヘルプを表示 / 非表示"],
                   ["N（講師管理タブ）", "新規講師登録フォームを開く"],
                   ["Esc", "モーダル・ダイアログを閉じる"],
+                  ["1", "ダッシュボードへ"],
+                  ["2", "カレンダーへ"],
+                  ["3", "講師管理へ"],
+                  ["4", "確認書作成へ"],
+                  ["5", "講師タスクへ"],
+                  ["6", "チラシ管理へ"],
+                  ["7", "タスク管理へ"],
+                  ["8", "完了ランキングへ"],
                 ].map(([key, desc]) => (
                   <tr key={key} style={{ borderBottom:"1px solid #F5F5F5" }}>
                     <td style={{ padding:"8px 12px", width:180 }}><kbd style={{ background:"#ECEFF1", border:"1px solid #CFD8DC", borderRadius:4, padding:"2px 8px", fontSize:12, fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
@@ -459,14 +471,20 @@ export default function App() {
         </div>
       )}
 
-      {toast && (
-        <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom:20, right:20, background: toast.msg?.startsWith("⚠") ? "#B71C1C" : "#1B5E20", color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 12px rgba(0,0,0,.3)", zIndex:2000, display:"flex", alignItems:"center", gap:10 }}>
-          <span>{toast.msg}</span>
-          {toast.action && (
-            <button onClick={() => { setToast(null); toast.action(); }} style={{ background:"rgba(255,255,255,.25)", border:"none", borderRadius:4, color:"#fff", padding:"3px 9px", fontSize:11, cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>{toast.actionLabel || "取り消し"}</button>
-          )}
-        </div>
-      )}
+      {toast && (() => {
+        const isErr = toast.type === "error" || toast.msg?.startsWith("⚠");
+        const isInfo = toast.type === "info";
+        const bg = isErr ? "#B71C1C" : isInfo ? "#1565C0" : "#1B5E20";
+        return (
+          <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom:20, left:"50%", transform:"translateX(-50%)", background: bg, color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 16px rgba(0,0,0,.35)", zIndex:2000, display:"flex", alignItems:"center", gap:10, maxWidth:"90vw", whiteSpace:"nowrap" }}>
+            <span>{toast.msg}</span>
+            {toast.action && (
+              <button onClick={() => { setToast(null); toast.action(); }} style={{ background:"rgba(255,255,255,.25)", border:"none", borderRadius:4, color:"#fff", padding:"3px 9px", fontSize:11, cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>{toast.actionLabel || "取り消し"}</button>
+            )}
+            <button onClick={() => setToast(null)} aria-label="閉じる" style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:4, color:"#fff", padding:"3px 7px", fontSize:11, cursor:"pointer", fontWeight:700, marginLeft:2 }}>✕</button>
+          </div>
+        );
+      })()}
     </div>
   );
 }

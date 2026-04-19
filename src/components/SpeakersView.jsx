@@ -218,9 +218,17 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       </button>
                     </td>
                     <td style={TD}>
-                      <div style={{ display:"flex", gap:3 }}>
+                      <div style={{ display:"flex", gap:3, flexWrap:"wrap" }}>
                         <button style={BSM} aria-label={`${sp.speakerName}の確認書を表示`} onClick={() => onDoc(sp)}>確認書</button>
                         <button style={BSM} aria-label={`${sp.speakerName}を編集`} onClick={() => onEdit(sp)}>編集</button>
+                        {(sp.phone || sp.email) && (
+                          <button style={{ ...BSM, color:"#1565C0" }} title="連絡先をコピー" aria-label={`${sp.speakerName}の連絡先をコピー`}
+                            onClick={() => {
+                              const lines = [`${sp.speakerName}`, sp.phone && `TEL: ${sp.phone}`, sp.email && `Mail: ${sp.email}`].filter(Boolean);
+                              navigator.clipboard?.writeText(lines.join("\n")).catch(() => {});
+                              showToast("連絡先をコピーしました 📋");
+                            }}>📋</button>
+                        )}
                         <button style={{ ...BSM, color:"#B71C1C" }} aria-label={`${sp.speakerName}を削除`} onClick={() => onDelete(sp.id)}>削除</button>
                       </div>
                     </td>
