@@ -171,7 +171,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       </div>
                       <div style={{ fontSize:10, color:"#78909C" }}>{sp.company}　{sp.role}</div>
                     </td>
-                    <td style={{ ...TD, maxWidth:150, fontSize:11 }}>「{sp.topic}」</td>
+                    <td style={{ ...TD, maxWidth:150, fontSize:11 }}>{sp.topic ? `「${sp.topic}」` : <span style={{ color:"#B0BEC5" }}>―</span>}</td>
                     <td style={TD}>
                       <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status].color }} value={sp.status} onChange={e => onStatusChange(sp.id, e.target.value)}>
                         {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}

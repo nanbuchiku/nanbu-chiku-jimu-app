@@ -11,7 +11,7 @@ export const toDateStr = d => {
 
 export const formatDate = d => {
   if (!d) return "";
-  const dt = typeof d === "string" ? new Date(d) : d;
+  const dt = typeof d === "string" ? new Date(d + "T00:00:00") : d;
   return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日（${"日月火水木金土"[dt.getDay()]}）`;
 };
 

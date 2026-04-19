@@ -1,13 +1,13 @@
 import React, { useMemo, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, isSameDay, toDateStr } from '../utils';
+import { getChapter, toDateStr } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate }) {
-  const thisWeek = useMemo(
-    () => speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate)))),
-    [speakers, weekDates]
-  );
+  const thisWeek = useMemo(() => {
+    const weekStrs = new Set(weekDates.map(toDateStr));
+    return speakers.filter(sp => sp.seminarDate && weekStrs.has(sp.seminarDate));
+  }, [speakers, weekDates]);
   const topTasks = useMemo(
     () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
     [tasks]
@@ -59,11 +59,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
         <div>
-          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>今週のモーニングセミナー</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>
+            今週のモーニングセミナー
+            {weekDates.length >= 6 && <span style={{ fontSize:11, fontWeight:400, color:"#90A4AE", marginLeft:6 }}>{weekDates[1].getMonth()+1}/{weekDates[1].getDate()} 〜 {weekDates[5].getMonth()+1}/{weekDates[5].getDate()}</span>}
+          </div>
           <div style={CARD}>
             {CHAPTERS.map(ch => {
               const sp = thisWeek.find(x => x.chapterId === ch.id);
-              const isToday = sp && isSameDay(new Date(sp.seminarDate), today);
+              const isToday = sp && sp.seminarDate === toDateStr(today);
               return (
                 <div key={ch.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5", background: isToday ? "#FFEBEE" : "transparent", borderRadius: isToday ? 4 : 0, paddingLeft: isToday ? 4 : 0 }}>
                   <div style={{ color:"#fff", fontSize:10, padding:"2px 7px", borderRadius:12, fontWeight:700, background: ch.color, minWidth:26, textAlign:"center" }}>{ch.dayName.replace("曜日","")}</div>
