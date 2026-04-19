@@ -252,11 +252,20 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           </table>
         </div>
       </div>
-      <div style={{ marginTop:8, display:"flex", gap:6, flexWrap:"wrap" }}>
+      <div style={{ marginTop:8, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+        <span style={{ fontSize:10, color:"#90A4AE", fontWeight:600 }}>ステータス：</span>
         {Object.entries(STATUS).map(([k, v]) => {
           const count = speakers.filter(sp => sp.status === k).length;
           if (count === 0) return null;
           return <span key={k} style={{ fontSize:11, padding:"3px 10px", borderRadius:12, fontWeight:600, color: v.color, background: v.bg, border:`1px solid ${v.color}33` }}>{v.label} {count}件</span>;
+        })}
+      </div>
+      <div style={{ marginTop:6, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+        <span style={{ fontSize:10, color:"#90A4AE", fontWeight:600 }}>単会別：</span>
+        {CHAPTERS.map(ch => {
+          const count = speakers.filter(sp => sp.chapterId === ch.id && sp.status !== "cancelled").length;
+          if (count === 0) return null;
+          return <span key={ch.id} style={{ fontSize:11, padding:"3px 10px", borderRadius:12, fontWeight:600, color: ch.color, background: ch.light, border:`1px solid ${ch.color}33` }}>{ch.name} {count}件</span>;
         })}
       </div>
       <div style={{ marginTop:10, padding:"10px 14px", background:"#E8F5E9", borderRadius:6, fontSize:11, color:"#2E7D32", display:"flex", alignItems:"center", gap:8 }}>

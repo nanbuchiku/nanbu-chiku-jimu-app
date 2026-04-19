@@ -85,7 +85,11 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               </div>
               <div style={{ fontSize:22, fontWeight:800, color:"#1A1A2E", letterSpacing:"0.06em", marginBottom:10 }}>講師依頼確認書</div>
               <div style={{ height:1, background:`linear-gradient(to right, transparent, ${st.color}, transparent)`, margin:"0 40px 10px" }} />
-              <div style={{ fontSize:11, color:"#78909C", letterSpacing:"0.05em" }}>受付日：　　　　年　　月　　日　　担当：</div>
+              <div style={{ fontSize:11, color:"#78909C", letterSpacing:"0.05em" }}>
+                {sp.requestDate
+                  ? `受付日：${sp.requestDate}　担当：`
+                  : "受付日：　　　　年　　月　　日　　担当："}
+              </div>
             </div>
 
             <DocSection title="① 開催情報" color={st.color}>
