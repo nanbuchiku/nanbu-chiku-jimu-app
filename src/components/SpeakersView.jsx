@@ -13,8 +13,8 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState("all");
-  const [sortCol, setSortCol] = useState("date");
-  const [sortDir, setSortDir] = useState("asc");
+  const [sortCol, setSortCol] = useState(() => { try { return localStorage.getItem('sp_sortCol') || "date"; } catch { return "date"; } });
+  const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('sp_sortDir') || "asc"; } catch { return "asc"; } });
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
@@ -35,12 +35,19 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
   const toggleSort = useCallback(col => {
     setSortCol(prev => {
+      const next = prev === col ? prev : col;
+      try { localStorage.setItem('sp_sortCol', next); } catch {}
       if (prev === col) {
-        setSortDir(d => d === "asc" ? "desc" : "asc");
-        return col;
+        setSortDir(d => {
+          const nd = d === "asc" ? "desc" : "asc";
+          try { localStorage.setItem('sp_sortDir', nd); } catch {}
+          return nd;
+        });
+      } else {
+        setSortDir("asc");
+        try { localStorage.setItem('sp_sortDir', "asc"); } catch {}
       }
-      setSortDir("asc");
-      return col;
+      return next;
     });
   }, []);
 
