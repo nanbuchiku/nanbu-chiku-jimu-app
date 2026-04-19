@@ -53,8 +53,9 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                 const ch = getChapter(t.chapterId);
                 const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
                 const p  = PRIO[t.priority] || PRIO.medium;
+                const isOverdue = !t.done && dl < 0;
                 return (
-                  <tr key={t.id} className="hover-row" style={{ opacity: t.done ? .5 : 1, background: t.done ? "#FAFAFA" : "white" }}>
+                  <tr key={t.id} className="hover-row" style={{ opacity: t.done ? .5 : 1, background: t.done ? "#FAFAFA" : isOverdue ? "#FFF5F5" : "white" }}>
                     <td style={TD}><input type="checkbox" checked={t.done} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
                     <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
                     <td style={{ ...TD, fontWeight: t.done ? 400 : 600, textDecoration: t.done ? "line-through" : "none", maxWidth:200 }}>{t.title}</td>

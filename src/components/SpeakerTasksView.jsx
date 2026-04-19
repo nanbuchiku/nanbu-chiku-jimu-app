@@ -93,7 +93,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                   })()}
                   {allDone && <span style={{ fontSize:10, background:"#E8F5E9", color:"#2E7D32", fontWeight:700, padding:"2px 7px", borderRadius:10, marginLeft:6 }}>✓ 完了</span>}
                 </div>
-                <button style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#90A4AE" }} onClick={() => setExpandedId(isExpanded ? null : sp.id)}>
+                <button aria-label={isExpanded ? "折りたたむ" : "すべてのタスクを表示"} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#90A4AE" }} onClick={() => setExpandedId(isExpanded ? null : sp.id)}>
                   {isExpanded ? "▲" : "▼"}
                 </button>
               </div>

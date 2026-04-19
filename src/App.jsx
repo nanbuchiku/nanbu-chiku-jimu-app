@@ -223,9 +223,10 @@ export default function App() {
         <nav style={HDR.nav}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
+              aria-current={tab === t.id ? "page" : undefined}
               style={{ ...HDR.navBtn, ...(tab === t.id ? HDR.navOn : {}) }}>
               <span>{t.icon}</span> {t.label}
-              {!!t.badge && t.badge > 0 && <span style={HDR.navBadge}>{t.badge}</span>}
+              {!!t.badge && t.badge > 0 && <span style={HDR.navBadge} aria-label={`${t.badge}件`}>{t.badge}</span>}
             </button>
           ))}
         </nav>
