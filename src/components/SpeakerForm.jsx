@@ -7,9 +7,10 @@ const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUn
 
 export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, saving }) {
   const [form, setForm] = useState(() => {
-    if (initial) return initial;
+    if (initial?.id) return initial;
     const savedChapter = (() => { try { return localStorage.getItem('form_lastChapter') || "kawaguchi"; } catch { return "kawaguchi"; } })();
-    return { ...BLANK, chapterId: savedChapter, requestDate: new Date().toISOString().slice(0,10) };
+    const base = { ...BLANK, chapterId: savedChapter, requestDate: new Date().toISOString().slice(0,10) };
+    return initial ? { ...base, ...initial } : base;
   });
   const [err, setErr] = useState("");
   const set = (k, v) => {

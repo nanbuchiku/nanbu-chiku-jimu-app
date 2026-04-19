@@ -185,6 +185,11 @@ export default function App() {
   const onDoneEmail   = useCallback(() => { setEmailModal(null); showToast("メール文をコピーしました 📧"); }, [showToast]);
   const onCloseFormUrl = useCallback(() => setFormUrlModal(undefined), []);
 
+  const onAddSpeakerForDate = useCallback((seminarDate, chapterId) => {
+    setEditSpeaker({ chapterId, seminarDate, requestDate: new Date().toISOString().slice(0,10) });
+    setShowForm(true);
+  }, []);
+
   const sptasksBadge = useMemo(() => {
     const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 90);
     let n = 0;
@@ -215,20 +220,29 @@ export default function App() {
   useEffect(() => {
     const tabLabel = TABS.find(t => t.id === tab)?.label;
     document.title = tabLabel ? `${tabLabel} | 南部地区5単会タスク管理` : "南部地区5単会タスク管理";
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [tab, TABS]);
 
   useEffect(() => {
     const onKey = e => {
-      if (e.key !== "Escape") return;
-      if (confirm) { setConfirm(null); }
-      else if (showForm) { setShowForm(false); setEditSpeaker(null); }
-      else if (lineModal) { setLineModal(null); }
-      else if (emailModal) { setEmailModal(null); }
-      else if (formUrlModal !== undefined) { setFormUrlModal(undefined); }
+      if (e.key === "Escape") {
+        if (confirm) { setConfirm(null); }
+        else if (showForm) { setShowForm(false); setEditSpeaker(null); }
+        else if (lineModal) { setLineModal(null); }
+        else if (emailModal) { setEmailModal(null); }
+        else if (formUrlModal !== undefined) { setFormUrlModal(undefined); }
+        return;
+      }
+      const noModals = !confirm && !showForm && !lineModal && !emailModal && formUrlModal === undefined;
+      const notInInput = !["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName);
+      if (e.key === "n" && noModals && notInInput && tab === "speakers") {
+        e.preventDefault();
+        setEditSpeaker(null); setShowForm(true);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [confirm, showForm, lineModal, emailModal, formUrlModal]);
+  }, [confirm, showForm, lineModal, emailModal, formUrlModal, tab]);
 
   if (loading) return (
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
@@ -291,7 +305,7 @@ export default function App() {
 
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
         {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} />}
-        {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} />}
+        {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onStatusChange={onStatusChange} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={onAddSpeaker} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
         {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}

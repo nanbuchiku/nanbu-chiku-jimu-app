@@ -2,7 +2,7 @@ import React, { useMemo, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { isSameDay } from '../utils';
 
-export default memo(function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, onSpeaker }) {
+export default memo(function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, onSpeaker, onAddForDate }) {
   const label = useMemo(() => {
     const a = weekDates[1], b = weekDates[5];
     return `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日 〜 ${b.getMonth()+1}月${b.getDate()}日`;
@@ -58,9 +58,12 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       <span style={{ fontSize:8, padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
                     </div>
                   ) : (
-                    <div style={{ textAlign:"center", paddingTop:16 }}>
+                    <div style={{ textAlign:"center", paddingTop:10, cursor: onAddForDate ? "pointer" : "default" }}
+                      title={onAddForDate ? "クリックで講師を登録" : undefined}
+                      onClick={() => onAddForDate?.(dKey, ch.id)}>
                       <div style={{ fontSize:9, color: ch.accent }}>MS開催</div>
                       <div style={{ fontSize:8, color:"#B0BEC5" }}>講師未定</div>
+                      {onAddForDate && <div style={{ fontSize:8, color: ch.color, marginTop:2, fontWeight:600 }}>＋ 登録</div>}
                     </div>
                   ))}
                 </div>
@@ -70,7 +73,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
         ))}
       </div>
       <div style={{ marginTop:10, padding:"7px 12px", background:"#F5F5F5", borderRadius:6, fontSize:11, color:"#78909C" }}>
-        💡 セルをクリックで確認書を表示　｜　MS = モーニングセミナー（毎週午前6時〜7時）
+        💡 登録済みセルをクリック → 確認書を表示　｜　未登録セルをクリック → 講師を新規登録　｜　MS = モーニングセミナー（毎週午前6時〜7時）
       </div>
     </div>
   );
