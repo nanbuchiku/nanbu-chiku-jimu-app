@@ -21,6 +21,18 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  const speakerAppearance = useMemo(() => {
+    const sorted = [...speakers].sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate));
+    const counter = {};
+    const result = {};
+    sorted.forEach(sp => {
+      if (!sp.speakerName) return;
+      counter[sp.speakerName] = (counter[sp.speakerName] || 0) + 1;
+      result[sp.id] = counter[sp.speakerName];
+    });
+    return result;
+  }, [speakers]);
+
   const toggleSort = useCallback(col => {
     setSortCol(prev => {
       if (prev === col) {
@@ -140,7 +152,15 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       )}
                     </td>
                     <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
-                    <td style={TD}><div style={{ fontWeight:600, fontSize:12 }}>{sp.speakerName}</div><div style={{ fontSize:10, color:"#78909C" }}>{sp.company}　{sp.role}</div></td>
+                    <td style={TD}>
+                      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                        <span style={{ fontWeight:600, fontSize:12 }}>{sp.speakerName}</span>
+                        {speakerAppearance[sp.id] > 1 && (
+                          <span style={{ fontSize:9, background:"#E3F2FD", color:"#1565C0", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize:10, color:"#78909C" }}>{sp.company}　{sp.role}</div>
+                    </td>
                     <td style={{ ...TD, maxWidth:150, fontSize:11 }}>「{sp.topic}」</td>
                     <td style={TD}>
                       <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status].color }} value={sp.status} onChange={e => onStatusChange(sp.id, e.target.value)}>

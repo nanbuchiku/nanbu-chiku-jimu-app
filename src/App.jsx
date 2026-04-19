@@ -190,6 +190,18 @@ export default function App() {
     setShowForm(true);
   }, []);
 
+  const exportBackup = useCallback(() => {
+    const data = { exportedAt: new Date().toISOString(), speakers: speakersRef.current, tasks: tasksRef.current };
+    const json = JSON.stringify(data, null, 2);
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(new Blob([json], { type: "application/json" })),
+      download: `backup_${new Date().toISOString().slice(0,10)}.json`,
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("バックアップをエクスポートしました 📤");
+  }, [showToast]);
+
   const sptasksBadge = useMemo(() => {
     const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() + 90);
     let n = 0;
@@ -277,6 +289,7 @@ export default function App() {
                 </span>
               ))}
             </div>
+            <button aria-label="データをバックアップ" title="全データをJSONでエクスポート" onClick={exportBackup} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.8)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>📤 BK</button>
             <button aria-label="データを更新" title="データを再読み込み" onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>⟳ 更新</button>
           </div>
         </div>
