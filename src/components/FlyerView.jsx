@@ -5,8 +5,11 @@ import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL } from '../s
 export default memo(function FlyerView({ speakers, today, showToast }) {
   const months = useMemo(() => Array.from({ length: 6 }, (_, i) => {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-    return { value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月号` };
-  }), [today]);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    const monthSpeakers = speakers.filter(s => (!s.seminarType || s.seminarType === "ms") && s.seminarDate?.startsWith(ym) && s.status !== "cancelled");
+    const ready = monthSpeakers.filter(s => s.speakerName && s.topic && s.materialUrl).length;
+    return { value: ym, label: `${d.getFullYear()}年${d.getMonth()+1}月号`, readyCount: ready };
+  }), [today, speakers]);
   const [selMonth, setSelMonth] = useState(() => months[1].value);
   const [printEmail, setPrintEmail] = useState(() => localStorage.getItem('flyer_printEmail') || "");
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -100,7 +103,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>📋 チラシ流し込みデータ管理</div>
         <select style={{ ...SEL, fontWeight:700 }} value={selMonth} onChange={e => setSelMonth(e.target.value)}>
-          {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          {months.map(m => <option key={m.value} value={m.value}>{m.label}　{m.readyCount === 5 ? "✓完成" : `${m.readyCount}/5`}</option>)}
         </select>
         <div style={{ marginLeft:"auto", display:"flex", gap:8, flexWrap:"wrap" }}>
           <button style={BP} onClick={() => { navigator.clipboard?.writeText(buildLineText).catch(() => {}); showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱"); }}>📱 LINE共有テキストをコピー</button>

@@ -92,7 +92,7 @@ export default function App() {
     setToast(t);
     toastTimerRef.current = setTimeout(() => setToast(null), t.action ? 5000 : 3000);
   }, []);
-  const showConfirm = useCallback((msg, onOk) => setConfirm({ msg, onOk }), []);
+  const showConfirm = useCallback((msg, onOk, okLabel) => setConfirm({ msg, onOk, okLabel }), []);
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -315,7 +315,7 @@ export default function App() {
         } catch (e) {
           showToast(`⚠ インポートに失敗しました: ${e.message}`);
         }
-      });
+      }, "インポートする");
     } catch (e) {
       showToast(`⚠ ファイルの解析に失敗しました: ${e.message}`);
     }
@@ -512,7 +512,7 @@ export default function App() {
             <div style={{ fontSize:13, color:"#37474F", marginBottom:20 }}>{confirm.msg}</div>
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={BC} onClick={() => setConfirm(null)}>キャンセル</button>
-              <button style={{ ...BP, background:"#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>削除する</button>
+              <button style={{ ...BP, background: confirm.okLabel ? "#1A3A6B" : "#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>{confirm.okLabel || "削除する"}</button>
             </div>
           </div>
         </div>
