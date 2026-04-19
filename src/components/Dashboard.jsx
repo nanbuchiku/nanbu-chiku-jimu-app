@@ -41,12 +41,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           <div style={CARD}>
             {CHAPTERS.map(ch => {
               const sp = thisWeek.find(x => x.chapterId === ch.id);
+              const isToday = sp && isSameDay(new Date(sp.seminarDate), today);
               return (
-                <div key={ch.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
+                <div key={ch.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5", background: isToday ? "#FFEBEE" : "transparent", borderRadius: isToday ? 4 : 0, paddingLeft: isToday ? 4 : 0 }}>
                   <div style={{ color:"#fff", fontSize:10, padding:"2px 7px", borderRadius:12, fontWeight:700, background: ch.color, minWidth:26, textAlign:"center" }}>{ch.dayName.replace("曜日","")}</div>
                   <div style={{ fontWeight:700, fontSize:12, minWidth:70, color: ch.color }}>{ch.name}</div>
                   {sp ? (
                     <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", flex:1 }}>
+                      {isToday && <span style={{ fontSize:9, background:"#B71C1C", color:"#fff", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>今日！</span>}
                       <span style={{ fontSize:12, fontWeight:600 }}>{sp.speakerName}</span>
                       <span style={{ fontSize:11, color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
                       <span style={{ fontSize:11, padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
@@ -69,7 +71,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                 <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
                   <span style={PILL(ch)}>{ch.name}</span>
                   <span style={{ flex:1, fontSize:12 }}>{t.title}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color: dl < 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : "#546E7A" }}>{dl < 0 ? "超過" : `${dl}日`}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color: dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : "#546E7A" }}>{dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span>
                 </div>
               );
             })}
