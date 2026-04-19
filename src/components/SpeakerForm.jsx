@@ -1,18 +1,38 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, useEffect, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
 const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"" };
 
+const DRAFT_KEY = 'speakerFormDraft';
+
 export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, saving }) {
+  const isNew = !initial?.id;
   const [form, setForm] = useState(() => {
-    if (initial?.id) return initial;
+    if (!isNew) return initial;
     const savedChapter = (() => { try { return localStorage.getItem('form_lastChapter') || "kawaguchi"; } catch { return "kawaguchi"; } })();
     const base = { ...BLANK, chapterId: savedChapter, requestDate: new Date().toISOString().slice(0,10) };
-    return initial ? { ...base, ...initial } : base;
+    if (initial) return { ...base, ...initial };
+    try {
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) return JSON.parse(draft);
+    } catch {}
+    return base;
   });
   const [err, setErr] = useState("");
+  const [hasDraft] = useState(() => {
+    if (!isNew || initial) return false;
+    try { return !!localStorage.getItem(DRAFT_KEY); } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (!isNew) return;
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch {}
+  }, [form, isNew]);
+
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
+
   const set = (k, v) => {
     setErr("");
     if (k === 'chapterId') { try { localStorage.setItem('form_lastChapter', v); } catch {} }
@@ -79,7 +99,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
 
           <div>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>前泊・宿泊</div>
-            <select style={{ ...INP, width:"100%" }} value={form.lodging || "不要"} onChange={e => set("lodging", e.target.value)}>
+            <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.lodging || "不要"} onChange={e => set("lodging", e.target.value)}>
               <option value="不要">不要</option>
               <option value="あり（前泊）">あり（前泊）</option>
               <option value="あり（当日のみ）">あり（当日のみ）</option>
@@ -87,7 +107,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           </div>
           <div>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>資料印刷</div>
-            <select style={{ ...INP, width:"100%" }} value={form.printRequired || "不要"} onChange={e => set("printRequired", e.target.value)}>
+            <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.printRequired || "不要"} onChange={e => set("printRequired", e.target.value)}>
               <option value="不要">不要（持参 or なし）</option>
               <option value="あり">あり（単会で印刷）</option>
             </select>
@@ -103,20 +123,20 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 {ch.venue}
               </div>
             ) : (
-              <input type="text" style={{ ...INP, width:"100%" }} placeholder="会場名を入力" value={form.venue || ""} onChange={e => set("venue", e.target.value)} />
+              <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="会場名を入力" value={form.venue || ""} onChange={e => set("venue", e.target.value)} />
             )}
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>テーマ</div>
-            <input type="text" style={{ ...INP, width:"100%" }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
+            <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料フォルダURL</div>
-            <input type="url" style={{ ...INP, width:"100%" }} placeholder="https://drive.google.com/..." value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
+            <input disabled={saving} type="url" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="https://drive.google.com/..." value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
-            <textarea style={{ ...INP, width:"100%", minHeight:54, resize:"vertical" }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
+            <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:54, resize:"vertical", opacity: saving ? .6 : 1 }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
           </div>
 
           <div style={{ gridColumn:"1/-1", borderTop:"2px dashed #E0E0E0", paddingTop:12, marginTop:4 }}>
@@ -124,7 +144,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div>
                 <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>お酒を飲むか</div>
-                <select style={{ ...INP, width:"100%" }} value={form.drinksAlcohol || ""} onChange={e => set("drinksAlcohol", e.target.value)}>
+                <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.drinksAlcohol || ""} onChange={e => set("drinksAlcohol", e.target.value)}>
                   <option value="">未確認</option>
                   <option value="飲む">飲む</option>
                   <option value="飲まない">飲まない</option>
@@ -133,14 +153,14 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
               </div>
               <div>
                 <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>栞・第何条</div>
-                <select style={{ ...INP, width:"100%" }} value={form.shioriArticle || ""} onChange={e => set("shioriArticle", e.target.value)}>
+                <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.shioriArticle || ""} onChange={e => set("shioriArticle", e.target.value)}>
                   <option value="">未記入</option>
                   {Array.from({length:17},(_,i)=>`第${i+1}条`).map(v=><option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>講話内容・特記事項・次回への申し送り</div>
-                <textarea style={{ ...INP, width:"100%", minHeight:80, resize:"vertical" }} placeholder="講話の内容、参加者の反応、次回依頼時の注意点など自由に記入" value={form.postNotes || ""} onChange={e => set("postNotes", e.target.value)} />
+                <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:80, resize:"vertical", opacity: saving ? .6 : 1 }} placeholder="講話の内容、参加者の反応、次回依頼時の注意点など自由に記入" value={form.postNotes || ""} onChange={e => set("postNotes", e.target.value)} />
               </div>
             </div>
           </div>
@@ -164,17 +184,24 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             ⚠ 同じ単会・開催日の講師が既に登録されています（{duplicate.speakerName}）。続けて登録することもできます。
           </div>
         )}
+        {hasDraft && isNew && !initial && (
+          <div style={{ marginTop:8, padding:"6px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:11, color:"#E65100", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span>📝 前回の入力内容を復元しました</span>
+            <button style={{ background:"none", border:"none", fontSize:10, color:"#90A4AE", cursor:"pointer", textDecoration:"underline" }} onClick={() => { clearDraft(); setForm({ ...BLANK, chapterId: form.chapterId, requestDate: form.requestDate }); }}>クリア</button>
+          </div>
+        )}
         {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:12, color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
         <div style={{ display:"flex", gap:8, marginTop:10 }}>
           <button style={{ ...BP, opacity: saving ? .6 : 1 }} disabled={saving} onClick={() => {
             if (!form.speakerName) return setErr("講師名は必須です");
             if (!form.seminarDate) return setErr("開催日は必須です");
             if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("メールアドレスの形式が正しくありません");
+            clearDraft();
             onSave(form);
           }}>
             {saving ? "⏳ 保存中..." : initial ? "💾 変更を保存" : "✓ 登録する"}
           </button>
-          <button style={BC} disabled={saving} onClick={onClose}>キャンセル</button>
+          <button style={BC} disabled={saving} onClick={() => { clearDraft(); onClose(); }}>キャンセル</button>
         </div>
       </div>
     </div>
