@@ -53,7 +53,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理</div>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理 <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE" }}>{visible.length}件</span></div>
         <input style={{ ...INP, width:140, fontSize:11 }} placeholder="🔍 名前・会社検索" value={search} onChange={e => setSearch(e.target.value)} />
         <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
           <option value="all">全単会</option>
@@ -154,11 +154,10 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
         })}
       </div>
 
-      {visible.length === 0 && filtered.length > 0 && (
-        <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>該当する講師タスクがありません</div>
-      )}
-      {filtered.length === 0 && (
-        <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>講師データがありません</div>
+      {visible.length === 0 && (
+        <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>
+          {filtered.length === 0 ? "講師データがありません" : "該当する講師タスクがありません"}
+        </div>
       )}
     </div>
   );

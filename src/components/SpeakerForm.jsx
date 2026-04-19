@@ -45,11 +45,11 @@ export default memo(function SpeakerForm({ initial, onSave, onClose, saving }) {
             <div key={k}>
               <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>{l}</div>
               {t === "select" ? (
-                <select style={{ ...INP, width:"100%" }} value={form[k] || ""} onChange={e => set(k, e.target.value)}>
+                <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form[k] || ""} onChange={e => set(k, e.target.value)}>
                   {o.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
                 </select>
               ) : (
-                <input type={t} style={{ ...INP, width:"100%" }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
+                <input disabled={saving} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
               )}
             </div>
           ))}
