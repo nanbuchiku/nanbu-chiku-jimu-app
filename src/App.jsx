@@ -175,6 +175,10 @@ export default function App() {
     return n;
   }, [speakers, today]);
 
+  const todaysSpeakers = useMemo(() =>
+    speakers.filter(sp => sp.seminarDate === today.toISOString().slice(0,10) && sp.status !== "cancelled"),
+  [speakers, today]);
+
   const TABS = useMemo(() => [
     { id:"dashboard", label:"ダッシュボード", icon:"⊞" },
     { id:"calendar",  label:"カレンダー",     icon:"▦" },
@@ -251,6 +255,17 @@ export default function App() {
           ))}
         </nav>
       </header>
+
+      {todaysSpeakers.length > 0 && (
+        <div role="banner" style={{ background:"linear-gradient(90deg,#B71C1C,#C62828)", color:"#fff", padding:"8px 22px", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+          <span style={{ fontSize:16 }}>🎤</span>
+          <span>本日のモーニングセミナー：</span>
+          {todaysSpeakers.map(sp => {
+            const ch = getChapter(sp.chapterId);
+            return <span key={sp.id} style={{ background:"rgba(255,255,255,.2)", padding:"2px 10px", borderRadius:12 }}>{ch.name}　{sp.speakerName} 様「{sp.topic}」</span>;
+          })}
+        </div>
+      )}
 
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
         {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} />}
