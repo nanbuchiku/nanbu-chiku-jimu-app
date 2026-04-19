@@ -29,7 +29,7 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
         <div style={{ overflowX:"auto" }}>
           <table style={TBL}>
             <thead>
-              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","依頼メール","LINE通知","📅 カレンダー","📝 確認フォーム","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+              <tr>{["開催日","単会","講師名・所属","テーマ","ステータス","講話資料","連絡","📅 カレンダー","📝 確認フォーム","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {filtered.map(sp => {
@@ -58,17 +58,17 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
                       )}
                     </td>
                     <td style={TD}>
-                      <button style={{ ...BSM, background:"#1A3A6B", color:"#fff", fontSize:10 }} onClick={() => onEmail(sp)}>📧 送信</button>
-                    </td>
-                    <td style={TD}>
-                      {sp.lineNotified ? (
-                        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                          <span style={{ color:"#06C755", fontSize:11, fontWeight:600 }}>✓ 送信済</span>
-                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} onClick={() => { updateSpeaker(sp.id,{lineNotified:false}); showToast("LINE未送信に戻しました"); }}>↩</button>
-                        </div>
-                      ) : (
-                        <button style={{ ...BSM, background:"#06C755", color:"#fff", fontSize:10 }} onClick={() => onLine(sp)}>📱 LINE</button>
-                      )}
+                      <div style={{ display:"flex", gap:3, flexDirection:"column" }}>
+                        <button style={{ ...BSM, background:"#1A3A6B", color:"#fff", fontSize:10 }} onClick={() => onEmail(sp)}>📧 メール</button>
+                        {sp.lineNotified ? (
+                          <div style={{ display:"flex", alignItems:"center", gap:3 }}>
+                            <span style={{ color:"#06C755", fontSize:10, fontWeight:600 }}>✓LINE済</span>
+                            <button style={{ ...BSM, fontSize:9, color:"#78909C", padding:"1px 4px" }} onClick={() => { updateSpeaker(sp.id,{lineNotified:false}); showToast("LINE未送信に戻しました"); }}>↩</button>
+                          </div>
+                        ) : (
+                          <button style={{ ...BSM, background:"#06C755", color:"#fff", fontSize:10 }} onClick={() => onLine(sp)}>📱 LINE</button>
+                        )}
+                      </div>
                     </td>
                     <td style={TD}>
                       {sp.calendarAdded ? (
@@ -95,7 +95,7 @@ export default function SpeakersView({ speakers, filterCh, filterSt, setFilterCh
                   </tr>
                 );
               })}
-              {filtered.length === 0 && <tr><td colSpan={11} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:28 }}>該当データなし</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={10} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:28 }}>該当データなし</td></tr>}
             </tbody>
           </table>
         </div>

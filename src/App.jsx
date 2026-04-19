@@ -171,17 +171,20 @@ export default function App() {
             onToggle={async id => {
               const t = tasks.find(x => x.id === id);
               const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };
-              await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+              const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+              if (error) { showToast("⚠ 更新に失敗しました"); return; }
               setTasks(prev => prev.map(x => x.id === id ? updated : x));
             }}
             onDelete={async id => {
-              await db.from('tasks').delete().eq('id', id);
+              const { error } = await db.from('tasks').delete().eq('id', id);
+              if (error) { showToast("⚠ 削除に失敗しました"); return; }
               setTasks(prev => prev.filter(t => t.id !== id));
             }}
             onAdd={async () => {
               if (!newTask.title || !newTask.dueDate) return;
               const t = { ...newTask, id: `t${Date.now()}`, done: false };
-              await db.from('tasks').insert(taskToDB(t));
+              const { error } = await db.from('tasks').insert(taskToDB(t));
+              if (error) { showToast("⚠ 追加に失敗しました"); return; }
               setTasks(prev => [...prev, t]);
               setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
               showToast("タスクを追加しました ✓");

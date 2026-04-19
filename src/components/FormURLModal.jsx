@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CHAPTERS } from '../constants';
+import { CHAPTERS, SEMINAR_TYPES } from '../constants';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 
@@ -101,11 +101,7 @@ Mail：nanbugoudou.jimu@gmail.com
               <div>
                 <label style={LB}>セミナー種別</label>
                 <select style={INP2} value={form.seminarType} onChange={e => setForm(f => ({ ...f, seminarType: e.target.value }))}>
-                  <option value="ms">モーニングセミナー</option>
-                  <option value="msbasic">MS基礎</option>
-                  <option value="ethics">倫経セミナー</option>
-                  <option value="tsudoi">集い</option>
-                  <option value="other">その他セミナー</option>
+                  {SEMINAR_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
               </div>
               <div style={{ gridColumn:"1/-1" }}>
