@@ -292,6 +292,35 @@ export default function App() {
     showToast("バックアップをエクスポートしました 📤");
   }, [showToast]);
 
+  const importBackup = useCallback(async (file) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data.speakers) || !Array.isArray(data.tasks)) throw new Error("無効なバックアップファイルです");
+      const spCount = data.speakers.length, tkCount = data.tasks.length;
+      showConfirm(`講師 ${spCount}件・タスク ${tkCount}件をインポートします。既存の同一IDのデータは上書きされます。続けますか？`, async () => {
+        try {
+          if (data.speakers.length > 0) {
+            const { error } = await db.from('speakers').upsert(data.speakers.map(toDB), { onConflict: 'id' });
+            if (error) throw error;
+            setSpeakers(data.speakers);
+          }
+          if (data.tasks.length > 0) {
+            const { error } = await db.from('tasks').upsert(data.tasks.map(taskToDB), { onConflict: 'id' });
+            if (error) throw error;
+            setTasks(data.tasks);
+          }
+          showToast(`インポートしました ✓ 講師${spCount}件 タスク${tkCount}件`);
+        } catch (e) {
+          showToast(`⚠ インポートに失敗しました: ${e.message}`);
+        }
+      });
+    } catch (e) {
+      showToast(`⚠ ファイルの解析に失敗しました: ${e.message}`);
+    }
+  }, [showConfirm, showToast]);
+
   const sptasksBadge = useMemo(() => {
     const fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14);
     const toDate   = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 90);
@@ -404,6 +433,10 @@ export default function App() {
             </div>
             <button aria-label="キーボードショートカット一覧" title="ショートカット (?)" onClick={() => setShowHelp(h => !h)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.7)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>?</button>
             <button aria-label="データをバックアップ" title="全データをJSONでエクスポート" onClick={exportBackup} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.8)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>📤 BK</button>
+            <label aria-label="バックアップから復元" title="JSONバックアップからインポート" style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.7)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>
+              📥 復元
+              <input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} />
+            </label>
             <button aria-label="データを更新" title="データを再読み込み" onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>⟳ 更新</button>
           </div>
         </div>

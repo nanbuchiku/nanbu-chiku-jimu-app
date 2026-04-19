@@ -67,6 +67,9 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       .sort((a, b) => new Date(b.seminarDate) - new Date(a.seminarDate));
   }, [form.speakerName, form.id, speakers]);
 
+  const latestPast = pastTalks[0];
+  const canAutofill = isNew && latestPast && (!form.company || !form.speakerKana);
+
   const suggestDates = useMemo(() => {
     const chapter = getChapter(form.chapterId);
     if (!chapter || chapter.day < 0) return [];
@@ -202,7 +205,23 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
         </div>
         {pastTalks.length > 0 && (
           <div style={{ marginTop:10, padding:"8px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:11, color:"#1565C0" }}>
-            <div style={{ fontWeight:700, marginBottom:5 }}>📚 この講師の過去講話（{pastTalks.length}件）</div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:5, flexWrap:"wrap", gap:6 }}>
+              <div style={{ fontWeight:700 }}>📚 この講師の過去講話（{pastTalks.length}件）</div>
+              {canAutofill && (
+                <button style={{ fontSize:10, background:"#1565C0", color:"#fff", border:"none", borderRadius:8, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}
+                  onClick={() => setForm(f => ({
+                    ...f,
+                    speakerKana:  f.speakerKana  || latestPast.speakerKana  || "",
+                    speakerUnit:  f.speakerUnit  || latestPast.speakerUnit  || "",
+                    company:      f.company      || latestPast.company      || "",
+                    role:         f.role         || latestPast.role         || "",
+                    email:        f.email        || latestPast.email        || "",
+                    phone:        f.phone        || latestPast.phone        || "",
+                  }))}>
+                  前回情報を自動入力
+                </button>
+              )}
+            </div>
             {pastTalks.slice(0, 3).map(sp => {
               const ch = getChapter(sp.chapterId);
               return (
