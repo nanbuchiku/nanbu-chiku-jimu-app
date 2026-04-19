@@ -174,6 +174,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                     <td style={TD}>
                       <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ fontWeight:600, fontSize:12 }}>{sp.speakerName}</span>
+                        {speakerAppearance[sp.id] === 1 && (
+                          <span style={{ fontSize:9, background:"#E8F5E9", color:"#2E7D32", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>初回</span>
+                        )}
                         {speakerAppearance[sp.id] > 1 && (
                           <span style={{ fontSize:9, background:"#E3F2FD", color:"#1565C0", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>
                         )}
