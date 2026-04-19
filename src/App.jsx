@@ -214,7 +214,7 @@ export default function App() {
   );
 
   return (
-    <div style={{ fontFamily:"'Hiragino Kaku Gothic ProN','Meiryo',sans-serif", background:"#F0F2F5", minHeight:"100vh", color:"#263238" }}>
+    <div style={{ minHeight:"100vh" }}>
       <header style={HDR.header}>
         <div style={HDR.hInner}>
           <div>

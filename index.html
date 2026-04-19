@@ -11,16 +11,19 @@
     <link rel="icon" type="image/svg+xml" href="/rinri-nanbu/favicon.svg" />
     <link rel="manifest" href="/rinri-nanbu/manifest.json" />
     <style>
-      *, *::before, *::after { box-sizing: border-box; }
-      body { margin: 0; }
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background: #F0F2F5; color: #263238; }
       .hover-row:hover td { background: #F8FAFC !important; transition: background .1s; }
       button { transition: opacity .15s, box-shadow .15s; }
       button:hover:not(:disabled) { opacity: .88; }
       button:active:not(:disabled) { opacity: .75; }
+      select, input, textarea { outline: none; font-family: inherit; }
+      select:focus, input:focus, textarea:focus { border-color: #1A3A6B !important; box-shadow: 0 0 0 2px rgba(26,58,107,.1); }
       ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: #F5F5F5; }
       ::-webkit-scrollbar-thumb { background: #CFD8DC; border-radius: 3px; }
       ::-webkit-scrollbar-thumb:hover { background: #90A4AE; }
+      @media (max-width: 600px) { main { padding: 10px !important; } }
       @media print {
         .no-print { display: none !important; }
         body { background: white !important; }

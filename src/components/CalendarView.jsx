@@ -21,10 +21,10 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>週間カレンダー</div>
         <div style={{ display:"flex", gap:8, marginLeft:"auto", alignItems:"center" }}>
-          <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setWeekOffset(o => o - 1)}>‹ 前週</button>
-          <span style={{ fontSize:12, color:"#37474F", minWidth:210, textAlign:"center" }}>{label}</span>
-          <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setWeekOffset(o => o + 1)}>次週 ›</button>
-          <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600 }} onClick={() => setWeekOffset(0)}>今週</button>
+          <button aria-label="前週" style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setWeekOffset(o => o - 1)}>‹ 前週</button>
+          <span aria-live="polite" style={{ fontSize:12, color:"#37474F", minWidth:210, textAlign:"center" }}>{label}</span>
+          <button aria-label="次週" style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setWeekOffset(o => o + 1)}>次週 ›</button>
+          <button aria-label="今週に戻る" style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600 }} onClick={() => setWeekOffset(0)}>今週</button>
         </div>
       </div>
 
