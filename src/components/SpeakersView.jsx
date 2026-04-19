@@ -4,9 +4,11 @@ import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 const DATE_RANGES = [
-  { value: "all", label: "すべて" },
-  { value: "7",   label: "今後7日" },
-  { value: "30",  label: "今後30日" },
+  { value: "all",  label: "すべて" },
+  { value: "past", label: "過去のみ" },
+  { value: "7",    label: "今後7日" },
+  { value: "14",   label: "今後14日" },
+  { value: "30",   label: "今後30日" },
 ];
 
 export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onStatusChange, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
@@ -56,7 +58,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     const q = search.trim().toLowerCase();
     const pad = n => String(n).padStart(2, "0");
     const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
-    const cutoffStr = dateRange !== "all" ? (() => {
+    const cutoffStr = (dateRange !== "all" && dateRange !== "past") ? (() => {
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + parseInt(dateRange, 10));
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     })() : null;
@@ -65,7 +67,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         (filterCh === "all" || sp.chapterId === filterCh) &&
         (filterSt === "all" || sp.status === filterSt) &&
         (!q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q)) &&
-        (dateRange === "all" || (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr))
+        (dateRange === "all" || (dateRange === "past" ? (sp.seminarDate && sp.seminarDate < todayStr) : (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr)))
       )
       .sort((a, b) => {
         let cmp = 0;
