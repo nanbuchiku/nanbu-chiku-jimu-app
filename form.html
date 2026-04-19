@@ -80,6 +80,19 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 .loading-overlay.show { display: flex; }
 .spinner { width: 44px; height: 44px; border: 5px solid rgba(255,255,255,.3); border-top: 5px solid #fff; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.file-info-box { background: #F3F0FF; border-left: 4px solid #5C35CC; border-radius: 6px; padding: 12px 14px; font-size: 12px; color: #37274F; line-height: 1.85; margin-bottom: 4px; }
+.file-info-box strong { color: #5C35CC; }
+.file-upload-area { border: 2px dashed #B0BEC5; border-radius: 8px; padding: 18px; text-align: center; cursor: pointer; background: #FAFAFA; transition: all .2s; position: relative; }
+.file-upload-area:hover, .file-upload-area.dragover { border-color: #1A3A6B; background: #EEF3FF; }
+.file-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.file-upload-area .upload-icon { font-size: 28px; margin-bottom: 6px; }
+.file-upload-area .upload-text { font-size: 13px; color: #546E7A; font-weight: 600; }
+.file-upload-area .upload-hint { font-size: 11px; color: #90A4AE; margin-top: 3px; }
+.file-selected { background: #E8F5E9; border-color: #43A047; }
+.file-selected .upload-text { color: #2E7D32; }
+.upload-progress { height: 4px; background: #E0E0E0; border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
+.upload-progress-bar { height: 100%; background: #1A3A6B; border-radius: 2px; transition: width .3s; width: 0%; }
 </style>
 </head>
 <body>
@@ -258,6 +271,53 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
     </div>
 
     <div class="section-card">
+      <div class="section-header">📷 顔写真・講話資料の提出</div>
+      <div class="section-body">
+        <div class="file-info-box">
+          <strong>【写真・資料のご提出方法について】</strong><br>
+          ▼ このフォームから直接アップロードする場合<br>
+          　下のアップロードエリアからファイルを選択してください。<br><br>
+          ▼ メールで送付する場合<br>
+          　<a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#5C35CC;">nanbugoudou.jimu@gmail.com</a> へ添付してお送りください。<br>
+          　件名：【講話資料】氏名<br><br>
+          ※ファイル名は「氏名_顔写真」「氏名_資料」としてください。
+        </div>
+
+        <div class="field">
+          <label>提出方法<span class="req">*</span></label>
+          <div class="radio-group" id="submit-method-group">
+            <label class="radio-item"><input type="radio" name="submitMethod" value="upload"> このフォームからアップロードする</label>
+            <label class="radio-item"><input type="radio" name="submitMethod" value="email"> メールで送付する（アップロードしない）</label>
+          </div>
+        </div>
+
+        <div id="upload-section" style="display:none;">
+          <div class="field">
+            <label>顔写真<span class="hint">JPEG・PNG・最大10MB</span></label>
+            <div class="file-upload-area" id="photo-drop">
+              <input type="file" id="photoFile" accept="image/*" onchange="onFileSelect('photo')">
+              <div class="upload-icon">🖼</div>
+              <div class="upload-text" id="photo-label">クリックまたはドラッグ＆ドロップ</div>
+              <div class="upload-hint">写真の大きさは調整いたします</div>
+              <div class="upload-progress" id="photo-progress"><div class="upload-progress-bar" id="photo-progress-bar"></div></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>講話資料<span class="hint">PDF・Word・PowerPoint・最大20MB</span></label>
+            <div class="file-upload-area" id="material-drop">
+              <input type="file" id="materialFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.key" onchange="onFileSelect('material')">
+              <div class="upload-icon">📄</div>
+              <div class="upload-text" id="material-label">クリックまたはドラッグ＆ドロップ</div>
+              <div class="upload-hint">資料がない場合は空欄で構いません</div>
+              <div class="upload-progress" id="material-progress"><div class="upload-progress-bar" id="material-progress-bar"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
       <div class="section-header">📝 備考</div>
       <div class="section-body">
         <div class="field">
@@ -396,6 +456,60 @@ document.querySelectorAll('.radio-item input').forEach(inp => {
   });
 });
 
+// 提出方法の選択でアップロード欄の表示切替
+document.querySelectorAll('input[name="submitMethod"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('upload-section').style.display =
+      r.value === 'upload' ? 'grid' : 'none';
+    if (r.value === 'upload') document.getElementById('upload-section').style.gap = '14px';
+  });
+});
+
+// ファイル選択時のUI更新
+function onFileSelect(type) {
+  const input = document.getElementById(type + 'File');
+  const label = document.getElementById(type + '-label');
+  const area  = document.getElementById(type + '-drop');
+  if (input.files[0]) {
+    const name = input.files[0].name;
+    const size = (input.files[0].size / 1024 / 1024).toFixed(1);
+    label.textContent = `✓ ${name}（${size} MB）`;
+    area.classList.add('file-selected');
+  }
+}
+
+// ドラッグ＆ドロップ
+['photo-drop','material-drop'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
+  el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('dragover');
+    const type = id.replace('-drop','');
+    const fileInput = document.getElementById(type + 'File');
+    fileInput.files = e.dataTransfer.files;
+    onFileSelect(type);
+  });
+});
+
+// Supabase Storageへのアップロード
+async function uploadToStorage(file, speakerName, type) {
+  const ext = file.name.split('.').pop();
+  const safeName = speakerName.replace(/\s/g, '_');
+  const path = `${safeName}_${type}.${ext}`;
+  const progressBar = document.getElementById(type + '-progress-bar');
+  const progressEl  = document.getElementById(type + '-progress');
+  progressEl.style.display = 'block';
+  progressBar.style.width = '30%';
+
+  const { error } = await db.storage.from('speaker-files').upload(path, file, { upsert: true });
+  if (error) throw new Error('ファイルのアップロードに失敗しました: ' + error.message);
+
+  progressBar.style.width = '100%';
+  const { data } = db.storage.from('speaker-files').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 // 送信
 async function submitForm() {
   if (!validatePage3()) return;
@@ -431,6 +545,28 @@ async function submitForm() {
   };
 
   try {
+    // ファイルアップロード処理
+    const submitMethod = document.querySelector('input[name="submitMethod"]:checked')?.value;
+    if (submitMethod === 'upload') {
+      const speakerName = val('speakerName');
+      const photoFile    = document.getElementById('photoFile').files[0];
+      const materialFile = document.getElementById('materialFile').files[0];
+      if (photoFile) {
+        const url = await uploadToStorage(photoFile, speakerName, '顔写真');
+        payload.material_url  = url;
+        payload.material_name = photoFile.name;
+      }
+      if (materialFile) {
+        const url = await uploadToStorage(materialFile, speakerName, '資料');
+        if (!payload.material_url) {
+          payload.material_url  = url;
+          payload.material_name = materialFile.name;
+        } else {
+          payload.notes = (payload.notes || '') + '\n\n【資料URL】' + url;
+        }
+      }
+    }
+
     if (speakerId) {
       // 既存の講師レコードを更新
       await db.from('speakers').update(payload).eq('id', speakerId);
