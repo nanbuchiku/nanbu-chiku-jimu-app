@@ -3,6 +3,10 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, isSameDay } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers }) {
   const thisWeek = useMemo(
     () => speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate)))),
@@ -15,6 +19,22 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
   const overdueCount = useMemo(() =>
     tasks.filter(t => !t.done && t.dueDate && new Date(t.dueDate) < today).length,
   [tasks, today]);
+
+  const unassignedMS = useMemo(() => {
+    const assigned = new Set(speakers.filter(sp => sp.seminarType === "ms" || !sp.seminarType).map(sp => `${sp.chapterId}|${sp.seminarDate}`));
+    const result = [];
+    CHAPTERS.forEach(ch => {
+      const d = new Date(today);
+      const daysToFirst = (ch.day - d.getDay() + 7) % 7 || 7;
+      d.setDate(d.getDate() + daysToFirst);
+      for (let i = 0; i < 8; i++) {
+        const key = `${ch.id}|${toDateStr(d)}`;
+        if (!assigned.has(key)) result.push({ ch, dateStr: toDateStr(d), date: new Date(d) });
+        d.setDate(d.getDate() + 7);
+      }
+    });
+    return result.sort((a, b) => a.date - b.date).slice(0, 10);
+  }, [speakers, today]);
 
   const stats = useMemo(() => [
     { label:"今週の開催",  val: thisWeek.length,                                      sub:"/5単会", color:"#1A3A6B", action: () => setTab("calendar") },
@@ -96,6 +116,30 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           </div>
         </div>
       </div>
+
+      {unassignedMS.length > 0 && (
+        <div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>
+            未設定のモーニングセミナー日程
+            <span style={{ fontSize:11, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{unassignedMS.length}件（今後8週）</span>
+          </div>
+          <div style={{ ...CARD, marginBottom:0 }}>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {unassignedMS.map(({ ch, dateStr, date }) => {
+                const dl = Math.ceil((date - today) / 86400000);
+                return (
+                  <div key={`${ch.id}|${dateStr}`} style={{ display:"flex", alignItems:"center", gap:6, background:"#FAFAFA", border:"1px solid #ECEFF1", borderRadius:6, padding:"5px 10px", cursor:"pointer" }} onClick={() => setTab("speakers")}>
+                    <span style={{ fontSize:10, fontWeight:700, color:"#fff", background: ch.color, padding:"1px 6px", borderRadius:10 }}>{ch.short}</span>
+                    <span style={{ fontSize:11, fontWeight:600, color:"#37474F" }}>{dateStr}</span>
+                    <span style={{ fontSize:10, color: dl <= 14 ? "#E65100" : "#90A4AE" }}>あと{dl}日</span>
+                  </div>
+                );
+              })}
+            </div>
+            <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:12, cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("speakers")}>講師管理で登録 →</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
