@@ -607,6 +607,16 @@ export default function App() {
                 ))}
               </tbody>
             </table>
+            <div style={{ marginTop:14, padding:"10px 14px", background:"#E3F2FD", borderRadius:8, fontSize:11, color:"#1565C0" }}>
+              <div style={{ fontWeight:700, marginBottom:6 }}>💡 機能ヒント</div>
+              <ul style={{ lineHeight:1.8, paddingLeft:16 }}>
+                <li>ダッシュボードの 📝 事務局メモ で電話メモや申し送りを記録できます（自分のブラウザのみ）</li>
+                <li>講師管理タブの「⚡ 要対応のみ」で30日以内の未確認・情報不足の講師を絞り込めます</li>
+                <li>確認書タブ上部に「最近見た講師」ショートカットが表示されます</li>
+                <li>タスク管理の「▦ グループ表示」で期限別（超過/今日/今週/来週）に整理できます</li>
+                <li>変更はリアルタイムで全ユーザーに反映されます（Supabase Realtime）</li>
+              </ul>
+            </div>
             <button style={{ ...BC, marginTop:14, display:"block", width:"100%" }} onClick={() => setShowHelp(false)}>閉じる</button>
           </div>
         </div>
