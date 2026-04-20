@@ -120,6 +120,34 @@ export default function App() {
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {
+    const channel = db.channel('app-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'speakers', filter: `district_id=eq.${DISTRICT_ID}` }, payload => {
+        if (payload.eventType === 'INSERT') {
+          const sp = fromDB(payload.new);
+          setSpeakers(prev => prev.some(s => s.id === sp.id) ? prev : [...prev, sp].sort((a,b) => (a.seminarDate||"").localeCompare(b.seminarDate||"")));
+        } else if (payload.eventType === 'UPDATE') {
+          const sp = fromDB(payload.new);
+          setSpeakers(prev => prev.map(s => s.id === sp.id ? sp : s));
+        } else if (payload.eventType === 'DELETE') {
+          setSpeakers(prev => prev.filter(s => s.id !== payload.old.id));
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `district_id=eq.${DISTRICT_ID}` }, payload => {
+        if (payload.eventType === 'INSERT') {
+          const t = taskFromDB(payload.new);
+          setTasks(prev => prev.some(x => x.id === t.id) ? prev : [...prev, t].sort((a,b) => (a.dueDate||"").localeCompare(b.dueDate||"")));
+        } else if (payload.eventType === 'UPDATE') {
+          const t = taskFromDB(payload.new);
+          setTasks(prev => prev.map(x => x.id === t.id ? t : x));
+        } else if (payload.eventType === 'DELETE') {
+          setTasks(prev => prev.filter(x => x.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+    return () => { db.removeChannel(channel); };
+  }, []);
+
+  useEffect(() => {
     const on = () => setIsOnline(true);
     const off = () => setIsOnline(false);
     window.addEventListener("online", on);
