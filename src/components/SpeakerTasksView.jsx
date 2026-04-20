@@ -70,10 +70,26 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     return { done, total: tasks.length, pct: tasks.length ? Math.round(done / tasks.length * 100) : 0 };
   };
 
+  const globalStats = useMemo(() => {
+    let totalTasks = 0, doneTasks = 0, completeSpeakers = 0;
+    filtered.forEach(sp => {
+      const tasks = buildSpeakerTasks(sp);
+      const checks = sp.speakerChecks || {};
+      const done = tasks.filter(t => checks[t.id]).length;
+      totalTasks += tasks.length;
+      doneTasks += done;
+      if (done === tasks.length) completeSpeakers++;
+    });
+    return { totalTasks, doneTasks, completeSpeakers, total: filtered.length, pct: totalTasks ? Math.round(doneTasks / totalTasks * 100) : 100 };
+  }, [filtered]);
+
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理 <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE" }}>{visible.length}件</span></div>
+        <div>
+          <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理 <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE" }}>{visible.length}件</span></div>
+          {filtered.length > 0 && <div style={{ fontSize:10, color:"#78909C", marginTop:2 }}>全{filtered.length}名　タスク完了率 <span style={{ fontWeight:700, color: globalStats.pct === 100 ? "#2E7D32" : "#1A3A6B" }}>{globalStats.pct}%</span>（{globalStats.doneTasks}/{globalStats.totalTasks}件）　完全完了 {globalStats.completeSpeakers}名</div>}
+        </div>
         <input style={{ ...INP, width:140, fontSize:11 }} placeholder="🔍 名前・会社検索" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
         <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
           <option value="all">全単会</option>
