@@ -64,11 +64,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     return base;
   }, [filtered, filterDone, filterPast, filterUpcoming, today]);
 
-  const toggleTask = useCallback((sp, taskId) => {
+  const toggleTask = useCallback(async (sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
     checks[taskId] = !checks[taskId];
-    updateSpeaker(sp.id, { speakerChecks: checks });
-    showToast(checks[taskId] ? "✓ 完了にしました" : "未完了に戻しました");
+    const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
+    if (ok) showToast(checks[taskId] ? "✓ 完了にしました" : "未完了に戻しました");
   }, [updateSpeaker, showToast]);
 
   const getProgress = sp => {
@@ -108,10 +108,10 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
             <button key={v} style={{ ...(filterDone===v ? BP : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterDone(v)}>{l}</button>
           ))}
         </div>
-        <button style={{ ...(filterPast ? { ...BP, background:"#B71C1C" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterPast(v => !v)}>
+        <button style={{ ...(filterPast ? { ...BP, background:"#B71C1C" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => { setFilterPast(v => !v); setFilterUpcoming(false); }}>
           {filterPast ? "⚠ 未完了超過" : "超過のみ"}
         </button>
-        <button style={{ ...(filterUpcoming ? { ...BP, background:"#6D4C9F" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterUpcoming(v => !v)}>
+        <button style={{ ...(filterUpcoming ? { ...BP, background:"#6D4C9F" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => { setFilterUpcoming(v => !v); setFilterPast(false); }}>
           {filterUpcoming ? "📅 30日以内" : "30日以内"}
         </button>
         <button style={{ ...BC, padding:"5px 12px", fontSize:11 }} onClick={() => setExpandAll(v => !v)}>
@@ -191,11 +191,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                       <div style={{ fontSize:10, fontWeight:700, color: catColor, letterSpacing:"0.05em" }}>▸ {cat}</div>
                       {!catAllDone && (
                         <button style={{ fontSize:8, background: catColor+"18", color: catColor, border:`1px solid ${catColor}44`, borderRadius:8, padding:"1px 6px", cursor:"pointer", fontWeight:700 }}
-                          onClick={() => {
+                          onClick={async () => {
                             const newChecks = { ...checks };
                             catTasks.forEach(t => { newChecks[t.id] = true; });
-                            updateSpeaker(sp.id, { speakerChecks: newChecks });
-                            showToast(`${cat}を完了 ✓`);
+                            const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
+                            if (ok) showToast(`${cat}を完了 ✓`);
                           }}>
                           {cat}完了
                         </button>
@@ -218,11 +218,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               )}
               {!allDone && (
                 <button style={{ marginTop:8, width:"100%", background:"#F1F8E9", border:"1px solid #C5E1A5", borderRadius:6, color:"#2E7D32", fontSize:11, fontWeight:700, cursor:"pointer", padding:"6px" }}
-                  onClick={() => {
+                  onClick={async () => {
                     const allChecks = {};
                     tasks.forEach(t => { allChecks[t.id] = true; });
-                    updateSpeaker(sp.id, { speakerChecks: allChecks });
-                    showToast(`${sp.speakerName} 様のタスクをすべて完了にしました ✓`);
+                    const ok = await updateSpeaker(sp.id, { speakerChecks: allChecks });
+                    if (ok) showToast(`${sp.speakerName} 様のタスクをすべて完了にしました ✓`);
                   }}>
                   ✓ すべて完了にする
                 </button>

@@ -47,8 +47,10 @@ export function buildSpeakerTasks(sp) {
   add("doc_sent",    "確認書送付",               "依頼");
 
   if (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし") {
-    add("hotel_rsrv", "ホテル予約完了",           "宿泊");
-    add("hotel_conf", "ホテル確認連絡（講師へ）",  "宿泊");
+    if (sp.lodging !== "あり（当日のみ）") {
+      add("hotel_rsrv", "ホテル予約完了",          "宿泊");
+      add("hotel_conf", "ホテル確認連絡（講師へ）", "宿泊");
+    }
     add("pickup_plan","お迎え手配",               "宿泊");
   }
 
