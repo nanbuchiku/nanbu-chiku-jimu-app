@@ -454,7 +454,11 @@ document.addEventListener('DOMContentLoaded', () => {
     set('ev-date',   urlDate ? fmt(urlDate) : '');
     document.getElementById('eventBanner').style.display = 'block';
   }
-  if (speakerId) prefillFromDB();
+  if (speakerId) {
+    const infoBox = document.querySelector('#page1 .info-box');
+    if (infoBox) infoBox.innerHTML = '⏳ 以前の回答内容を読み込み中...';
+    prefillFromDB();
+  }
 });
 
 // 更新フォーム: 既存回答を取得して事前入力
@@ -516,7 +520,10 @@ async function prefillFromDB() {
         photoLabel.insertAdjacentHTML('beforeend', '<span class="hint">（写真登録済み。変更する場合のみ選択）</span>');
       }
     }
-  } catch (e) { /* silent fallback */ }
+  } catch (e) {
+    const infoBox = document.querySelector('#page1 .info-box');
+    if (infoBox) infoBox.innerHTML = '⚠ 以前のデータの読み込みに失敗しました。新規入力として送信してください。';
+  }
 }
 
 // 郵便番号から住所を自動入力
