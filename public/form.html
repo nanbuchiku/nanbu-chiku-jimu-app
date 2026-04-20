@@ -497,6 +497,14 @@ async function prefillFromDB() {
       if (pm) pm[1].split('・').forEach(v => triggerCheck('prepare', v.trim()));
     }
     if (data.lodging) triggerRadio('lodging', data.lodging === '不要' ? '不要' : '要');
+    if (data.lodging !== '不要' && data.notes) {
+      const rm = data.notes.match(/【禁煙ルーム】([^／\n]+)/);
+      if (rm) triggerRadio('room', rm[1].trim());
+      const pkm = data.notes.match(/【お迎え】([^\n]+)/);
+      if (pkm) triggerRadio('pickup', pkm[1].trim());
+    }
+    if (data.material_url) triggerRadio('material', 'あり');
+    if (data.print_required) triggerRadio('print', data.print_required === 'あり' ? 'あり' : '不要');
 
     // ページ3 (領収証・写真利用範囲)
     if (data.notes) {
