@@ -183,7 +183,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   "□ お車　□ 電車　□ その他"
                 } />;
               })()}
-              <DocRow label="資料の有無"         value={sp.materialUrl ? "☑ あり　□ なし" : "□ あり　□ なし"}  color={st.color} />
+              <DocRow label="資料の有無"         value={parsedNotes['資料01'] || parsedNotes['資料02'] ? "☑ あり　□ なし" : "□ あり　□ なし"}  color={st.color} />
               <DocRow label="印刷の要否"         value={sp.printRequired === "あり" ? "☑ 要（単会で印刷）　□ 不要（持参）" : sp.printRequired === "不要" ? "□ 要（単会で印刷）　☑ 不要（持参）" : "□ 要（単会で印刷）　□ 不要（持参）"} color={st.color} />
               {(() => {
                 const p = parsedNotes['単会で準備'];
@@ -220,7 +220,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 </tr>
               )}
               <DocRow label="顔写真"           value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
-              <DocRow label="講話資料"         value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
+              <DocRow label="講話資料"         value={parsedNotes['資料01'] || parsedNotes['資料02'] ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
               {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={st.color} />}
               <DocRow label="顔写真の使用範囲" value={parsedNotes['顔写真の使用範囲'] || ""}       color={st.color} />
             </DocSection>
