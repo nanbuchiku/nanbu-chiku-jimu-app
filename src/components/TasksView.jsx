@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter } from '../utils';
+import { getChapter, parseDate } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
@@ -62,7 +62,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
     return CHAPTERS.map(ch => {
       const chTasks = tasks.filter(t => t.chapterId === ch.id && !t.done);
       const overdue = chTasks.filter(t => t.dueDate && t.dueDate < todayStr).length;
-      const thisWeek = chTasks.filter(t => { if (!t.dueDate) return false; const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000); return dl >= 0 && dl <= 7; }).length;
+      const thisWeek = chTasks.filter(t => { if (!t.dueDate) return false; const dl = Math.ceil((parseDate(t.dueDate) - today) / 86400000); return dl >= 0 && dl <= 7; }).length;
       return { ch, total: chTasks.length, overdue, thisWeek };
     }).filter(s => s.total > 0);
   }, [tasks, today]);
@@ -186,7 +186,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                     <tr key={`hdr-${label}`}><td colSpan={7} style={{ padding:"5px 10px", background: bg, fontSize:11, fontWeight:700, color, borderTop:`2px solid ${color}33` }}>{label}　{gTasks.length}件</td></tr>,
                     ...gTasks.map(t => {
                       const ch = getChapter(t.chapterId);
-                      const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+                      const dl = Math.ceil((parseDate(t.dueDate) - today) / 86400000);
                       const p = PRIO[t.priority] || PRIO.medium;
                       const isEditing = editingId === t.id;
                       if (isEditing) {
@@ -219,7 +219,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
               })()}
               {(!groupByDate || showDone) && visible.map(t => {
                 const ch = getChapter(t.chapterId);
-                const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+                const dl = Math.ceil((parseDate(t.dueDate) - today) / 86400000);
                 const p  = PRIO[t.priority] || PRIO.medium;
                 const isOverdue = !t.done && dl < 0;
                 const isEditing = editingId === t.id;

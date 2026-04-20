@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, toDateStr } from '../utils';
+import { getChapter, toDateStr, parseDate } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast }) {
@@ -193,7 +193,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
             {overdueTasks.slice(0, 6).map(t => {
               const ch = getChapter(t.chapterId);
-              const overDays = Math.ceil((today - new Date(t.dueDate)) / 86400000);
+              const overDays = Math.ceil((today - parseDate(t.dueDate)) / 86400000);
               return (
                 <span key={t.id} style={{ fontSize:11, background:"#FFCDD2", border:"1px solid #EF9A9A", borderRadius:6, padding:"3px 9px", color:"#B71C1C", display:"flex", gap:5, alignItems:"center" }}>
                   <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
@@ -234,7 +234,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
             {pendingTooLong.map(sp => {
               const ch = getChapter(sp.chapterId);
-              const pendingDays = Math.ceil((today - new Date(sp.requestDate)) / 86400000);
+              const pendingDays = Math.ceil((today - parseDate(sp.requestDate)) / 86400000);
               return (
                 <span key={sp.id} onClick={() => onGoSpeakers("pending")} style={{ fontSize:11, background:"#FFE0B2", border:"1px solid #FFCC80", borderRadius:6, padding:"3px 9px", color:"#E65100", display:"flex", gap:5, alignItems:"center", cursor:"pointer" }}>
                   <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
@@ -328,7 +328,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           <div style={CARD}>
             {topTasks.map(t => {
               const ch = getChapter(t.chapterId);
-              const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+              const dl = Math.ceil((parseDate(t.dueDate) - today) / 86400000);
               return (
                 <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
                   <span style={PILL(ch)}>{ch.name}</span>
@@ -405,7 +405,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
               {upcoming14.map(sp => {
                 const ch = getChapter(sp.chapterId);
-                const dl = Math.ceil((new Date(sp.seminarDate) - today) / 86400000);
+                const dl = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
                 const isToday = dl === 0;
                 const isUrgent = dl <= 3;
                 return (

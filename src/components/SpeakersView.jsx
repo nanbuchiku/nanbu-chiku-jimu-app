@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, toDateStr, extractStaffNotes } from '../utils';
+import { getChapter, toDateStr, extractStaffNotes, parseDate } from '../utils';
 import { CARD, BP, BC, BSM, SEL, INP, TBL, TH, TD, PILL, OV, MOD, MH } from '../styles';
 
 function extractStructuredNotes(notes) {
@@ -218,7 +218,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             <tbody>
               {filtered.map(sp => {
                 const ch = getChapter(sp.chapterId);
-                const daysUntil = sp.seminarDate ? Math.ceil((new Date(sp.seminarDate) - today) / 86400000) : null;
+                const daysUntil = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
                 const isPast = daysUntil !== null && daysUntil < 0;
                 const rowBg = daysUntil === 0 ? "#FFEBEE" : daysUntil !== null && daysUntil > 0 && daysUntil <= 3 ? "#FFF8E1" : "white";
                 const isSaving = savingIds.has(sp.id);

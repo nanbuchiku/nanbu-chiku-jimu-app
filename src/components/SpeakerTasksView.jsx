@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes } from '../utils';
+import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
@@ -141,7 +141,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                   <span style={PILL(ch)}>{ch?.name}</span>
                   <span style={{ fontSize:10, color:"#90A4AE", marginLeft:6 }}>{sp.seminarDate}</span>
                   {(() => {
-                    const d = sp.seminarDate ? Math.ceil((new Date(sp.seminarDate) - today) / 86400000) : null;
+                    const d = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
                     if (d === null) return null;
                     if (d === 0) return <span style={{ fontSize:10, background:"#FFEBEE", color:"#B71C1C", fontWeight:700, padding:"2px 6px", borderRadius:8, marginLeft:4 }}>今日！</span>;
                     if (d > 0 && d <= 7) return <span style={{ fontSize:10, background: d <= 3 ? "#FFF8E1" : "#F5F5F5", color: d <= 3 ? "#E65100" : "#78909C", fontWeight:700, padding:"2px 6px", borderRadius:8, marginLeft:4 }}>あと{d}日</span>;

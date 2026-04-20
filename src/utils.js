@@ -9,6 +9,8 @@ export const toDateStr = d => {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 };
 
+export const parseDate = s => s ? new Date(s + 'T00:00:00') : null;
+
 export const formatDate = d => {
   if (!d) return "";
   const dt = typeof d === "string" ? new Date(d + "T00:00:00") : d;
