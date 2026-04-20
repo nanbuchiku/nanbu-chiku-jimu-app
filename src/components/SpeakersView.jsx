@@ -249,11 +249,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       {isSaving ? (
                         <div style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"#78909C" }}>
                           <span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span>
-                          <span>{STATUS[sp.status].label}</span>
+                          <span>{STATUS[sp.status]?.label ?? sp.status}</span>
                         </div>
                       ) : (
                         <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                          <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status].color }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
+                          <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status]?.color ?? "#90A4AE" }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
                             {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                           </select>
                           {isPast && sp.status === "confirmed" && (
