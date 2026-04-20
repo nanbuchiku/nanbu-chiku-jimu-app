@@ -75,8 +75,8 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const handleStatusChange = useCallback(async (id, st) => {
     setSavingIds(prev => new Set([...prev, id]));
     try {
-      await updateSpeaker(id, { status: st });
-      showToast("更新しました ✓");
+      const ok = await updateSpeaker(id, { status: st });
+      if (ok) showToast("更新しました ✓");
     } finally {
       setSavingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     }

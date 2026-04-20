@@ -175,11 +175,12 @@ export default function App() {
 
   const updateSpeaker = useCallback(async (id, patch) => {
     const sp = speakersRef.current.find(s => s.id === id);
-    if (!sp) return;
+    if (!sp) return false;
     const updated = { ...sp, ...patch };
     const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
-    if (error) { showToast("⚠ 保存に失敗しました"); return; }
+    if (error) { showToast("⚠ 保存に失敗しました"); return false; }
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
+    return true;
   }, [showToast]);
 
   const deleteSpeaker = useCallback(id => {
