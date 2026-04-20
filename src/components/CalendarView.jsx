@@ -102,7 +102,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       <>
                         <div style={{ fontSize:10, fontWeight:600, color:"#263238", lineHeight:1.3 }}>{sp.speakerName}</div>
                         <div style={{ fontSize:8, color:"#546E7A", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>「{sp.topic}」</div>
-                        <span style={{ fontSize:7, padding:"1px 4px", borderRadius:8, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
+                        <span style={{ fontSize:7, padding:"1px 4px", borderRadius:8, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                       </>
                     ) : (
                       <div style={{ fontSize:9, color:"#B0BEC5" }}>
@@ -181,7 +181,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                     <div style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4 }} onClick={() => onSpeaker(sp)}>
                       <div style={{ fontSize:10, fontWeight:700, color: ch.color }}>{sp.speakerName}</div>
                       <div style={{ fontSize:9, color:"#546E7A", marginTop:1 }}>「{sp.topic}」</div>
-                      <span style={{ fontSize:8, padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
+                      <span style={{ fontSize:8, padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                     </div>
                   ) : (
                     <div style={{ textAlign:"center", paddingTop:10, cursor: onAddForDate ? "pointer" : "default" }}

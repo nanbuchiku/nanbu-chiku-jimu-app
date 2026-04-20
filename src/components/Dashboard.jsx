@@ -288,7 +288,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       {isToday && <span style={{ fontSize:9, background:"#B71C1C", color:"#fff", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>今日！</span>}
                       <span style={{ fontSize:12, fontWeight:600 }}>{sp.speakerName}</span>
                       <span style={{ fontSize:11, color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
-                      <span style={{ fontSize:11, padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
+                      <span style={{ fontSize:11, padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                       <button style={BSM} onClick={() => onView(sp)}>確認書</button>
                     </div>
                   ) : (

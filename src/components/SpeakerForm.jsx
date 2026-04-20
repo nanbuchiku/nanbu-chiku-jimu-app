@@ -9,11 +9,12 @@ const DRAFT_KEY = 'speakerFormDraft';
 
 export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, saving }) {
   const isNew = !initial?.id;
+  const normalizeLodging = v => (!v || v === "不要" || v === "なし") ? "不要" : v === "要" ? "あり（前泊）" : v;
   const [form, setForm] = useState(() => {
-    if (!isNew) return initial;
+    if (!isNew) return { ...initial, lodging: normalizeLodging(initial.lodging) };
     const savedChapter = (() => { try { return localStorage.getItem('form_lastChapter') || "kawaguchi"; } catch { return "kawaguchi"; } })();
     const base = { ...BLANK, chapterId: savedChapter, requestDate: new Date().toISOString().slice(0,10) };
-    if (initial) return { ...base, ...initial };
+    if (initial) return { ...base, ...initial, lodging: normalizeLodging(initial.lodging) };
     try {
       const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) return JSON.parse(draft);
