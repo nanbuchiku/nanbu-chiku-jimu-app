@@ -62,7 +62,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       base = base.filter(sp => sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr);
     }
     return base;
-  }, [filtered, filterDone, filterPast, today]);
+  }, [filtered, filterDone, filterPast, filterUpcoming, today]);
 
   const toggleTask = useCallback((sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
