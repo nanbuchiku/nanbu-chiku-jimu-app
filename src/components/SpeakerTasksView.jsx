@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks, toDateStr } from '../utils';
+import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
@@ -228,9 +228,9 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                 </button>
               )}
 
-              {sp.notes && (
+              {extractStaffNotes(sp.notes) && (
                 <div style={{ marginTop:6, padding:"5px 8px", background:"#F3E5F5", borderRadius:5, borderLeft:"3px solid #CE93D8", fontSize:10, color:"#4A148C", whiteSpace:"pre-wrap" }}>
-                  <span style={{ fontWeight:700 }}>📝 メモ：</span>{sp.notes}
+                  <span style={{ fontWeight:700 }}>📝 メモ：</span>{extractStaffNotes(sp.notes)}
                 </div>
               )}
               {(sp.postNotes || sp.drinksAlcohol || sp.shioriArticle) && (
