@@ -177,9 +177,13 @@ export default function App() {
     const sp = speakersRef.current.find(s => s.id === id);
     if (!sp) return false;
     const updated = { ...sp, ...patch };
-    const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
-    if (error) { showToast("⚠ 保存に失敗しました"); return false; }
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
+    const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
+    if (error) {
+      setSpeakers(prev => prev.map(s => s.id === id ? sp : s));
+      showToast("⚠ 保存に失敗しました");
+      return false;
+    }
     return true;
   }, [showToast]);
 
