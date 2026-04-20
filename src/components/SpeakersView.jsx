@@ -430,9 +430,8 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 e.preventDefault();
                 const structured = extractStructuredNotes(notesModal.notes || "");
                 const merged = [structured, notesText].filter(Boolean).join('\n\n');
-                await updateSpeaker(notesModal.id, { notes: merged });
-                showToast("メモを保存しました ✓");
-                setNotesModal(null);
+                const ok = await updateSpeaker(notesModal.id, { notes: merged });
+                if (ok) { showToast("メモを保存しました ✓"); setNotesModal(null); }
               }
             }}>
             <div style={MH}>📝 スタッフメモ — {notesModal.speakerName} 様</div>
@@ -451,16 +450,14 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               <button style={BC} onClick={() => setNotesModal(null)}>キャンセル</button>
               <button style={{ ...BC, color:"#B71C1C", borderColor:"#EF9A9A" }} onClick={async () => {
                 const structured = extractStructuredNotes(notesModal.notes || "");
-                await updateSpeaker(notesModal.id, { notes: structured || "" });
-                showToast("メモを削除しました");
-                setNotesModal(null);
+                const ok = await updateSpeaker(notesModal.id, { notes: structured || "" });
+                if (ok) { showToast("メモを削除しました"); setNotesModal(null); }
               }}>削除</button>
               <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 18px", fontSize:12, fontWeight:700, cursor:"pointer" }} onClick={async () => {
                 const structured = extractStructuredNotes(notesModal.notes || "");
                 const merged = [structured, notesText].filter(Boolean).join('\n\n');
-                await updateSpeaker(notesModal.id, { notes: merged });
-                showToast("メモを保存しました ✓");
-                setNotesModal(null);
+                const ok = await updateSpeaker(notesModal.id, { notes: merged });
+                if (ok) { showToast("メモを保存しました ✓"); setNotesModal(null); }
               }}>保存</button>
             </div>
           </div>
