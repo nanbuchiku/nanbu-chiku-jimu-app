@@ -169,6 +169,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
             <div style={{ background:"#FAFAFA", padding:"6px 8px", display:"flex", flexDirection:"column", justifyContent:"center", gap:1, borderLeft:`3px solid ${ch.color}` }}>
               <span style={{ color: ch.color, fontWeight:700, fontSize:11 }}>{ch.name}</span>
               <span style={{ fontSize:9, color:"#90A4AE" }}>{ch.dayName}</span>
+              <span style={{ fontSize:8, color:"#B0BEC5" }}>{ch.time}</span>
             </div>
             {weekDates.map((d, i) => {
               const isChDay = d.getDay() === ch.day;
