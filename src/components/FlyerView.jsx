@@ -40,6 +40,16 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
 
   const readyCount = useMemo(() => flyerData.filter(({ sp }) => sp && sp.speakerName && sp.topic && sp.materialUrl).length, [flyerData]);
 
+  const completeness = useMemo(() => flyerData.map(({ ch, sp }) => {
+    if (!sp) return { ch, pct: 0, missing: ["講師未登録"] };
+    const missing = [];
+    if (!sp.speakerName) missing.push("氏名");
+    if (!sp.speakerKana) missing.push("ふりがな");
+    if (!sp.topic) missing.push("テーマ");
+    if (!sp.materialUrl) missing.push("顔写真");
+    return { ch, pct: Math.round((4 - missing.length) / 4 * 100), missing };
+  }), [flyerData]);
+
   const buildLineText = useMemo(() => {
     const lines = [
       `【${selMonth.replace("-","年")}月号　チラシ流し込みデータ】`,
@@ -128,6 +138,24 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
             <div style={{ fontSize:24, fontWeight:800, color: readyCount === 5 ? "#1B5E20" : "#E65100" }}>{readyCount}<span style={{ fontSize:13, fontWeight:400 }}>/5単会</span></div>
             <div style={{ fontSize:11, color:"#78909C" }}>データ揃い</div>
           </div>
+        </div>
+      </div>
+
+      <div style={{ ...CARD, padding:"10px 14px", marginBottom:8 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:8 }}>単会別 データ完成度</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:8 }}>
+          {completeness.map(({ ch, pct, missing }) => (
+            <div key={ch.id} style={{ padding:"7px 10px", background: pct === 100 ? "#E8F5E9" : pct === 0 ? "#FFEBEE" : "#FFF8E1", borderRadius:7, border:`1px solid ${pct === 100 ? "#A5D6A7" : pct === 0 ? "#EF9A9A" : "#FFE082"}` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                <span style={{ fontSize:10, fontWeight:700, color: ch.color }}>{ch.name}</span>
+                <span style={{ fontSize:12, fontWeight:800, color: pct === 100 ? "#2E7D32" : pct === 0 ? "#B71C1C" : "#E65100" }}>{pct}%</span>
+              </div>
+              <div style={{ background:"#E0E0E0", borderRadius:3, height:5, overflow:"hidden" }}>
+                <div style={{ height:5, borderRadius:3, width:`${pct}%`, background: pct === 100 ? "#2E7D32" : pct === 0 ? "#B71C1C" : "#FF8F00", transition:"width .4s" }} />
+              </div>
+              {missing.length > 0 && <div style={{ fontSize:9, color:"#78909C", marginTop:3 }}>未：{missing.join("・")}</div>}
+            </div>
+          ))}
         </div>
       </div>
 
