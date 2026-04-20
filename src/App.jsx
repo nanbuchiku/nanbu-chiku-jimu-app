@@ -278,9 +278,13 @@ export default function App() {
     const t = tasksRef.current.find(x => x.id === id);
     if (!t) return;
     const updated = { ...t, ...patch };
-    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
-    if (error) { showToast("⚠ 更新に失敗しました"); return; }
     setTasks(prev => prev.map(x => x.id === id ? updated : x));
+    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+    if (error) {
+      setTasks(prev => prev.map(x => x.id === id ? t : x));
+      showToast("⚠ 更新に失敗しました");
+      return;
+    }
     showToast("タスクを更新しました ✓");
   }, [showToast]);
 
