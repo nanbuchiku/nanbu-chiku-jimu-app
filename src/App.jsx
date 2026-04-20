@@ -124,7 +124,11 @@ export default function App() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'speakers', filter: `district_id=eq.${DISTRICT_ID}` }, payload => {
         if (payload.eventType === 'INSERT') {
           const sp = fromDB(payload.new);
-          setSpeakers(prev => prev.some(s => s.id === sp.id) ? prev : [...prev, sp].sort((a,b) => (a.seminarDate||"").localeCompare(b.seminarDate||"")));
+          if (!speakersRef.current.some(s => s.id === sp.id)) {
+            const ch = getChapter(sp.chapterId);
+            showToast(`📬 新規講師登録：${sp.speakerName || '（名前未入力）'} 様${ch ? `（${ch.name}）` : ''}`);
+            setSpeakers(prev => [...prev, sp].sort((a,b) => (a.seminarDate||"").localeCompare(b.seminarDate||"")));
+          }
         } else if (payload.eventType === 'UPDATE') {
           const sp = fromDB(payload.new);
           setSpeakers(prev => prev.map(s => s.id === sp.id ? sp : s));

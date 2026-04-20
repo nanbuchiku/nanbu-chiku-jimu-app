@@ -593,6 +593,13 @@ document.querySelectorAll('.radio-item input').forEach(inp => {
   });
 });
 
+// チェックボックスのスタイル更新
+document.querySelectorAll('.check-item input').forEach(inp => {
+  inp.addEventListener('change', () => {
+    inp.closest('.check-item')?.classList.toggle('selected', inp.checked);
+  });
+});
+
 // ファイル選択時のUI更新
 function onFileSelect(type) {
   const input = document.getElementById(type + 'File');
@@ -738,10 +745,11 @@ async function submitForm() {
     print_required: radio('print') || '不要',
     seminar_type: urlType || 'ms',
     seminar_date: urlDate || null,
-    request_date: new Date().toISOString().slice(0, 10),
   };
-  // 新規のみstatus設定（更新時はステータスを変更しない）
-  if (!speakerId) payload.status = 'pending';
+  if (!speakerId) {
+    payload.status = 'pending';
+    payload.request_date = new Date().toISOString().slice(0, 10);
+  }
 
   try {
     // ファイルアップロード処理（顔写真は必須、資料は任意）
@@ -779,6 +787,10 @@ async function submitForm() {
     document.getElementById('done').classList.add('active');
     document.getElementById('progLabel').textContent = '完了';
     ['prog1','prog2','prog3'].forEach(id => document.getElementById(id).className = 'progress-step done');
+    if (urlName) {
+      const doneTitle = document.querySelector('.done-title');
+      if (doneTitle) doneTitle.textContent = `${urlName} 様、送信ありがとうございました`;
+    }
   } catch (e) {
     document.getElementById('loadingOverlay').classList.remove('show');
     btn.disabled = false;
