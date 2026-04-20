@@ -35,14 +35,14 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
   const maxAbs = useMemo(() => Math.max(...ranking.filter(r => r.avgDays !== null).map(r => Math.abs(r.avgDays)), 1), [ranking]);
 
   const exportCSV = useCallback(() => {
-    const headers = ["単会","開催日","タスク内容","期限","完了日時","早/遅（日）"];
+    const headers = ["単会","タスク内容","期限","完了日時","早/遅（日）"];
     const rows = tasks
       .filter(t => t.done && t.completedAt && t.completedAt.startsWith(selMonth))
       .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
       .map(t => {
         const ch = getChapter(t.chapterId);
         const days = Math.ceil((new Date(t.dueDate) - new Date(t.completedAt)) / 86400000);
-        return [ch.name, t.dueDate, t.title, t.dueDate, t.completedAt?.slice(0,16).replace("T"," "), days >= 0 ? `+${days}` : `${days}`];
+        return [ch.name, t.title, t.dueDate, t.completedAt?.slice(0,16).replace("T"," "), days >= 0 ? `+${days}` : `${days}`];
       });
     const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
     const a = Object.assign(document.createElement("a"), {
