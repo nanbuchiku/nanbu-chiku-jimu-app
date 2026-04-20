@@ -427,6 +427,7 @@ const SUPABASE_URL = 'https://leqavpnmtylmankbcdkd.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_sAahVVEPRHnLDsOxawsI5w_XtGZe25O';
 const DISTRICT_ID  = '11111111-1111-1111-1111-111111111111';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let existingData = null; // 更新時の既存DBデータを保持（スタッフメモ引継ぎ用）
 
 // URLパラメータから事務局入力情報を取得
 const urlParams  = new URLSearchParams(location.search);
@@ -461,6 +462,7 @@ async function prefillFromDB() {
   try {
     const { data, error } = await db.from('speakers').select('*').eq('id', speakerId).single();
     if (error || !data) return;
+    existingData = data;
 
     const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
     const triggerRadio = (name, value) => {
@@ -759,6 +761,16 @@ async function uploadToStorage(file, speakerName, type) {
   return data.publicUrl;
 }
 
+// スタッフが手入力したメモ部分だけを抽出（構造化タグ行を除去）
+function extractStaffNotes(notes) {
+  if (!notes) return '';
+  return notes
+    .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
+    .replace(/【[^】]+】[^\n]*/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 // 送信
 async function submitForm() {
   if (!validatePage3()) return;
@@ -829,6 +841,8 @@ async function submitForm() {
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
 
     if (speakerId) {
+      const staffNotes = extractStaffNotes(existingData?.notes || '');
+      if (staffNotes) payload.notes += '\n\n' + staffNotes;
       const { error } = await db.from('speakers').update(payload).eq('id', speakerId);
       if (error) throw new Error(error.message);
     } else {
