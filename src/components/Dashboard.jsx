@@ -64,6 +64,31 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       .sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
   }, [speakers, today, todayStr]);
 
+  const pendingTooLong = useMemo(() => {
+    const cutoff = new Date(today);
+    cutoff.setDate(today.getDate() - 7);
+    const cutoffStr = toDateStr(cutoff);
+    return speakers.filter(sp =>
+      sp.status === "pending" &&
+      sp.seminarDate >= todayStr &&
+      sp.requestDate &&
+      sp.requestDate <= cutoffStr
+    ).sort((a, b) => a.requestDate.localeCompare(b.requestDate));
+  }, [speakers, today, todayStr]);
+
+  const missingInfoSoon = useMemo(() => {
+    const cutoff = new Date(today);
+    cutoff.setDate(today.getDate() + 30);
+    const cutoffStr = toDateStr(cutoff);
+    return speakers.filter(sp =>
+      sp.status === "confirmed" &&
+      sp.seminarDate &&
+      sp.seminarDate >= todayStr &&
+      sp.seminarDate <= cutoffStr &&
+      (!sp.topic || !sp.speakerKana || !sp.email)
+    ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today, todayStr]);
+
   const monthCoverage = useMemo(() => Array.from({ length: 3 }, (_, i) => {
     const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
     const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
@@ -147,6 +172,50 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               return (
                 <span key={sp.id} style={{ fontSize:11, background:"#FFF3CD", border:"1px solid #FFE082", borderRadius:6, padding:"3px 9px", color:"#E65100", fontWeight:600 }}>
                   {sp.seminarDate} {ch.name} {sp.speakerName}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {pendingTooLong.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #FF8F00", padding:"10px 14px", background:"#FFF8E1" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#E65100" }}>⏳ 確認未取得（依頼から7日超）　{pendingTooLong.length}件</div>
+            <button onClick={() => onGoSpeakers("pending")} style={{ fontSize:10, background:"#E65100", color:"#fff", border:"none", borderRadius:10, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}>講師管理へ →</button>
+          </div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            {pendingTooLong.map(sp => {
+              const ch = getChapter(sp.chapterId);
+              const pendingDays = Math.ceil((today - new Date(sp.requestDate)) / 86400000);
+              return (
+                <span key={sp.id} onClick={() => onGoSpeakers("pending")} style={{ fontSize:11, background:"#FFE0B2", border:"1px solid #FFCC80", borderRadius:6, padding:"3px 9px", color:"#E65100", display:"flex", gap:5, alignItems:"center", cursor:"pointer" }}>
+                  <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
+                  <span style={{ fontWeight:600 }}>{sp.speakerName}</span>
+                  <span style={{ fontSize:9, opacity:.8 }}>{sp.seminarDate}｜{pendingDays}日経過</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {missingInfoSoon.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #6D4C9F", padding:"10px 14px", background:"#F3E5F5" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#6D4C9F" }}>⚠ 確定済み — 必須情報が未入力（30日以内）　{missingInfoSoon.length}件</div>
+            <button onClick={() => onGoSpeakers("confirmed")} style={{ fontSize:10, background:"#6D4C9F", color:"#fff", border:"none", borderRadius:10, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}>講師管理へ →</button>
+          </div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            {missingInfoSoon.map(sp => {
+              const ch = getChapter(sp.chapterId);
+              const missing = [!sp.topic && "テーマ", !sp.speakerKana && "ふりがな", !sp.email && "メール"].filter(Boolean);
+              return (
+                <span key={sp.id} onClick={() => onGoSpeakers("confirmed")} style={{ fontSize:11, background:"#E1BEE7", border:"1px solid #CE93D8", borderRadius:6, padding:"3px 9px", color:"#4A148C", display:"flex", gap:5, alignItems:"center", cursor:"pointer" }}>
+                  <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
+                  <span style={{ fontWeight:600 }}>{sp.speakerName}</span>
+                  <span style={{ fontSize:9, opacity:.8 }}>{sp.seminarDate}｜未:{missing.join("・")}</span>
                 </span>
               );
             })}

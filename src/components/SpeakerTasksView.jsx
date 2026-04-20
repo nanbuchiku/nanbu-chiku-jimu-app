@@ -12,9 +12,10 @@ const TASK_CATEGORY_COLOR = {
 };
 
 export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail, onEdit }) {
-  const [filterCh,    setFilterCh]   = useState("all");
-  const [filterDone,  setFilterDone] = useState("undone");
-  const [filterPast,  setFilterPast] = useState(false);
+  const [filterCh,      setFilterCh]     = useState("all");
+  const [filterDone,    setFilterDone]   = useState("undone");
+  const [filterPast,    setFilterPast]   = useState(false);
+  const [filterUpcoming,setFilterUpcoming] = useState(false);
   const [expandedId,  setExpandedId] = useState(null);
   const [expandAll,   setExpandAll]  = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -52,6 +53,13 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
         const allDone = tasks.every(t => checks[t.id]);
         return isPast && !allDone;
       });
+    }
+    if (filterUpcoming) {
+      const todayStr = toDateStr(today);
+      const cutoff = new Date(today);
+      cutoff.setDate(today.getDate() + 30);
+      const cutoffStr = toDateStr(cutoff);
+      base = base.filter(sp => sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr);
     }
     return base;
   }, [filtered, filterDone, filterPast, today]);
@@ -102,6 +110,9 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
         </div>
         <button style={{ ...(filterPast ? { ...BP, background:"#B71C1C" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterPast(v => !v)}>
           {filterPast ? "⚠ 未完了超過" : "超過のみ"}
+        </button>
+        <button style={{ ...(filterUpcoming ? { ...BP, background:"#6D4C9F" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterUpcoming(v => !v)}>
+          {filterUpcoming ? "📅 30日以内" : "30日以内"}
         </button>
         <button style={{ ...BC, padding:"5px 12px", fontSize:11 }} onClick={() => setExpandAll(v => !v)}>
           {expandAll ? "▲ すべて折りたたむ" : "▼ すべて展開"}

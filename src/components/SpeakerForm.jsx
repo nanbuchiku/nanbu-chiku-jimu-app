@@ -83,6 +83,15 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     });
   }, [form.chapterId]);
 
+  const shioriConflict = useMemo(() => {
+    if (!form.shioriArticle || !speakers) return null;
+    return speakers.filter(sp =>
+      sp.id !== form.id &&
+      sp.shioriArticle === form.shioriArticle &&
+      sp.status !== "cancelled"
+    ).sort((a, b) => new Date(b.seminarDate) - new Date(a.seminarDate)).slice(0, 3);
+  }, [form.shioriArticle, form.id, speakers]);
+
   const isPastDate = useMemo(() => {
     if (!form.seminarDate || initial?.id) return false;
     const today = new Date();
@@ -200,6 +209,12 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>講話内容・特記事項・次回への申し送り</div>
                 <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:80, resize:"vertical", opacity: saving ? .6 : 1 }} placeholder="講話の内容、参加者の反応、次回依頼時の注意点など自由に記入" value={form.postNotes || ""} onChange={e => set("postNotes", e.target.value)} />
               </div>
+              {shioriConflict && shioriConflict.length > 0 && (
+                <div style={{ gridColumn:"1/-1", padding:"6px 10px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:11, color:"#E65100" }}>
+                  <span style={{ fontWeight:700 }}>⚠ この条は他の講師も使用済み：</span>
+                  {shioriConflict.map(sp => { const c = getChapter(sp.chapterId); return <span key={sp.id} style={{ marginLeft:6 }}>{sp.seminarDate} {c.name} {sp.speakerName}</span>; })}
+                </div>
+              )}
             </div>
           </div>
         </div>
