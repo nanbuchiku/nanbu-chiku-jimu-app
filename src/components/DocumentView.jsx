@@ -28,6 +28,22 @@ function DocRow({ label, value, color }) {
 export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
   useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
+
+  const [recentIds, setRecentIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('doc_recent') || '[]'); } catch { return []; }
+  });
+  useEffect(() => {
+    if (!sel) return;
+    setRecentIds(prev => {
+      const next = [sel, ...prev.filter(id => id !== sel)].slice(0, 5);
+      try { localStorage.setItem('doc_recent', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [sel]);
+  const recentSpeakers = useMemo(() =>
+    recentIds.map(id => speakers.find(x => x.id === id)).filter(Boolean),
+    [recentIds, speakers]
+  );
   const sortedSpeakers = useMemo(
     () => [...speakers].sort((a, b) => new Date(a.seminarDate) - new Date(b.seminarDate)),
     [speakers]
@@ -61,6 +77,20 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             return <option key={sp.id} value={sp.id}>{sp.seminarDate} | {ch.name} | {sp.speakerName}</option>;
           })}
         </select>
+        {recentSpeakers.length > 0 && (
+          <div style={{ display:"flex", gap:5, alignItems:"center", flexWrap:"wrap", marginLeft:4 }}>
+            <span style={{ fontSize:10, color:"#90A4AE", fontWeight:600, whiteSpace:"nowrap" }}>最近：</span>
+            {recentSpeakers.filter(r => r.id !== sel).slice(0,4).map(r => {
+              const rc = getChapter(r.chapterId);
+              return (
+                <button key={r.id} onClick={() => { setSel(r.id); setDocSpeaker(r); }}
+                  style={{ fontSize:10, background: rc.light, color: rc.color, border:`1px solid ${rc.accent}`, borderRadius:10, padding:"2px 9px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
+                  {r.speakerName}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {sp && (
           <>
             <button style={BP} onClick={() => window.print()}>🖨 印刷 / PDF保存</button>

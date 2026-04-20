@@ -337,6 +337,17 @@ export default function App() {
     }
   }, [showConfirm, showToast]);
 
+  const dashboardBadge = useMemo(() => {
+    const todayStr = toDateStr(today);
+    const cutoff7 = new Date(today); cutoff7.setDate(today.getDate() - 7);
+    const cutoff7Str = toDateStr(cutoff7);
+    const cutoff30 = new Date(today); cutoff30.setDate(today.getDate() + 30);
+    const cutoff30Str = toDateStr(cutoff30);
+    const pending = speakers.filter(sp => sp.status === "pending" && sp.seminarDate >= todayStr && sp.requestDate && sp.requestDate <= cutoff7Str).length;
+    const missing = speakers.filter(sp => sp.status === "confirmed" && sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoff30Str && (!sp.topic || !sp.speakerKana || !sp.email)).length;
+    return pending + missing;
+  }, [speakers, today]);
+
   const sptasksBadge = useMemo(() => {
     const fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14);
     const toDate   = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 90);
@@ -358,7 +369,7 @@ export default function App() {
   }, [speakers, today]);
 
   const TABS = useMemo(() => [
-    { id:"dashboard", label:"ダッシュボード", icon:"⊞" },
+    { id:"dashboard", label:"ダッシュボード", icon:"⊞", badge: dashboardBadge },
     { id:"calendar",  label:"カレンダー",     icon:"▦" },
     { id:"speakers",  label:"講師管理",       icon:"♟", badge: speakers.filter(s => s.status === "pending").length },
     { id:"document",  label:"確認書作成",     icon:"≡" },
