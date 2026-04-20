@@ -46,10 +46,11 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
       ``,
     ];
     flyerData.forEach(({ ch, sp }) => {
-      lines.push(`■ ${ch.name}（${ch.dayName}）`);
+      lines.push(`■ ${ch.name}（${ch.dayName} ${ch.time}）`);
       if (sp) {
         lines.push(`  開催日：${sp.seminarDate}`);
-        lines.push(`  講師：${sp.speakerName}　${sp.company}　${sp.role}`);
+        lines.push(`  講師：${sp.speakerName}（${sp.speakerKana || "ふりがな未入力"}）`);
+        lines.push(`  所属：${sp.company}　${sp.role}`);
         lines.push(`  テーマ：「${sp.topic}」`);
         lines.push(`  写真：${sp.materialUrl || "※未受領"}`);
       } else {
