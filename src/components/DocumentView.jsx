@@ -212,6 +212,14 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             </DocSection>
 
             <DocSection title="⑥ 顔写真・資料" color={st.color}>
+              {sp.materialUrl && (/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/')) && (
+                <tr>
+                  <th style={{ width:120, padding:"6px 10px", background:"#F5F6FA", border:"1px solid #D0D7E2", fontSize:10, fontWeight:700, color:st.color, textAlign:"left", verticalAlign:"middle" }}>顔写真プレビュー</th>
+                  <td style={{ padding:"6px 10px", border:"1px solid #D0D7E2", background:"#fff" }}>
+                    <img src={sp.materialUrl} alt={sp.speakerName} style={{ height:80, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC" }} onError={e => { e.target.parentElement.parentElement.style.display="none"; }} />
+                  </td>
+                </tr>
+              )}
               <DocRow label="顔写真"           value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
               <DocRow label="講話資料"         value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
               {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={st.color} />}
