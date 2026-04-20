@@ -1,9 +1,23 @@
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, useState, useCallback, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast }) {
+  const [memo, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
+  const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
+  const saveMemo = useCallback(v => {
+    setMemoText(v);
+    try { localStorage.setItem('dashboard_memo', v); } catch {}
+  }, []);
+  const toggleMemo = useCallback(() => {
+    setMemoOpen(o => {
+      const next = !o;
+      try { localStorage.setItem('dashboard_memo_open', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }, []);
+
   const thisWeek = useMemo(() => {
     const weekStrs = new Set(weekDates.map(toDateStr));
     return speakers.filter(sp => sp.seminarDate && weekStrs.has(sp.seminarDate));
@@ -133,7 +147,30 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
 
   return (
     <div>
-      <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B", marginBottom:13 }}>ダッシュボード</div>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:13, flexWrap:"wrap" }}>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>ダッシュボード</div>
+        <button onClick={toggleMemo} style={{ fontSize:10, background: memoOpen ? "#FFF9C4" : "#ECEFF1", color: memoOpen ? "#F57F17" : "#546E7A", border:`1px solid ${memoOpen ? "#FFE082" : "#CFD8DC"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600, marginLeft:"auto" }}>
+          📝 事務局メモ {memoOpen ? "▲" : "▼"} {memo && !memoOpen ? <span style={{ fontSize:9, background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
+        </button>
+      </div>
+      {memoOpen && (
+        <div style={{ marginBottom:12, background:"#FFFDE7", border:"2px solid #FFE082", borderRadius:8, padding:"10px 13px" }}>
+          <div style={{ fontSize:11, fontWeight:700, color:"#F57F17", marginBottom:6 }}>📝 事務局メモ（ローカル保存・自分だけ表示）</div>
+          <textarea
+            autoFocus
+            rows={3}
+            style={{ width:"100%", border:"1px solid #FFE082", borderRadius:6, padding:"7px", fontSize:12, fontFamily:"inherit", resize:"vertical", background:"#FFFFF0", boxSizing:"border-box" }}
+            placeholder="電話メモ・やること・申し送り事項など..."
+            value={memo}
+            onChange={e => saveMemo(e.target.value)}
+          />
+          {memo && (
+            <div style={{ textAlign:"right", marginTop:4 }}>
+              <button onClick={() => saveMemo('')} style={{ fontSize:10, color:"#90A4AE", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}>クリア</button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:10, marginBottom:14 }}>
         {stats.map((it, i) => (

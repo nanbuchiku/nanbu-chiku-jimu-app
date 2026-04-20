@@ -54,6 +54,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
     showToast?.("CSVをエクスポートしました 📥");
   }, [visible, showToast]);
 
+  const [groupByDate, setGroupByDate] = useState(true);
   const hasFilter = filterCh !== "all" || filterPrio !== "all";
 
   const chapterStats = useMemo(() => {
@@ -99,6 +100,9 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
               🗑 完了済みを削除
             </button>
           )}
+          <button style={{ background: groupByDate ? "#1A3A6B" : "#ECEFF1", color: groupByDate ? "#fff" : "#546E7A", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600 }} onClick={() => setGroupByDate(v => !v)}>
+            {groupByDate ? "▦ グループ表示" : "≡ 一覧表示"}
+          </button>
           <button style={{ background:"#2E7D32", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:700 }} onClick={exportCSV}>📥 CSV</button>
         </div>
       </div>
@@ -161,7 +165,59 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
               <tr>{["","単会","タスク内容","期限","残り","優先","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {visible.map(t => {
+              {groupByDate && !showDone && (() => {
+                const pad = n => String(n).padStart(2,'0');
+                const ds = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+                const todayStr = ds(today);
+                const tom = new Date(today); tom.setDate(today.getDate()+1);
+                const tomStr = ds(tom);
+                const wk = new Date(today); wk.setDate(today.getDate()+7);
+                const wkStr = ds(wk);
+                const groups = [
+                  { label:"⚠ 期限超過", color:"#B71C1C", bg:"#FFEBEE", filter: t => t.dueDate < todayStr },
+                  { label:"📅 今日・明日", color:"#E65100", bg:"#FFF8E1", filter: t => t.dueDate >= todayStr && t.dueDate <= tomStr },
+                  { label:"📌 今週中", color:"#FF8F00", bg:"#FFFDE7", filter: t => t.dueDate > tomStr && t.dueDate <= wkStr },
+                  { label:"🗓 来週以降", color:"#546E7A", bg:"#F5F5F5", filter: t => t.dueDate > wkStr },
+                ];
+                return groups.flatMap(({ label, color, bg, filter }) => {
+                  const gTasks = visible.filter(filter);
+                  if (gTasks.length === 0) return [];
+                  return [
+                    <tr key={`hdr-${label}`}><td colSpan={7} style={{ padding:"5px 10px", background: bg, fontSize:11, fontWeight:700, color, borderTop:`2px solid ${color}33` }}>{label}　{gTasks.length}件</td></tr>,
+                    ...gTasks.map(t => {
+                      const ch = getChapter(t.chapterId);
+                      const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+                      const p = PRIO[t.priority] || PRIO.medium;
+                      const isEditing = editingId === t.id;
+                      if (isEditing) {
+                        return (
+                          <tr key={t.id} style={{ background:"#E3F2FD" }}>
+                            <td style={TD}><input type="checkbox" checked={t.done} disabled style={{ cursor:"not-allowed", opacity:.4 }} /></td>
+                            <td style={TD}><select style={{ ...SEL, fontSize:11 }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>{CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
+                            <td style={{ ...TD, maxWidth:200 }}><input autoFocus style={{ ...INP, width:"100%", fontSize:12 }} value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }} /></td>
+                            <td style={TD}><input type="date" style={{ ...INP, fontSize:11 }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} /></td>
+                            <td style={TD} />
+                            <td style={TD}><select style={{ ...SEL, fontSize:11 }} value={editForm.priority} onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))}><option value="high">🔴 高</option><option value="medium">🟡 中</option><option value="low">🟢 低</option></select></td>
+                            <td style={TD}><div style={{ display:"flex", gap:3 }}><button style={{ ...BSM, background:"#1A3A6B", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button><button style={{ ...BSM, color:"#546E7A" }} onClick={() => setEditingId(null)}>取消</button></div></td>
+                          </tr>
+                        );
+                      }
+                      return (
+                        <tr key={t.id} className="hover-row" style={{ background: dl < 0 ? "#FFF5F5" : "white" }}>
+                          <td style={TD}><input type="checkbox" aria-label={`${t.title}を完了にする`} checked={t.done} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
+                          <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
+                          <td style={{ ...TD, fontWeight:600, maxWidth:200 }}>{t.title}</td>
+                          <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
+                          <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
+                          <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
+                          <td style={TD}><div style={{ display:"flex", gap:3 }}><button style={{ ...BSM, color:"#1565C0" }} onClick={() => startEdit(t)}>編集</button><button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></div></td>
+                        </tr>
+                      );
+                    })
+                  ];
+                });
+              })()}
+              {(!groupByDate || showDone) && visible.map(t => {
                 const ch = getChapter(t.chapterId);
                 const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
                 const p  = PRIO[t.priority] || PRIO.medium;
