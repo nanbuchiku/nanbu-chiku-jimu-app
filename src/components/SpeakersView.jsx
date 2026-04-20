@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter } from '../utils';
+import { getChapter, toDateStr } from '../utils';
 import { CARD, BP, BC, BSM, SEL, INP, TBL, TH, TD, PILL, OV, MOD, MH } from '../styles';
 
 const DATE_RANGES = [
@@ -113,6 +113,21 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     showToast(`CSVをエクスポートしました 📥（${filtered.length}件）`);
   }, [filtered, showToast]);
 
+  const todayStr = useMemo(() => toDateStr(today), [today]);
+
+  const pastConfirmedCount = useMemo(() =>
+    filtered.filter(sp => sp.status === "confirmed" && sp.seminarDate && sp.seminarDate < todayStr).length,
+    [filtered, todayStr]
+  );
+
+  const bulkComplete = useCallback(async () => {
+    const targets = filtered.filter(sp => sp.status === "confirmed" && sp.seminarDate && sp.seminarDate < todayStr);
+    if (targets.length === 0) return;
+    if (!window.confirm(`過去の確定済み講師 ${targets.length}件をすべて「終了」にしますか？`)) return;
+    for (const sp of targets) await updateSpeaker(sp.id, { status: "completed" });
+    showToast(`${targets.length}件を終了にしました ✓`);
+  }, [filtered, todayStr, updateSpeaker, showToast]);
+
   const sortIcon = col => sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : " ⇅";
   const sortTH = (col, label) => (
     <th style={{ ...TH, cursor:"pointer", userSelect:"none", whiteSpace:"nowrap" }} onClick={() => toggleSort(col)}>
@@ -138,6 +153,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
           <button style={{ ...BP, background:"#2E7D32" }} onClick={exportCSV}>📥 CSV出力</button>
+          {pastConfirmedCount > 0 && (
+            <button style={{ ...BP, background:"#546E7A", fontSize:11 }} onClick={bulkComplete} title={`過去の確定済み${pastConfirmedCount}件を一括終了にする`}>
+              ✓ 過去{pastConfirmedCount}件を終了
+            </button>
+          )}
           <button style={BC} onClick={() => window.print()} title="現在の絞り込み結果を印刷">🖨 印刷</button>
           <button style={BP} onClick={onAdd}>＋ 新規登録</button>
         </div>
