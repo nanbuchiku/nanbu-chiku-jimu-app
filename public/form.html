@@ -884,9 +884,13 @@ async function submitForm() {
     document.getElementById('done').classList.add('active');
     document.getElementById('progLabel').textContent = '完了';
     ['prog1','prog2','prog3'].forEach(id => document.getElementById(id).className = 'progress-step done');
-    if (urlName) {
-      const doneTitle = document.querySelector('.done-title');
-      if (doneTitle) doneTitle.textContent = `${urlName} 様、送信ありがとうございました`;
+    const doneTitle = document.querySelector('.done-title');
+    const doneMsg = document.querySelector('.done-msg');
+    if (doneTitle) {
+      doneTitle.textContent = urlName ? `${urlName} 様、${speakerId ? '更新' : '送信'}ありがとうございました` : (speakerId ? '更新が完了しました' : '送信が完了しました');
+    }
+    if (doneMsg && speakerId) {
+      doneMsg.innerHTML = '情報を更新しました。<br>引き続きご不明な点がございましたらご連絡ください。<br><br><strong>倫理法人会 南部地区合同事務局</strong><br><a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#1565C0;">nanbugoudou.jimu@gmail.com</a>';
     }
   } catch (e) {
     document.getElementById('loadingOverlay').classList.remove('show');
