@@ -453,7 +453,61 @@ document.addEventListener('DOMContentLoaded', () => {
     set('ev-date',   urlDate ? fmt(urlDate) : '');
     document.getElementById('eventBanner').style.display = 'block';
   }
+  if (speakerId) prefillFromDB();
 });
+
+// 更新フォーム: 既存回答を取得して事前入力
+async function prefillFromDB() {
+  try {
+    const { data, error } = await db.from('speakers').select('*').eq('id', speakerId).single();
+    if (error || !data) return;
+
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+    const triggerRadio = (name, value) => {
+      const r = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
+    };
+    const triggerCheck = (name, value) => {
+      const c = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (c) { c.checked = true; c.dispatchEvent(new Event('change')); }
+    };
+
+    // ページ1
+    setVal('speakerKana', data.speaker_kana);
+    setVal('company',     data.company);
+    let role = data.role || '';
+    if (urlEthics && role.startsWith(urlEthics + '・')) role = role.slice(urlEthics.length + 1);
+    setVal('role',  role);
+    setVal('phone', data.phone);
+
+    // ページ2
+    setVal('topic', data.topic);
+    if (data.notes) {
+      const sm = data.notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
+      if (sm) { document.getElementById('summary').value = sm[1].trim(); updateCharCount(); }
+      const tm = data.notes.match(/【交通手段】([^\n]+)/);
+      if (tm) triggerRadio('transport', tm[1].trim());
+      const pm = data.notes.match(/【単会で準備】([^\n]+)/);
+      if (pm) pm[1].split('・').forEach(v => triggerCheck('prepare', v.trim()));
+    }
+    if (data.lodging) triggerRadio('lodging', data.lodging === '不要' ? '不要' : '要');
+
+    // ページ3 (領収証・写真利用範囲)
+    if (data.notes) {
+      const rm  = data.notes.match(/【領収証宛名】([^\n]+)/);
+      if (rm)  triggerRadio('receiptType', rm[1].trim());
+      const zm  = data.notes.match(/【領収証郵便番号】([^\n]+)/);
+      if (zm)  setVal('zipcode', zm[1].trim());
+      const am  = data.notes.match(/【領収証住所】([^\n]+)/);
+      if (am)  setVal('address', am[1].trim());
+      const pum = data.notes.match(/【顔写真の使用範囲】([^\n]+)/);
+      if (pum) triggerRadio('photoUse', pum[1].trim());
+    }
+
+    const infoBox = document.querySelector('#page1 .info-box');
+    if (infoBox) infoBox.innerHTML = '🔄 以前の回答内容を読み込みました。変更が必要な箇所のみご修正のうえ、再度送信してください。';
+  } catch (e) { /* silent fallback */ }
+}
 
 // 郵便番号から住所を自動入力
 async function lookupZip() {

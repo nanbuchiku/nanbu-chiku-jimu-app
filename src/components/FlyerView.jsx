@@ -185,8 +185,11 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                     <td style={{ ...TD, fontSize:11, maxWidth:160 }}>{sp?.topic ? `「${sp.topic}」` : none}</td>
                     <td style={TD}>
                       {sp?.materialUrl ? (
-                        <a href={sp.materialUrl} target="_blank" rel="noreferrer" style={{ fontSize:11, color:"#1565C0", display:"flex", alignItems:"center", gap:4, textDecoration:"none", whiteSpace:"nowrap" }}>
-                          <span>📁</span>フォルダを開く
+                        <a href={sp.materialUrl} target="_blank" rel="noreferrer" style={{ fontSize:11, color:"#1565C0", display:"flex", alignItems:"center", gap:6, textDecoration:"none", whiteSpace:"nowrap" }}>
+                          {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/') ? (
+                            <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:40, height:40, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
+                          ) : null}
+                          <span>📁 開く</span>
                         </a>
                       ) : <span style={{ fontSize:11, color:"#B0BEC5" }}>📭 未設定</span>}
                     </td>
