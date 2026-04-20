@@ -184,7 +184,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 } />;
               })()}
               <DocRow label="資料の有無"         value={parsedNotes['資料01'] || parsedNotes['資料02'] ? "☑ あり　□ なし" : "□ あり　□ なし"}  color={st.color} />
-              <DocRow label="印刷の要否"         value={sp.printRequired === "あり" ? "☑ 要（単会で印刷）　□ 不要（持参）" : sp.printRequired === "不要" ? "□ 要（単会で印刷）　☑ 不要（持参）" : "□ 要（単会で印刷）　□ 不要（持参）"} color={st.color} />
+              <DocRow label="印刷の要否"         value={(sp.printRequired === "あり" || sp.printRequired?.startsWith("要")) ? "☑ 要（単会で印刷）　□ 不要（持参）" : (sp.printRequired === "不要" || sp.printRequired?.startsWith("不要")) ? "□ 要（単会で印刷）　☑ 不要（持参）" : "□ 要（単会で印刷）　□ 不要（持参）"} color={st.color} />
               {(() => {
                 const p = parsedNotes['単会で準備'];
                 const items = ["プロジェクタ","パソコン","ホワイトボード","その他","無し"];
@@ -196,7 +196,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             </DocSection>
 
             <DocSection title="⑤ 宿泊情報" color={st.color}>
-              <DocRow label="前泊要否"       value={sp.lodging === "不要" ? "□ 要　☑ 不要" : sp.lodging === "要" ? "☑ 要　□ 不要" : "□ 要　□ 不要"} color={st.color} />
+              <DocRow label="前泊要否"       value={sp.lodging === "不要" ? "□ 要　☑ 不要" : (sp.lodging === "要" || sp.lodging?.startsWith("あり")) ? "☑ 要　□ 不要" : "□ 要　□ 不要"} color={st.color} />
               {(() => {
                 const room   = parsedNotes['禁煙ルーム']?.split('／')[0] || null;
                 const pickup = parsedNotes['お迎え'] || null;

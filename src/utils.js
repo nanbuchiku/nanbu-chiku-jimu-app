@@ -53,7 +53,7 @@ export function buildSpeakerTasks(sp) {
   }
 
   add("material_chk","資料・写真受領確認",         "資料");
-  if (sp.printRequired && sp.printRequired !== "不要") {
+  if (sp.printRequired && !sp.printRequired.startsWith("不要")) {
     add("print_done", "資料印刷完了",             "資料");
   }
 
