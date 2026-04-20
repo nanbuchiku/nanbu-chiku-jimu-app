@@ -11,7 +11,7 @@ const DATE_RANGES = [
   { value: "30",   label: "今後30日" },
 ];
 
-export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd }) {
+export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd, onDuplicate }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
@@ -273,6 +273,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                               showToast("連絡先をコピーしました 📋");
                             }}>📋</button>
                         )}
+                        {onDuplicate && <button style={{ ...BSM, color:"#1B5E20", background:"#E8F5E9", fontSize:10 }} title="この講師のデータを複製して別の単会・日程で登録" aria-label={`${sp.speakerName}を複製`} onClick={() => onDuplicate(sp)}>複製</button>}
                         <button style={{ ...BSM, color:"#B71C1C" }} aria-label={`${sp.speakerName}を削除`} onClick={() => onDelete(sp.id)}>削除</button>
                       </div>
                     </td>
