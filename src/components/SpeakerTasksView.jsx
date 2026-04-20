@@ -29,7 +29,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     return speakers
       .filter(sp => sp.status !== "cancelled")
       .filter(sp => filterCh === "all" || sp.chapterId === filterCh)
-      .filter(sp => !q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.notes?.toLowerCase().includes(q))
+      .filter(sp => !q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.notes?.toLowerCase().includes(q))
       .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || ""));
   }, [speakers, filterCh, search]);
 

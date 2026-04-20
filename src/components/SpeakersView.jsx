@@ -79,7 +79,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       .filter(sp =>
         (filterCh === "all" || sp.chapterId === filterCh) &&
         (filterSt === "all" || sp.status === filterSt) &&
-        (!q || sp.speakerName?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.phone?.includes(q)) &&
+        (!q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.phone?.includes(q)) &&
         (dateRange === "all" || (dateRange === "past" ? (sp.seminarDate && sp.seminarDate < todayStr) : (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr)))
       )
       .sort((a, b) => {
@@ -119,7 +119,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{filtered.length}/{speakers.length}件</span>
         </div>
         <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
-          <input style={{ ...INP, width:180, fontSize:11 }} placeholder="🔍 名前・会社・テーマ・メール検索" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
+          <input style={{ ...INP, width:200, fontSize:11 }} placeholder="🔍 名前・ふりがな・会社・テーマ" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
           <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
             <option value="all">全単会</option>
             {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
