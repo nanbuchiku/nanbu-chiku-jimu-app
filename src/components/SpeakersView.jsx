@@ -20,6 +20,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('sp_sortDir') || "asc"; } catch { return "asc"; } });
   const [savingIds, setSavingIds] = useState(new Set());
   const [notesModal, setNotesModal] = useState(null);
+  const [showActionOnly, setShowActionOnly] = useState(false);
   const notesRef = useRef("");
 
   useEffect(() => {
@@ -75,12 +76,19 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + parseInt(dateRange, 10));
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     })() : null;
+    const cutoff30 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30);
+    const cutoff30Str = `${cutoff30.getFullYear()}-${pad(cutoff30.getMonth()+1)}-${pad(cutoff30.getDate())}`;
     return [...speakers]
       .filter(sp =>
         (filterCh === "all" || sp.chapterId === filterCh) &&
         (filterSt === "all" || sp.status === filterSt) &&
         (!q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.phone?.includes(q)) &&
-        (dateRange === "all" || (dateRange === "past" ? (sp.seminarDate && sp.seminarDate < todayStr) : (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr)))
+        (dateRange === "all" || (dateRange === "past" ? (sp.seminarDate && sp.seminarDate < todayStr) : (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr))) &&
+        (!showActionOnly || (
+          sp.status !== "cancelled" &&
+          sp.seminarDate >= todayStr && sp.seminarDate <= cutoff30Str &&
+          (sp.status === "pending" || !sp.topic || !sp.speakerKana || !sp.email || !sp.materialUrl)
+        ))
       )
       .sort((a, b) => {
         let cmp = 0;
@@ -89,7 +97,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         else if (sortCol === "chapter") cmp = a.chapterId.localeCompare(b.chapterId);
         return sortDir === "asc" ? cmp : -cmp;
       });
-  }, [speakers, filterCh, filterSt, search, dateRange, sortCol, sortDir, today]);
+  }, [speakers, filterCh, filterSt, search, dateRange, sortCol, sortDir, today, showActionOnly]);
 
   const exportCSV = useCallback(() => {
     const headers = ["開催日","単会","講師名","ふりがな","所属単会","企業名","役職","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","資料ファイル名","備考"];
@@ -142,8 +150,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             {r.label}
           </button>
         ))}
-        {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
-          <button onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); }}
+        <button onClick={() => setShowActionOnly(v => !v)}
+          style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:`1px solid ${showActionOnly ? "#B71C1C" : "#CFD8DC"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, transition:"all .15s", marginLeft:4 }}>
+          ⚡ 要対応のみ
+        </button>
+        {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" || showActionOnly) && (
+          <button onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); setShowActionOnly(false); }}
             style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:"1px solid #EF5350", background:"#FFEBEE", color:"#B71C1C", cursor:"pointer", fontWeight:700, marginLeft:4 }}>
             ✕ フィルターをすべてリセット
           </button>
