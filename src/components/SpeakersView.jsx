@@ -206,9 +206,17 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                           <span>{STATUS[sp.status].label}</span>
                         </div>
                       ) : (
-                        <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status].color }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
-                          {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                        </select>
+                        <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                          <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status].color }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
+                            {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                          </select>
+                          {isPast && sp.status === "confirmed" && (
+                            <button style={{ fontSize:9, fontWeight:700, background:"#ECEFF1", color:"#546E7A", border:"1px solid #CFD8DC", borderRadius:4, padding:"1px 6px", cursor:"pointer", whiteSpace:"nowrap" }}
+                              onClick={() => handleStatusChange(sp.id, "completed")} title="開催済み — 終了にする">
+                              → 終了にする
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td style={TD}>
