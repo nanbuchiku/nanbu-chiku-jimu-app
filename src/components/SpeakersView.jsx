@@ -314,8 +314,8 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                         <button style={BSM} aria-label={`${sp.speakerName}の確認書を表示`} onClick={() => onDoc(sp)}>確認書</button>
                         <button style={BSM} aria-label={`${sp.speakerName}を編集`} onClick={() => onEdit(sp)}>編集</button>
                         <button
-                          style={{ ...BSM, color: sp.notes ? "#7B1FA2" : "#90A4AE", background: sp.notes ? "#F3E5F5" : "#ECEFF1" }}
-                          title={sp.notes ? `メモ: ${sp.notes}` : "メモを追加"}
+                          style={{ ...BSM, color: extractStaffNotes(sp.notes) ? "#7B1FA2" : "#90A4AE", background: extractStaffNotes(sp.notes) ? "#F3E5F5" : "#ECEFF1" }}
+                          title={extractStaffNotes(sp.notes) ? `メモ: ${extractStaffNotes(sp.notes).slice(0, 80)}` : "メモを追加"}
                           aria-label={`${sp.speakerName}のメモ`}
                           onClick={() => { const t = extractStaffNotes(sp.notes || ""); notesRef.current = t; setNotesText(t); setNotesModal(sp); }}>
                           {sp.notes ? "📝" : "📝+"}
@@ -412,7 +412,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{STATUS[sp.status]?.label || sp.status}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.materialUrl ? "受領済" : "未受領"}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.lodging || "不要"}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", maxWidth:120, fontSize:10 }}>{sp.notes || ""}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", maxWidth:120, fontSize:10 }}>{extractStaffNotes(sp.notes)}</td>
                 </tr>
               );
             })}
