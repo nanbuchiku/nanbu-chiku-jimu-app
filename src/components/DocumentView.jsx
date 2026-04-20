@@ -198,12 +198,11 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocSection title="⑤ 宿泊情報" color={st.color}>
               <DocRow label="前泊要否"       value={sp.lodging === "不要" ? "□ 要　☑ 不要" : sp.lodging === "要" ? "☑ 要　□ 不要" : "□ 要　□ 不要"} color={st.color} />
               {(() => {
-                const r = parsedNotes['禁煙ルーム'];
-                const pickup = r ? r.split("／【お迎え】")[1] : null;
-                const room   = r ? r.split("／")[0] : null;
+                const room   = parsedNotes['禁煙ルーム']?.split('／')[0] || null;
+                const pickup = parsedNotes['お迎え'] || null;
                 return <>
-                  <DocRow label="お部屋のタイプ" color={st.color} value={room || "□ 禁煙　□ 喫煙　□ どちらでも"} />
-                  <DocRow label="お迎えの要否"   color={st.color} value={pickup || "□ 要　□ 不要"} />
+                  <DocRow label="お部屋のタイプ" color={st.color} value={room ? ["禁煙","喫煙","どちらでも"].map(v => `${v===room?"☑":"□"} ${v}`).join("　") : "□ 禁煙　□ 喫煙　□ どちらでも"} />
+                  <DocRow label="お迎えの要否"   color={st.color} value={pickup ? (pickup === "要" ? "☑ 要　□ 不要" : "□ 要　☑ 不要") : "□ 要　□ 不要"} />
                 </>;
               })()}
               <DocRow label="領収証の宛名"   value={parsedNotes['領収証宛名'] || ""}               color={st.color} />
