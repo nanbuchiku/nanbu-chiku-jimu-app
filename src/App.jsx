@@ -223,7 +223,8 @@ export default function App() {
 
   const openLine = useCallback(sp => {
     const ch = getChapter(sp.chapterId);
-    const msg = `【${ch.name}単会 モーニングセミナー講師ご案内】\n\n開催日：${formatDate(sp.seminarDate)}\n会場：${ch.venue}\n時間：${ch.time}\n\n講師：${sp.speakerName} 様\n所属：${sp.company}　${sp.role}\nテーマ：「${sp.topic}」\n\n皆様のご参加をお待ちしております。\n${ch.name}単会事務局`;
+    const mapLine = ch.mapUrl ? `\n地図：${ch.mapUrl}` : "";
+    const msg = `【${ch.name}単会 モーニングセミナー講師ご案内】\n\n開催日：${formatDate(sp.seminarDate)}\n会場：${ch.venue}\n住所：${ch.address}${mapLine}\n時間：${ch.time}\n\n講師：${sp.speakerName} 様\n所属：${sp.company}　${sp.role}\nテーマ：「${sp.topic}」\n\n皆様のご参加をお待ちしております。\n${ch.name}単会事務局`;
     setLineModal({ msg, speakerId: sp.id });
   }, []);
 
