@@ -420,11 +420,11 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       </div>
                       <div>
                         <div style={{ fontSize:12, fontWeight:700, color:"#263238" }}>{sp.speakerName}</div>
-                        <div style={{ fontSize:9, color:"#78909C" }}>{sp.seminarDate}｜{STATUS[sp.status]?.label}</div>
+                        <div style={{ fontSize:9, color:"#78909C" }}>{sp.seminarDate}｜{STATUS[sp.status]?.label ?? sp.status}</div>
                       </div>
                     </div>
                     {sp.status === "pending" && updateSpeaker && (
-                      <button onClick={() => { updateSpeaker(sp.id, { status:"confirmed" }); showToast?.(`${sp.speakerName} 様を確定にしました ✓`); }}
+                      <button onClick={async () => { const ok = await updateSpeaker(sp.id, { status:"confirmed" }); if (ok) showToast?.(`${sp.speakerName} 様を確定にしました ✓`); }}
                         style={{ fontSize:9, fontWeight:700, background:"#E8F5E9", color:"#2E7D32", border:"1px solid #A5D6A7", borderRadius:6, padding:"2px 7px", cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
                         確定 →
                       </button>

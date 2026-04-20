@@ -24,7 +24,7 @@ const DATE_RANGES = [
   { value: "30",   label: "今後30日" },
 ];
 
-export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, onAdd, onDuplicate }) {
+export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
@@ -133,13 +133,15 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     [filtered, todayStr]
   );
 
-  const bulkComplete = useCallback(async () => {
+  const bulkComplete = useCallback(() => {
     const targets = filtered.filter(sp => sp.status === "confirmed" && sp.seminarDate && sp.seminarDate < todayStr);
     if (targets.length === 0) return;
-    if (!window.confirm(`過去の確定済み講師 ${targets.length}件をすべて「終了」にしますか？`)) return;
-    for (const sp of targets) await updateSpeaker(sp.id, { status: "completed" });
-    showToast(`${targets.length}件を終了にしました ✓`);
-  }, [filtered, todayStr, updateSpeaker, showToast]);
+    showConfirm(`過去の確定済み講師 ${targets.length}件をすべて「終了」にしますか？`, async () => {
+      let ok = 0;
+      for (const sp of targets) { if (await updateSpeaker(sp.id, { status: "completed" })) ok++; }
+      if (ok > 0) showToast(`${ok}件を終了にしました ✓`);
+    }, "終了にする");
+  }, [filtered, todayStr, updateSpeaker, showToast, showConfirm]);
 
   const sortIcon = col => sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : " ⇅";
   const sortTH = (col, label) => (
@@ -287,7 +289,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                         {sp.lineNotified ? (
                           <div style={{ display:"flex", alignItems:"center", gap:3 }}>
                             <span style={{ color:"#06C755", fontSize:10, fontWeight:600 }}>✓LINE済</span>
-                            <button style={{ ...BSM, fontSize:9, color:"#78909C", padding:"1px 4px" }} title="LINE送信済をリセット" aria-label="LINE送信済をリセット" onClick={() => { updateSpeaker(sp.id,{lineNotified:false}); showToast("LINE未送信に戻しました"); }}>↩</button>
+                            <button style={{ ...BSM, fontSize:9, color:"#78909C", padding:"1px 4px" }} title="LINE送信済をリセット" aria-label="LINE送信済をリセット" onClick={async () => { const ok = await updateSpeaker(sp.id,{lineNotified:false}); if (ok) showToast("LINE未送信に戻しました"); }}>↩</button>
                           </div>
                         ) : (
                           <button style={{ ...BSM, background:"#06C755", color:"#fff", fontSize:10 }} title="LINEメッセージを作成" onClick={() => onLine(sp)}>📱 LINE</button>
@@ -298,10 +300,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       {sp.calendarAdded ? (
                         <div style={{ display:"flex", alignItems:"center", gap:4 }}>
                           <span style={{ color:"#2E7D32", fontSize:11, fontWeight:600 }}>✓ 転記済</span>
-                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} title="未転記に戻す" aria-label="カレンダー転記済をリセット" onClick={() => { updateSpeaker(sp.id,{calendarAdded:false}); showToast("未転記に戻しました"); }}>↩</button>
+                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} title="未転記に戻す" aria-label="カレンダー転記済をリセット" onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:false}); if (ok) showToast("未転記に戻しました"); }}>↩</button>
                         </div>
                       ) : (
-                        <button style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", border:"1px solid #90CAF9", fontSize:10 }} onClick={() => { updateSpeaker(sp.id,{calendarAdded:true}); showToast("カレンダー転記済にしました 📅"); }}>📅 転記済にする</button>
+                        <button style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", border:"1px solid #90CAF9", fontSize:10 }} onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:true}); if (ok) showToast("カレンダー転記済にしました 📅"); }}>📅 転記済にする</button>
                       )}
                     </td>
                     <td style={TD}>
