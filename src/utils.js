@@ -28,6 +28,15 @@ export const isSameDay = (a, b) =>
   a.getMonth()    === b.getMonth()    &&
   a.getDate()     === b.getDate();
 
+export function extractStaffNotes(notes) {
+  if (!notes) return '';
+  return notes
+    .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
+    .replace(/【[^】]+】[^\n]*/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function buildSpeakerTasks(sp) {
   const tasks = [];
   const add = (id, label, category) => tasks.push({ id, label, category });

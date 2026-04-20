@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { JIMU } from '../constants';
-import { getChapter, getSeminarType, formatDate } from '../utils';
+import { getChapter, getSeminarType, formatDate, extractStaffNotes } from '../utils';
 import { BP, SEL } from '../styles';
 
 function DocSection({ title, color, children }) {
@@ -229,8 +229,9 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocSection title="⑦ 備考・特記事項" color="#546E7A">
               <tr>
                 <td colSpan={2} style={{ padding:"8px 10px", border:"1px solid #D0D7E2",
-                  fontSize:11, color:"#263238", background:"#fff", minHeight:52, height:52 }}>
-                  {sp.notes || ""}
+                  fontSize:11, color:"#263238", background:"#fff", minHeight:52, height:52,
+                  whiteSpace:"pre-wrap" }}>
+                  {extractStaffNotes(sp.notes)}
                 </td>
               </tr>
             </DocSection>

@@ -1,16 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, toDateStr } from '../utils';
+import { getChapter, toDateStr, extractStaffNotes } from '../utils';
 import { CARD, BP, BC, BSM, SEL, INP, TBL, TH, TD, PILL, OV, MOD, MH } from '../styles';
-
-function extractStaffNotes(notes) {
-  if (!notes) return '';
-  return notes
-    .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
-    .replace(/【[^】]+】[^\n]*/g, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
 
 function extractStructuredNotes(notes) {
   if (!notes) return '';
