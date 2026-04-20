@@ -3,6 +3,28 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr } from '../utils';
 import { CARD, BP, BC, BSM, SEL, INP, TBL, TH, TD, PILL, OV, MOD, MH } from '../styles';
 
+function extractStaffNotes(notes) {
+  if (!notes) return '';
+  return notes
+    .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
+    .replace(/【[^】]+】[^\n]*/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function extractStructuredNotes(notes) {
+  if (!notes) return '';
+  const lines = [];
+  const sm = notes.match(/【内容要約】\n[\s\S]*?(?=\n【|$)/);
+  if (sm) lines.push(sm[0].trim());
+  const re = /【([^】]+)】([^\n]*)/g;
+  let m;
+  while ((m = re.exec(notes)) !== null) {
+    if (m[1] !== '内容要約') lines.push(`【${m[1]}】${m[2]}`);
+  }
+  return lines.join('\n');
+}
+
 const DATE_RANGES = [
   { value: "all",  label: "すべて" },
   { value: "past", label: "過去のみ" },
@@ -304,7 +326,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                           style={{ ...BSM, color: sp.notes ? "#7B1FA2" : "#90A4AE", background: sp.notes ? "#F3E5F5" : "#ECEFF1" }}
                           title={sp.notes ? `メモ: ${sp.notes}` : "メモを追加"}
                           aria-label={`${sp.speakerName}のメモ`}
-                          onClick={() => { notesRef.current = sp.notes || ""; setNotesText(sp.notes || ""); setNotesModal(sp); }}>
+                          onClick={() => { const t = extractStaffNotes(sp.notes || ""); notesRef.current = t; setNotesText(t); setNotesModal(sp); }}>
                           {sp.notes ? "📝" : "📝+"}
                         </button>
                         {sp.postNotes && (
@@ -415,12 +437,14 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             onKeyDown={async e => {
               if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                 e.preventDefault();
-                await updateSpeaker(notesModal.id, { notes: notesText });
+                const structured = extractStructuredNotes(notesModal.notes || "");
+                const merged = [structured, notesText].filter(Boolean).join('\n\n');
+                await updateSpeaker(notesModal.id, { notes: merged });
                 showToast("メモを保存しました ✓");
                 setNotesModal(null);
               }
             }}>
-            <div style={MH}>📝 メモ — {notesModal.speakerName} 様</div>
+            <div style={MH}>📝 スタッフメモ — {notesModal.speakerName} 様</div>
             <textarea
               autoFocus
               rows={5}
@@ -435,12 +459,15 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={BC} onClick={() => setNotesModal(null)}>キャンセル</button>
               <button style={{ ...BC, color:"#B71C1C", borderColor:"#EF9A9A" }} onClick={async () => {
-                await updateSpeaker(notesModal.id, { notes: "" });
+                const structured = extractStructuredNotes(notesModal.notes || "");
+                await updateSpeaker(notesModal.id, { notes: structured || "" });
                 showToast("メモを削除しました");
                 setNotesModal(null);
               }}>削除</button>
               <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 18px", fontSize:12, fontWeight:700, cursor:"pointer" }} onClick={async () => {
-                await updateSpeaker(notesModal.id, { notes: notesText });
+                const structured = extractStructuredNotes(notesModal.notes || "");
+                const merged = [structured, notesText].filter(Boolean).join('\n\n');
+                await updateSpeaker(notesModal.id, { notes: merged });
                 showToast("メモを保存しました ✓");
                 setNotesModal(null);
               }}>保存</button>
