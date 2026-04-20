@@ -391,6 +391,10 @@ export default function App() {
         e.preventDefault();
         setEditSpeaker(null); setShowForm(true);
       }
+      if (e.key === "e" && noModals && notInInput && tab === "document" && docSpeaker) {
+        e.preventDefault();
+        setEditSpeaker(docSpeaker); setShowForm(true);
+      }
       if (e.key === "?" && noModals && notInInput) {
         e.preventDefault();
         setShowHelp(h => !h);
@@ -539,6 +543,7 @@ export default function App() {
                   ["?", "このヘルプを表示 / 非表示"],
                   ["R", "データを再読み込み"],
                   ["N（講師管理タブ）", "新規講師登録フォームを開く"],
+                  ["E（確認書タブ）", "現在の講師を編集フォームで開く"],
                   ["Ctrl + Enter（フォーム内）", "講師フォームを保存"],
                   ["← →（確認書タブ）", "前後の講師に移動"],
                   ["Esc", "モーダル・ダイアログを閉じる"],
