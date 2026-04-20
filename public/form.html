@@ -758,23 +758,25 @@ function buildFileName(type, ext, speakerName, unit, date) {
 }
 
 // Supabase Storageへのアップロード
-async function uploadToStorage(file, speakerName, type) {
+// type: ファイル種別名（ファイル名に使用）'顔写真'|'資料01'|'資料02'
+// idPrefix: DOM要素のIDプレフィックス 'photo'|'material'|'material2'
+async function uploadToStorage(file, speakerName, type, idPrefix) {
   const isImage = file.type.startsWith('image/');
   const unit    = document.getElementById('speakerUnit')?.value.trim() || urlUnit;
   const date    = urlDate;
-  const progressBar = document.getElementById(type + '-progress-bar');
-  const progressEl  = document.getElementById(type + '-progress');
-  const label       = document.getElementById(type + '-label');
-  progressEl.style.display = 'block';
-  progressBar.style.width = '20%';
+  const progressBar = idPrefix ? document.getElementById(idPrefix + '-progress-bar') : null;
+  const progressEl  = idPrefix ? document.getElementById(idPrefix + '-progress') : null;
+  const label       = idPrefix ? document.getElementById(idPrefix + '-label') : null;
+  if (progressEl) progressEl.style.display = 'block';
+  if (progressBar) progressBar.style.width = '20%';
 
   let uploadFile = file;
   if (isImage) {
-    label.textContent = '🔄 圧縮中...';
+    if (label) label.textContent = '🔄 圧縮中...';
     uploadFile = await compressImage(file, 700);
     const sizeMB = (uploadFile.size / 1024 / 1024).toFixed(2);
-    label.textContent = `✓ 圧縮完了（${sizeMB} MB）`;
-    progressBar.style.width = '50%';
+    if (label) label.textContent = `✓ 圧縮完了（${sizeMB} MB）`;
+    if (progressBar) progressBar.style.width = '50%';
   }
 
   const ext      = isImage ? 'jpg' : file.name.split('.').pop();
@@ -782,7 +784,7 @@ async function uploadToStorage(file, speakerName, type) {
   const { error } = await db.storage.from('speaker-files').upload(fileName, uploadFile, { upsert: true });
   if (error) throw new Error('アップロード失敗: ' + error.message);
 
-  progressBar.style.width = '100%';
+  if (progressBar) progressBar.style.width = '100%';
   const { data } = db.storage.from('speaker-files').getPublicUrl(fileName);
   return data.publicUrl;
 }
@@ -851,7 +853,7 @@ async function submitForm() {
     const material2File = document.getElementById('material2File').files[0];
 
     if (photoFile) {
-      const url = await uploadToStorage(photoFile, speakerName, '顔写真');
+      const url = await uploadToStorage(photoFile, speakerName, '顔写真', 'photo');
       payload.material_url  = url;
       payload.material_name = '顔写真';
     } else if (speakerId && existingData?.material_url) {
@@ -860,11 +862,11 @@ async function submitForm() {
     }
     const extraUrls = [];
     if (materialFile) {
-      const url = await uploadToStorage(materialFile, speakerName, '資料01');
+      const url = await uploadToStorage(materialFile, speakerName, '資料01', 'material');
       extraUrls.push('【資料01】' + url);
     }
     if (material2File) {
-      const url = await uploadToStorage(material2File, speakerName, '資料02');
+      const url = await uploadToStorage(material2File, speakerName, '資料02', 'material2');
       extraUrls.push('【資料02】' + url);
     }
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
