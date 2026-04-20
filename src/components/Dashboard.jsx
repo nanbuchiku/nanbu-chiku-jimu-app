@@ -4,7 +4,7 @@ import { getChapter, toDateStr } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast }) {
-  const [memo, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
+  const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
   const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
   const saveMemo = useCallback(v => {
     setMemoText(v);
@@ -150,7 +150,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:13, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>ダッシュボード</div>
         <button onClick={toggleMemo} style={{ fontSize:10, background: memoOpen ? "#FFF9C4" : "#ECEFF1", color: memoOpen ? "#F57F17" : "#546E7A", border:`1px solid ${memoOpen ? "#FFE082" : "#CFD8DC"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600, marginLeft:"auto" }}>
-          📝 事務局メモ {memoOpen ? "▲" : "▼"} {memo && !memoOpen ? <span style={{ fontSize:9, background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
+          📝 事務局メモ {memoOpen ? "▲" : "▼"} {memoText && !memoOpen ? <span style={{ fontSize:9, background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
         </button>
       </div>
       {memoOpen && (
@@ -161,10 +161,10 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             rows={3}
             style={{ width:"100%", border:"1px solid #FFE082", borderRadius:6, padding:"7px", fontSize:12, fontFamily:"inherit", resize:"vertical", background:"#FFFFF0", boxSizing:"border-box" }}
             placeholder="電話メモ・やること・申し送り事項など..."
-            value={memo}
+            value={memoText}
             onChange={e => saveMemo(e.target.value)}
           />
-          {memo && (
+          {memoText && (
             <div style={{ textAlign:"right", marginTop:4 }}>
               <button onClick={() => saveMemo('')} style={{ fontSize:10, color:"#90A4AE", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}>クリア</button>
             </div>

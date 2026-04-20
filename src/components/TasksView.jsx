@@ -225,7 +225,6 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                 const isEditing = editingId === t.id;
 
                 if (isEditing) {
-                  const eCh = getChapter(editForm.chapterId);
                   return (
                     <tr key={t.id} style={{ background:"#E3F2FD" }}>
                       <td style={TD}><input type="checkbox" checked={t.done} disabled style={{ cursor:"not-allowed", opacity:.4 }} /></td>
