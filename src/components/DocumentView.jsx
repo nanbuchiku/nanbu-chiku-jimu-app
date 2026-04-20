@@ -51,6 +51,19 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
   const sp = useMemo(() => speakers.find(x => x.id === sel), [speakers, sel]);
   const ch = useMemo(() => sp ? getChapter(sp.chapterId) : null, [sp]);
 
+  const parsedNotes = useMemo(() => {
+    if (!sp?.notes) return {};
+    const result = {};
+    const summaryMatch = sp.notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
+    if (summaryMatch) result['内容要約'] = summaryMatch[1].trim();
+    const tagLine = /【([^】]+)】([^\n【]*)/g;
+    let m;
+    while ((m = tagLine.exec(sp.notes)) !== null) {
+      if (m[1] !== '内容要約') result[m[1]] = m[2].trim();
+    }
+    return result;
+  }, [sp?.notes]);
+
   useEffect(() => {
     const onKey = e => {
       if (["INPUT","SELECT","TEXTAREA"].includes(document.activeElement?.tagName)) return;
@@ -159,30 +172,50 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
 
             <DocSection title="③ 講話内容" color={st.color}>
               <DocRow label="タイトル" value={sp.topic ? `「${sp.topic}」` : ""} color={st.color} />
-              <DocRow label="内容要約" value="" color={st.color} />
+              <DocRow label="内容要約" value={parsedNotes['内容要約'] || ""} color={st.color} />
             </DocSection>
 
             <DocSection title="④ 交通・当日の準備" color={st.color}>
-              <DocRow label="交通手段"           value="□ お車　□ 電車　□ その他"                               color={st.color} />
+              {(() => {
+                const t = parsedNotes['交通手段'];
+                return <DocRow label="交通手段" color={st.color} value={
+                  t ? `${t==="お車"?"☑":"□"} お車　${t==="電車"?"☑":"□"} 電車　${t==="その他"?"☑":"□"} その他` :
+                  "□ お車　□ 電車　□ その他"
+                } />;
+              })()}
               <DocRow label="資料の有無"         value={sp.materialUrl ? "☑ あり　□ なし" : "□ あり　□ なし"}  color={st.color} />
               <DocRow label="印刷の要否"         value={sp.printRequired === "あり" ? "☑ 要（単会で印刷）　□ 不要（持参）" : sp.printRequired === "不要" ? "□ 要（単会で印刷）　☑ 不要（持参）" : "□ 要（単会で印刷）　□ 不要（持参）"} color={st.color} />
-              <DocRow label="単会で準備するもの" value="□ プロジェクタ　□ パソコン　□ ホワイトボード　□ その他　□ 無し" color={st.color} />
+              {(() => {
+                const p = parsedNotes['単会で準備'];
+                const items = ["プロジェクタ","パソコン","ホワイトボード","その他","無し"];
+                return <DocRow label="単会で準備するもの" color={st.color} value={
+                  p ? items.map(i => `${p.includes(i)?"☑":"□"} ${i}`).join("　") :
+                  "□ プロジェクタ　□ パソコン　□ ホワイトボード　□ その他　□ 無し"
+                } />;
+              })()}
             </DocSection>
 
             <DocSection title="⑤ 宿泊情報" color={st.color}>
-              <DocRow label="前泊要否"       value={sp.lodging === "不要" ? "□ 要　☑ 不要" : sp.lodging ? "☑ 要　□ 不要" : "□ 要　□ 不要"} color={st.color} />
-              <DocRow label="お迎えの要否"   value="□ 要　□ 不要"  color={st.color} />
-              <DocRow label="お部屋のタイプ" value="□ 禁煙　□ 喫煙" color={st.color} />
-              <DocRow label="領収証の宛名"   value=""               color={st.color} />
-              <DocRow label="郵便番号"       value=""               color={st.color} />
-              <DocRow label="住所"           value=""               color={st.color} />
+              <DocRow label="前泊要否"       value={sp.lodging === "不要" ? "□ 要　☑ 不要" : sp.lodging === "要" ? "☑ 要　□ 不要" : "□ 要　□ 不要"} color={st.color} />
+              {(() => {
+                const r = parsedNotes['禁煙ルーム'];
+                const pickup = r ? r.split("／【お迎え】")[1] : null;
+                const room   = r ? r.split("／")[0] : null;
+                return <>
+                  <DocRow label="お部屋のタイプ" color={st.color} value={room || "□ 禁煙　□ 喫煙　□ どちらでも"} />
+                  <DocRow label="お迎えの要否"   color={st.color} value={pickup || "□ 要　□ 不要"} />
+                </>;
+              })()}
+              <DocRow label="領収証の宛名"   value={parsedNotes['領収証宛名'] || ""}               color={st.color} />
+              <DocRow label="郵便番号"       value={parsedNotes['領収証郵便番号'] || ""}           color={st.color} />
+              <DocRow label="住所"           value={parsedNotes['領収証住所'] || ""}               color={st.color} />
             </DocSection>
 
             <DocSection title="⑥ 顔写真・資料" color={st.color}>
               <DocRow label="顔写真"           value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
               <DocRow label="講話資料"         value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
               {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={st.color} />}
-              <DocRow label="顔写真の使用範囲" value=""                                               color={st.color} />
+              <DocRow label="顔写真の使用範囲" value={parsedNotes['顔写真の使用範囲'] || ""}       color={st.color} />
             </DocSection>
 
             <DocSection title="⑦ 備考・特記事項" color="#546E7A">
