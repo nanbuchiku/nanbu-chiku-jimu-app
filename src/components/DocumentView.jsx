@@ -216,7 +216,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 <tr>
                   <th style={{ width:120, padding:"6px 10px", background:"#F5F6FA", border:"1px solid #D0D7E2", fontSize:10, fontWeight:700, color:st.color, textAlign:"left", verticalAlign:"middle" }}>顔写真プレビュー</th>
                   <td style={{ padding:"6px 10px", border:"1px solid #D0D7E2", background:"#fff" }}>
-                    <img src={sp.materialUrl} alt={sp.speakerName} style={{ height:80, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC" }} onError={e => { e.target.parentElement.parentElement.style.display="none"; }} />
+                    <img src={sp.materialUrl} alt={sp.speakerName} style={{ height:80, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC" }} onError={e => { const tr = e.target.closest('tr'); if (tr) tr.style.display="none"; }} />
                   </td>
                 </tr>
               )}

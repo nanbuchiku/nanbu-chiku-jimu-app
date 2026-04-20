@@ -147,7 +147,9 @@ export default function App() {
           setTasks(prev => prev.filter(x => x.id !== payload.old.id));
         }
       })
-      .subscribe();
+      .subscribe(status => {
+        if (status === 'CHANNEL_ERROR') showToast('⚠ リアルタイム同期エラー。ページを再読み込みしてください');
+      });
     return () => { db.removeChannel(channel); };
   }, []);
 

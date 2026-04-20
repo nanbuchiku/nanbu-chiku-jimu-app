@@ -508,6 +508,14 @@ async function prefillFromDB() {
 
     const infoBox = document.querySelector('#page1 .info-box');
     if (infoBox) infoBox.innerHTML = '🔄 以前の回答内容を読み込みました。変更が必要な箇所のみご修正のうえ、再度送信してください。';
+    if (data.material_url) {
+      const photoLabel = document.querySelector('#f-photo label');
+      if (photoLabel) {
+        const req = photoLabel.querySelector('.req');
+        if (req) req.remove();
+        photoLabel.insertAdjacentHTML('beforeend', '<span class="hint">（写真登録済み。変更する場合のみ選択）</span>');
+      }
+    }
   } catch (e) { /* silent fallback */ }
 }
 
@@ -603,12 +611,13 @@ function validatePage2() {
 function validatePage3() {
   let ok = true;
 
-  // 顔写真アップロード必須
+  // 顔写真アップロード（更新時は既存写真があれば省略可）
   const photoFile = document.getElementById('photoFile').files[0];
+  const hasExistingPhoto = speakerId && existingData?.material_url;
   const pe = document.getElementById('photo-error');
   const pf = document.getElementById('f-photo');
-  if (!photoFile) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
-  else            { pe.style.display='none';  pf.classList.remove('has-error'); }
+  if (!photoFile && !hasExistingPhoto) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
+  else                                 { pe.style.display='none';  pf.classList.remove('has-error'); }
 
   ok = requiredRadio('receiptType','receipt-error', 'f-receipt')  && ok;
   ok = required('address','f-address') && ok;
@@ -678,7 +687,9 @@ function onFileSelect(type) {
     e.preventDefault(); el.classList.remove('dragover');
     const type = id.replace('-drop','');
     const fileInput = document.getElementById(type + 'File');
-    fileInput.files = e.dataTransfer.files;
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    fileInput.files = dt.files;
     onFileSelect(type);
   });
 });
@@ -828,6 +839,9 @@ async function submitForm() {
       const url = await uploadToStorage(photoFile, speakerName, '顔写真');
       payload.material_url  = url;
       payload.material_name = '顔写真';
+    } else if (speakerId && existingData?.material_url) {
+      payload.material_url  = existingData.material_url;
+      payload.material_name = existingData.material_name || '顔写真';
     }
     const extraUrls = [];
     if (materialFile) {
