@@ -504,7 +504,11 @@ async function prefillFromDB() {
       if (pkm) triggerRadio('pickup', pkm[1].trim());
     }
     if (data.material_url) triggerRadio('material', 'あり');
-    if (data.print_required) triggerRadio('print', data.print_required === 'あり' ? 'あり' : '不要');
+    if (data.print_required) {
+      const pr = data.print_required;
+      const prVal = (pr === 'あり' || pr.startsWith('要')) ? '要（単会で印刷）' : '不要（持参）';
+      triggerRadio('print', prVal);
+    }
 
     // ページ3 (領収証・写真利用範囲)
     if (data.notes) {
