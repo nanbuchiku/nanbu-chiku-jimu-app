@@ -91,12 +91,35 @@ Mail：nanbugoudou.jimu@gmail.com
 倫理法人会 南部地区合同事務局
 ━━━━━━━━━━━━━━━━━`,
     },
+    reminder: {
+      label: "🔔 前日リマインダー",
+      subject: `【${ch.name}単会 モーニングセミナー】明日のご講話について`,
+      body:
+`${sp.speakerName} 様
+
+明日、${ch.name}単会 モーニングセミナーにてご講話をいただきます。
+どうぞよろしくお願いいたします。
+
+【開催日時】${formatDate(sp.seminarDate)}　${ch.time}
+【会　　場】${ch.venue}
+【住　　所】${ch.address || ch.venue}
+
+開始の15分前（5:45頃）にお越しいただけますと幸いです。
+ご不明な点がございましたら、お気軽にご連絡ください。
+
+お忙しいところ恐れ入りますが、明日のご登壇をどうぞよろしくお願いいたします。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区事務局
+${ch.name}単会 担当
+━━━━━━━━━━━━━━━━━`,
+    },
     free: {
       label: "✏️ フリーメール",
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, ch.name, ch.venue, ch.dayName, matDL]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, ch.name, ch.venue, ch.dayName, ch.address, ch.time, matDL]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;

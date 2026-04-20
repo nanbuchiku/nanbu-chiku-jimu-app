@@ -107,6 +107,15 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     };
   }), [speakers, today]);
 
+  const yearStats = useMemo(() => {
+    const year = today.getFullYear();
+    const yearSpeakers = speakers.filter(sp => sp.seminarDate?.startsWith(String(year)) && sp.status !== "cancelled");
+    const uniqueNames = new Set(yearSpeakers.map(sp => sp.speakerName).filter(Boolean));
+    const completed = yearSpeakers.filter(sp => sp.status === "completed").length;
+    const withMaterial = yearSpeakers.filter(sp => sp.materialUrl).length;
+    return { year, total: yearSpeakers.length, unique: uniqueNames.size, completed, withMaterial };
+  }, [speakers, today]);
+
   const tasksByChapter = useMemo(() => CHAPTERS.map(ch => {
     const total  = tasks.filter(t => t.chapterId === ch.id).length;
     const done   = tasks.filter(t => t.chapterId === ch.id && t.done).length;
@@ -309,6 +318,30 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {yearStats.total > 0 && (
+            <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, background:"linear-gradient(135deg,#E3F2FD,#F0F4FF)" }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#1A3A6B", marginBottom:8 }}>{yearStats.year}年 講師実績</div>
+              <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:22, fontWeight:800, color:"#1A3A6B", lineHeight:1 }}>{yearStats.total}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
+                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>登録数</div>
+                </div>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:22, fontWeight:800, color:"#2E7D32", lineHeight:1 }}>{yearStats.unique}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>名</span></div>
+                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>延べ講師</div>
+                </div>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:22, fontWeight:800, color:"#546E7A", lineHeight:1 }}>{yearStats.completed}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
+                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>開催済</div>
+                </div>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:22, fontWeight:800, color:"#E65100", lineHeight:1 }}>{yearStats.withMaterial}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
+                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>資料受領</div>
+                </div>
+              </div>
             </div>
           )}
 
