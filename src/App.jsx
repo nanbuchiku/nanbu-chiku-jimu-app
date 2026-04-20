@@ -248,10 +248,14 @@ export default function App() {
 
   const onToggleTask = useCallback(async id => {
     const t = tasksRef.current.find(x => x.id === id);
+    if (!t) return;
     const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };
-    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
-    if (error) { showToast("⚠ 更新に失敗しました"); return; }
     setTasks(prev => prev.map(x => x.id === id ? updated : x));
+    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+    if (error) {
+      setTasks(prev => prev.map(x => x.id === id ? t : x));
+      showToast("⚠ 更新に失敗しました");
+    }
   }, [showToast]);
 
   const onDeleteTask = useCallback(id => {
@@ -417,7 +421,7 @@ export default function App() {
     { id:"flyer",     label:"チラシ管理",     icon:"📋" },
     { id:"tasks",     label:"タスク管理",     icon:"✓", badge: tasks.filter(t => !t.done).length },
     { id:"ranking",   label:"完了ランキング", icon:"🏆" },
-  ], [speakers, tasks, sptasksBadge]);
+  ], [speakers, tasks, dashboardBadge, sptasksBadge]);
 
   useEffect(() => {
     const tabLabel = TABS.find(t => t.id === tab)?.label;
