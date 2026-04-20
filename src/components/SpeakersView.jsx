@@ -20,6 +20,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('sp_sortDir') || "asc"; } catch { return "asc"; } });
   const [savingIds, setSavingIds] = useState(new Set());
   const [notesModal, setNotesModal] = useState(null);
+  const [notesText, setNotesText] = useState("");
   const [showActionOnly, setShowActionOnly] = useState(false);
   const notesRef = useRef("");
 
@@ -279,7 +280,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                           style={{ ...BSM, color: sp.notes ? "#7B1FA2" : "#90A4AE", background: sp.notes ? "#F3E5F5" : "#ECEFF1" }}
                           title={sp.notes ? `メモ: ${sp.notes}` : "メモを追加"}
                           aria-label={`${sp.speakerName}のメモ`}
-                          onClick={() => { notesRef.current = sp.notes || ""; setNotesModal(sp); }}>
+                          onClick={() => { notesRef.current = sp.notes || ""; setNotesText(sp.notes || ""); setNotesModal(sp); }}>
                           {sp.notes ? "📝" : "📝+"}
                         </button>
                         {sp.postNotes && (
@@ -386,17 +387,28 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       {/* ── Quick notes modal ─────────────────── */}
       {notesModal && (
         <div style={OV} role="presentation" onClick={() => setNotesModal(null)}>
-          <div role="dialog" aria-modal="true" aria-label="メモを編集" style={{ ...MOD, maxWidth:420 }} onClick={e => e.stopPropagation()}>
+          <div role="dialog" aria-modal="true" aria-label="メモを編集" style={{ ...MOD, maxWidth:420 }} onClick={e => e.stopPropagation()}
+            onKeyDown={async e => {
+              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                await updateSpeaker(notesModal.id, { notes: notesText });
+                showToast("メモを保存しました ✓");
+                setNotesModal(null);
+              }
+            }}>
             <div style={MH}>📝 メモ — {notesModal.speakerName} 様</div>
             <textarea
               autoFocus
               rows={5}
-              defaultValue={notesModal.notes || ""}
-              onChange={e => { notesRef.current = e.target.value; }}
+              value={notesText}
+              onChange={e => { setNotesText(e.target.value); notesRef.current = e.target.value; }}
               style={{ width:"100%", border:"1px solid #CFD8DC", borderRadius:6, padding:"8px", fontSize:12, fontFamily:"inherit", resize:"vertical", marginTop:8, boxSizing:"border-box" }}
               placeholder="自由メモ（内部のみ表示）"
             />
-            <div style={{ display:"flex", gap:8, marginTop:12, justifyContent:"flex-end" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:4, marginBottom:8 }}>
+              <span style={{ fontSize:10, color:"#90A4AE" }}>{notesText.length}文字　Ctrl+Enterで保存</span>
+            </div>
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={BC} onClick={() => setNotesModal(null)}>キャンセル</button>
               <button style={{ ...BC, color:"#B71C1C", borderColor:"#EF9A9A" }} onClick={async () => {
                 await updateSpeaker(notesModal.id, { notes: "" });
@@ -404,7 +416,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 setNotesModal(null);
               }}>削除</button>
               <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 18px", fontSize:12, fontWeight:700, cursor:"pointer" }} onClick={async () => {
-                await updateSpeaker(notesModal.id, { notes: notesRef.current });
+                await updateSpeaker(notesModal.id, { notes: notesText });
                 showToast("メモを保存しました ✓");
                 setNotesModal(null);
               }}>保存</button>
