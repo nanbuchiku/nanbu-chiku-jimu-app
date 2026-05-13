@@ -753,12 +753,13 @@ async function compressImage(file, maxKB = 700) {
 //   資料01 : 資料01_名前_単会名_講話日.ext
 //   資料02 : 資料02_名前_単会名_講話日.ext
 function buildFileName(type, ext, speakerName, unit, date) {
-  const d = date ? date.replace(/-/g, '') : 'nodate'; // 20260506
-  const n = (speakerName || '').replace(/\s/g, '');
-  const u = (unit || '').replace(/\s/g, '');
-  if (type === '顔写真') return `${n}_${u}_${d}.jpg`;
-  // 資料01 / 資料02 どちらにも対応
-  return `${type}_${n}_${u}_${d}.${ext}`;
+  const d = date ? date.replace(/-/g, '') : String(Date.now());
+  // Supabase Storage keys must be ASCII — strip non-ASCII, fall back to timestamp
+  const n = (speakerName || '').replace(/[^\x21-\x7E]/g, '').replace(/\s/g, '') || String(Date.now());
+  const u = (unit || '').replace(/[^\x21-\x7E]/g, '').replace(/\s/g, '');
+  const typeKey = type === '顔写真' ? 'photo' : type === '資料01' ? 'doc1' : 'doc2';
+  if (type === '顔写真') return `photo_${n}_${u}_${d}.jpg`;
+  return `${typeKey}_${n}_${u}_${d}.${ext}`;
 }
 
 // Supabase Storageへのアップロード
