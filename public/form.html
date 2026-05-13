@@ -786,11 +786,11 @@ async function uploadToStorage(file, speakerName, type, idPrefix) {
 
   const ext      = isImage ? 'jpg' : file.name.split('.').pop();
   const fileName = buildFileName(type, ext, speakerName, unit, date);
-  const { error } = await db.storage.from('speaker-files').upload(fileName, uploadFile, { upsert: true });
+  const { error } = await db.storage.from('スピーカーファイル').upload(fileName, uploadFile, { upsert: true });
   if (error) throw new Error('アップロード失敗: ' + error.message);
 
   if (progressBar) progressBar.style.width = '100%';
-  const { data } = db.storage.from('speaker-files').getPublicUrl(fileName);
+  const { data } = db.storage.from('スピーカーファイル').getPublicUrl(fileName);
   return data.publicUrl;
 }
 
