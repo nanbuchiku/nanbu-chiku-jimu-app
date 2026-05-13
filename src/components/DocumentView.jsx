@@ -25,6 +25,15 @@ function DocRow({ label, value, color }) {
   );
 }
 
+function Cb({ on, label }) {
+  return (
+    <span style={{ marginRight:10, whiteSpace:"nowrap" }}>
+      <span style={{ fontSize:16, verticalAlign:"middle", lineHeight:1 }}>{on ? "■" : "□"}</span>
+      {" "}<span style={{ verticalAlign:"middle" }}>{label}</span>
+    </span>
+  );
+}
+
 export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
   useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
@@ -179,30 +188,62 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               {(() => {
                 const t = parsedNotes['交通手段'];
                 return <DocRow label="交通手段" color={st.color} value={
-                  t ? `${t==="お車"?"☑":"□"} お車　${t==="電車"?"☑":"□"} 電車　${t==="その他"?"☑":"□"} その他` :
-                  "□ お車　□ 電車　□ その他"
+                  <span>
+                    <Cb on={t === "お車"} label="お車" />
+                    <Cb on={t === "電車"} label="電車" />
+                    <Cb on={t === "その他"} label="その他" />
+                  </span>
                 } />;
               })()}
-              <DocRow label="資料の有無"         value={parsedNotes['資料01'] || parsedNotes['資料02'] ? "☑ あり　□ なし" : "□ あり　□ なし"}  color={st.color} />
-              <DocRow label="印刷の要否"         value={(sp.printRequired === "あり" || sp.printRequired?.startsWith("要")) ? "☑ 要（単会で印刷）　□ 不要（持参）" : (sp.printRequired === "不要" || sp.printRequired?.startsWith("不要")) ? "□ 要（単会で印刷）　☑ 不要（持参）" : "□ 要（単会で印刷）　□ 不要（持参）"} color={st.color} />
+              <DocRow label="資料の有無" color={st.color} value={
+                <span>
+                  <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="あり" />
+                  <Cb on={false} label="なし" />
+                </span>
+              } />
+              {(() => {
+                const req = sp.printRequired === "あり" || sp.printRequired?.startsWith("要");
+                const notReq = sp.printRequired === "不要" || sp.printRequired?.startsWith("不要");
+                return <DocRow label="印刷の要否" color={st.color} value={
+                  <span>
+                    <Cb on={req} label="要（単会で印刷）" />
+                    <Cb on={notReq} label="不要（持参）" />
+                  </span>
+                } />;
+              })()}
               {(() => {
                 const p = parsedNotes['単会で準備'];
                 const items = ["プロジェクタ","パソコン","ホワイトボード","その他","無し"];
                 return <DocRow label="単会で準備するもの" color={st.color} value={
-                  p ? items.map(i => `${p.includes(i)?"☑":"□"} ${i}`).join("　") :
-                  "□ プロジェクタ　□ パソコン　□ ホワイトボード　□ その他　□ 無し"
+                  <span>{items.map(i => <Cb key={i} on={!!(p && p.includes(i))} label={i} />)}</span>
                 } />;
               })()}
             </DocSection>
 
             <DocSection title="⑤ 宿泊情報" color={st.color}>
-              <DocRow label="前泊要否"       value={sp.lodging === "不要" ? "□ 要　☑ 不要" : (sp.lodging === "要" || sp.lodging?.startsWith("あり")) ? "☑ 要　□ 不要" : "□ 要　□ 不要"} color={st.color} />
+              {(() => {
+                const req = sp.lodging === "要" || sp.lodging?.startsWith("あり");
+                const notReq = sp.lodging === "不要";
+                return <DocRow label="前泊要否" color={st.color} value={
+                  <span>
+                    <Cb on={req} label="要" />
+                    <Cb on={notReq} label="不要" />
+                  </span>
+                } />;
+              })()}
               {(() => {
                 const room   = parsedNotes['禁煙ルーム']?.split('／')[0] || null;
                 const pickup = parsedNotes['お迎え'] || null;
                 return <>
-                  <DocRow label="お部屋のタイプ" color={st.color} value={room ? ["禁煙","喫煙","どちらでも"].map(v => `${v===room?"☑":"□"} ${v}`).join("　") : "□ 禁煙　□ 喫煙　□ どちらでも"} />
-                  <DocRow label="お迎えの要否"   color={st.color} value={pickup ? (pickup === "要" ? "☑ 要　□ 不要" : "□ 要　☑ 不要") : "□ 要　□ 不要"} />
+                  <DocRow label="お部屋のタイプ" color={st.color} value={
+                    <span>{["禁煙","喫煙","どちらでも"].map(v => <Cb key={v} on={room === v} label={v} />)}</span>
+                  } />
+                  <DocRow label="お迎えの要否" color={st.color} value={
+                    <span>
+                      <Cb on={pickup === "要"} label="要" />
+                      <Cb on={pickup === "不要"} label="不要" />
+                    </span>
+                  } />
                 </>;
               })()}
               <DocRow label="領収証の宛名"   value={parsedNotes['領収証宛名'] || ""}               color={st.color} />
@@ -219,8 +260,20 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   </td>
                 </tr>
               )}
-              <DocRow label="顔写真"           value={sp.materialUrl ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
-              <DocRow label="講話資料"         value={parsedNotes['資料01'] || parsedNotes['資料02'] ? "☑ フォームアップ済　□ メール送付済　□ 未受領" : "□ フォームアップ済　□ メール送付済　□ 未受領"} color={st.color} />
+              <DocRow label="顔写真" color={st.color} value={
+                <span>
+                  <Cb on={!!sp.materialUrl} label="フォームアップ済" />
+                  <Cb on={false} label="メール送付済" />
+                  <Cb on={false} label="未受領" />
+                </span>
+              } />
+              <DocRow label="講話資料" color={st.color} value={
+                <span>
+                  <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="フォームアップ済" />
+                  <Cb on={false} label="メール送付済" />
+                  <Cb on={false} label="未受領" />
+                </span>
+              } />
               {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={st.color} />}
               <DocRow label="顔写真の使用範囲" value={parsedNotes['顔写真の使用範囲'] || ""}       color={st.color} />
             </DocSection>
