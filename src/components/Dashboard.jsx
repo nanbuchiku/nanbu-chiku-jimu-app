@@ -281,9 +281,11 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
 
       {hotelNeeded.length > 0 && (() => {
         const items = [
-          { id:"hotel_booked", label:"予約完了",   icon:"🏨" },
-          { id:"hotel_sent",   label:"講師へ送信", icon:"📧" },
-          { id:"hotel_paid",   label:"支払い完了", icon:"💴" },
+          { id:"hotel_booked",   label:"予約完了",                 icon:"🏨" },
+          { id:"hotel_sent",     label:"講師へホテル情報を送信済み", icon:"📧" },
+          { id:"hotel_pickup",   label:"お迎え場所など相談済み",     icon:"🚗" },
+          { id:"hotel_greeting", label:"会長からの挨拶連絡済み",     icon:"💬" },
+          { id:"hotel_paid",     label:"支払い完了",                 icon:"💴" },
         ];
         const allDoneCount = hotelNeeded.filter(sp => items.every(it => (sp.speakerChecks || {})[it.id])).length;
         const pendingCount = hotelNeeded.length - allDoneCount;
