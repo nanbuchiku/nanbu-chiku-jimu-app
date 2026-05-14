@@ -6,7 +6,7 @@ import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
 
 export default memo(function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, showToast }) {
-  const [showDone,    setShowDone]    = useState(false);
+  const [showDone,    setShowDone]    = useState(true);
   const [filterCh,   setFilterCh]    = useState("all");
   const [filterPrio, setFilterPrio]  = useState("all");
   const [editingId,  setEditingId]   = useState(null);
@@ -93,7 +93,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
             </button>
           )}
           <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setShowDone(v => !v)}>
-            {showDone ? "完了を隠す" : "完了済も表示"}
+            {showDone ? "完了済みを隠す" : "完了済みも表示"}
           </button>
           {doneCount > 0 && (
             <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#B71C1C" }} onClick={onDeleteDone}>
@@ -165,7 +165,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
               <tr>{["","単会","タスク内容","期限","残り","優先","操作"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              {groupByDate && !showDone && (() => {
+              {groupByDate && (() => {
                 const pad = n => String(n).padStart(2,'0');
                 const ds = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
                 const todayStr = ds(today);
@@ -173,14 +173,16 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                 const tomStr = ds(tom);
                 const wk = new Date(today); wk.setDate(today.getDate()+7);
                 const wkStr = ds(wk);
+                const undoneTasks = visible.filter(t => !t.done);
+                const doneTasks   = showDone ? visible.filter(t => t.done) : [];
                 const groups = [
                   { label:"⚠ 期限超過", color:"#B71C1C", bg:"#FFEBEE", filter: t => t.dueDate < todayStr },
                   { label:"📅 今日・明日", color:"#E65100", bg:"#FFF8E1", filter: t => t.dueDate >= todayStr && t.dueDate <= tomStr },
                   { label:"📌 今週中", color:"#FF8F00", bg:"#FFFDE7", filter: t => t.dueDate > tomStr && t.dueDate <= wkStr },
                   { label:"🗓 来週以降", color:"#546E7A", bg:"#F5F5F5", filter: t => t.dueDate > wkStr },
                 ];
-                return groups.flatMap(({ label, color, bg, filter }) => {
-                  const gTasks = visible.filter(filter);
+                const undoneRows = groups.flatMap(({ label, color, bg, filter }) => {
+                  const gTasks = undoneTasks.filter(filter);
                   if (gTasks.length === 0) return [];
                   return [
                     <tr key={`hdr-${label}`}><td colSpan={7} style={{ padding:"5px 10px", background: bg, fontSize:11, fontWeight:700, color, borderTop:`2px solid ${color}33` }}>{label}　{gTasks.length}件</td></tr>,
@@ -216,8 +218,27 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                     })
                   ];
                 });
+                const doneRows = doneTasks.length === 0 ? [] : [
+                  <tr key="hdr-done"><td colSpan={7} style={{ padding:"5px 10px", background:"#F5F5F5", fontSize:11, fontWeight:700, color:"#78909C", borderTop:"2px solid #CFD8DC" }}>✓ 完了済み　{doneTasks.length}件</td></tr>,
+                  ...doneTasks.map(t => {
+                    const ch = getChapter(t.chapterId);
+                    const p = PRIO[t.priority] || PRIO.medium;
+                    return (
+                      <tr key={t.id} className="hover-row" style={{ background:"#FAFAFA", opacity:.55 }}>
+                        <td style={TD}><input type="checkbox" aria-label={`${t.title}を未完了に戻す`} checked={true} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
+                        <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
+                        <td style={{ ...TD, fontWeight:400, textDecoration:"line-through", color:"#90A4AE", maxWidth:200 }}>{t.title}</td>
+                        <td style={{ ...TD, fontSize:11, color:"#90A4AE" }}>{t.dueDate}</td>
+                        <td style={TD}><span style={{ fontWeight:700, fontSize:11, color:"#90A4AE" }}>✓完了</span></td>
+                        <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700, opacity:.5 }}>{p.label}</span></td>
+                        <td style={TD}><button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></td>
+                      </tr>
+                    );
+                  })
+                ];
+                return [...undoneRows, ...doneRows];
               })()}
-              {(!groupByDate || showDone) && visible.map(t => {
+              {!groupByDate && visible.map(t => {
                 const ch = getChapter(t.chapterId);
                 const dl = Math.ceil((parseDate(t.dueDate) - today) / 86400000);
                 const p  = PRIO[t.priority] || PRIO.medium;
