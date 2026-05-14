@@ -391,6 +391,12 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                   : <span style={{ fontSize:9, background:"#C8E6C9", color:"#2E7D32", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>✓ 全完了</span>;
               })()}
             </div>
+            <a href="https://www.toyoko-inn.com/search/detail/00324/" target="_blank" rel="noopener noreferrer"
+              style={{ display:"flex", alignItems:"center", gap:8, background:"#E0F7FA", border:"2px solid #00ACC1", borderRadius:8, padding:"8px 12px", marginBottom:10, textDecoration:"none", color:"#006064", fontWeight:700, fontSize:12 }}>
+              <span style={{ fontSize:18 }}>🏨</span>
+              <span>東横イン志木東口</span>
+              <span style={{ marginLeft:"auto", fontSize:10, color:"#00838F", background:"#B2EBF2", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>予約サイトを開く →</span>
+            </a>
             {hotelNeeded.length === 0 ? (
               <div style={{ fontSize:11, color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
             ) : (
