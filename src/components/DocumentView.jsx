@@ -173,8 +173,10 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocSection title="② 講師情報" color={st.color}>
               <DocRow label="お名前（漢字）"     value={`${sp.speakerName}　様`}  color={st.color} />
               <DocRow label="お名前（ふりがな）" value={sp.speakerKana || ""}     color={st.color} />
-              <DocRow label="所属法人会名"       value={sp.company || ""}         color={st.color} />
-              <DocRow label="役職名"             value={sp.role || ""}            color={st.color} />
+              <DocRow label="所属法人会名"       value={sp.speakerUnit || ""}     color={st.color} />
+              <DocRow label="法人会役職"         value={sp.role || ""}            color={st.color} />
+              <DocRow label="勤務先"             value={sp.company || ""}         color={st.color} />
+              <DocRow label="勤務先役職名"       value={sp.companyRole || ""}     color={st.color} />
               <DocRow label="連絡先TEL"          value={sp.phone || ""}           color={st.color} />
               <DocRow label="メールアドレス"     value={sp.email || ""}           color={st.color} />
             </DocSection>

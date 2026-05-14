@@ -95,11 +95,11 @@ Mail：nanbugoudou.jimu@gmail.com
                 <input type="text" style={INP2} placeholder="例：山田 太郎" value={form.speakerName} onChange={e => setForm(f => ({ ...f, speakerName: e.target.value }))} />
               </div>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={LB}>所属組織（単会・研究所など）</label>
+                <label style={LB}>所属法人会名</label>
                 <input type="text" style={INP2} placeholder="例：川口倫理法人会" value={form.speakerUnit} onChange={e => setForm(f => ({ ...f, speakerUnit: e.target.value }))} />
               </div>
               <div>
-                <label style={LB}>倫理法人会の役職</label>
+                <label style={LB}>法人会役職</label>
                 <input type="text" style={INP2} placeholder="例：幹事" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
               </div>
               <div>

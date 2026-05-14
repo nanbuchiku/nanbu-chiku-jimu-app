@@ -98,7 +98,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       .filter(sp =>
         (filterCh === "all" || sp.chapterId === filterCh) &&
         (filterSt === "all" || sp.status === filterSt) &&
-        (!q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.phone?.includes(q)) &&
+        (!q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.companyRole?.toLowerCase().includes(q) || sp.speakerUnit?.toLowerCase().includes(q) || sp.role?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.phone?.includes(q)) &&
         (dateRange === "all" || (dateRange === "past" ? (sp.seminarDate && sp.seminarDate < todayStr) : (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr))) &&
         (!showActionOnly || (
           sp.status !== "cancelled" &&
@@ -116,10 +116,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   }, [speakers, filterCh, filterSt, search, dateRange, sortCol, sortDir, today, showActionOnly]);
 
   const exportCSV = useCallback(() => {
-    const headers = ["開催日","単会","講師名","ふりがな","所属単会","企業名","役職","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","資料ファイル名","お酒","栞・条","講話後メモ","スタッフメモ"];
+    const headers = ["開催日","単会","講師名","ふりがな","所属法人会名","法人会役職","勤務先","勤務先役職名","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","資料ファイル名","お酒","栞・条","講話後メモ","スタッフメモ"];
     const rows = filtered.map(sp => {
       const ch = getChapter(sp.chapterId);
-      return [sp.seminarDate, ch.name, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.company, sp.role, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.materialName || "", sp.drinksAlcohol || "", sp.shioriArticle || "", sp.postNotes || "", extractStaffNotes(sp.notes)];
+      return [sp.seminarDate, ch.name, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.role, sp.company, sp.companyRole, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.materialName || "", sp.drinksAlcohol || "", sp.shioriArticle || "", sp.postNotes || "", extractStaffNotes(sp.notes)];
     });
     const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });
@@ -246,7 +246,16 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                           <span style={{ fontSize:9, background:"#E3F2FD", color:"#1565C0", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>
                         )}
                       </div>
-                      <div style={{ fontSize:10, color:"#78909C" }}>{sp.company}　{sp.role}</div>
+                      {(sp.speakerUnit || sp.role) && (
+                        <div style={{ fontSize:11, color:"#37474F" }}>
+                          {sp.speakerUnit}{sp.role && <span style={{ color:"#7B1FA2", marginLeft:5 }}>{sp.role}</span>}
+                        </div>
+                      )}
+                      {(sp.company || sp.companyRole) && (
+                        <div style={{ fontSize:11, color:"#78909C" }}>
+                          {sp.company}{sp.companyRole && <span style={{ marginLeft:5 }}>{sp.companyRole}</span>}
+                        </div>
+                      )}
                     </td>
                     <td style={{ ...TD, maxWidth:150, fontSize:11 }}>{sp.topic ? `「${sp.topic}」` : <span style={{ color:"#B0BEC5" }}>―</span>}</td>
                     <td style={TD}>
@@ -399,7 +408,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
           <thead>
             <tr style={{ background:"#ECEFF1" }}>
-              {["開催日","単会","講師名","所属・役職","テーマ","ステータス","資料","前泊","メモ"].map(h => (
+              {["開催日","単会","講師名","所属法人会・役職／勤務先","テーマ","ステータス","資料","前泊","メモ"].map(h => (
                 <th key={h} style={{ padding:"5px 7px", textAlign:"left", borderBottom:"2px solid #90A4AE", fontWeight:700, color:"#37474F" }}>{h}</th>
               ))}
             </tr>
@@ -412,7 +421,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", whiteSpace:"nowrap" }}>{sp.seminarDate}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontWeight:700, color: ch.color }}>{ch.name}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontWeight:600 }}>{sp.speakerName}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{[sp.company, sp.role].filter(Boolean).join("　")}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontSize:11 }}>
+                    {[sp.speakerUnit, sp.role].filter(Boolean).join("　")}
+                    {(sp.company || sp.companyRole) && <div style={{ color:"#78909C" }}>{[sp.company, sp.companyRole].filter(Boolean).join("　")}</div>}
+                  </td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.topic ? `「${sp.topic}」` : ""}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{STATUS[sp.status]?.label || sp.status}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.materialUrl ? "受領済" : "未受領"}</td>

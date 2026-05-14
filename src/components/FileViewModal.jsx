@@ -50,7 +50,8 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
 `${speaker.speakerName}様より${fileType}が届きましたのでご確認ください。
 
 【講師名】${speaker.speakerName}${speaker.speakerKana ? `（${speaker.speakerKana}）` : ''}
-【所　属】${[speaker.speakerUnit, speaker.company].filter(Boolean).join('　')}
+【所属法人会】${[speaker.speakerUnit, speaker.role].filter(Boolean).join('　')}
+【勤務先】${[speaker.company, speaker.companyRole].filter(Boolean).join('　')}
 【登壇日】${formatDate(speaker.seminarDate)}
 【単　会】${ch.name}単会
 【ファイル名】${displayName}

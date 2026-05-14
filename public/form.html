@@ -131,8 +131,8 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
     <div class="event-banner-label">📅 ご依頼内容の確認</div>
     <div class="event-banner-body">
       <div class="event-item"><span class="event-label">講師名</span><span class="event-value" id="ev-name">—</span></div>
-      <div class="event-item"><span class="event-label">所属組織</span><span class="event-value" id="ev-unit">—</span></div>
-      <div class="event-item"><span class="event-label">倫理法人会の役職</span><span class="event-value" id="ev-ethics">—</span></div>
+      <div class="event-item"><span class="event-label">所属法人会名</span><span class="event-value" id="ev-unit">—</span></div>
+      <div class="event-item"><span class="event-label">法人会役職</span><span class="event-value" id="ev-ethics">—</span></div>
       <div class="event-item"><span class="event-label">セミナー種別</span><span class="event-value" id="ev-type">—</span></div>
       <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date">—</span></div>
     </div>
@@ -164,15 +164,15 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
         </div>
 
         <div class="field" id="f-company">
-          <label>企業名・法人名<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <label>勤務先<span class="req">*</span><span class="hint">チラシに記載します</span></label>
           <input type="text" id="company" placeholder="株式会社○○">
-          <div class="error-msg">企業名を入力してください</div>
+          <div class="error-msg">勤務先を入力してください</div>
         </div>
 
-        <div class="field" id="f-role">
-          <label>企業での役職<span class="req">*</span><span class="hint">チラシに記載します</span></label>
-          <input type="text" id="role" placeholder="代表取締役">
-          <div class="error-msg">役職を入力してください</div>
+        <div class="field" id="f-companyRole">
+          <label>勤務先役職名<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <input type="text" id="companyRole" placeholder="代表取締役">
+          <div class="error-msg">勤務先役職名を入力してください</div>
         </div>
 
         <div class="field" id="f-phone">
@@ -481,9 +481,11 @@ async function prefillFromDB() {
     // ページ1
     setVal('speakerKana', data.speaker_kana);
     setVal('company',     data.company);
-    let role = data.role || '';
-    if (urlEthics && role.startsWith(urlEthics + '・')) role = role.slice(urlEthics.length + 1);
-    setVal('role',  role);
+    let companyRole = data.company_role || '';
+    if (!companyRole && data.role && urlEthics && data.role.startsWith(urlEthics + '・')) {
+      companyRole = data.role.slice(urlEthics.length + 1);
+    }
+    setVal('companyRole', companyRole);
     setVal('phone', data.phone);
 
     // ページ2
@@ -597,10 +599,10 @@ function requiredRadio(name, errId, wrapperId) {
 
 function validatePage1() {
   let ok = true;
-  ok = required('speakerKana','f-kana')   && ok;
-  ok = required('company',    'f-company')&& ok;
-  ok = required('role',       'f-role')   && ok;
-  ok = required('phone',      'f-phone')  && ok;
+  ok = required('speakerKana','f-kana')       && ok;
+  ok = required('company',    'f-company')    && ok;
+  ok = required('companyRole','f-companyRole')&& ok;
+  ok = required('phone',      'f-phone')      && ok;
   return ok;
 }
 
@@ -836,9 +838,10 @@ async function submitForm() {
     speaker_unit: urlUnit,
     phone:   val('phone'),
     email:   urlEmail,
-    company: val('company'),
-    role:    [urlEthics, val('role')].filter(Boolean).join('・'),
-    topic:   val('topic'),
+    company:      val('company'),
+    company_role: val('companyRole'),
+    role:         urlEthics || '',
+    topic:        val('topic'),
     notes:   notesLines,
     lodging: radio('lodging'),
     print_required: radio('print') || '不要',

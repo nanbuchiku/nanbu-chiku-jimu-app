@@ -3,7 +3,7 @@ import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType, toDateStr } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
-const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"", materialName:"" };
+const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", companyRole:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"", materialName:"" };
 
 const DRAFT_KEY = 'speakerFormDraft';
 
@@ -115,9 +115,10 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             { l:"開催日 *",    k:"seminarDate", t:"date" },
             { l:"講師名 *",    k:"speakerName", t:"text",  p:"山田 太郎" },
             { l:"ふりがな",    k:"speakerKana", t:"text",  p:"やまだ たろう" },
-            { l:"所属単会",    k:"speakerUnit", t:"text",  p:"川口単会" },
-            { l:"企業名",      k:"company",     t:"text",  p:"株式会社○○" },
-            { l:"役職・役目",  k:"role",        t:"text",  p:"会長・専任幹事など" },
+            { l:"所属法人会名",    k:"speakerUnit",  t:"text",  p:"川口倫理法人会" },
+            { l:"法人会役職",      k:"role",         t:"text",  p:"会長・専任幹事など" },
+            { l:"勤務先",          k:"company",      t:"text",  p:"株式会社○○" },
+            { l:"勤務先役職名",    k:"companyRole",  t:"text",  p:"代表取締役" },
             { l:"メール *",    k:"email",       t:"email", p:"email@example.com" },
             { l:"電話",        k:"phone",       t:"text",  p:"090-0000-0000" },
             { l:"ステータス",  k:"status",      t:"select", o: Object.entries(STATUS).map(([k, v]) => ({ v:k, l:v.label })) },
@@ -233,6 +234,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                     speakerUnit:  f.speakerUnit  || latestPast.speakerUnit  || "",
                     company:      f.company      || latestPast.company      || "",
                     role:         f.role         || latestPast.role         || "",
+                    companyRole:  f.companyRole  || latestPast.companyRole  || "",
                     email:        f.email        || latestPast.email        || "",
                     phone:        f.phone        || latestPast.phone        || "",
                   }))}>

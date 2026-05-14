@@ -30,7 +30,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     return speakers
       .filter(sp => sp.status !== "cancelled")
       .filter(sp => filterCh === "all" || sp.chapterId === filterCh)
-      .filter(sp => !q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.notes?.toLowerCase().includes(q))
+      .filter(sp => !q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.companyRole?.toLowerCase().includes(q) || sp.speakerUnit?.toLowerCase().includes(q) || sp.role?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.notes?.toLowerCase().includes(q))
       .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || ""));
   }, [speakers, filterCh, search]);
 
@@ -168,6 +168,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               <div style={{ fontSize:12, color:"#546E7A", marginBottom:8, display:"flex", gap:6, flexWrap:"wrap" }}>
                 {sp.speakerUnit && <span style={{ background:"#E8EAF6", color:"#3949AB", padding:"1px 7px", borderRadius:10, fontWeight:600 }}>{sp.speakerUnit}</span>}
                 {sp.role && <span style={{ background:"#F3E5F5", color:"#7B1FA2", padding:"1px 7px", borderRadius:10 }}>{sp.role}</span>}
+                {sp.company && <span style={{ background:"#ECEFF1", color:"#546E7A", padding:"1px 7px", borderRadius:10 }}>{sp.company}</span>}
+                {sp.companyRole && <span style={{ background:"#FFF3E0", color:"#E65100", padding:"1px 7px", borderRadius:10 }}>{sp.companyRole}</span>}
               </div>
 
               <div style={{ marginBottom:10 }}>

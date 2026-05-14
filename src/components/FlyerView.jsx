@@ -61,7 +61,8 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
       if (sp) {
         lines.push(`  開催日：${sp.seminarDate}`);
         lines.push(`  講師：${sp.speakerName}（${sp.speakerKana || "ふりがな未入力"}）`);
-        lines.push(`  所属：${sp.company}　${sp.role}`);
+        lines.push(`  所属法人会：${sp.speakerUnit || "―"}　${sp.role || ""}`);
+        lines.push(`  勤務先：${sp.company || "―"}　${sp.companyRole || ""}`);
         lines.push(`  テーマ：「${sp.topic}」`);
         lines.push(`  写真：${sp.materialUrl || "※未受領"}`);
       } else {
@@ -88,9 +89,10 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
         lines.push(`  開催日：${sp.seminarDate}`);
         lines.push(`  講師名：${sp.speakerName}`);
         lines.push(`  ふりがな：${sp.speakerKana || "―"}`);
-        lines.push(`  所属単会：${sp.speakerUnit || "―"}`);
-        lines.push(`  企業名：${sp.company}`);
-        lines.push(`  役職・役目：${sp.role}`);
+        lines.push(`  所属法人会名：${sp.speakerUnit || "―"}`);
+        lines.push(`  法人会役職：${sp.role || "―"}`);
+        lines.push(`  勤務先：${sp.company || "―"}`);
+        lines.push(`  勤務先役職名：${sp.companyRole || "―"}`);
         lines.push(`  テーマ：「${sp.topic}」`);
         lines.push(`  顔写真：${sp.materialUrl || "※別途メール添付"}`);
       } else {
@@ -163,7 +165,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
         <div style={{ overflowX:"auto" }}>
           <table style={TBL}>
             <thead>
-              <tr>{["単会名","開催日","講師名（漢字）","ふりがな","所属単会","企業名","役職・役目","テーマ","顔写真","状態","コピー"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
+              <tr>{["単会名","開催日","講師名（漢字）","ふりがな","所属法人会名","法人会役職","勤務先","勤務先役職名","テーマ","顔写真","状態","コピー"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
             </thead>
             <tbody>
               {flyerData.map(({ ch, sp }) => {
@@ -180,8 +182,9 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                     <td style={{ ...TD, fontWeight:700, fontSize:12, whiteSpace:"nowrap" }}>{sp?.speakerName || <span style={{ color:"#B71C1C" }}>未登録</span>}</td>
                     <td style={{ ...TD, fontSize:11, color:"#546E7A" }}>{sp?.speakerKana || none}</td>
                     <td style={{ ...TD, fontSize:11 }}>{sp?.speakerUnit || none}</td>
-                    <td style={{ ...TD, fontSize:11 }}>{sp?.company || none}</td>
                     <td style={{ ...TD, fontSize:11 }}>{sp?.role || none}</td>
+                    <td style={{ ...TD, fontSize:11 }}>{sp?.company || none}</td>
+                    <td style={{ ...TD, fontSize:11 }}>{sp?.companyRole || none}</td>
                     <td style={{ ...TD, fontSize:11, maxWidth:160 }}>{sp?.topic ? `「${sp.topic}」` : none}</td>
                     <td style={TD}>
                       {sp?.materialUrl ? (
@@ -210,7 +213,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                             const lines = [
                               `■ ${ch.name}（${ch.dayName}）`,
                               `  開催日：${sp.seminarDate}`,
-                              `  講師：${sp.speakerName}　${sp.company}　${sp.role}`,
+                              `  講師：${sp.speakerName}　${[sp.speakerUnit, sp.role, sp.company, sp.companyRole].filter(Boolean).join("　")}`,
                               `  テーマ：「${sp.topic}」`,
                               `  写真：${sp.materialUrl || "※未受領"}`,
                             ];
