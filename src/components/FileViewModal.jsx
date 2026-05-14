@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { JIMU } from '../constants';
+import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BP, BC, BG } from '../styles';
 
 const isImage = url => /\.(jpg|jpeg|png|webp|gif)$/i.test(url?.split('?')[0] || '');
@@ -18,10 +20,11 @@ function downloadFile(url, filename) {
   document.body.removeChild(a);
 }
 
-export default function FileViewModal({ url, name, speakerName, onClose, onEmail }) {
+export default function FileViewModal({ url, name, speaker, onClose }) {
   const [copied, setCopied] = useState(false);
   const [driveToast, setDriveToast] = useState(false);
   const displayName = name || decodeURIComponent(url?.split('/').pop()?.split('?')[0] || 'ファイル');
+  const ch = speaker ? getChapter(speaker.chapterId) : null;
 
   const handleDownload = () => downloadFile(url, displayName);
 
@@ -39,6 +42,29 @@ export default function FileViewModal({ url, name, speakerName, onClose, onEmail
     }).catch(() => {});
   };
 
+  const handleSendToJimu = () => {
+    if (!speaker || !JIMU.email) return;
+    const fileType = isImage(url) ? '顔写真' : '講話資料';
+    const subject = `【${ch.name}単会】${speaker.speakerName}様の${fileType}が届きました`;
+    const body =
+`${speaker.speakerName}様より${fileType}が届きましたのでご確認ください。
+
+【講師名】${speaker.speakerName}${speaker.speakerKana ? `（${speaker.speakerKana}）` : ''}
+【所　属】${[speaker.speakerUnit, speaker.company].filter(Boolean).join('　')}
+【登壇日】${formatDate(speaker.seminarDate)}
+【単　会】${ch.name}単会
+【ファイル名】${displayName}
+【ファイルURL】${url}
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区合同事務局
+━━━━━━━━━━━━━━━━━`;
+    window.open(
+      `mailto:${JIMU.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+      '_blank'
+    );
+  };
+
   return (
     <div style={OV} onClick={onClose} role="presentation">
       <div role="dialog" aria-modal="true" aria-label="ファイルビューア"
@@ -48,7 +74,7 @@ export default function FileViewModal({ url, name, speakerName, onClose, onEmail
         {/* Header */}
         <div style={{ ...MH, marginBottom:10, position:'relative', paddingRight:36 }}>
           📎 <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayName}</span>
-          {speakerName && <span style={{ fontSize:11, fontWeight:400, color:'#90A4AE', whiteSpace:'nowrap' }}>{speakerName}</span>}
+          {speaker?.speakerName && <span style={{ fontSize:11, fontWeight:400, color:'#90A4AE', whiteSpace:'nowrap' }}>{speaker.speakerName}</span>}
           <button onClick={onClose} aria-label="閉じる"
             style={{ position:'absolute', top:-4, right:-4, width:32, height:32, borderRadius:'50%', border:'none', background:'#ECEFF1', color:'#37474F', fontSize:18, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
             ×
@@ -95,10 +121,11 @@ export default function FileViewModal({ url, name, speakerName, onClose, onEmail
             title="ファイルをダウンロードしてGoogleドライブを開きます">
             🗂 Driveへ保存
           </button>
-          {onEmail && (
-            <button style={{ ...BP, flex:1, minWidth:110, background:'#6A1B9A' }}
-              onClick={() => { onClose(); onEmail(); }}>
-              📧 メール送信
+          {speaker && JIMU.email && (
+            <button style={{ ...BP, flex:1, minWidth:130, background:'#E65100' }}
+              onClick={handleSendToJimu}
+              title={`事務局（${JIMU.email}）へ転送`}>
+              📧 事務局へ転送
             </button>
           )}
           <button style={{ ...BG, flex:1, minWidth:90, background: copied ? '#388E3C' : '#06C755' }}
@@ -106,6 +133,14 @@ export default function FileViewModal({ url, name, speakerName, onClose, onEmail
             {copied ? '✓ コピー済' : '📋 URLコピー'}
           </button>
         </div>
+
+        {/* 事務局メール宛先表示 */}
+        {speaker && JIMU.email && (
+          <div style={{ fontSize:10, color:'#78909C', marginBottom:8, padding:'4px 8px', background:'#FFF3E0', borderRadius:4 }}>
+            📮 転送先：{JIMU.email}（事務局固定）
+          </div>
+        )}
+
         <button onClick={onClose}
           style={{ width:'100%', background:'#37474F', color:'#fff', border:'none', borderRadius:8, padding:'12px', fontSize:14, fontWeight:700, cursor:'pointer' }}>
           ✕ 閉じる
