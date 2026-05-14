@@ -271,7 +271,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                     </td>
                     <td style={TD}>
                       {sp.materialUrl ? (
-                        <button onClick={() => setFileModal({ url: sp.materialUrl, name: sp.materialName, speakerName: sp.speakerName, sp })}
+                        <button onClick={() => setFileModal({ url: sp.materialUrl, name: sp.materialName, speaker: sp })}
                           style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#1565C0", fontWeight:600, background:"none", border:"none", cursor:"pointer", padding:0, textAlign:"left" }}>
                           {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split('?')[0] || '') ? (
                             <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:34, height:34, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
@@ -472,9 +472,8 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         <FileViewModal
           url={fileModal.url}
           name={fileModal.name}
-          speakerName={fileModal.speakerName}
+          speaker={fileModal.speaker}
           onClose={() => setFileModal(null)}
-          onEmail={fileModal.sp ? () => onEmail(fileModal.sp) : null}
         />
       )}
     </div>
