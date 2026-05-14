@@ -14,6 +14,14 @@ const HOTEL_ITEMS = [
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings }) {
   const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
   const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
+  const [hotelOpen, setHotelOpen] = useState(() => { try { return localStorage.getItem('dashboard_hotel_open') === '1'; } catch { return false; } });
+  const toggleHotel = useCallback(() => {
+    setHotelOpen(o => {
+      const next = !o;
+      try { localStorage.setItem('dashboard_hotel_open', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }, []);
   const saveMemo = useCallback(v => {
     setMemoText(v);
     try { localStorage.setItem('dashboard_memo', v); } catch {}
@@ -384,11 +392,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           )}
 
           <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, borderLeft:"4px solid #00838F" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:"#00838F" }}>
+            <div onClick={toggleHotel} role="button" tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleHotel(); } }}
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none", marginBottom: hotelOpen ? 8 : 0 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#00838F", display:"flex", alignItems:"center", gap:6 }}>
+                <span style={{ fontSize:10, color:"#00838F", transition:"transform .15s", transform: hotelOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
                 🏨 ホテル予約管理
                 {hotelNeeded.length > 0 && (
-                  <span style={{ fontWeight:400, color:"#546E7A", marginLeft:5 }}>{hotelNeeded.length}件</span>
+                  <span style={{ fontWeight:400, color:"#546E7A", marginLeft:2 }}>{hotelNeeded.length}件</span>
                 )}
               </div>
               {hotelNeeded.length > 0 && (() => {
@@ -398,52 +409,56 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                   : <span style={{ fontSize:9, background:"#C8E6C9", color:"#2E7D32", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>✓ 全完了</span>;
               })()}
             </div>
-            <a href="https://www.toyoko-inn.com/search/detail/00324/" target="_blank" rel="noopener noreferrer"
-              style={{ display:"flex", alignItems:"center", gap:8, background:"#E0F7FA", border:"2px solid #00ACC1", borderRadius:8, padding:"8px 12px", marginBottom:10, textDecoration:"none", color:"#006064", fontWeight:700, fontSize:12 }}>
-              <span style={{ fontSize:18 }}>🏨</span>
-              <span>東横イン志木東口</span>
-              <span style={{ marginLeft:"auto", fontSize:10, color:"#00838F", background:"#B2EBF2", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>予約サイトを開く →</span>
-            </a>
-            {hotelNeeded.length === 0 ? (
-              <div style={{ fontSize:11, color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
-            ) : (
-              hotelNeeded.map((sp, idx) => {
-                const ch = getChapter(sp.chapterId);
-                const checks = sp.speakerChecks || {};
-                const allDone = HOTEL_ITEMS.every(it => checks[it.id]);
-                const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
-                return (
-                  <div key={sp.id} style={{ marginBottom: idx < hotelNeeded.length - 1 ? 10 : 0, paddingBottom: idx < hotelNeeded.length - 1 ? 10 : 0, borderBottom: idx < hotelNeeded.length - 1 ? "1px solid #E0F7FA" : "none" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:4 }}>
-                      <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 6px", borderRadius:10 }}>{ch.short || ch.name}</span>
-                      <span style={{ fontWeight:700, fontSize:12 }}>{sp.speakerName}</span>
-                      {allDone
-                        ? <span style={{ fontSize:9, color:"#2E7D32", fontWeight:700 }}>✓完了</span>
-                        : <span style={{ fontSize:9, color: daysUntil <= 7 ? "#B71C1C" : "#78909C", fontWeight:700 }}>あと{daysUntil}日</span>
-                      }
-                    </div>
-                    <div style={{ fontSize:10, color:"#546E7A", marginBottom:5, background:"#E0F7FA", borderRadius:4, padding:"2px 6px", display:"inline-block" }}>{sp.lodging} | {sp.seminarDate}</div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                      {HOTEL_ITEMS.map(it => {
-                        const on = !!checks[it.id];
-                        return (
-                          <label key={it.id} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, cursor:"pointer", padding:"2px 5px", borderRadius:4, background: on ? "#E8F5E9" : "transparent" }}>
-                            <input type="checkbox" checked={on}
-                              onChange={async () => {
-                                const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
-                                const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
-                                if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
-                              }}
-                              style={{ cursor:"pointer", width:13, height:13, flexShrink:0 }} />
-                            <span>{it.icon}</span>
-                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })
+            {hotelOpen && (
+              <>
+                <a href="https://www.toyoko-inn.com/search/detail/00324/" target="_blank" rel="noopener noreferrer"
+                  style={{ display:"flex", alignItems:"center", gap:8, background:"#E0F7FA", border:"2px solid #00ACC1", borderRadius:8, padding:"8px 12px", marginBottom:10, textDecoration:"none", color:"#006064", fontWeight:700, fontSize:12 }}>
+                  <span style={{ fontSize:18 }}>🏨</span>
+                  <span>東横イン志木東口</span>
+                  <span style={{ marginLeft:"auto", fontSize:10, color:"#00838F", background:"#B2EBF2", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>予約サイトを開く →</span>
+                </a>
+                {hotelNeeded.length === 0 ? (
+                  <div style={{ fontSize:11, color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
+                ) : (
+                  hotelNeeded.map((sp, idx) => {
+                    const ch = getChapter(sp.chapterId);
+                    const checks = sp.speakerChecks || {};
+                    const allDone = HOTEL_ITEMS.every(it => checks[it.id]);
+                    const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
+                    return (
+                      <div key={sp.id} style={{ marginBottom: idx < hotelNeeded.length - 1 ? 10 : 0, paddingBottom: idx < hotelNeeded.length - 1 ? 10 : 0, borderBottom: idx < hotelNeeded.length - 1 ? "1px solid #E0F7FA" : "none" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:4 }}>
+                          <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 6px", borderRadius:10 }}>{ch.short || ch.name}</span>
+                          <span style={{ fontWeight:700, fontSize:12 }}>{sp.speakerName}</span>
+                          {allDone
+                            ? <span style={{ fontSize:9, color:"#2E7D32", fontWeight:700 }}>✓完了</span>
+                            : <span style={{ fontSize:9, color: daysUntil <= 7 ? "#B71C1C" : "#78909C", fontWeight:700 }}>あと{daysUntil}日</span>
+                          }
+                        </div>
+                        <div style={{ fontSize:10, color:"#546E7A", marginBottom:5, background:"#E0F7FA", borderRadius:4, padding:"2px 6px", display:"inline-block" }}>{sp.lodging} | {sp.seminarDate}</div>
+                        <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                          {HOTEL_ITEMS.map(it => {
+                            const on = !!checks[it.id];
+                            return (
+                              <label key={it.id} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, cursor:"pointer", padding:"2px 5px", borderRadius:4, background: on ? "#E8F5E9" : "transparent" }}>
+                                <input type="checkbox" checked={on}
+                                  onChange={async () => {
+                                    const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
+                                    const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
+                                    if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
+                                  }}
+                                  style={{ cursor:"pointer", width:13, height:13, flexShrink:0 }} />
+                                <span>{it.icon}</span>
+                                <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </>
             )}
           </div>
 
