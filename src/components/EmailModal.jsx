@@ -7,6 +7,7 @@ export default memo(function EmailModal({ speaker: sp, onClose, onDone }) {
   const [mailType, setMailType] = useState("request");
   const [freeSubject, setFreeSubject] = useState("");
   const [freeBody,    setFreeBody]    = useState("");
+  const [includeFile, setIncludeFile] = useState(false);
 
   const matDL = useMemo(() => {
     if (!sp.seminarDate) return '';
@@ -123,7 +124,11 @@ ${ch.name}単会 担当
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
-  const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
+  const bodyBase = isFree ? freeBody : TEMPLATES[mailType].body;
+  const fileAppend = (includeFile && sp.materialUrl)
+    ? `\n\n【受領済みファイル】\n${sp.materialName ? sp.materialName + '\n' : ''}${sp.materialUrl}`
+    : '';
+  const body = bodyBase + fileAppend;
 
   return (
     <div style={OV} onClick={onClose} role="presentation">
@@ -149,6 +154,14 @@ ${ch.name}単会 担当
           ? <input style={{ ...INP, width:"100%", marginBottom:10 }} placeholder="件名を入力..." value={freeSubject} onChange={e => setFreeSubject(e.target.value)} />
           : <div style={{ fontSize:12, background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{subject}</div>
         }
+
+        {sp.materialUrl && (
+          <label style={{ display:"flex", alignItems:"center", gap:7, fontSize:11, color:"#1565C0", background:"#E3F2FD", borderRadius:6, padding:"6px 10px", marginBottom:8, cursor:"pointer" }}>
+            <input type="checkbox" checked={includeFile} onChange={e => setIncludeFile(e.target.checked)} style={{ width:14, height:14, cursor:"pointer" }} />
+            <span>📎 受領済みファイルのリンクをメール本文に追加する</span>
+            <span style={{ color:"#78909C", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:160 }}>（{sp.materialName || "ファイル"}）</span>
+          </label>
+        )}
 
         <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>本文</div>
         {isFree

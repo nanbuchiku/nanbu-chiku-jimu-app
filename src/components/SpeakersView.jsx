@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from '
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr, extractStaffNotes, parseDate } from '../utils';
 import { CARD, BP, BC, BSM, SEL, INP, TBL, TH, TD, PILL, OV, MOD, MH } from '../styles';
+import FileViewModal from './FileViewModal';
 
 function extractStructuredNotes(notes) {
   if (!notes) return '';
@@ -35,6 +36,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const [notesModal, setNotesModal] = useState(null);
   const [notesText, setNotesText] = useState("");
   const [showActionOnly, setShowActionOnly] = useState(false);
+  const [fileModal, setFileModal] = useState(null);
   const notesRef = useRef("");
 
   useEffect(() => {
@@ -269,14 +271,15 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                     </td>
                     <td style={TD}>
                       {sp.materialUrl ? (
-                        <a href={sp.materialUrl} target="_blank" rel="noreferrer" style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#1565C0", fontWeight:600, textDecoration:"none" }}>
-                          {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/') ? (
+                        <button onClick={() => setFileModal({ url: sp.materialUrl, name: sp.materialName, speakerName: sp.speakerName, sp })}
+                          style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#1565C0", fontWeight:600, background:"none", border:"none", cursor:"pointer", padding:0, textAlign:"left" }}>
+                          {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split('?')[0] || '') ? (
                             <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:34, height:34, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
                           ) : (
                             <span style={{ fontSize:13 }}>📄</span>
                           )}
                           <span style={{ maxWidth:70, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{sp.materialName || "資料を開く"}</span>
-                        </a>
+                        </button>
                       ) : (
                         <span style={{ fontSize:10, color:"#B0BEC5", display:"flex", alignItems:"center", gap:3 }}>
                           <span>📭</span> 未受信
@@ -464,6 +467,15 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             </div>
           </div>
         </div>
+      )}
+      {fileModal && (
+        <FileViewModal
+          url={fileModal.url}
+          name={fileModal.name}
+          speakerName={fileModal.speakerName}
+          onClose={() => setFileModal(null)}
+          onEmail={fileModal.sp ? () => onEmail(fileModal.sp) : null}
+        />
       )}
     </div>
   );
