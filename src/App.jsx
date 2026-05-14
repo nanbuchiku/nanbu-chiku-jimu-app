@@ -15,6 +15,7 @@ import SpeakerTasksView from './components/SpeakerTasksView';
 import FlyerView from './components/FlyerView';
 import SpeakerForm from './components/SpeakerForm';
 import ErrorBoundary from './components/ErrorBoundary';
+import SettingsModal from './components/SettingsModal';
 
 const HDR = {
   header:  { background:"linear-gradient(135deg,#0D1B3E 0%,#1A3A6B 100%)", color:"#fff", boxShadow:"0 2px 12px rgba(0,0,0,.3)", position:"sticky", top:0, zIndex:100 },
@@ -66,12 +67,15 @@ export default function App() {
   const [emailModal,  setEmailModal] = useState(null);
   const [formUrlModal,setFormUrlModal]=useState(undefined);
   const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
-  const [toast,       setToast]      = useState(null);
-  const [isSaving,    setIsSaving]   = useState(false);
-  const [confirm,     setConfirm]    = useState(null);
-  const [showHelp,    setShowHelp]   = useState(false);
-  const [isOnline,    setIsOnline]   = useState(() => navigator.onLine);
-  const [refreshing,  setRefreshing] = useState(false);
+  const [toast,          setToast]         = useState(null);
+  const [isSaving,       setIsSaving]      = useState(false);
+  const [confirm,        setConfirm]       = useState(null);
+  const [showHelp,       setShowHelp]      = useState(false);
+  const [isOnline,       setIsOnline]      = useState(() => navigator.onLine);
+  const [refreshing,     setRefreshing]    = useState(false);
+  const [chapterSettings,setChSettings]   = useState(() => { try { const c = localStorage.getItem('chapterSettings'); return c ? JSON.parse(c) : {}; } catch { return {}; } });
+  const [settingsOpen,   setSettingsOpen]  = useState(false);
+  const [settingsSaving, setSettingsSaving]= useState(false);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -117,7 +121,38 @@ export default function App() {
     }
   }, [showToast]);
 
-  useEffect(() => { loadData(); }, []);
+  const loadSettings = useCallback(async () => {
+    try {
+      const { data, error } = await db.from('chapter_settings').select('*');
+      if (error || !data) return;
+      const settings = {};
+      data.forEach(row => { settings[row.chapter_id] = row.data || {}; });
+      setChSettings(settings);
+      try { localStorage.setItem('chapterSettings', JSON.stringify(settings)); } catch {}
+    } catch {}
+  }, []);
+
+  const saveChapterSettings = useCallback(async (chapterId, data) => {
+    setSettingsSaving(true);
+    try {
+      const { error } = await db.from('chapter_settings')
+        .upsert({ chapter_id: chapterId, data, updated_at: new Date().toISOString() }, { onConflict: 'chapter_id' });
+      setChSettings(prev => {
+        const next = { ...prev, [chapterId]: data };
+        try { localStorage.setItem('chapterSettings', JSON.stringify(next)); } catch {}
+        return next;
+      });
+      if (error) {
+        showToast("設定をローカルに保存しました（DB未設定のためブラウザのみ）");
+      } else {
+        showToast("設定を保存しました ✓");
+      }
+    } finally {
+      setSettingsSaving(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => { loadData(); loadSettings(); }, []);
 
   useEffect(() => {
     const channel = db.channel('app-sync')
@@ -437,6 +472,7 @@ export default function App() {
     const onKey = e => {
       if (e.key === "Escape") {
         if (showHelp) { setShowHelp(false); }
+        else if (settingsOpen) { setSettingsOpen(false); }
         else if (confirm) { setConfirm(null); }
         else if (showForm) { setShowForm(false); setEditSpeaker(null); }
         else if (lineModal) { setLineModal(null); }
@@ -471,7 +507,7 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [confirm, showForm, showHelp, lineModal, emailModal, formUrlModal, tab]);
+  }, [confirm, showForm, showHelp, settingsOpen, lineModal, emailModal, formUrlModal, tab]);
 
   if (loading) return (
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
@@ -551,7 +587,7 @@ export default function App() {
 
       <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
         <ErrorBoundary key={tab}>
-          {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} />}
+          {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
           {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
           {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} />}
           {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
@@ -562,6 +598,7 @@ export default function App() {
         </ErrorBoundary>
       </main>
 
+      {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} />}
       {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
       {emailModal && <EmailModal speaker={emailModal} onClose={onCloseEmail} onDone={onDoneEmail} />}
       {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} />}

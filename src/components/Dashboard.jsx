@@ -11,7 +11,7 @@ const HOTEL_ITEMS = [
   { id:"hotel_paid",     label:"支払い完了",                 icon:"💴" },
 ];
 
-export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast }) {
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings }) {
   const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
   const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
   const saveMemo = useCallback(v => {
@@ -167,9 +167,16 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:13, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>ダッシュボード</div>
-        <button onClick={toggleMemo} style={{ fontSize:10, background: memoOpen ? "#FFF9C4" : "#ECEFF1", color: memoOpen ? "#F57F17" : "#546E7A", border:`1px solid ${memoOpen ? "#FFE082" : "#CFD8DC"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600, marginLeft:"auto" }}>
-          📝 事務局メモ {memoOpen ? "▲" : "▼"} {memoText && !memoOpen ? <span style={{ fontSize:9, background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
-        </button>
+        <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
+          {onOpenSettings && (
+            <button onClick={onOpenSettings} style={{ fontSize:10, background:"#E8EAF6", color:"#3949AB", border:"1px solid #C5CAE9", borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
+              ⚙ 設定
+            </button>
+          )}
+          <button onClick={toggleMemo} style={{ fontSize:10, background: memoOpen ? "#FFF9C4" : "#ECEFF1", color: memoOpen ? "#F57F17" : "#546E7A", border:`1px solid ${memoOpen ? "#FFE082" : "#CFD8DC"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
+            📝 事務局メモ {memoOpen ? "▲" : "▼"} {memoText && !memoOpen ? <span style={{ fontSize:9, background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
+          </button>
+        </div>
       </div>
       {memoOpen && (
         <div style={{ marginBottom:12, background:"#FFFDE7", border:"2px solid #FFE082", borderRadius:8, padding:"10px 13px" }}>
