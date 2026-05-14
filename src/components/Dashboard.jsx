@@ -3,6 +3,14 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr, parseDate } from '../utils';
 import { CARD, BSM, PILL } from '../styles';
 
+const HOTEL_ITEMS = [
+  { id:"hotel_booked",   label:"予約完了",                 icon:"🏨" },
+  { id:"hotel_sent",     label:"講師へホテル情報を送信済み", icon:"📧" },
+  { id:"hotel_pickup",   label:"お迎え場所など相談済み",     icon:"🚗" },
+  { id:"hotel_greeting", label:"会長からの挨拶連絡済み",     icon:"💬" },
+  { id:"hotel_paid",     label:"支払い完了",                 icon:"💴" },
+];
+
 export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast }) {
   const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
   const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
@@ -279,73 +287,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         </div>
       )}
 
-      {hotelNeeded.length > 0 && (() => {
-        const items = [
-          { id:"hotel_booked",   label:"予約完了",                 icon:"🏨" },
-          { id:"hotel_sent",     label:"講師へホテル情報を送信済み", icon:"📧" },
-          { id:"hotel_pickup",   label:"お迎え場所など相談済み",     icon:"🚗" },
-          { id:"hotel_greeting", label:"会長からの挨拶連絡済み",     icon:"💬" },
-          { id:"hotel_paid",     label:"支払い完了",                 icon:"💴" },
-        ];
-        const allDoneCount = hotelNeeded.filter(sp => items.every(it => (sp.speakerChecks || {})[it.id])).length;
-        const pendingCount = hotelNeeded.length - allDoneCount;
-        return (
-          <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #00838F", padding:"12px 14px", background:"#E0F7FA" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10, flexWrap:"wrap", gap:6 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:"#00838F" }}>
-                🏨 ホテル予約管理
-                <span style={{ fontSize:11, fontWeight:400, color:"#546E7A" }}>{hotelNeeded.length}件</span>
-                {pendingCount > 0 && <span style={{ fontSize:10, marginLeft:6, background:"#FFCDD2", color:"#B71C1C", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>未対応 {pendingCount}件</span>}
-                {allDoneCount > 0 && <span style={{ fontSize:10, marginLeft:4, background:"#C8E6C9", color:"#2E7D32", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>完了 {allDoneCount}件</span>}
-              </div>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:10 }}>
-              {hotelNeeded.map(sp => {
-                const ch = getChapter(sp.chapterId);
-                const checks = sp.speakerChecks || {};
-                const allDone = items.every(it => checks[it.id]);
-                const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
-                return (
-                  <div key={sp.id} style={{ background: allDone ? "#F1F8E9" : "#fff", border:`2px solid ${allDone ? "#A5D6A7" : "#80DEEA"}`, borderRadius:8, padding:"9px 11px" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:5, flexWrap:"wrap" }}>
-                      <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 7px", borderRadius:10 }}>{ch.short || ch.name}</span>
-                      <span style={{ fontWeight:700, fontSize:13 }}>{sp.speakerName}</span>
-                      {allDone && <span style={{ fontSize:9, color:"#2E7D32", fontWeight:700, background:"#C8E6C9", padding:"1px 6px", borderRadius:8 }}>✓ 完了</span>}
-                    </div>
-                    <div style={{ fontSize:10, color:"#546E7A", marginBottom:7, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
-                      <span style={{ fontWeight:600 }}>📅 {sp.seminarDate}</span>
-                      <span style={{ color: daysUntil <= 7 ? "#B71C1C" : daysUntil <= 14 ? "#E65100" : "#78909C", fontWeight:700 }}>(あと{daysUntil}日)</span>
-                      <span style={{ background:"#B2EBF2", color:"#00838F", padding:"1px 6px", borderRadius:6, fontWeight:600 }}>{sp.lodging}</span>
-                    </div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                      {items.map(it => {
-                        const on = !!checks[it.id];
-                        return (
-                          <label key={it.id} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, cursor:"pointer", padding:"3px 6px", borderRadius:4, background: on ? "#E8F5E9" : "#F5F5F5" }}>
-                            <input
-                              type="checkbox"
-                              checked={on}
-                              onChange={async () => {
-                                const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
-                                const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
-                                if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
-                              }}
-                              style={{ cursor:"pointer", width:14, height:14 }}
-                            />
-                            <span>{it.icon}</span>
-                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
-
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
         <div>
           <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>
@@ -435,29 +376,74 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             </div>
           )}
 
-          {yearStats.total > 0 && (
-            <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, background:"linear-gradient(135deg,#E3F2FD,#F0F4FF)" }}>
-              <div style={{ fontSize:11, fontWeight:700, color:"#1A3A6B", marginBottom:8 }}>{yearStats.year}年 講師実績</div>
-              <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:22, fontWeight:800, color:"#1A3A6B", lineHeight:1 }}>{yearStats.total}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
-                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>登録数</div>
-                </div>
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:22, fontWeight:800, color:"#2E7D32", lineHeight:1 }}>{yearStats.unique}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>名</span></div>
-                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>延べ講師</div>
-                </div>
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:22, fontWeight:800, color:"#546E7A", lineHeight:1 }}>{yearStats.completed}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
-                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>開催済</div>
-                </div>
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:22, fontWeight:800, color:"#E65100", lineHeight:1 }}>{yearStats.withMaterial}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
-                  <div style={{ fontSize:9, color:"#78909C", marginTop:2 }}>資料受領</div>
-                </div>
+          <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, borderLeft:"4px solid #00838F" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#00838F" }}>
+                🏨 ホテル予約管理
+                {hotelNeeded.length > 0 && (
+                  <span style={{ fontWeight:400, color:"#546E7A", marginLeft:5 }}>{hotelNeeded.length}件</span>
+                )}
               </div>
+              {hotelNeeded.length > 0 && (() => {
+                const pending = hotelNeeded.filter(sp => !HOTEL_ITEMS.every(it => (sp.speakerChecks || {})[it.id])).length;
+                return pending > 0
+                  ? <span style={{ fontSize:9, background:"#FFCDD2", color:"#B71C1C", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>未対応 {pending}件</span>
+                  : <span style={{ fontSize:9, background:"#C8E6C9", color:"#2E7D32", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>✓ 全完了</span>;
+              })()}
             </div>
-          )}
+            {hotelNeeded.length === 0 ? (
+              <div style={{ fontSize:11, color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
+            ) : (
+              hotelNeeded.map((sp, idx) => {
+                const ch = getChapter(sp.chapterId);
+                const checks = sp.speakerChecks || {};
+                const allDone = HOTEL_ITEMS.every(it => checks[it.id]);
+                const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
+                return (
+                  <div key={sp.id} style={{ marginBottom: idx < hotelNeeded.length - 1 ? 10 : 0, paddingBottom: idx < hotelNeeded.length - 1 ? 10 : 0, borderBottom: idx < hotelNeeded.length - 1 ? "1px solid #E0F7FA" : "none" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:4 }}>
+                      <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 6px", borderRadius:10 }}>{ch.short || ch.name}</span>
+                      <span style={{ fontWeight:700, fontSize:12 }}>{sp.speakerName}</span>
+                      {allDone
+                        ? <span style={{ fontSize:9, color:"#2E7D32", fontWeight:700 }}>✓完了</span>
+                        : <span style={{ fontSize:9, color: daysUntil <= 7 ? "#B71C1C" : "#78909C", fontWeight:700 }}>あと{daysUntil}日</span>
+                      }
+                    </div>
+                    <div style={{ fontSize:10, color:"#546E7A", marginBottom:5, background:"#E0F7FA", borderRadius:4, padding:"2px 6px", display:"inline-block" }}>{sp.lodging} | {sp.seminarDate}</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                      {HOTEL_ITEMS.map(it => {
+                        const on = !!checks[it.id];
+                        return (
+                          <label key={it.id} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, cursor:"pointer", padding:"2px 5px", borderRadius:4, background: on ? "#E8F5E9" : "transparent" }}>
+                            <input type="checkbox" checked={on}
+                              onChange={async () => {
+                                const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
+                                const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
+                                if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
+                              }}
+                              style={{ cursor:"pointer", width:13, height:13, flexShrink:0 }} />
+                            <span>{it.icon}</span>
+                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, background:"linear-gradient(135deg,#FFF8E1,#FFFDE7)", borderLeft:"4px solid #F9A825", cursor:"pointer" }} onClick={() => setTab("ranking")}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={{ background:"#F9A825", color:"#fff", borderRadius:"50%", width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🏆</div>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800, color:"#E65100" }}>完了ランキング</div>
+                <div style={{ fontSize:11, color:"#F57F17", marginTop:2 }}>講師の登壇回数・実績を確認</div>
+              </div>
+              <div style={{ marginLeft:"auto", fontSize:18, color:"#F9A825" }}>›</div>
+            </div>
+          </div>
 
           <div style={{ marginTop:12, background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
