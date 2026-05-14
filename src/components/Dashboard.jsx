@@ -82,18 +82,21 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
 
   const unassignedMS = useMemo(() => {
     const assigned = new Set(speakers.filter(sp => sp.seminarType === "ms" || !sp.seminarType).map(sp => `${sp.chapterId}|${sp.seminarDate}`));
+    const cutoff = new Date(today.getFullYear(), today.getMonth() + 2, 1);
     const result = [];
     CHAPTERS.forEach(ch => {
       const d = new Date(today);
       const daysToFirst = (ch.day - d.getDay() + 7) % 7 || 7;
       d.setDate(d.getDate() + daysToFirst);
-      for (let i = 0; i < 13; i++) {
-        const key = `${ch.id}|${toDateStr(d)}`;
-        if (!assigned.has(key)) result.push({ ch, dateStr: toDateStr(d), date: new Date(d) });
+      for (let i = 0; i < 16; i++) {
+        if (d >= cutoff) {
+          const key = `${ch.id}|${toDateStr(d)}`;
+          if (!assigned.has(key)) result.push({ ch, dateStr: toDateStr(d), date: new Date(d) });
+        }
         d.setDate(d.getDate() + 7);
       }
     });
-    return result.sort((a, b) => a.date - b.date).slice(0, 20);
+    return result.sort((a, b) => a.date - b.date).slice(0, 25);
   }, [speakers, today]);
 
   const upcoming14 = useMemo(() => {
@@ -584,7 +587,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         <div>
           <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>
             未設定のモーニングセミナー日程
-            <span style={{ fontSize:11, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{unassignedMS.length}件（今後3ヶ月）</span>
+            <span style={{ fontSize:11, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{unassignedMS.length}件（{today.getMonth() + 3 > 12 ? today.getMonth() + 3 - 12 : today.getMonth() + 3}月以降）</span>
           </div>
           <div style={{ ...CARD, marginBottom:0 }}>
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
