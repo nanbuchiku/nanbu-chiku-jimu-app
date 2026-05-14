@@ -46,9 +46,13 @@ export default function FileViewModal({ url, name, speakerName, onClose, onEmail
         onClick={e => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ ...MH, marginBottom:10 }}>
+        <div style={{ ...MH, marginBottom:10, position:'relative', paddingRight:36 }}>
           📎 <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayName}</span>
           {speakerName && <span style={{ fontSize:11, fontWeight:400, color:'#90A4AE', whiteSpace:'nowrap' }}>{speakerName}</span>}
+          <button onClick={onClose} aria-label="閉じる"
+            style={{ position:'absolute', top:-4, right:-4, width:32, height:32, borderRadius:'50%', border:'none', background:'#ECEFF1', color:'#37474F', fontSize:18, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+            ×
+          </button>
         </div>
 
         {/* Preview */}
@@ -77,7 +81,7 @@ export default function FileViewModal({ url, name, speakerName, onClose, onEmail
         )}
 
         {/* Action Buttons */}
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:10 }}>
           <button style={{ ...BP, flex:1, minWidth:90 }}
             onClick={() => window.open(url, '_blank', 'noopener')}>
             🔗 開く
@@ -101,8 +105,11 @@ export default function FileViewModal({ url, name, speakerName, onClose, onEmail
             onClick={handleCopy}>
             {copied ? '✓ コピー済' : '📋 URLコピー'}
           </button>
-          <button style={BC} onClick={onClose}>閉じる</button>
         </div>
+        <button onClick={onClose}
+          style={{ width:'100%', background:'#37474F', color:'#fff', border:'none', borderRadius:8, padding:'12px', fontSize:14, fontWeight:700, cursor:'pointer' }}>
+          ✕ 閉じる
+        </button>
       </div>
     </div>
   );
