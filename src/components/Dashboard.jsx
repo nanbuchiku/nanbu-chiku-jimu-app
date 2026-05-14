@@ -530,20 +530,20 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       )}
 
       <div style={{ marginBottom:12 }}>
-        <div style={{ fontSize:12, fontWeight:700, color:"#37474F", marginBottom:5 }}>今後3ヶ月 講師確定情報</div>
-        <div style={{ ...CARD, marginBottom:0, padding:"6px 9px" }}>
-          <div style={{ display:"grid", gridTemplateColumns:`80px repeat(${CHAPTERS.length},1fr)`, gap:1, minWidth:320 }}>
+        <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:5 }}>今後3ヶ月 講師確定情報</div>
+        <div style={{ ...CARD, marginBottom:0, padding:"8px 10px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:`90px repeat(${CHAPTERS.length},1fr)`, gap:1, minWidth:320 }}>
             <div />
             {CHAPTERS.map(ch => (
-              <div key={ch.id} style={{ textAlign:"center", fontSize:8, fontWeight:700, color:"#fff", background: ch.color, padding:"2px 1px", borderRadius:3 }}>{ch.short||ch.name}</div>
+              <div key={ch.id} style={{ textAlign:"center", fontSize:11, fontWeight:700, color:"#fff", background: ch.color, padding:"2px 1px", borderRadius:3 }}>{ch.short||ch.name}</div>
             ))}
             {monthCoverage.map(({ label, ym, chapters }) => {
               const covered = chapters.filter(c => c.sp).length;
               return (
                 <React.Fragment key={ym}>
-                  <div style={{ fontSize:10, fontWeight:700, color:"#37474F", display:"flex", alignItems:"center", gap:3 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:"#37474F", display:"flex", alignItems:"center", gap:4 }}>
                     {label}
-                    <span style={{ fontSize:8, fontWeight:600, color: covered === 5 ? "#2E7D32" : covered >= 3 ? "#E65100" : "#B71C1C" }}>{covered}/5</span>
+                    <span style={{ fontSize:11, fontWeight:600, color: covered === 5 ? "#2E7D32" : covered >= 3 ? "#E65100" : "#B71C1C" }}>{covered}/5</span>
                   </div>
                   {chapters.map(({ ch, sp }) => {
                     const handleClick = () => {
@@ -556,14 +556,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       if (d.getMonth() + 1 === m) onAddForDate(toDateStr(d), ch.id);
                     };
                     return (
-                      <div key={ch.id} onClick={handleClick} style={{ textAlign:"center", padding:"3px 1px", borderRadius:3, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor:"pointer", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}` }}
+                      <div key={ch.id} onClick={handleClick} style={{ textAlign:"center", padding:"4px 1px", borderRadius:3, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor:"pointer", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}` }}
                         title={sp ? `${sp.speakerName}「${sp.topic}」クリックで確認書` : `未登録 — クリックして登録`}>
                         {sp ? (
-                          <span style={{ fontSize:8, fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }}>
+                          <span style={{ fontSize:11, fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }}>
                             {sp.speakerName ? "✓" : "▲"}
                           </span>
                         ) : (
-                          <span style={{ fontSize:8, color:"#EF9A9A", fontWeight:700 }}>＋</span>
+                          <span style={{ fontSize:11, color:"#EF9A9A", fontWeight:700 }}>＋</span>
                         )}
                       </div>
                     );
@@ -572,7 +572,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               );
             })}
           </div>
-          <div style={{ marginTop:5, fontSize:9, color:"#90A4AE", display:"flex", gap:9, flexWrap:"wrap" }}>
+          <div style={{ marginTop:6, fontSize:11, color:"#90A4AE", display:"flex", gap:12, flexWrap:"wrap" }}>
             <span><span style={{ fontWeight:700, color:"#2E7D32" }}>✓</span> 確定</span>
             <span><span style={{ fontWeight:700, color:"#E65100" }}>▲</span> 情報不足</span>
             <span><span style={{ fontWeight:700, color:"#B71C1C" }}>＋</span> 未登録</span>
