@@ -68,7 +68,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       sp.status !== "cancelled" &&
       sp.seminarDate &&
       sp.seminarDate >= todayStr &&
-      sp.lodging && sp.lodging.startsWith("あり")
+      sp.lodging && sp.lodging !== "不要"
     ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
   }, [speakers, today]);
 
