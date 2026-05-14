@@ -123,10 +123,10 @@ export default function App() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const { data, error } = await db.from('chapter_settings').select('*');
+      const { data, error } = await db.storage.from('speaker-files').download('settings/chapter_settings.json');
       if (error || !data) return;
-      const settings = {};
-      data.forEach(row => { settings[row.chapter_id] = row.data || {}; });
+      const text = await data.text();
+      const settings = JSON.parse(text);
       setChSettings(settings);
       try { localStorage.setItem('chapterSettings', JSON.stringify(settings)); } catch {}
     } catch {}
@@ -135,22 +135,17 @@ export default function App() {
   const saveChapterSettings = useCallback(async (chapterId, data) => {
     setSettingsSaving(true);
     try {
-      const { error } = await db.from('chapter_settings')
-        .upsert({ chapter_id: chapterId, data, updated_at: new Date().toISOString() }, { onConflict: 'chapter_id' });
-      setChSettings(prev => {
-        const next = { ...prev, [chapterId]: data };
-        try { localStorage.setItem('chapterSettings', JSON.stringify(next)); } catch {}
-        return next;
-      });
-      if (error) {
-        showToast("設定をローカルに保存しました（DB未設定のためブラウザのみ）");
-      } else {
-        showToast("設定を保存しました ✓");
-      }
+      const next = { ...chapterSettings, [chapterId]: data };
+      const file = new Blob([JSON.stringify(next)], { type: 'application/json' });
+      const { error } = await db.storage.from('speaker-files')
+        .upload('settings/chapter_settings.json', file, { upsert: true });
+      setChSettings(next);
+      try { localStorage.setItem('chapterSettings', JSON.stringify(next)); } catch {}
+      showToast(error ? "設定をローカルに保存しました（ストレージ書き込みエラー）" : "設定を保存しました ✓");
     } finally {
       setSettingsSaving(false);
     }
-  }, [showToast]);
+  }, [chapterSettings, showToast]);
 
   useEffect(() => { loadData(); loadSettings(); }, []);
 
