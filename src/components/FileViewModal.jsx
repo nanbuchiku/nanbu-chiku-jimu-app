@@ -59,10 +59,12 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
 ━━━━━━━━━━━━━━━━━
 倫理法人会 南部地区合同事務局
 ━━━━━━━━━━━━━━━━━`;
-    window.open(
-      `mailto:${JIMU.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
-      '_blank'
-    );
+    const params = [
+      JIMU.cc ? `cc=${encodeURIComponent(JIMU.cc)}` : '',
+      `subject=${encodeURIComponent(subject)}`,
+      `body=${encodeURIComponent(body)}`,
+    ].filter(Boolean).join('&');
+    window.open(`mailto:${JIMU.email}?${params}`, '_blank');
   };
 
   return (
@@ -136,8 +138,9 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
 
         {/* 事務局メール宛先表示 */}
         {speaker && JIMU.email && (
-          <div style={{ fontSize:10, color:'#78909C', marginBottom:8, padding:'4px 8px', background:'#FFF3E0', borderRadius:4 }}>
-            📮 転送先：{JIMU.email}（事務局固定）
+          <div style={{ fontSize:10, color:'#78909C', marginBottom:8, padding:'5px 9px', background:'#FFF3E0', borderRadius:4, lineHeight:1.6 }}>
+            <div>📮 To：{JIMU.email}</div>
+            {JIMU.cc && <div>📋 CC：{JIMU.cc}</div>}
           </div>
         )}
 
