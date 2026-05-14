@@ -87,13 +87,13 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       const d = new Date(today);
       const daysToFirst = (ch.day - d.getDay() + 7) % 7 || 7;
       d.setDate(d.getDate() + daysToFirst);
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 13; i++) {
         const key = `${ch.id}|${toDateStr(d)}`;
         if (!assigned.has(key)) result.push({ ch, dateStr: toDateStr(d), date: new Date(d) });
         d.setDate(d.getDate() + 7);
       }
     });
-    return result.sort((a, b) => a.date - b.date).slice(0, 10);
+    return result.sort((a, b) => a.date - b.date).slice(0, 20);
   }, [speakers, today]);
 
   const upcoming14 = useMemo(() => {
@@ -530,20 +530,20 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       )}
 
       <div style={{ marginBottom:12 }}>
-        <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>今後3ヶ月 MS講師カバレッジ</div>
-        <div style={{ ...CARD, marginBottom:0, padding:"10px 14px" }}>
-          <div style={{ display:"grid", gridTemplateColumns:`120px repeat(${CHAPTERS.length},1fr)`, gap:1, minWidth:400 }}>
+        <div style={{ fontSize:12, fontWeight:700, color:"#37474F", marginBottom:5 }}>今後3ヶ月 講師確定情報</div>
+        <div style={{ ...CARD, marginBottom:0, padding:"6px 9px" }}>
+          <div style={{ display:"grid", gridTemplateColumns:`80px repeat(${CHAPTERS.length},1fr)`, gap:1, minWidth:320 }}>
             <div />
             {CHAPTERS.map(ch => (
-              <div key={ch.id} style={{ textAlign:"center", fontSize:9, fontWeight:700, color:"#fff", background: ch.color, padding:"3px 2px", borderRadius:4 }}>{ch.short||ch.name}</div>
+              <div key={ch.id} style={{ textAlign:"center", fontSize:8, fontWeight:700, color:"#fff", background: ch.color, padding:"2px 1px", borderRadius:3 }}>{ch.short||ch.name}</div>
             ))}
             {monthCoverage.map(({ label, ym, chapters }) => {
               const covered = chapters.filter(c => c.sp).length;
               return (
                 <React.Fragment key={ym}>
-                  <div style={{ fontSize:11, fontWeight:700, color:"#37474F", display:"flex", alignItems:"center", gap:5 }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:"#37474F", display:"flex", alignItems:"center", gap:3 }}>
                     {label}
-                    <span style={{ fontSize:9, fontWeight:600, color: covered === 5 ? "#2E7D32" : covered >= 3 ? "#E65100" : "#B71C1C" }}>{covered}/5</span>
+                    <span style={{ fontSize:8, fontWeight:600, color: covered === 5 ? "#2E7D32" : covered >= 3 ? "#E65100" : "#B71C1C" }}>{covered}/5</span>
                   </div>
                   {chapters.map(({ ch, sp }) => {
                     const handleClick = () => {
@@ -556,14 +556,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       if (d.getMonth() + 1 === m) onAddForDate(toDateStr(d), ch.id);
                     };
                     return (
-                      <div key={ch.id} onClick={handleClick} style={{ textAlign:"center", padding:"6px 2px", borderRadius:4, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor:"pointer", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}` }}
+                      <div key={ch.id} onClick={handleClick} style={{ textAlign:"center", padding:"3px 1px", borderRadius:3, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor:"pointer", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}` }}
                         title={sp ? `${sp.speakerName}「${sp.topic}」クリックで確認書` : `未登録 — クリックして登録`}>
                         {sp ? (
-                          <span style={{ fontSize:9, fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }}>
+                          <span style={{ fontSize:8, fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }}>
                             {sp.speakerName ? "✓" : "▲"}
                           </span>
                         ) : (
-                          <span style={{ fontSize:9, color:"#EF9A9A", fontWeight:700 }}>＋</span>
+                          <span style={{ fontSize:8, color:"#EF9A9A", fontWeight:700 }}>＋</span>
                         )}
                       </div>
                     );
@@ -572,10 +572,10 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               );
             })}
           </div>
-          <div style={{ marginTop:8, fontSize:10, color:"#90A4AE", display:"flex", gap:12, flexWrap:"wrap" }}>
-            <span><span style={{ fontWeight:700, color:"#2E7D32" }}>✓</span> 講師・テーマ登録済</span>
-            <span><span style={{ fontWeight:700, color:"#E65100" }}>▲</span> 登録不足</span>
-            <span><span style={{ fontWeight:700, color:"#B71C1C" }}>×</span> 未登録</span>
+          <div style={{ marginTop:5, fontSize:9, color:"#90A4AE", display:"flex", gap:9, flexWrap:"wrap" }}>
+            <span><span style={{ fontWeight:700, color:"#2E7D32" }}>✓</span> 確定</span>
+            <span><span style={{ fontWeight:700, color:"#E65100" }}>▲</span> 情報不足</span>
+            <span><span style={{ fontWeight:700, color:"#B71C1C" }}>＋</span> 未登録</span>
           </div>
         </div>
       </div>
@@ -584,7 +584,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         <div>
           <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>
             未設定のモーニングセミナー日程
-            <span style={{ fontSize:11, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{unassignedMS.length}件（今後8週）</span>
+            <span style={{ fontSize:11, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{unassignedMS.length}件（今後3ヶ月）</span>
           </div>
           <div style={{ ...CARD, marginBottom:0 }}>
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
