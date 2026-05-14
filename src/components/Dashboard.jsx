@@ -54,6 +54,16 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
   }, [speakers, today]);
 
+  const hotelNeeded = useMemo(() => {
+    const todayStr = toDateStr(today);
+    return speakers.filter(sp =>
+      sp.status !== "cancelled" &&
+      sp.seminarDate &&
+      sp.seminarDate >= todayStr &&
+      sp.lodging && sp.lodging.startsWith("あり")
+    ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today]);
+
   const unassignedMS = useMemo(() => {
     const assigned = new Set(speakers.filter(sp => sp.seminarType === "ms" || !sp.seminarType).map(sp => `${sp.chapterId}|${sp.seminarDate}`));
     const result = [];
@@ -250,7 +260,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       {missingInfoSoon.length > 0 && (
         <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #6D4C9F", padding:"10px 14px", background:"#F3E5F5" }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:"#6D4C9F" }}>⚠ 確定済み — 必須情報が未入力（30日以内）　{missingInfoSoon.length}件</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#6D4C9F" }}>⚠ 確定済み — 必須情報が未入力(30日以内)　{missingInfoSoon.length}件</div>
             <button onClick={() => onGoSpeakers("confirmed")} style={{ fontSize:10, background:"#6D4C9F", color:"#fff", border:"none", borderRadius:10, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}>講師管理へ →</button>
           </div>
           <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
@@ -268,6 +278,71 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           </div>
         </div>
       )}
+
+      {hotelNeeded.length > 0 && (() => {
+        const items = [
+          { id:"hotel_booked", label:"予約完了",   icon:"🏨" },
+          { id:"hotel_sent",   label:"講師へ送信", icon:"📧" },
+          { id:"hotel_paid",   label:"支払い完了", icon:"💴" },
+        ];
+        const allDoneCount = hotelNeeded.filter(sp => items.every(it => (sp.speakerChecks || {})[it.id])).length;
+        const pendingCount = hotelNeeded.length - allDoneCount;
+        return (
+          <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #00838F", padding:"12px 14px", background:"#E0F7FA" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10, flexWrap:"wrap", gap:6 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:"#00838F" }}>
+                🏨 ホテル予約管理
+                <span style={{ fontSize:11, fontWeight:400, color:"#546E7A" }}>{hotelNeeded.length}件</span>
+                {pendingCount > 0 && <span style={{ fontSize:10, marginLeft:6, background:"#FFCDD2", color:"#B71C1C", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>未対応 {pendingCount}件</span>}
+                {allDoneCount > 0 && <span style={{ fontSize:10, marginLeft:4, background:"#C8E6C9", color:"#2E7D32", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>完了 {allDoneCount}件</span>}
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))", gap:10 }}>
+              {hotelNeeded.map(sp => {
+                const ch = getChapter(sp.chapterId);
+                const checks = sp.speakerChecks || {};
+                const allDone = items.every(it => checks[it.id]);
+                const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
+                return (
+                  <div key={sp.id} style={{ background: allDone ? "#F1F8E9" : "#fff", border:`2px solid ${allDone ? "#A5D6A7" : "#80DEEA"}`, borderRadius:8, padding:"9px 11px" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:5, flexWrap:"wrap" }}>
+                      <span style={{ fontSize:9, fontWeight:700, background: ch.color, color:"#fff", padding:"1px 7px", borderRadius:10 }}>{ch.short || ch.name}</span>
+                      <span style={{ fontWeight:700, fontSize:13 }}>{sp.speakerName}</span>
+                      {allDone && <span style={{ fontSize:9, color:"#2E7D32", fontWeight:700, background:"#C8E6C9", padding:"1px 6px", borderRadius:8 }}>✓ 完了</span>}
+                    </div>
+                    <div style={{ fontSize:10, color:"#546E7A", marginBottom:7, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+                      <span style={{ fontWeight:600 }}>📅 {sp.seminarDate}</span>
+                      <span style={{ color: daysUntil <= 7 ? "#B71C1C" : daysUntil <= 14 ? "#E65100" : "#78909C", fontWeight:700 }}>(あと{daysUntil}日)</span>
+                      <span style={{ background:"#B2EBF2", color:"#00838F", padding:"1px 6px", borderRadius:6, fontWeight:600 }}>{sp.lodging}</span>
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                      {items.map(it => {
+                        const on = !!checks[it.id];
+                        return (
+                          <label key={it.id} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, cursor:"pointer", padding:"3px 6px", borderRadius:4, background: on ? "#E8F5E9" : "#F5F5F5" }}>
+                            <input
+                              type="checkbox"
+                              checked={on}
+                              onChange={async () => {
+                                const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
+                                const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
+                                if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
+                              }}
+                              style={{ cursor:"pointer", width:14, height:14 }}
+                            />
+                            <span>{it.icon}</span>
+                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
         <div>
