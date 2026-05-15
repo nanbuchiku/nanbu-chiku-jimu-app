@@ -30,8 +30,8 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
     /資料0?2|doc2/i.test(name || '')  ? '講話資料2' :
     /資料|doc1/i.test(name || '')     ? '講話資料' :
     (name || 'ファイル');
-  const displayName = speaker
-    ? `${speaker.seminarDate || ''}_${speaker.speakerName || ''}_${typeLabel}${fileExt ? '.' + fileExt : ''}`
+  const displayName = speaker && ch
+    ? `${(speaker.seminarDate || '').replace(/-/g,'')}_${ch.name}_${speaker.speakerName || ''}_${typeLabel}${fileExt ? '.' + fileExt : ''}`
     : (name || decodeURIComponent(url?.split('/').pop()?.split('?')[0] || 'ファイル'));
 
   const handleDownload = () => downloadFile(url, displayName);
