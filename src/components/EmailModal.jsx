@@ -114,12 +114,44 @@ Mail：nanbugoudou.jimu@gmail.com
 ${ch.name}単会 担当
 ━━━━━━━━━━━━━━━━━`,
     },
+    promo: {
+      label: "📣 講話の宣伝・ご案内",
+      subject: `【${ch.name}単会MS】${formatDate(sp.seminarDate)} ${sp.speakerName}様 ご講話のご案内`,
+      body:
+`各位
+
+いつもお世話になっております。${ch.name}単会 事務局です。
+
+このたびのモーニングセミナーにて、${sp.company ? `${sp.company}${sp.companyRole ? `にて${sp.companyRole}として` : "にて"}ご活躍中の` : ""}${sp.speakerName}様にご講話をいただきます。${[sp.speakerUnit, sp.role].filter(Boolean).join("　") ? `\n（所属：${[sp.speakerUnit, sp.role].filter(Boolean).join("　")}）` : ""}
+
+━━━━━━━━━━━━━━━━━
+　演題「${sp.topic}」
+━━━━━━━━━━━━━━━━━
+
+${sp.company
+  ? `${sp.company}での豊富なご経験に裏打ちされた「${sp.topic}」のお話は、経営・リーダーシップ・人材育成、そして日々の生き方に直結する学びにあふれています。`
+  : `「${sp.topic}」をテーマに、実践に活きる示唆に富んだお話を伺えます。`}
+明日からの仕事と人生に活かせるヒントが満載の、またとない機会です。
+
+【開催日時】${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
+【会　　場】${ch.venue}
+【住　　所】${ch.address || ch.venue}
+
+会員の皆様はもちろん、ご友人・お知り合いの経営者の方もお誘い合わせの上、ぜひご参加ください。早朝のひとときが一日の活力となります。
+
+皆様のご参加を心よりお待ちしております。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区事務局
+${ch.name}単会 担当
+━━━━━━━━━━━━━━━━━`,
+    },
     free: {
       label: "✏️ フリーメール",
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, ch.name, ch.venue, ch.dayName, ch.address, ch.time, matDL]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, ch.name, ch.venue, ch.dayName, ch.address, ch.time, matDL]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;

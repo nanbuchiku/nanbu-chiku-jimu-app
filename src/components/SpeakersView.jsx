@@ -186,12 +186,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       {/* ── Filters ─────────────────────────────── */}
       <div className="no-print" style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
         <span style={{ fontSize:"clamp(13px,2.2vw,22px)", color:"#78909C", fontWeight:600 }}>期間：</span>
-        {DATE_RANGES.map(r => (
-          <button key={r.value} onClick={() => setDateRangePersist(r.value)}
-            style={{ fontSize:"clamp(13px,2.2vw,22px)", padding:"6px 16px", borderRadius:14, border:`1px solid ${dateRange === r.value ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange === r.value ? "#1A3A6B" : "#fff", color: dateRange === r.value ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: dateRange === r.value ? 700 : 400 }}>
-            {r.label}
-          </button>
-        ))}
+        <select value={dateRange} onChange={e => setDateRangePersist(e.target.value)}
+          style={{ ...SEL, fontSize:"clamp(13px,2.2vw,22px)", padding:"8px 14px", borderRadius:14, border:`1px solid ${dateRange !== "all" ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange !== "all" ? "#1A3A6B" : "#fff", color: dateRange !== "all" ? "#fff" : "#546E7A", fontWeight: dateRange !== "all" ? 700 : 400, cursor:"pointer" }}>
+          {DATE_RANGES.map(r => (
+            <option key={r.value} value={r.value} style={{ background:"#fff", color:"#546E7A" }}>{r.label}</option>
+          ))}
+        </select>
         <button onClick={() => setShowActionOnly(v => !v)}
           style={{ fontSize:"clamp(13px,2.2vw,22px)", padding:"6px 16px", borderRadius:14, border:`1px solid ${showActionOnly ? "#B71C1C" : "#CFD8DC"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, marginLeft:6 }}>
           ⚡ 要対応のみ
