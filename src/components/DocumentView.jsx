@@ -269,6 +269,48 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           </DocSection>
         );
 
+        const mkLodgingNoReceipt = (c, n) => (
+          <DocSection title={`${n} 宿泊情報`} color={c}>
+            {(() => {
+              const req  = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
+              const notR = sp.lodging === "不要";
+              return <DocRow label="前泊要否" color={c} value={
+                <span>
+                  <Cb on={req}  label="要" />
+                  <Cb on={notR} label="不要" />
+                </span>
+              } />;
+            })()}
+            {lodgingRequired && (chSettings.hotelName || chSettings.hotelAddress || chSettings.hotelTel || chSettings.hotelStation || chSettings.hotelMapUrl) && (
+              <>
+                {chSettings.hotelName    && <DocRow label="ホテル名"     value={chSettings.hotelName}    color={c} />}
+                {chSettings.hotelAddress && <DocRow label="ホテル住所"   value={chSettings.hotelAddress} color={c} />}
+                {chSettings.hotelTel     && <DocRow label="ホテル連絡先" value={chSettings.hotelTel}     color={c} />}
+                {chSettings.hotelStation && <DocRow label="最寄駅"       value={chSettings.hotelStation} color={c} />}
+                {chSettings.hotelMapUrl  && (
+                  <DocRow label="ホテル地図" color={c}
+                    value={<a href={chSettings.hotelMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
+                )}
+              </>
+            )}
+            {(() => {
+              const room   = parsedNotes['禁煙ルーム']?.split('／')[0] || null;
+              const pickup = parsedNotes['お迎え'] || null;
+              return <>
+                <DocRow label="お部屋のタイプ" color={c} value={
+                  <span>{["禁煙","喫煙","どちらでも"].map(v => <Cb key={v} on={room === v} label={v} />)}</span>
+                } />
+                <DocRow label="お迎えの要否" color={c} value={
+                  <span>
+                    <Cb on={pickup === "要"}  label="要" />
+                    <Cb on={pickup === "不要"} label="不要" />
+                  </span>
+                } />
+              </>;
+            })()}
+          </DocSection>
+        );
+
         const mkPhoto = (c, n) => (
           <DocSection title={`${n} 顔写真・資料`} color={c}>
             {sp.materialUrl && (/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/')) && (
@@ -363,7 +405,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                     color={c1} />
                 </DocSection>
                 {mkTransport(c1, "④")}
-                {mkLodging(c1, "⑤")}
+                {mkLodgingNoReceipt(c1, "⑤")}
                 {mkPhoto(c1, "⑥")}
                 {mkRemarks(c1, "⑦")}
                 {mkFooter(c1)}
@@ -395,7 +437,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   <DocRow label="内容要約"  value={parsedNotes['内容要約'] || ""}       color={c2} />
                 </DocSection>
                 {mkTransport(c2, "④")}
-                {mkLodging(c2, "⑤")}
+                {mkLodgingNoReceipt(c2, "⑤")}
                 {mkPhoto(c2, "⑥")}
                 {mkRemarks(c2, "⑦")}
                 {mkFooter(c2)}
