@@ -854,6 +854,97 @@ function extractStaffNotes(notes) {
     .trim();
 }
 
+// 講師依頼確認書メールを自動で開く（宛先：講師＋南部地区事務局）
+const NANBU_MAIL = 'nanbugoudou.jimu@gmail.com';
+
+function openConfirmationMail(payload, extraUrls) {
+  const val   = id   => document.getElementById(id)?.value.trim() || '';
+  const radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+  const checks= name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(x=>x.value).join('・');
+  const fmtD  = d => { if (!d) return '未定'; const dt = new Date(d + 'T00:00:00'); return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日（${"日月火水木金土"[dt.getDay()]}）`; };
+
+  const seminarLabel = SEMINAR_LABELS[payload.seminar_type] || payload.seminar_type || 'セミナー';
+  let dateLine = fmtD(payload.seminar_date);
+  if (payload.seminar_type === 'kiso' && payload.seminar_date) {
+    const d2 = new Date(payload.seminar_date + 'T00:00:00');
+    d2.setDate(d2.getDate() + 1);
+    const ms = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+    dateLine = `${fmtD(payload.seminar_date)}【基礎講座】\n　　　　${fmtD(ms)}【モーニングセミナー】`;
+  }
+
+  const lodging = radio('lodging');
+  const lines = [
+    '━━━━━━━━━━━━━━━━━━━━',
+    '　　　　　講師依頼確認書',
+    '━━━━━━━━━━━━━━━━━━━━',
+    '',
+    'この度はご登壇のご快諾を賜り誠にありがとうございます。',
+    '以下の内容でお申し込みを承りました。ご確認ください。',
+    '',
+    '【① 講師情報】',
+    `　お名前　　　：${payload.speaker_name || ''} 様`,
+    `　ふりがな　　：${payload.speaker_kana || ''}`,
+    `　所属法人会　：${payload.speaker_unit || ''}`,
+    `　法人会役職　：${payload.role || ''}`,
+    `　勤務先　　　：${payload.company || ''}`,
+    `　勤務先役職　：${payload.company_role || ''}`,
+    `　連絡先TEL　 ：${payload.phone || ''}`,
+    `　メール　　　：${payload.email || ''}`,
+    '',
+    '【② 開催情報】',
+    `　セミナー種別：${seminarLabel}`,
+    `　開催日　　　：${dateLine}`,
+    `　テーマ　　　：${payload.topic || ''}`,
+    '',
+    '【③ 内容要約】',
+    `${val('summary') || '（未記入）'}`,
+    '',
+    '【④ 交通・準備】',
+    `　交通手段　　：${radio('transport') || '未回答'}`,
+    `　資料印刷　　：${payload.print_required || '不要'}`,
+    `　単会で準備　：${checks('prepare') || 'なし'}`,
+    '',
+    '【⑤ 宿泊】',
+    `　前泊　　　　：${lodging || '不要'}`,
+    lodging === '要' ? `　お部屋　　　：${radio('room') || '未回答'}` : '',
+    lodging === '要' ? `　お迎え　　　：${radio('pickup') || '未回答'}` : '',
+    `　領収証宛名　：${radio('receiptType') || ''}`,
+    val('zipcode') ? `　郵便番号　　：${val('zipcode')}` : '',
+    val('address') ? `　住所　　　　：${val('address')}` : '',
+    '',
+    '【⑥ 顔写真・資料】',
+    `　顔写真　　　：${payload.material_url ? '受領済' : '未受領'}`,
+    `　講話資料　　：${(extraUrls && extraUrls.length) ? '受領済' : '未受領'}`,
+    `　使用範囲　　：${radio('photoUse') || '未回答'}`,
+    '',
+    '━━━━━━━━━━━━━━━━━━━━',
+    '内容に相違がございましたら、本メールにご返信ください。',
+    '',
+    '倫理法人会 南部地区合同事務局',
+    NANBU_MAIL,
+    '━━━━━━━━━━━━━━━━━━━━',
+  ].filter(l => l !== '');
+
+  const to      = payload.email || NANBU_MAIL;
+  const cc      = payload.email ? NANBU_MAIL : '';
+  const subject = `【講師依頼確認書】${fmtD(payload.seminar_date)} ${seminarLabel} ${payload.speaker_name || ''}様`;
+  const href    = `mailto:${to}?${cc ? 'cc=' + encodeURIComponent(cc) + '&' : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
+
+  const a = document.createElement('a');
+  a.href = href;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  // 完了画面に再送ボタンを表示（自動オープンがブロックされた場合のフォールバック）
+  const doneMsg = document.querySelector('.done-msg');
+  if (doneMsg) {
+    doneMsg.insertAdjacentHTML('afterbegin',
+      `<a href="${href.replace(/"/g, '&quot;')}" style="display:inline-block;background:#1B5E20;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-weight:800;margin-bottom:14px;">📧 確認書メールを開く</a><br>` +
+      `<span style="font-size:13px;color:#78909C;">確認書を講師ご本人と事務局へ送付できます。<br>メール画面が開かない場合は上のボタンを押してください。</span><br><br>`);
+  }
+}
+
 // 送信
 async function submitForm() {
   if (!validatePage3()) return;
@@ -950,6 +1041,7 @@ async function submitForm() {
     if (doneMsg && speakerId) {
       doneMsg.innerHTML = '情報を更新しました。<br>引き続きご不明な点がございましたらご連絡ください。<br><br><strong>倫理法人会 南部地区合同事務局</strong><br><a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#1565C0;">nanbugoudou.jimu@gmail.com</a>';
     }
+    try { openConfirmationMail(payload, extraUrls); } catch (mailErr) { console.error('確認書メール起動に失敗', mailErr); }
   } catch (e) {
     document.getElementById('loadingOverlay').classList.remove('show');
     btn.disabled = false;
