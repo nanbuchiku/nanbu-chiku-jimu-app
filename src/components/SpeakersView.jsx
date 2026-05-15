@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, toDateStr, extractStaffNotes, parseDate } from '../utils';
+import { getChapter, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate } from '../utils';
 import { CARD, BP, BC, BSM, SEL, INP, TBL, TH, TD, PILL, OV, MOD, MH } from '../styles';
 import FileViewModal from './FileViewModal';
 
@@ -279,21 +279,38 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       )}
                     </td>
                     <td style={TD}>
-                      {sp.materialUrl ? (
-                        <button onClick={() => setFileModal({ url: sp.materialUrl, name: sp.materialName, speaker: sp })}
-                          style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#1565C0", fontWeight:600, background:"none", border:"none", cursor:"pointer", padding:0, textAlign:"left" }}>
-                          {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split('?')[0] || '') ? (
-                            <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:34, height:34, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
-                          ) : (
-                            <span style={{ fontSize:13 }}>📄</span>
-                          )}
-                          <span style={{ maxWidth:70, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{sp.materialName || "資料を開く"}</span>
-                        </button>
-                      ) : (
-                        <span style={{ fontSize:10, color:"#B0BEC5", display:"flex", alignItems:"center", gap:3 }}>
-                          <span>📭</span> 未受信
-                        </span>
-                      )}
+                      {(() => {
+                        const docs = extractMaterialLinks(sp.notes);
+                        if (!sp.materialUrl && docs.length === 0) {
+                          return (
+                            <span style={{ fontSize:10, color:"#B0BEC5", display:"flex", alignItems:"center", gap:3 }}>
+                              <span>📭</span> 未受信
+                            </span>
+                          );
+                        }
+                        return (
+                          <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                            {sp.materialUrl && (
+                              <button onClick={() => setFileModal({ url: sp.materialUrl, name: sp.materialName, speaker: sp })}
+                                style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#1565C0", fontWeight:600, background:"none", border:"none", cursor:"pointer", padding:0, textAlign:"left" }}>
+                                {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split('?')[0] || '') ? (
+                                  <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:34, height:34, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
+                                ) : (
+                                  <span style={{ fontSize:13 }}>📄</span>
+                                )}
+                                <span style={{ maxWidth:70, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{sp.materialName || "顔写真"}</span>
+                              </button>
+                            )}
+                            {docs.map(d => (
+                              <button key={d.label} onClick={() => setFileModal({ url: d.url, name: d.label, speaker: sp })}
+                                style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#E65100", fontWeight:600, background:"#FFF3E0", border:"1px solid #FFCC80", borderRadius:4, cursor:"pointer", padding:"2px 6px", textAlign:"left" }}>
+                                <span style={{ fontSize:12 }}>📄</span>
+                                <span>{d.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={TD}>
                       <div style={{ display:"flex", gap:3, flexDirection:"column" }}>
@@ -427,7 +444,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   </td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.topic ? `「${sp.topic}」` : ""}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{STATUS[sp.status]?.label || sp.status}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.materialUrl ? "受領済" : "未受領"}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{[sp.materialUrl && "写真", extractMaterialLinks(sp.notes).length && "資料"].filter(Boolean).join("・") || "未受領"}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.lodging || "不要"}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", maxWidth:120, fontSize:10 }}>{extractStaffNotes(sp.notes)}</td>
                 </tr>
