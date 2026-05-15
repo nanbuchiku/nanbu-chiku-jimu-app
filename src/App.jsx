@@ -538,9 +538,9 @@ ${ch.name}単会事務局`;
     tab;
   const primaryTabIds  = new Set(["dashboard","speakers"]);
   const secondaryTabIds = new Set(["flyer","tasks","ranking"]);
-  const mobileTabIds   = ["dashboard","calendar","speakers","tasks"];
-  const mobileLabel    = { dashboard:"ホーム", calendar:"カレンダー", speakers:"講師", tasks:"タスク" };
-  const mobileIcon     = { dashboard:"⊞", calendar:"▦", speakers:"♟", tasks:"✓" };
+  const mobileTabIds   = ["dashboard","speakers","tasks"];
+  const mobileLabel    = { dashboard:"ダッシュボード", speakers:"講師", tasks:"タスク" };
+  const mobileIcon     = { dashboard:"⊞", speakers:"♟", tasks:"✓" };
 
   const sidebarBtn = (t, isActive, secondary) => (
     <button key={t.id} onClick={() => setTab(t.id)}
@@ -696,10 +696,10 @@ ${ch.name}単会事務局`;
                 </button>
               );
             })}
-            <button onClick={() => setMobileDrawer(true)}
-              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color:"#90A4AE", cursor:"pointer", fontSize:12, fontWeight:400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-              <span style={{ fontSize:24, lineHeight:1 }}>☰</span>
-              <span>メニュー</span>
+            <button onClick={() => setSettingsOpen(true)}
+              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: settingsOpen ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:12, fontWeight: settingsOpen ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+              <span style={{ fontSize:24, lineHeight:1 }}>⚙</span>
+              <span>設定</span>
             </button>
           </nav>
         )}
