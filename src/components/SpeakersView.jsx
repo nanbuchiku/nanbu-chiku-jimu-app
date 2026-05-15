@@ -178,7 +178,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               ✓ 過去{pastConfirmedCount}件を終了
             </button>
           )}
-          <button style={{ ...BC, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 18px" }} onClick={() => window.print()} title="印刷">🖨</button>
+          <button style={{ ...BC, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 18px" }} onClick={() => window.print()} title="印刷">🖨 印刷</button>
           <button style={{ ...BP, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 20px" }} onClick={onAdd}>＋ 新規登録</button>
         </div>
       </div>
