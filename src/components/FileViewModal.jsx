@@ -8,7 +8,7 @@ const isPDF   = url => /\.pdf$/i.test(url?.split('?')[0] || '');
 
 function downloadFile(url, filename) {
   const dlUrl = url.includes('supabase.co')
-    ? url + (url.includes('?') ? '&' : '?') + 'download'
+    ? url + (url.includes('?') ? '&' : '?') + 'download=' + encodeURIComponent(filename)
     : url;
   const a = document.createElement('a');
   a.href = dlUrl;
