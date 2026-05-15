@@ -306,7 +306,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         </div>
       )}
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
         <div>
           <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>
             今週のモーニングセミナー
@@ -466,17 +466,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             )}
           </div>
 
-          <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, background:"linear-gradient(135deg,#FFF8E1,#FFFDE7)", borderLeft:"4px solid #F9A825", cursor:"pointer" }} onClick={() => setTab("ranking")}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ background:"#F9A825", color:"#fff", borderRadius:"50%", width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🏆</div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:800, color:"#E65100" }}>完了ランキング</div>
-                <div style={{ fontSize:11, color:"#F57F17", marginTop:2 }}>講師の登壇回数・実績を確認</div>
-              </div>
-              <div style={{ marginLeft:"auto", fontSize:18, color:"#F9A825" }}>›</div>
-            </div>
-          </div>
-
           <div style={{ marginTop:12, background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>📝</div>
@@ -535,7 +524,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
 
       <div style={{ marginBottom:12 }}>
         <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:5 }}>今後3ヶ月 講師確定情報</div>
-        <div style={{ ...CARD, marginBottom:0, padding:"8px 10px" }}>
+        <div style={{ ...CARD, marginBottom:0, padding:"8px 10px", overflowX:"auto" }}>
           <div style={{ display:"grid", gridTemplateColumns:`90px repeat(${CHAPTERS.length},1fr)`, gap:1, minWidth:320 }}>
             <div />
             {CHAPTERS.map(ch => (
