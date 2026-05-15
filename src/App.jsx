@@ -259,11 +259,38 @@ export default function App() {
 
   const openLine = useCallback(sp => {
     const ch = getChapter(sp.chapterId);
-    const mapLine = ch.mapUrl ? `\n地図：${ch.mapUrl}` : "";
+    const mapLine = ch.mapUrl ? `\n🗺 ${ch.mapUrl}` : "";
     const affiliation = [sp.speakerUnit, sp.role].filter(Boolean).join("　");
-    const workplace   = [sp.company, sp.companyRole].filter(Boolean).join("　");
-    const profileLines = [affiliation && `所属：${affiliation}`, workplace && `勤務先：${workplace}`].filter(Boolean).join("\n");
-    const msg = `【${ch.name}単会 モーニングセミナー講師ご案内】\n\n開催日：${formatDate(sp.seminarDate)}\n会場：${ch.venue}\n住所：${ch.address}${mapLine}\n時間：${ch.time}\n\n講師：${sp.speakerName} 様\n${profileLines}\nテーマ：「${sp.topic}」\n\n皆様のご参加をお待ちしております。\n${ch.name}単会事務局`;
+    const company     = sp.company || "";
+    const companyRole = sp.companyRole || "";
+    const careerLine  = company
+      ? `${company}${companyRole ? `にて${companyRole}として` : "にて"}ご活躍中の${sp.speakerName}様。`
+      : `${sp.speakerName}様。`;
+    const introLine = company
+      ? `${company}での実体験に裏打ちされた「${sp.topic}」のお話は、経営やリーダーシップ、そして日々の生き方に通じる学びにあふれています。`
+      : `「${sp.topic}」をテーマに、心に響く貴重なお話を伺えます。`;
+    const profileLines = [affiliation && `▶ 所属：${affiliation}`].filter(Boolean).join("\n");
+    const msg = `【${ch.name}単会 モーニングセミナーのご案内】
+
+✨ 今回の講師をご紹介します ✨
+
+🎤 ${sp.speakerName} 様
+${careerLine}
+${profileLines ? profileLines + "\n" : ""}
+━━━━━━━━━━━━━━━
+演題「${sp.topic}」
+━━━━━━━━━━━━━━━
+
+${introLine}
+
+お誘い合わせの上、ぜひご参加ください。早朝のひとときが、一日の活力になります。
+
+📅 ${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
+📍 ${ch.venue}
+${ch.address}${mapLine}
+
+皆様のご参加を心よりお待ちしております。
+${ch.name}単会事務局`;
     setLineModal({ msg, speakerId: sp.id });
   }, []);
 
