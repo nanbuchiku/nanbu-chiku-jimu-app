@@ -39,6 +39,15 @@ export function extractStaffNotes(notes) {
     .trim();
 }
 
+export function extractMaterialLinks(notes) {
+  if (!notes) return [];
+  const out = [];
+  const re = /【(資料\d+)】\s*(https?:\/\/\S+)/g;
+  let m;
+  while ((m = re.exec(notes)) !== null) out.push({ label: m[1], url: m[2] });
+  return out;
+}
+
 export function buildSpeakerTasks(sp) {
   const tasks = [];
   const add = (id, label, category) => tasks.push({ id, label, category });
