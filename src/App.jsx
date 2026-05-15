@@ -559,6 +559,11 @@ export default function App() {
             {TABS.filter(t => primaryTabIds.has(t.id)).map(t => sidebarBtn(t, activeNavId === t.id, false))}
             <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"10px 8px" }} />
             {TABS.filter(t => secondaryTabIds.has(t.id)).map(t => sidebarBtn(t, activeNavId === t.id, true))}
+            <button onClick={() => setSettingsOpen(true)}
+              style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding:"8px 12px", borderRadius:8, border:"none", background: settingsOpen ? "rgba(255,255,255,.18)" : "transparent", color: settingsOpen ? "#fff" : "rgba(255,255,255,.52)", cursor:"pointer", fontWeight: settingsOpen ? 700 : 400, textAlign:"left", fontSize:12, marginBottom:2, transition:"background .15s" }}>
+              <span style={{ fontSize:15, width:22, textAlign:"center", flexShrink:0 }}>⚙</span>
+              <span style={{ flex:1 }}>設定</span>
+            </button>
           </nav>
           <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.1)" }}>
             <div style={{ display:"flex", flexWrap:"wrap", gap:3, marginBottom:8 }}>
@@ -571,7 +576,6 @@ export default function App() {
               <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"5px 2px", fontSize:11, cursor:"pointer" }}>📤</button>
               <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"5px 2px", fontSize:11, cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
               <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.18)", border:"1px solid rgba(255,255,255,.35)", borderRadius:6, color:"#fff", padding:"5px 2px", fontSize:11, cursor:"pointer" }}>⟳</button>
-              <button onClick={() => setSettingsOpen(true)} title="設定" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"5px 2px", fontSize:11, cursor:"pointer" }}>⚙</button>
             </div>
           </div>
         </aside>
@@ -589,7 +593,6 @@ export default function App() {
               </div>
               <div style={{ display:"flex", gap:5 }}>
                 <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"4px 8px", fontSize:10, cursor:"pointer" }}>⟳</button>
-                <button onClick={() => setSettingsOpen(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.8)", padding:"4px 8px", fontSize:11, cursor:"pointer" }}>⚙</button>
               </div>
             </div>
             <div style={{ fontSize:9, color:"rgba(255,255,255,.48)", marginTop:3, display:"flex", alignItems:"center", gap:8 }}>
@@ -657,6 +660,11 @@ export default function App() {
                 </button>
               );
             })}
+            <button onClick={() => setSettingsOpen(true)}
+              style={{ flex:1, padding:"8px 4px 10px", border:"none", background:"transparent", color: settingsOpen ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:9, fontWeight: settingsOpen ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+              <span style={{ fontSize:20, lineHeight:1 }}>⚙</span>
+              <span>設定</span>
+            </button>
           </nav>
         )}
       </div>
