@@ -536,7 +536,7 @@ ${ch.name}単会事務局`;
     ["calendar","tasks"].includes(tab) ? "dashboard" :
     tab;
   const primaryTabIds  = new Set(["dashboard","speakers"]);
-  const secondaryTabIds = new Set(["flyer","ranking"]);
+  const secondaryTabIds = new Set(["flyer","tasks","ranking"]);
   const mobileTabIds   = ["dashboard","speakers","flyer","ranking"];
   const mobileLabel    = { dashboard:"ダッシュ", speakers:"講師管理", flyer:"チラシ", ranking:"ランキング" };
 
