@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { JIMU } from '../constants';
-import { getChapter, getSeminarType, formatDate, extractStaffNotes } from '../utils';
+import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr } from '../utils';
 import { BP, SEL } from '../styles';
 
 function DocSection({ title, color, children }) {
@@ -141,219 +141,296 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
       </div>
 
       {sp && ch ? (() => {
-        const st = getSeminarType(sp.seminarType || "ms");
-        const lodgingRequired = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
         const isKiso = sp.seminarType === "kiso";
+        const st    = getSeminarType(sp.seminarType || "ms");
+        const stMs  = getSeminarType("ms");
+        const stKiso = getSeminarType("kiso");
+        const lodgingRequired = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
         const contactPerson = chSettings.contactPerson || ch.staff || "";
 
-        return (
-          <div id="print-doc" style={{
-            background:"#fff", maxWidth:700, margin:"0 auto",
-            padding:"32px 40px 24px", boxShadow:"0 2px 16px rgba(0,0,0,.10)",
-            border:"1px solid #D0D7E2", borderRadius:4, position:"relative", overflow:"hidden",
-            fontFamily:"'Hiragino Sans','Meiryo',sans-serif"
-          }}>
-            <div style={{ position:"absolute", top:0, right:0, width:0, height:0,
-              borderStyle:"solid", borderWidth:"0 72px 72px 0",
-              borderColor:`transparent ${st.color} transparent transparent` }} />
-            <div style={{ position:"absolute", top:10, right:7, fontSize:"10pt", fontWeight:800,
-              color:"#fff", zIndex:2, lineHeight:1.1, textAlign:"right" }}>{st.short}</div>
+        // kiso day + 1 = MS day
+        const msDateStr = isKiso && sp.seminarDate ? (() => {
+          const d = new Date(sp.seminarDate + 'T00:00:00');
+          d.setDate(d.getDate() + 1);
+          return toDateStr(d);
+        })() : null;
 
-            {/* ── ヘッダー ── */}
-            <div style={{ textAlign:"center", marginBottom:20 }}>
-              <div style={{ fontSize:"10.5pt", color:"#546E7A", marginBottom:6, letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
-              <div style={{ display:"inline-block", fontSize:"12pt", fontWeight:700, color:st.color,
-                border:`2px solid ${st.color}`, padding:"4px 24px", marginBottom:8, letterSpacing:"0.15em" }}>
-                {st.label}
-              </div>
-              <div style={{ fontSize:"18pt", fontWeight:800, color:"#1A1A2E", letterSpacing:"0.06em", marginBottom:8 }}>講師依頼確認書</div>
-              <div style={{ height:1, background:`linear-gradient(to right, transparent, ${st.color}, transparent)`, margin:"0 40px 8px" }} />
-              {/* 担当者 ── タイトル直下 */}
-              <div style={{ fontSize:"10.5pt", color:"#78909C", letterSpacing:"0.05em" }}>
-                {sp.requestDate
-                  ? `受付日：${sp.requestDate}`
-                  : "受付日：　　　　年　　月　　日"}
-                {"　　担当："}
-                {contactPerson || "　　　　　　　　"}
-              </div>
+        // ── Section builders (shared) ──
+
+        const mkHeader = (sheetSt, dateStr) => (
+          <div style={{ textAlign:"center", marginBottom:20 }}>
+            <div style={{ fontSize:"10.5pt", color:"#546E7A", marginBottom:6, letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
+            <div style={{ display:"inline-block", fontSize:"12pt", fontWeight:700, color:sheetSt.color,
+              border:`2px solid ${sheetSt.color}`, padding:"4px 24px", marginBottom:8, letterSpacing:"0.15em" }}>
+              {sheetSt.label}
             </div>
+            <div style={{ fontSize:"18pt", fontWeight:800, color:"#1A1A2E", letterSpacing:"0.06em", marginBottom:8 }}>講師依頼確認書</div>
+            <div style={{ height:1, background:`linear-gradient(to right, transparent, ${sheetSt.color}, transparent)`, margin:"0 40px 8px" }} />
+            <div style={{ fontSize:"10.5pt", color:"#78909C", letterSpacing:"0.05em" }}>
+              {sp.requestDate ? `受付日：${sp.requestDate}` : "受付日：　　　　年　　月　　日"}
+              {"　　担当："}{contactPerson || "　　　　　　　　"}
+            </div>
+          </div>
+        );
 
-            {/* ── ① 講師情報 ── */}
-            <DocSection title="① 講師情報" color={st.color}>
-              <DocRow label="お名前（漢字）"     value={`${sp.speakerName}　様`}  color={st.color} />
-              <DocRow label="ふりがな"           value={sp.speakerKana || ""}     color={st.color} />
-              <DocRow label="所属法人会名"       value={sp.speakerUnit || ""}     color={st.color} />
-              <DocRow label="法人会役職"         value={sp.role || ""}            color={st.color} />
-              <DocRow label="勤務先"             value={sp.company || ""}         color={st.color} />
-              <DocRow label="勤務先役職名"       value={sp.companyRole || ""}     color={st.color} />
-              <DocRow label="連絡先TEL"          value={sp.phone || ""}           color={st.color} />
-              <DocRow label="メールアドレス"     value={sp.email || ""}           color={st.color} />
-            </DocSection>
+        const mkSpeaker = (c) => (
+          <DocSection title="① 講師情報" color={c}>
+            <DocRow label="お名前（漢字）"   value={`${sp.speakerName}　様`}  color={c} />
+            <DocRow label="ふりがな"         value={sp.speakerKana || ""}     color={c} />
+            <DocRow label="所属法人会名"     value={sp.speakerUnit || ""}     color={c} />
+            <DocRow label="法人会役職"       value={sp.role || ""}            color={c} />
+            <DocRow label="勤務先"           value={sp.company || ""}         color={c} />
+            <DocRow label="勤務先役職名"     value={sp.companyRole || ""}     color={c} />
+            <DocRow label="連絡先TEL"        value={sp.phone || ""}           color={c} />
+            <DocRow label="メールアドレス"   value={sp.email || ""}           color={c} />
+          </DocSection>
+        );
 
-            {/* ── ② 開催情報 ── */}
-            <DocSection title="② 開催情報" color={st.color}>
-              <DocRow label="講話単会名"      value={chSettings.name || ch.name}                               color={st.color} />
-              <DocRow label="開催曜日・時間"  value={`${ch.dayName}　${ch.time}`}                             color={st.color} />
-              <DocRow label="開催場所"        value={chSettings.msVenue || ch.venue}                           color={st.color} />
-              <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}                       color={st.color} />
-              {chSettings.msStation && <DocRow label="最寄駅"        value={chSettings.msStation}              color={st.color} />}
-              <DocRow label="会場地図"        color={st.color}
-                value={<a href={chSettings.msMapUrl || ch.mapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
-              {chSettings.msParking && <DocRow label="駐車場"        value={chSettings.msParking}              color={st.color} />}
-              <DocRow label="会場連絡先"      value={chSettings.msVenueTel || ch.venueTel || "—"}             color={st.color} />
-            </DocSection>
+        const mkTransport = (c, n) => (
+          <DocSection title={`${n} 交通・当日の準備`} color={c}>
+            {(() => {
+              const t = parsedNotes['交通手段'];
+              return <DocRow label="交通手段" color={c} value={
+                <span>
+                  <Cb on={t === "お車"} label="お車" />
+                  <Cb on={t === "電車"} label="電車" />
+                  <Cb on={t === "その他"} label="その他" />
+                </span>
+              } />;
+            })()}
+            <DocRow label="資料の有無" color={c} value={
+              <span>
+                <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="あり" />
+                <Cb on={false} label="なし" />
+              </span>
+            } />
+            {(() => {
+              const req  = sp.printRequired === "あり" || sp.printRequired?.startsWith("要");
+              const notR = sp.printRequired === "不要" || sp.printRequired?.startsWith("不要");
+              return <DocRow label="印刷の要否" color={c} value={
+                <span>
+                  <Cb on={req}  label="要（単会で印刷）" />
+                  <Cb on={notR} label="不要（持参）" />
+                </span>
+              } />;
+            })()}
+            {(() => {
+              const p = parsedNotes['単会で準備'];
+              const items = ["プロジェクタ","パソコン","ホワイトボード","その他","無し"];
+              return <DocRow label="必要機材など" color={c} value={
+                <span>{items.map(i => <Cb key={i} on={!!(p && p.includes(i))} label={i} />)}</span>
+              } />;
+            })()}
+          </DocSection>
+        );
 
-            {/* ── ③ MS講話内容 ── */}
-            <DocSection title="③ MS講話内容" color={st.color}>
-              <DocRow label="タイトル" value={sp.topic ? `「${sp.topic}」` : ""} color={st.color} />
-              <DocRow label="内容要約" value={parsedNotes['内容要約'] || ""}      color={st.color} />
-            </DocSection>
-
-            {/* ── ④ 倫理経営基礎講座（kisoのみ） ── */}
-            {isKiso && (
-              <DocSection title="④ 倫理経営基礎講座" color={st.color}>
-                <DocRow label="基礎講座会場" value={chSettings.kisoVenue || ""}   color={st.color} />
-                <DocRow label="会場住所"     value={chSettings.kisoAddress || ""} color={st.color} />
-                {chSettings.kisoMapUrl && (
-                  <DocRow label="会場地図" color={st.color}
-                    value={<a href={chSettings.kisoMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
+        const mkLodging = (c, n) => (
+          <DocSection title={`${n} 宿泊情報`} color={c}>
+            {(() => {
+              const req  = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
+              const notR = sp.lodging === "不要";
+              return <DocRow label="前泊要否" color={c} value={
+                <span>
+                  <Cb on={req}  label="要" />
+                  <Cb on={notR} label="不要" />
+                </span>
+              } />;
+            })()}
+            {lodgingRequired && (chSettings.hotelName || chSettings.hotelAddress || chSettings.hotelTel || chSettings.hotelStation || chSettings.hotelMapUrl) && (
+              <>
+                {chSettings.hotelName    && <DocRow label="ホテル名"     value={chSettings.hotelName}    color={c} />}
+                {chSettings.hotelAddress && <DocRow label="ホテル住所"   value={chSettings.hotelAddress} color={c} />}
+                {chSettings.hotelTel     && <DocRow label="ホテル連絡先" value={chSettings.hotelTel}     color={c} />}
+                {chSettings.hotelStation && <DocRow label="最寄駅"       value={chSettings.hotelStation} color={c} />}
+                {chSettings.hotelMapUrl  && (
+                  <DocRow label="ホテル地図" color={c}
+                    value={<a href={chSettings.hotelMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
                 )}
-                {chSettings.kisoTextChapter && (
-                  <DocRow label="テキスト" value={`第${chSettings.kisoTextChapter}講`} color={st.color} />
-                )}
-              </DocSection>
+              </>
             )}
-
-            {/* ── ⑤ 交通・当日の準備 ── */}
-            <DocSection title={isKiso ? "⑤ 交通・当日の準備" : "④ 交通・当日の準備"} color={st.color}>
-              {(() => {
-                const t = parsedNotes['交通手段'];
-                return <DocRow label="交通手段" color={st.color} value={
+            {(() => {
+              const room   = parsedNotes['禁煙ルーム']?.split('／')[0] || null;
+              const pickup = parsedNotes['お迎え'] || null;
+              return <>
+                <DocRow label="お部屋のタイプ" color={c} value={
+                  <span>{["禁煙","喫煙","どちらでも"].map(v => <Cb key={v} on={room === v} label={v} />)}</span>
+                } />
+                <DocRow label="お迎えの要否" color={c} value={
                   <span>
-                    <Cb on={t === "お車"} label="お車" />
-                    <Cb on={t === "電車"} label="電車" />
-                    <Cb on={t === "その他"} label="その他" />
+                    <Cb on={pickup === "要"}  label="要" />
+                    <Cb on={pickup === "不要"} label="不要" />
                   </span>
-                } />;
-              })()}
-              <DocRow label="資料の有無" color={st.color} value={
-                <span>
-                  <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="あり" />
-                  <Cb on={false} label="なし" />
-                </span>
-              } />
-              {(() => {
-                const req = sp.printRequired === "あり" || sp.printRequired?.startsWith("要");
-                const notReq = sp.printRequired === "不要" || sp.printRequired?.startsWith("不要");
-                return <DocRow label="印刷の要否" color={st.color} value={
-                  <span>
-                    <Cb on={req} label="要（単会で印刷）" />
-                    <Cb on={notReq} label="不要（持参）" />
-                  </span>
-                } />;
-              })()}
-              {(() => {
-                const p = parsedNotes['単会で準備'];
-                const items = ["プロジェクタ","パソコン","ホワイトボード","その他","無し"];
-                return <DocRow label="必要機材など" color={st.color} value={
-                  <span>{items.map(i => <Cb key={i} on={!!(p && p.includes(i))} label={i} />)}</span>
-                } />;
-              })()}
-            </DocSection>
+                } />
+              </>;
+            })()}
+            <DocRow label="領収証の宛名"   value={parsedNotes['領収証宛名'] || ""}     color={c} />
+            <DocRow label="郵便番号"       value={parsedNotes['領収証郵便番号'] || ""} color={c} />
+            <DocRow label="住所"           value={parsedNotes['領収証住所'] || ""}     color={c} />
+          </DocSection>
+        );
 
-            {/* ── ⑥ 宿泊情報 ── */}
-            <DocSection title={isKiso ? "⑥ 宿泊情報" : "⑤ 宿泊情報"} color={st.color}>
-              {(() => {
-                const req = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
-                const notReq = sp.lodging === "不要";
-                return <DocRow label="前泊要否" color={st.color} value={
-                  <span>
-                    <Cb on={req} label="要" />
-                    <Cb on={notReq} label="不要" />
-                  </span>
-                } />;
-              })()}
-              {/* ホテル情報 ── 宿泊が要のとき設定値を表示 */}
-              {lodgingRequired && (chSettings.hotelName || chSettings.hotelAddress || chSettings.hotelTel || chSettings.hotelStation || chSettings.hotelMapUrl) && (
-                <>
-                  {chSettings.hotelName    && <DocRow label="ホテル名"     value={chSettings.hotelName}    color={st.color} />}
-                  {chSettings.hotelAddress && <DocRow label="ホテル住所"   value={chSettings.hotelAddress} color={st.color} />}
-                  {chSettings.hotelTel     && <DocRow label="ホテル連絡先" value={chSettings.hotelTel}     color={st.color} />}
-                  {chSettings.hotelStation && <DocRow label="最寄駅"       value={chSettings.hotelStation} color={st.color} />}
-                  {chSettings.hotelMapUrl  && (
-                    <DocRow label="ホテル地図" color={st.color}
-                      value={<a href={chSettings.hotelMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
-                  )}
-                </>
-              )}
-              {(() => {
-                const room   = parsedNotes['禁煙ルーム']?.split('／')[0] || null;
-                const pickup = parsedNotes['お迎え'] || null;
-                return <>
-                  <DocRow label="お部屋のタイプ" color={st.color} value={
-                    <span>{["禁煙","喫煙","どちらでも"].map(v => <Cb key={v} on={room === v} label={v} />)}</span>
-                  } />
-                  <DocRow label="お迎えの要否" color={st.color} value={
-                    <span>
-                      <Cb on={pickup === "要"} label="要" />
-                      <Cb on={pickup === "不要"} label="不要" />
-                    </span>
-                  } />
-                </>;
-              })()}
-              <DocRow label="領収証の宛名"   value={parsedNotes['領収証宛名'] || ""}     color={st.color} />
-              <DocRow label="郵便番号"       value={parsedNotes['領収証郵便番号'] || ""} color={st.color} />
-              <DocRow label="住所"           value={parsedNotes['領収証住所'] || ""}     color={st.color} />
-            </DocSection>
-
-            {/* ── ⑦ 顔写真・資料 ── */}
-            <DocSection title={isKiso ? "⑦ 顔写真・資料" : "⑥ 顔写真・資料"} color={st.color}>
-              {sp.materialUrl && (/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/')) && (
-                <tr>
-                  <th style={{ width:120, padding:"6px 10px", background:"#F5F6FA", border:"1px solid #D0D7E2", fontSize:"10.5pt", fontWeight:700, color:st.color, textAlign:"left", verticalAlign:"middle" }}>顔写真プレビュー</th>
-                  <td style={{ padding:"6px 10px", border:"1px solid #D0D7E2", background:"#fff" }}>
-                    <img src={sp.materialUrl} alt={sp.speakerName} style={{ height:80, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC" }} onError={e => { const tr = e.target.closest('tr'); if (tr) tr.style.display="none"; }} />
-                  </td>
-                </tr>
-              )}
-              <DocRow label="顔写真" color={st.color} value={
-                <span>
-                  <Cb on={!!sp.materialUrl} label="フォームアップ済" />
-                  <Cb on={false} label="メール送付済" />
-                  <Cb on={false} label="未受領" />
-                </span>
-              } />
-              <DocRow label="講話資料" color={st.color} value={
-                <span>
-                  <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="フォームアップ済" />
-                  <Cb on={false} label="メール送付済" />
-                  <Cb on={false} label="未受領" />
-                </span>
-              } />
-              {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={st.color} />}
-              <DocRow label="顔写真の使用範囲" value={parsedNotes['顔写真の使用範囲'] || ""} color={st.color} />
-            </DocSection>
-
-            {/* ── ⑧ 備考・特記事項 ── */}
-            <DocSection title={isKiso ? "⑧ 備考・特記事項" : "⑦ 備考・特記事項"} color="#546E7A">
+        const mkPhoto = (c, n) => (
+          <DocSection title={`${n} 顔写真・資料`} color={c}>
+            {sp.materialUrl && (/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/')) && (
               <tr>
-                <td colSpan={2} style={{ padding:"8px 10px", border:"1px solid #D0D7E2",
-                  fontSize:"10.5pt", color:"#263238", background:"#fff", minHeight:52, height:52,
-                  whiteSpace:"pre-wrap" }}>
-                  {extractStaffNotes(sp.notes)}
+                <th style={{ width:120, padding:"6px 10px", background:"#F5F6FA", border:"1px solid #D0D7E2", fontSize:"10.5pt", fontWeight:700, color:c, textAlign:"left", verticalAlign:"middle" }}>顔写真プレビュー</th>
+                <td style={{ padding:"6px 10px", border:"1px solid #D0D7E2", background:"#fff" }}>
+                  <img src={sp.materialUrl} alt={sp.speakerName} style={{ height:80, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC" }} onError={e => { const tr = e.target.closest('tr'); if (tr) tr.style.display="none"; }} />
                 </td>
               </tr>
-            </DocSection>
+            )}
+            <DocRow label="顔写真" color={c} value={
+              <span>
+                <Cb on={!!sp.materialUrl} label="フォームアップ済" />
+                <Cb on={false} label="メール送付済" />
+                <Cb on={false} label="未受領" />
+              </span>
+            } />
+            <DocRow label="講話資料" color={c} value={
+              <span>
+                <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="フォームアップ済" />
+                <Cb on={false} label="メール送付済" />
+                <Cb on={false} label="未受領" />
+              </span>
+            } />
+            {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={c} />}
+            <DocRow label="顔写真の使用範囲" value={parsedNotes['顔写真の使用範囲'] || ""} color={c} />
+          </DocSection>
+        );
 
-            <div style={{ marginTop:16, paddingTop:10, borderTop:`2px solid ${st.color}`,
-              fontSize:"10.5pt", color:"#546E7A", display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-              <div>
-                <span style={{ fontWeight:700 }}>【事務局連絡先】　倫理法人会　南部地区合同事務局</span>
-                {JIMU.tel && <span>　TEL：{JIMU.tel}</span>}
-                <span>　Mail：<span style={{ color:"#1565C0" }}>{JIMU.email}</span></span>
-              </div>
-              <div style={{ color:"#90A4AE" }}>確認日　　年　　月　　日</div>
+        const mkRemarks = (c, n) => (
+          <DocSection title={`${n} 備考・特記事項`} color="#546E7A">
+            <tr>
+              <td colSpan={2} style={{ padding:"8px 10px", border:"1px solid #D0D7E2",
+                fontSize:"10.5pt", color:"#263238", background:"#fff", minHeight:52, height:52,
+                whiteSpace:"pre-wrap" }}>
+                {extractStaffNotes(sp.notes)}
+              </td>
+            </tr>
+          </DocSection>
+        );
+
+        const mkFooter = (c) => (
+          <div style={{ marginTop:16, paddingTop:10, borderTop:`2px solid ${c}`,
+            fontSize:"10.5pt", color:"#546E7A", display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+            <div>
+              <span style={{ fontWeight:700 }}>【事務局連絡先】　倫理法人会　南部地区合同事務局</span>
+              {JIMU.tel && <span>　TEL：{JIMU.tel}</span>}
+              <span>　Mail：<span style={{ color:"#1565C0" }}>{JIMU.email}</span></span>
             </div>
+            <div style={{ color:"#90A4AE" }}>確認日　　年　　月　　日</div>
+          </div>
+        );
+
+        const docWrapStyle = (sheetSt) => ({
+          background:"#fff", maxWidth:700, margin:"0 auto",
+          padding:"32px 40px 24px", boxShadow:"0 2px 16px rgba(0,0,0,.10)",
+          border:"1px solid #D0D7E2", borderRadius:4, position:"relative", overflow:"hidden",
+          fontFamily:"'Hiragino Sans','Meiryo',sans-serif"
+        });
+
+        const mkCornerBadge = (sheetSt) => (<>
+          <div style={{ position:"absolute", top:0, right:0, width:0, height:0,
+            borderStyle:"solid", borderWidth:"0 72px 72px 0",
+            borderColor:`transparent ${sheetSt.color} transparent transparent` }} />
+          <div style={{ position:"absolute", top:10, right:7, fontSize:"10pt", fontWeight:800,
+            color:"#fff", zIndex:2, lineHeight:1.1, textAlign:"right" }}>{sheetSt.short}</div>
+        </>);
+
+        // ── KISO: 2 documents ──
+        if (isKiso) {
+          const c1 = stKiso.color;
+          const c2 = stMs.color;
+          return (
+            <>
+              {/* ─── Document 1: 倫理経営基礎講座 ─── */}
+              <div id="print-doc" style={docWrapStyle(stKiso)}>
+                {mkCornerBadge(stKiso)}
+                {mkHeader(stKiso, sp.seminarDate)}
+                {mkSpeaker(c1)}
+                <DocSection title="② 開催情報（倫理経営基礎講座）" color={c1}>
+                  <DocRow label="講話日"     value={formatDate(sp.seminarDate)}       color={c1} />
+                  <DocRow label="開催場所"   value={chSettings.kisoVenue || ""}       color={c1} />
+                  <DocRow label="会場住所"   value={chSettings.kisoAddress || ""}     color={c1} />
+                  {chSettings.kisoMapUrl && (
+                    <DocRow label="会場地図" color={c1}
+                      value={<a href={chSettings.kisoMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
+                  )}
+                </DocSection>
+                <DocSection title="③ 倫理経営基礎講座 内容" color={c1}>
+                  <DocRow label="テキスト"
+                    value={chSettings.kisoTextChapter ? `第${chSettings.kisoTextChapter}講` : "（設定で入力）"}
+                    color={c1} />
+                </DocSection>
+                {mkTransport(c1, "④")}
+                {mkLodging(c1, "⑤")}
+                {mkPhoto(c1, "⑥")}
+                {mkRemarks(c1, "⑦")}
+                {mkFooter(c1)}
+              </div>
+
+              {/* ─── Page break between docs ─── */}
+              <div style={{ pageBreakAfter:"always", height:0 }} />
+              <div className="no-print" style={{ height:36 }} />
+
+              {/* ─── Document 2: MS確認書 ─── */}
+              <div id="print-doc-ms" style={docWrapStyle(stMs)}>
+                {mkCornerBadge(stMs)}
+                {mkHeader(stMs, msDateStr)}
+                {mkSpeaker(c2)}
+                <DocSection title="② 開催情報（モーニングセミナー）" color={c2}>
+                  <DocRow label="講話日"         value={formatDate(msDateStr)}                           color={c2} />
+                  <DocRow label="講話単会名"      value={chSettings.name || ch.name}                     color={c2} />
+                  <DocRow label="開催曜日・時間"  value={`${ch.dayName}　${ch.time}`}                   color={c2} />
+                  <DocRow label="開催場所"        value={chSettings.msVenue || ch.venue}                  color={c2} />
+                  <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}              color={c2} />
+                  {chSettings.msStation && <DocRow label="最寄駅"    value={chSettings.msStation}         color={c2} />}
+                  <DocRow label="会場地図" color={c2}
+                    value={<a href={chSettings.msMapUrl || ch.mapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
+                  {chSettings.msParking && <DocRow label="駐車場"    value={chSettings.msParking}         color={c2} />}
+                  <DocRow label="会場連絡先"      value={chSettings.msVenueTel || ch.venueTel || "—"}   color={c2} />
+                </DocSection>
+                <DocSection title="③ MS講話内容" color={c2}>
+                  <DocRow label="タイトル"  value={sp.topic ? `「${sp.topic}」` : ""}  color={c2} />
+                  <DocRow label="内容要約"  value={parsedNotes['内容要約'] || ""}       color={c2} />
+                </DocSection>
+                {mkTransport(c2, "④")}
+                {mkLodging(c2, "⑤")}
+                {mkPhoto(c2, "⑥")}
+                {mkRemarks(c2, "⑦")}
+                {mkFooter(c2)}
+              </div>
+            </>
+          );
+        }
+
+        // ── Non-kiso: single document ──
+        return (
+          <div id="print-doc" style={docWrapStyle(st)}>
+            {mkCornerBadge(st)}
+            {mkHeader(st, sp.seminarDate)}
+            {mkSpeaker(st.color)}
+            <DocSection title="② 開催情報" color={st.color}>
+              <DocRow label="講話日"          value={formatDate(sp.seminarDate)}                              color={st.color} />
+              <DocRow label="講話単会名"      value={chSettings.name || ch.name}                              color={st.color} />
+              <DocRow label="開催曜日・時間"  value={`${ch.dayName}　${ch.time}`}                            color={st.color} />
+              <DocRow label="開催場所"        value={chSettings.msVenue || ch.venue}                          color={st.color} />
+              <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}                      color={st.color} />
+              {chSettings.msStation && <DocRow label="最寄駅"  value={chSettings.msStation}                   color={st.color} />}
+              <DocRow label="会場地図" color={st.color}
+                value={<a href={chSettings.msMapUrl || ch.mapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
+              {chSettings.msParking && <DocRow label="駐車場"  value={chSettings.msParking}                   color={st.color} />}
+              <DocRow label="会場連絡先"      value={chSettings.msVenueTel || ch.venueTel || "—"}            color={st.color} />
+            </DocSection>
+            <DocSection title="③ MS講話内容" color={st.color}>
+              <DocRow label="タイトル"  value={sp.topic ? `「${sp.topic}」` : ""}  color={st.color} />
+              <DocRow label="内容要約"  value={parsedNotes['内容要約'] || ""}       color={st.color} />
+            </DocSection>
+            {mkTransport(st.color, "④")}
+            {mkLodging(st.color, "⑤")}
+            {mkPhoto(st.color, "⑥")}
+            {mkRemarks(st.color, "⑦")}
+            {mkFooter(st.color)}
           </div>
         );
       })() : (

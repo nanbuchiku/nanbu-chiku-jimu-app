@@ -18,7 +18,26 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
   const speakerByKey = useMemo(() => {
     const map = new Map();
     speakers.forEach(sp => {
-      if (sp.seminarDate) map.set(`${sp.chapterId}|${sp.seminarDate}`, sp);
+      if (!sp.seminarDate) return;
+      map.set(`${sp.chapterId}|${sp.seminarDate}`, sp);
+      // kiso speakers also appear on msDate (kiso day + 1)
+      if (sp.seminarType === 'kiso') {
+        const d = new Date(sp.seminarDate + 'T00:00:00');
+        d.setDate(d.getDate() + 1);
+        const msStr = toDateStr(d);
+        map.set(`${sp.chapterId}|${msStr}`, { ...sp, _msDay: true });
+      }
+    });
+    return map;
+  }, [speakers]);
+
+  // kiso events on non-regular days (for week view kiso-day cells)
+  const kisoByChDate = useMemo(() => {
+    const map = new Map();
+    speakers.forEach(sp => {
+      if (sp.seminarType === 'kiso' && sp.seminarDate) {
+        map.set(`${sp.chapterId}|${sp.seminarDate}`, sp);
+      }
     });
     return map;
   }, [speakers]);
@@ -175,10 +194,12 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
               const isChDay = d.getDay() === ch.day;
               const dKey = toDateStr(d);
               const sp = isChDay ? (speakerByKey.get(`${ch.id}|${dKey}`) || null) : null;
+              const kisoSp = !isChDay ? kisoByChDate.get(`${ch.id}|${dKey}`) : null;
               return (
                 <div key={i} style={{ background: isChDay ? ch.light : "#fff", padding:4, minHeight:76, border:`1px solid ${isChDay ? ch.accent : "transparent"}` }}>
                   {isChDay && (sp ? (
                     <div style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4 }} onClick={() => onSpeaker(sp)}>
+                      {sp._msDay && <div style={{ fontSize:7, color:"#1A3A6B", fontWeight:700, marginBottom:1 }}>MS（基礎講座翌日）</div>}
                       <div style={{ fontSize:10, fontWeight:700, color: ch.color }}>{sp.speakerName}</div>
                       <div style={{ fontSize:9, color:"#546E7A", marginTop:1 }}>「{sp.topic}」</div>
                       <span style={{ fontSize:8, padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
@@ -192,6 +213,13 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       {onAddForDate && <div style={{ fontSize:8, color: ch.color, marginTop:2, fontWeight:600 }}>＋ 登録</div>}
                     </div>
                   ))}
+                  {kisoSp && (
+                    <div style={{ marginTop:4, background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:4, padding:"2px 4px", cursor:"pointer" }}
+                      onClick={() => onSpeaker(kisoSp)}>
+                      <div style={{ fontSize:7, color:"#2E7D32", fontWeight:700 }}>基礎講座</div>
+                      <div style={{ fontSize:9, color:"#1B5E20", fontWeight:600 }}>{kisoSp.speakerName}</div>
+                    </div>
+                  )}
                 </div>
               );
             })}

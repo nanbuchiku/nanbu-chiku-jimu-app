@@ -134,7 +134,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       <div class="event-item"><span class="event-label">所属法人会名</span><span class="event-value" id="ev-unit">—</span></div>
       <div class="event-item"><span class="event-label">法人会役職</span><span class="event-value" id="ev-ethics">—</span></div>
       <div class="event-item"><span class="event-label">セミナー種別</span><span class="event-value" id="ev-type">—</span></div>
-      <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date">—</span></div>
+      <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date" style="white-space:pre-line;">—</span></div>
     </div>
     <div class="event-note">※ 記載内容に誤りがある場合は事務局までご連絡ください</div>
   </div>
@@ -451,7 +451,14 @@ document.addEventListener('DOMContentLoaded', () => {
     set('ev-unit',   urlUnit);
     set('ev-ethics', urlEthics);
     set('ev-type',   SEMINAR_LABELS[urlType] || urlType);
-    set('ev-date',   urlDate ? fmt(urlDate) : '');
+    if (urlType === 'kiso' && urlDate) {
+      const d2 = new Date(urlDate + 'T00:00:00');
+      d2.setDate(d2.getDate() + 1);
+      const msDateStr = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+      set('ev-date', `${fmt(urlDate)}　【基礎講座】\n${fmt(msDateStr)}　【モーニングセミナー】`);
+    } else {
+      set('ev-date', urlDate ? fmt(urlDate) : '');
+    }
     document.getElementById('eventBanner').style.display = 'block';
   }
   if (speakerId) {

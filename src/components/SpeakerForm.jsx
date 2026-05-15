@@ -112,7 +112,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           {[
             { l:"種別 *",      k:"seminarType", t:"select", o: SEMINAR_TYPES.map(t => ({ v:t.id, l:t.label })) },
             { l:"単会",        k:"chapterId",   t:"select", o: CHAPTERS.map(c => ({ v:c.id, l:c.name })) },
-            { l:"開催日 *",    k:"seminarDate", t:"date" },
+            { l: form.seminarType === "kiso" ? "基礎講座日 *" : "開催日 *", k:"seminarDate", t:"date" },
             { l:"講師名 *",    k:"speakerName", t:"text",  p:"山田 太郎" },
             { l:"ふりがな",    k:"speakerKana", t:"text",  p:"やまだ たろう" },
             { l:"所属法人会名",    k:"speakerUnit",  t:"text",  p:"川口倫理法人会" },
@@ -133,6 +133,17 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
               ) : (
                 <input disabled={saving} autoFocus={k === "speakerName"} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
               )}
+              {k === "seminarDate" && form.seminarType === "kiso" && form.seminarDate && (() => {
+                const d = new Date(form.seminarDate + 'T00:00:00');
+                d.setDate(d.getDate() + 1);
+                const msStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                const dow = ["日","月","火","水","木","金","土"][d.getDay()];
+                return (
+                  <div style={{ marginTop:5, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"4px 10px", fontSize:10, color:"#1565C0", fontWeight:600 }}>
+                    MS日（翌日）：{msStr}（{dow}）
+                  </div>
+                );
+              })()}
               {k === "seminarDate" && !form.seminarDate && suggestDates.length > 0 && (
                 <div style={{ marginTop:5, display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
                   <span style={{ fontSize:9, color:"#90A4AE", fontWeight:600 }}>次回：</span>
