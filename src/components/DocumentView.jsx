@@ -181,7 +181,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             {/* ── ① 講師情報 ── */}
             <DocSection title="① 講師情報" color={st.color}>
               <DocRow label="お名前（漢字）"     value={`${sp.speakerName}　様`}  color={st.color} />
-              <DocRow label="お名前（ふりがな）" value={sp.speakerKana || ""}     color={st.color} />
+              <DocRow label="ふりがな"           value={sp.speakerKana || ""}     color={st.color} />
               <DocRow label="所属法人会名"       value={sp.speakerUnit || ""}     color={st.color} />
               <DocRow label="法人会役職"         value={sp.role || ""}            color={st.color} />
               <DocRow label="勤務先"             value={sp.company || ""}         color={st.color} />
@@ -255,7 +255,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               {(() => {
                 const p = parsedNotes['単会で準備'];
                 const items = ["プロジェクタ","パソコン","ホワイトボード","その他","無し"];
-                return <DocRow label="単会で準備するもの" color={st.color} value={
+                return <DocRow label="必要機材など" color={st.color} value={
                   <span>{items.map(i => <Cb key={i} on={!!(p && p.includes(i))} label={i} />)}</span>
                 } />;
               })()}
