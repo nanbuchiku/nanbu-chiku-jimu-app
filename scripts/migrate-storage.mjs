@@ -1,6 +1,6 @@
 // 既存アップロードファイルを新ルールのパスへ一括リネームする一回限りの移行スクリプト
 //   旧: doc1__20260516.pdf 等（フラット・タイムスタンプ）
-//   新: {単会ID}/{開催日}/{講師名ローマ字}/{種別}_{講師名}_{単会}_{日付}.ext
+//   新: {単会ID}/{開催日}/{講師名ローマ字}/{種別}.ext
 // 使い方:
 //   DRY_RUN（既定）: node scripts/migrate-storage.mjs
 //   実行           : node scripts/migrate-storage.mjs --apply
@@ -66,7 +66,7 @@ function buildPath(sp, typeKey, oldPath) {
     || String(Date.now());
   const ch = (sp.chapter_id || 'unknown').replace(/[^\x21-\x7E]/g, '');
   const ext = typeKey === 'photo' ? 'jpg' : (oldPath.split('.').pop() || 'dat');
-  return `${ch}/${d}/${name}/${typeKey}_${name}_${ch}_${d}.${ext}`;
+  return `${ch}/${d}/${name}/${typeKey}.${ext}`;
 }
 
 async function moveFile(from, to) {

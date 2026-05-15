@@ -791,7 +791,7 @@ function kanaToRomaji(str) {
 }
 
 // 格納パス生成ルール
-//   単会ID / 開催日(YYYYMMDD) / 講師名(ローマ字) / typeKey_講師名_単会ID_開催日.ext
+//   単会ID / 開催日(YYYYMMDD) / 講師名(ローマ字) / {種別}.ext
 function buildFileName(type, ext, speakerName, unit, date) {
   const d = date ? date.replace(/-/g, '') : String(Date.now());
   const kana = document.getElementById('speakerKana')?.value.trim() || '';
@@ -802,7 +802,7 @@ function buildFileName(type, ext, speakerName, unit, date) {
   const ch = (chapterId || 'unknown').replace(/[^\x21-\x7E]/g, '');
   const typeKey = type === '顔写真' ? 'photo' : type === '資料01' ? 'doc1' : 'doc2';
   const fileExt = type === '顔写真' ? 'jpg' : ext;
-  return `${ch}/${d}/${name}/${typeKey}_${name}_${ch}_${d}.${fileExt}`;
+  return `${ch}/${d}/${name}/${typeKey}.${fileExt}`;
 }
 
 // Supabase Storageへのアップロード
