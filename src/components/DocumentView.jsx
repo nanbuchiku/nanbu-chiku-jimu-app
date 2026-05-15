@@ -115,7 +115,14 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         )}
         {sp && (
           <>
-            <button style={BP} onClick={() => window.print()}>🖨 印刷 / PDF保存</button>
+            <button style={BP} onClick={() => {
+              const orig = document.title;
+              document.title = `${sp.seminarDate || ''}_${sp.speakerName || ''}_講師依頼確認書`;
+              const restore = () => { document.title = orig; window.removeEventListener('afterprint', restore); };
+              window.addEventListener('afterprint', restore);
+              window.print();
+              setTimeout(restore, 1000);
+            }}>🖨 印刷 / PDF保存</button>
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
               {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:11, color:"#90A4AE", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
               <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }}

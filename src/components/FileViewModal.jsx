@@ -23,8 +23,16 @@ function downloadFile(url, filename) {
 export default function FileViewModal({ url, name, speaker, onClose }) {
   const [copied, setCopied] = useState(false);
   const [driveToast, setDriveToast] = useState(false);
-  const displayName = name || decodeURIComponent(url?.split('/').pop()?.split('?')[0] || 'ファイル');
   const ch = speaker ? getChapter(speaker.chapterId) : null;
+  const fileExt = (url?.split('?')[0].split('.').pop() || '').toLowerCase();
+  const typeLabel =
+    /顔写真|photo/i.test(name || '')  ? '顔写真' :
+    /資料0?2|doc2/i.test(name || '')  ? '講話資料2' :
+    /資料|doc1/i.test(name || '')     ? '講話資料' :
+    (name || 'ファイル');
+  const displayName = speaker
+    ? `${speaker.seminarDate || ''}_${speaker.speakerName || ''}_${typeLabel}${fileExt ? '.' + fileExt : ''}`
+    : (name || decodeURIComponent(url?.split('/').pop()?.split('?')[0] || 'ファイル'));
 
   const handleDownload = () => downloadFile(url, displayName);
 
