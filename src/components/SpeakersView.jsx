@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate } from '../utils';
-import { CARD, BP, BC, BSM, SEL, INP, TBL, TH, TD, PILL, OV, MOD, MH } from '../styles';
+import { BP, BC, SEL, INP, TBL, TH, TD, OV, MOD, MH } from '../styles';
 import FileViewModal from './FileViewModal';
 
 function extractStructuredNotes(notes) {
@@ -122,7 +122,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       return [sp.seminarDate, ch.name, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.role, sp.company, sp.companyRole, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.materialName || "", sp.drinksAlcohol || "", sp.shioriArticle || "", sp.postNotes || "", extractStaffNotes(sp.notes)];
     });
     const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });
     a.click();
     URL.revokeObjectURL(a.href);
     showToast(`CSVをエクスポートしました 📥（${filtered.length}件）`);
@@ -145,21 +145,23 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     }, "終了にする");
   }, [filtered, todayStr, updateSpeaker, showToast, showConfirm]);
 
-  const sortIcon = col => sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : " ⇅";
-  const sortTH = (col, label) => (
-    <th style={{ ...TH, cursor:"pointer", userSelect:"none", whiteSpace:"nowrap" }} onClick={() => toggleSort(col)}>
-      {label}<span style={{ fontSize:9, opacity: sortCol === col ? 1 : 0.4 }}>{sortIcon(col)}</span>
-    </th>
+  const sortBtn = (col, label) => (
+    <button onClick={() => toggleSort(col)}
+      style={{ background:"none", border:"none", cursor:"pointer", color: sortCol === col ? "#1A3A6B" : "#78909C", fontWeight: sortCol === col ? 700 : 500, fontSize:11, padding:"2px 4px", display:"flex", alignItems:"center", gap:2 }}>
+      {label}
+      <span style={{ fontSize:9, opacity: sortCol === col ? 1 : 0.4 }}>{sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+    </button>
   );
 
   return (
     <div>
+      {/* ── Toolbar ─────────────────────────────── */}
       <div className="no-print" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
         <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>
           講師管理
           <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{filtered.length}/{speakers.length}件</span>
         </div>
-        <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
+        <div style={{ display:"flex", gap:6, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
           <input style={{ ...INP, width:200, fontSize:11 }} placeholder="🔍 名前・ふりがな・会社・テーマ" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
           <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
             <option value="all">全単会</option>
@@ -169,224 +171,236 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             <option value="all">全ステータス</option>
             {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <button style={{ ...BP, background:"#2E7D32" }} onClick={exportCSV}>📥 CSV出力</button>
+          <button style={{ ...BP, background:"#2E7D32" }} onClick={exportCSV}>📥 CSV</button>
           {pastConfirmedCount > 0 && (
-            <button style={{ ...BP, background:"#546E7A", fontSize:11 }} onClick={bulkComplete} title={`過去の確定済み${pastConfirmedCount}件を一括終了にする`}>
+            <button style={{ ...BP, background:"#546E7A", fontSize:11 }} onClick={bulkComplete} title={`過去の確定済み${pastConfirmedCount}件を一括終了`}>
               ✓ 過去{pastConfirmedCount}件を終了
             </button>
           )}
-          <button style={BC} onClick={() => window.print()} title="現在の絞り込み結果を印刷">🖨 印刷</button>
+          <button style={BC} onClick={() => window.print()} title="印刷">🖨</button>
           <button style={BP} onClick={onAdd}>＋ 新規登録</button>
         </div>
       </div>
 
-      <div className="no-print" style={{ display:"flex", gap:5, marginBottom:10, flexWrap:"wrap", alignItems:"center" }}>
+      {/* ── Filters ─────────────────────────────── */}
+      <div className="no-print" style={{ display:"flex", gap:5, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
         <span style={{ fontSize:11, color:"#78909C", fontWeight:600 }}>期間：</span>
         {DATE_RANGES.map(r => (
           <button key={r.value} onClick={() => setDateRangePersist(r.value)}
-            style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:`1px solid ${dateRange === r.value ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange === r.value ? "#1A3A6B" : "#fff", color: dateRange === r.value ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: dateRange === r.value ? 700 : 400, transition:"all .15s" }}>
+            style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:`1px solid ${dateRange === r.value ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange === r.value ? "#1A3A6B" : "#fff", color: dateRange === r.value ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: dateRange === r.value ? 700 : 400 }}>
             {r.label}
           </button>
         ))}
         <button onClick={() => setShowActionOnly(v => !v)}
-          style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:`1px solid ${showActionOnly ? "#B71C1C" : "#CFD8DC"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, transition:"all .15s", marginLeft:4 }}>
+          style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:`1px solid ${showActionOnly ? "#B71C1C" : "#CFD8DC"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, marginLeft:4 }}>
           ⚡ 要対応のみ
         </button>
+        <div style={{ display:"flex", gap:4, marginLeft:8, alignItems:"center" }}>
+          <span style={{ fontSize:11, color:"#78909C" }}>並び：</span>
+          {sortBtn("date","日付")}
+          {sortBtn("name","名前")}
+          {sortBtn("chapter","単会")}
+        </div>
         {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" || showActionOnly) && (
           <button onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); setShowActionOnly(false); }}
             style={{ fontSize:11, padding:"3px 10px", borderRadius:12, border:"1px solid #EF5350", background:"#FFEBEE", color:"#B71C1C", cursor:"pointer", fontWeight:700, marginLeft:4 }}>
-            ✕ フィルターをすべてリセット
+            ✕ リセット
           </button>
         )}
       </div>
 
-      <div className="sp-screen-main" style={CARD}>
-        <div style={{ overflowX:"auto" }}>
-          <table style={TBL}>
-            <thead>
-              <tr>
-                {sortTH("date", "開催日")}
-                {sortTH("chapter", "単会")}
-                {sortTH("name", "講師名・所属")}
-                <th style={TH}>テーマ</th>
-                <th style={TH}>ステータス</th>
-                <th style={TH}>講話資料</th>
-                <th style={TH}>連絡</th>
-                <th style={TH}>📅 カレンダー</th>
-                <th style={TH}>📝 確認フォーム</th>
-                <th style={TH}>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(sp => {
-                const ch = getChapter(sp.chapterId);
-                const daysUntil = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
-                const isPast = daysUntil !== null && daysUntil < 0;
-                const rowBg = daysUntil === 0 ? "#FFEBEE" : daysUntil !== null && daysUntil > 0 && daysUntil <= 3 ? "#FFF8E1" : "white";
-                const isSaving = savingIds.has(sp.id);
-                return (
-                  <tr key={sp.id} className="hover-row" style={{ background: rowBg, opacity: isPast ? 0.6 : 1 }}>
-                    <td style={TD}>
-                      <div style={{ fontWeight:600, fontSize:12 }}>{sp.seminarDate}</div>
-                      <div style={{ fontSize:10, color:"#90A4AE" }}>{ch.dayName}</div>
-                      {daysUntil !== null && daysUntil >= 0 && daysUntil <= 7 && (
-                        <div style={{ fontSize:9, fontWeight:700, color: daysUntil === 0 ? "#B71C1C" : daysUntil <= 3 ? "#E65100" : "#FF8F00" }}>
-                          {daysUntil === 0 ? "今日！" : `あと${daysUntil}日`}
-                        </div>
-                      )}
-                    </td>
-                    <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
-                    <td style={TD}>
-                      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                        <span style={{ fontWeight:600, fontSize:12 }}>{sp.speakerName}</span>
-                        {speakerAppearance[sp.id] === 1 && (
-                          <span style={{ fontSize:9, background:"#E8F5E9", color:"#2E7D32", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>初回</span>
-                        )}
-                        {speakerAppearance[sp.id] > 1 && (
-                          <span style={{ fontSize:9, background:"#E3F2FD", color:"#1565C0", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>
-                        )}
-                      </div>
-                      {(sp.speakerUnit || sp.role) && (
-                        <div style={{ fontSize:11, color:"#37474F" }}>
-                          {sp.speakerUnit}{sp.role && <span style={{ color:"#7B1FA2", marginLeft:5 }}>{sp.role}</span>}
-                        </div>
-                      )}
-                      {(sp.company || sp.companyRole) && (
-                        <div style={{ fontSize:11, color:"#78909C" }}>
-                          {sp.company}{sp.companyRole && <span style={{ marginLeft:5 }}>{sp.companyRole}</span>}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ ...TD, maxWidth:150, fontSize:11 }}>{sp.topic ? `「${sp.topic}」` : <span style={{ color:"#B0BEC5" }}>―</span>}</td>
-                    <td style={TD}>
-                      {isSaving ? (
-                        <div style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"#78909C" }}>
-                          <span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span>
-                          <span>{STATUS[sp.status]?.label ?? sp.status}</span>
-                        </div>
-                      ) : (
-                        <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-                          <select style={{ ...SEL, fontSize:11, color: STATUS[sp.status]?.color ?? "#90A4AE" }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
-                            {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                          </select>
-                          {isPast && sp.status === "confirmed" && (
-                            <button style={{ fontSize:9, fontWeight:700, background:"#ECEFF1", color:"#546E7A", border:"1px solid #CFD8DC", borderRadius:4, padding:"1px 6px", cursor:"pointer", whiteSpace:"nowrap" }}
-                              onClick={() => handleStatusChange(sp.id, "completed")} title="開催済み — 終了にする">
-                              → 終了にする
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td style={TD}>
-                      {(() => {
-                        const docs = extractMaterialLinks(sp.notes);
-                        if (!sp.materialUrl && docs.length === 0) {
-                          return (
-                            <span style={{ fontSize:10, color:"#B0BEC5", display:"flex", alignItems:"center", gap:3 }}>
-                              <span>📭</span> 未受信
-                            </span>
-                          );
-                        }
-                        return (
-                          <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
-                            {sp.materialUrl && (
-                              <button onClick={() => setFileModal({ url: sp.materialUrl, name: sp.materialName, speaker: sp })}
-                                style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, color:"#1565C0", fontWeight:600, background:"none", border:"none", cursor:"pointer", padding:0, textAlign:"left" }}>
-                                {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split('?')[0] || '') ? (
-                                  <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:34, height:34, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
-                                ) : (
-                                  <span style={{ fontSize:13 }}>📄</span>
-                                )}
-                                <span style={{ maxWidth:70, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{sp.materialName || "顔写真"}</span>
-                              </button>
-                            )}
-                            {docs.map(d => (
-                              <button key={d.label} onClick={() => setFileModal({ url: d.url, name: d.label, speaker: sp })}
-                                style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#E65100", fontWeight:600, background:"#FFF3E0", border:"1px solid #FFCC80", borderRadius:4, cursor:"pointer", padding:"2px 6px", textAlign:"left" }}>
-                                <span style={{ fontSize:12 }}>📄</span>
-                                <span>{d.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </td>
-                    <td style={TD}>
-                      <div style={{ display:"flex", gap:3, flexDirection:"column" }}>
-                        <button style={{ ...BSM, background:"#1A3A6B", color:"#fff", fontSize:10 }} title="メール送信" onClick={() => onEmail(sp)}>📧 メール</button>
-                        {sp.lineNotified ? (
-                          <div style={{ display:"flex", alignItems:"center", gap:3 }}>
-                            <span style={{ color:"#06C755", fontSize:10, fontWeight:600 }}>✓LINE済</span>
-                            <button style={{ ...BSM, fontSize:9, color:"#78909C", padding:"1px 4px" }} title="LINE送信済をリセット" aria-label="LINE送信済をリセット" onClick={async () => { const ok = await updateSpeaker(sp.id,{lineNotified:false}); if (ok) showToast("LINE未送信に戻しました"); }}>↩</button>
-                          </div>
-                        ) : (
-                          <button style={{ ...BSM, background:"#06C755", color:"#fff", fontSize:10 }} title="LINEメッセージを作成" onClick={() => onLine(sp)}>📱 LINE</button>
-                        )}
-                      </div>
-                    </td>
-                    <td style={TD}>
-                      {sp.calendarAdded ? (
-                        <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-                          <span style={{ color:"#2E7D32", fontSize:11, fontWeight:600 }}>✓ 転記済</span>
-                          <button style={{ ...BSM, fontSize:10, color:"#78909C" }} title="未転記に戻す" aria-label="カレンダー転記済をリセット" onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:false}); if (ok) showToast("未転記に戻しました"); }}>↩</button>
-                        </div>
-                      ) : (
-                        <button style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", border:"1px solid #90CAF9", fontSize:10 }} onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:true}); if (ok) showToast("カレンダー転記済にしました 📅"); }}>📅 転記済にする</button>
-                      )}
-                    </td>
-                    <td style={TD}>
-                      <button style={{ ...BSM, background:"#EDE7F6", color:"#4527A0", border:"1px solid #B39DDB", fontSize:10, whiteSpace:"nowrap" }} onClick={() => onFormUrl(sp)}>
-                        📝 フォーム作成
-                      </button>
-                    </td>
-                    <td style={TD}>
-                      <div style={{ display:"flex", gap:3, flexWrap:"wrap" }}>
-                        <button style={BSM} aria-label={`${sp.speakerName}の確認書を表示`} onClick={() => onDoc(sp)}>確認書</button>
-                        <button style={BSM} aria-label={`${sp.speakerName}を編集`} onClick={() => onEdit(sp)}>編集</button>
-                        <button
-                          style={{ ...BSM, color: extractStaffNotes(sp.notes) ? "#7B1FA2" : "#90A4AE", background: extractStaffNotes(sp.notes) ? "#F3E5F5" : "#ECEFF1" }}
-                          title={extractStaffNotes(sp.notes) ? `メモ: ${extractStaffNotes(sp.notes).slice(0, 80)}` : "メモを追加"}
-                          aria-label={`${sp.speakerName}のメモ`}
-                          onClick={() => { const t = extractStaffNotes(sp.notes || ""); notesRef.current = t; setNotesText(t); setNotesModal(sp); }}>
-                          {sp.notes ? "📝" : "📝+"}
-                        </button>
-                        {sp.postNotes && (
-                          <button style={{ ...BSM, color:"#2E7D32", background:"#E8F5E9", fontSize:9 }} title={`講話後メモ: ${sp.postNotes}`} aria-label="講話後メモあり" onClick={() => onEdit(sp)}>✓後記</button>
-                        )}
-                        {(sp.phone || sp.email) && (
-                          <button style={{ ...BSM, color:"#1565C0" }} title="連絡先をコピー" aria-label={`${sp.speakerName}の連絡先をコピー`}
-                            onClick={() => {
-                              const lines = [`${sp.speakerName}`, sp.phone && `TEL: ${sp.phone}`, sp.email && `Mail: ${sp.email}`].filter(Boolean);
-                              navigator.clipboard?.writeText(lines.join("\n")).catch(() => {});
-                              showToast("連絡先をコピーしました 📋");
-                            }}>📋</button>
-                        )}
-                        {onDuplicate && <button style={{ ...BSM, color:"#1B5E20", background:"#E8F5E9", fontSize:10 }} title="この講師のデータを複製して別の単会・日程で登録" aria-label={`${sp.speakerName}を複製`} onClick={() => onDuplicate(sp)}>複製</button>}
-                        <button style={{ ...BSM, color:"#B71C1C" }} aria-label={`${sp.speakerName}を削除`} onClick={() => onDelete(sp.id)}>削除</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={10} style={{ ...TD, textAlign:"center", padding:32 }}>
-                  <div style={{ color:"#90A4AE", fontSize:13, marginBottom:10 }}>
-                    {search || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
+      {/* ── Card list ─────────────────────────────── */}
+      <div className="sp-screen-main" style={{ display:"flex", flexDirection:"column", gap:10 }}>
+        {filtered.map(sp => {
+          const ch = getChapter(sp.chapterId);
+          const daysUntil = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
+          const isPast   = daysUntil !== null && daysUntil < 0;
+          const isToday  = daysUntil === 0;
+          const isUrgent = daysUntil !== null && daysUntil > 0 && daysUntil <= 3;
+          const isSavingThis = savingIds.has(sp.id);
+          const docs = extractMaterialLinks(sp.notes);
+          const staffMemo = extractStaffNotes(sp.notes);
+          const isPhoto = sp.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split("?")[0] || "");
+
+          return (
+            <div key={sp.id} style={{ background: isToday ? "#FFF5F5" : "#fff", borderRadius:12, border:`1px solid ${isToday ? "#EF9A9A" : isUrgent ? "#FFE082" : "#E8ECF0"}`, boxShadow:"0 1px 5px rgba(0,0,0,.06)", padding:"14px 16px", opacity: isPast ? 0.68 : 1, display:"flex", flexDirection:"column", gap:10 }}>
+
+              {/* Top: photo + info + status + edit/delete */}
+              <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+
+                {/* Photo / placeholder */}
+                <div style={{ flexShrink:0 }}>
+                  {isPhoto ? (
+                    <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName}
+                      style={{ width:56, height:56, objectFit:"cover", borderRadius:8, border:`2px solid ${ch.accent}`, cursor:"pointer", display:"block" }}
+                      onClick={() => setFileModal({ url:sp.materialUrl, name:sp.materialName, speaker:sp })}
+                      onError={e => { e.currentTarget.style.display="none"; }} />
+                  ) : (
+                    <div style={{ width:56, height:56, background:ch.light, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, color:ch.color, border:`2px solid ${ch.accent}` }}>♟</div>
+                  )}
+                </div>
+
+                {/* Main info */}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:5, flexWrap:"wrap", marginBottom:3 }}>
+                    <span style={{ fontSize:16, fontWeight:700, color:"#1A2B3C", lineHeight:1.2 }}>{sp.speakerName || "（名前未入力）"}</span>
+                    {speakerAppearance[sp.id] === 1 && <span style={{ fontSize:9, background:"#E8F5E9", color:"#2E7D32", padding:"1px 5px", borderRadius:8, fontWeight:700, alignSelf:"center" }}>初回</span>}
+                    {speakerAppearance[sp.id] > 1 && <span style={{ fontSize:9, background:"#E3F2FD", color:"#1565C0", padding:"1px 5px", borderRadius:8, fontWeight:700, alignSelf:"center" }}>{speakerAppearance[sp.id]}回目</span>}
                   </div>
-                  {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
-                    <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 14px", fontSize:12, cursor:"pointer", color:"#546E7A", fontWeight:600 }}
-                      onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); }}>
-                      フィルターをリセット
+                  {sp.speakerKana && <div style={{ fontSize:11, color:"#78909C", marginBottom:3 }}>{sp.speakerKana}</div>}
+                  <div style={{ display:"flex", gap:5, flexWrap:"wrap", alignItems:"center", marginBottom:4 }}>
+                    <span style={{ fontSize:10, fontWeight:700, color:"#fff", background:ch.color, padding:"2px 8px", borderRadius:10 }}>{ch.name}</span>
+                    {sp.seminarDate && (
+                      <span style={{ fontSize:11, color:"#546E7A" }}>
+                        {sp.seminarDate}（{ch.dayName.replace("曜日","")}）
+                      </span>
+                    )}
+                    {daysUntil !== null && daysUntil >= 0 && daysUntil <= 14 && (
+                      <span style={{ fontSize:10, fontWeight:700, color: isToday ? "#B71C1C" : isUrgent ? "#E65100" : "#FF8F00", background: isToday ? "#FFEBEE" : isUrgent ? "#FFF8E1" : "#FFF3E0", padding:"1px 7px", borderRadius:8 }}>
+                        {isToday ? "今日！" : `あと${daysUntil}日`}
+                      </span>
+                    )}
+                  </div>
+                  {(sp.speakerUnit || sp.role) && (
+                    <div style={{ fontSize:11, color:"#37474F", marginBottom:2 }}>
+                      {sp.speakerUnit}{sp.role && <span style={{ color:"#7B1FA2", marginLeft:4 }}>{sp.role}</span>}
+                    </div>
+                  )}
+                  {(sp.company || sp.companyRole) && (
+                    <div style={{ fontSize:11, color:"#78909C", marginBottom:2 }}>
+                      {sp.company}{sp.companyRole && <span style={{ marginLeft:4 }}>{sp.companyRole}</span>}
+                    </div>
+                  )}
+                  {sp.topic && <div style={{ fontSize:11, color:"#455A64", fontStyle:"italic" }}>「{sp.topic}」</div>}
+                </div>
+
+                {/* Status + edit/delete */}
+                <div style={{ flexShrink:0, display:"flex", flexDirection:"column", alignItems:"flex-end", gap:5 }}>
+                  {isSavingThis ? (
+                    <span style={{ fontSize:14, color:"#78909C", animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>
+                  ) : (
+                    <select style={{ ...SEL, fontSize:11, color:STATUS[sp.status]?.color ?? "#90A4AE", fontWeight:600, padding:"3px 6px", minWidth:72 }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
+                      {Object.entries(STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                  )}
+                  {isPast && sp.status === "confirmed" && (
+                    <button onClick={() => handleStatusChange(sp.id, "completed")}
+                      style={{ fontSize:9, fontWeight:700, background:"#ECEFF1", color:"#546E7A", border:"1px solid #CFD8DC", borderRadius:4, padding:"1px 7px", cursor:"pointer" }}>
+                      → 終了
                     </button>
                   )}
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                  <div style={{ display:"flex", gap:4, marginTop:2 }}>
+                    <button onClick={() => onEdit(sp)}
+                      style={{ background:"#E3F2FD", border:"none", borderRadius:6, width:28, height:28, cursor:"pointer", fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", color:"#1565C0" }}
+                      title="編集" aria-label={`${sp.speakerName}を編集`}>✏</button>
+                    <button onClick={() => onDelete(sp.id)}
+                      style={{ background:"#FFEBEE", border:"none", borderRadius:6, width:28, height:28, cursor:"pointer", fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", color:"#B71C1C" }}
+                      title="削除" aria-label={`${sp.speakerName}を削除`}>🗑</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom: files + actions */}
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center", paddingTop:8, borderTop:`1px solid ${isToday ? "#FFCDD2" : "#F0F4F8"}` }}>
+                {sp.materialUrl && (
+                  <button onClick={() => setFileModal({ url:sp.materialUrl, name:sp.materialName, speaker:sp })}
+                    style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#1565C0", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"4px 9px", cursor:"pointer", fontWeight:600 }}>
+                    📷 顔写真
+                  </button>
+                )}
+                {docs.map(d => (
+                  <button key={d.label} onClick={() => setFileModal({ url:d.url, name:d.label, speaker:sp })}
+                    style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#E65100", background:"#FFF3E0", border:"1px solid #FFCC80", borderRadius:6, padding:"4px 9px", cursor:"pointer", fontWeight:600 }}>
+                    📄 {d.label}
+                  </button>
+                ))}
+                {!sp.materialUrl && docs.length === 0 && (
+                  <span style={{ fontSize:10, color:"#B0BEC5", display:"flex", alignItems:"center", gap:3 }}>📭 資料未受信</span>
+                )}
+
+                <div style={{ flex:1 }} />
+
+                <button onClick={() => onEmail(sp)}
+                  style={{ fontSize:10, background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"5px 10px", cursor:"pointer", fontWeight:600 }}>
+                  📧 メール
+                </button>
+                {sp.lineNotified ? (
+                  <div style={{ display:"flex", alignItems:"center", gap:2 }}>
+                    <span style={{ color:"#06C755", fontSize:10, fontWeight:600 }}>✓LINE</span>
+                    <button onClick={async () => { const ok = await updateSpeaker(sp.id,{lineNotified:false}); if(ok)showToast("LINE未送信に戻しました"); }}
+                      style={{ fontSize:10, background:"#ECEFF1", border:"none", borderRadius:4, padding:"2px 5px", cursor:"pointer", color:"#78909C" }}>↩</button>
+                  </div>
+                ) : (
+                  <button onClick={() => onLine(sp)}
+                    style={{ fontSize:10, background:"#06C755", color:"#fff", border:"none", borderRadius:6, padding:"5px 10px", cursor:"pointer", fontWeight:600 }}>
+                    📱 LINE
+                  </button>
+                )}
+                <button onClick={() => onDoc(sp)}
+                  style={{ fontSize:10, background:"#37474F", color:"#fff", border:"none", borderRadius:6, padding:"5px 10px", cursor:"pointer", fontWeight:600 }}>
+                  ≡ 確認書
+                </button>
+                <button onClick={() => onFormUrl(sp)}
+                  style={{ fontSize:10, background:"#EDE7F6", color:"#4527A0", border:"1px solid #B39DDB", borderRadius:6, padding:"5px 8px", cursor:"pointer", fontWeight:600 }}>
+                  📝 フォーム
+                </button>
+                {sp.calendarAdded ? (
+                  <button onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:false}); if(ok)showToast("未転記に戻しました"); }}
+                    style={{ fontSize:10, color:"#2E7D32", background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 8px", cursor:"pointer" }}
+                    title="転記済 → 未転記に戻す">✓📅</button>
+                ) : (
+                  <button onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:true}); if(ok)showToast("転記済にしました 📅"); }}
+                    style={{ fontSize:10, background:"#F3F4F6", color:"#546E7A", border:"1px solid #D1D5DB", borderRadius:6, padding:"5px 8px", cursor:"pointer" }}
+                    title="カレンダー転記済にする">📅</button>
+                )}
+                <button
+                  onClick={() => { const t = extractStaffNotes(sp.notes || ""); notesRef.current = t; setNotesText(t); setNotesModal(sp); }}
+                  style={{ fontSize:10, background: staffMemo ? "#F3E5F5" : "#ECEFF1", color: staffMemo ? "#7B1FA2" : "#90A4AE", border:"none", borderRadius:6, padding:"5px 8px", cursor:"pointer" }}
+                  title={staffMemo ? `メモ: ${staffMemo.slice(0,60)}` : "メモを追加"}>
+                  {staffMemo ? "📝" : "📝+"}
+                </button>
+                {sp.postNotes && (
+                  <button onClick={() => onEdit(sp)}
+                    style={{ fontSize:10, color:"#2E7D32", background:"#E8F5E9", border:"none", borderRadius:6, padding:"5px 8px", cursor:"pointer" }}
+                    title={`講話後メモ: ${sp.postNotes}`}>✓後記</button>
+                )}
+                {onDuplicate && (
+                  <button onClick={() => onDuplicate(sp)}
+                    style={{ fontSize:10, background:"#E8F5E9", color:"#1B5E20", border:"none", borderRadius:6, padding:"5px 8px", cursor:"pointer" }}>
+                    複製
+                  </button>
+                )}
+                {(sp.phone || sp.email) && (
+                  <button onClick={() => {
+                    const lines = [sp.speakerName, sp.phone && `TEL: ${sp.phone}`, sp.email && `Mail: ${sp.email}`].filter(Boolean);
+                    navigator.clipboard?.writeText(lines.join("\n")).catch(() => {});
+                    showToast("連絡先をコピーしました 📋");
+                  }}
+                  style={{ fontSize:10, background:"#E3F2FD", color:"#1565C0", border:"none", borderRadius:6, padding:"5px 8px", cursor:"pointer" }}
+                  title="連絡先をコピー">📋</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {filtered.length === 0 && (
+          <div style={{ textAlign:"center", padding:"32px 16px", background:"#fff", borderRadius:12, border:"1px solid #E8ECF0" }}>
+            <div style={{ color:"#90A4AE", fontSize:13, marginBottom:10 }}>
+              {search || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
+            </div>
+            {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
+              <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 14px", fontSize:12, cursor:"pointer", color:"#546E7A", fontWeight:600 }}
+                onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); }}>
+                フィルターをリセット
+              </button>
+            )}
+          </div>
+        )}
       </div>
-      <div className="no-print" style={{ marginTop:8, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+
+      {/* ── Status/chapter summary ─────────────────────────────── */}
+      <div className="no-print" style={{ marginTop:10, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
         <span style={{ fontSize:10, color:"#90A4AE", fontWeight:600 }}>ステータス：</span>
         {Object.entries(STATUS).map(([k, v]) => {
           const count = speakers.filter(sp => sp.status === k).length;
@@ -402,15 +416,8 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           return <span key={ch.id} style={{ fontSize:11, padding:"3px 10px", borderRadius:12, fontWeight:600, color: ch.color, background: ch.light, border:`1px solid ${ch.color}33` }}>{ch.name} {count}件</span>;
         })}
       </div>
-      <div className="no-print" style={{ marginTop:10, padding:"10px 14px", background:"#E8F5E9", borderRadius:6, fontSize:11, color:"#2E7D32", display:"flex", alignItems:"center", gap:8 }}>
-        <span style={{ fontSize:16 }}>🤖</span>
-        <div>
-          <span style={{ fontWeight:700 }}>講話資料の自動格納について（準備中）</span>
-          <span style={{ color:"#546E7A", marginLeft:8 }}>講師からのメール添付ファイルを <strong>nanbugoudou.jimu@gmail.com</strong> で受信すると、Googleドライブに自動保存され、この列にリンクが表示されます。</span>
-        </div>
-      </div>
 
-      {/* ── Print-only table ─────────────────── */}
+      {/* ── Print-only table ─────────────────────────────── */}
       <div className="sp-print-only">
         <div style={{ marginBottom:10, borderBottom:"2px solid #1A3A6B", paddingBottom:8 }}>
           <div style={{ fontSize:18, fontWeight:700, color:"#1A3A6B" }}>倫理法人会 南部地区 講師一覧</div>
@@ -455,7 +462,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         <div style={{ marginTop:10, fontSize:10, color:"#90A4AE", textAlign:"right" }}>倫理法人会 南部地区合同事務局</div>
       </div>
 
-      {/* ── Quick notes modal ─────────────────── */}
+      {/* ── Notes modal ─────────────────────────────── */}
       {notesModal && (
         <div style={OV} role="presentation" onClick={() => setNotesModal(null)}>
           <div role="dialog" aria-modal="true" aria-label="メモを編集" style={{ ...MOD, maxWidth:420 }} onClick={e => e.stopPropagation()}
@@ -497,6 +504,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           </div>
         </div>
       )}
+
       {fileModal && (
         <FileViewModal
           url={fileModal.url}

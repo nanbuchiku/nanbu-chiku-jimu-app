@@ -17,19 +17,6 @@ import SpeakerForm from './components/SpeakerForm';
 import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
 
-const HDR = {
-  header:  { background:"linear-gradient(135deg,#0D1B3E 0%,#1A3A6B 100%)", color:"#fff", boxShadow:"0 2px 12px rgba(0,0,0,.3)", position:"sticky", top:0, zIndex:100 },
-  hInner:  { display:"flex", alignItems:"flex-start", justifyContent:"space-between", padding:"13px 22px 6px", flexWrap:"wrap", gap:8 },
-  orgLabel:{ fontSize:11, letterSpacing:"0.15em", opacity:.7, marginBottom:2 },
-  appTitle:{ margin:0, fontSize:18, fontWeight:700, letterSpacing:"0.04em" },
-  chBadges:{ display:"flex", gap:5, flexWrap:"wrap" },
-  badge:   { color:"#fff", fontSize:10, padding:"2px 9px", borderRadius:20, fontWeight:600 },
-  nav:     { display:"flex", padding:"0 14px", gap:2, overflowX:"auto", WebkitOverflowScrolling:"touch", scrollbarWidth:"none" },
-  navBtn:  { background:"transparent", border:"none", color:"rgba(255,255,255,.7)", padding:"9px 14px", cursor:"pointer", fontSize:12, fontWeight:500, borderBottom:"3px solid transparent", display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap", flexShrink:0 },
-  navOn:   { color:"#fff", borderBottomColor:"#64B5F6" },
-  navBadge:{ background:"#EF5350", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10 },
-};
-
 export default function App() {
   const [tab, setTabRaw] = useState(() => {
     try {
@@ -52,6 +39,7 @@ export default function App() {
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
+
   const [speakers,    setSpeakers]   = useState(() => { try { const c = localStorage.getItem('cachedSpeakers'); return c ? JSON.parse(c) : []; } catch { return []; } });
   const [tasks,       setTasks]      = useState(() => { try { const c = localStorage.getItem('cachedTasks'); return c ? JSON.parse(c) : []; } catch { return []; } });
   const [loading,     setLoading]    = useState(() => { try { return !localStorage.getItem('cachedSpeakers'); } catch { return true; } });
@@ -76,6 +64,7 @@ export default function App() {
   const [chapterSettings,setChSettings]   = useState(() => { try { const c = localStorage.getItem('chapterSettings'); return c ? JSON.parse(c) : {}; } catch { return {}; } });
   const [settingsOpen,   setSettingsOpen]  = useState(false);
   const [settingsSaving, setSettingsSaving]= useState(false);
+  const [windowWidth,    setWindowWidth]   = useState(() => window.innerWidth);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -87,6 +76,12 @@ export default function App() {
 
   useEffect(() => { try { localStorage.setItem('cachedSpeakers', JSON.stringify(speakers)); } catch {} }, [speakers]);
   useEffect(() => { try { localStorage.setItem('cachedTasks', JSON.stringify(tasks)); } catch {} }, [tasks]);
+
+  useEffect(() => {
+    const handler = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg, opts) => {
@@ -498,7 +493,7 @@ export default function App() {
         setShowHelp(h => !h);
       }
       if (noModals && notInInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        const tabKeys = { "1":"dashboard","2":"calendar","3":"speakers","4":"document","5":"sptasks","6":"flyer","7":"tasks","8":"ranking" };
+        const tabKeys = { "1":"dashboard","2":"speakers","3":"flyer","4":"ranking" };
         if (tabKeys[e.key]) { e.preventDefault(); setTab(tabKeys[e.key]); }
         if (e.key === "r") { e.preventDefault(); loadData(true); }
       }
@@ -506,6 +501,26 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [confirm, showForm, showHelp, settingsOpen, lineModal, emailModal, formUrlModal, tab]);
+
+  // ── Derived layout values ───────────────────────────────
+  const isMobile = windowWidth < 768;
+  const activeNavId =
+    ["document","sptasks"].includes(tab) ? "speakers" :
+    ["calendar","tasks"].includes(tab) ? "dashboard" :
+    tab;
+  const primaryTabIds  = new Set(["dashboard","speakers"]);
+  const secondaryTabIds = new Set(["flyer","ranking"]);
+  const mobileTabIds   = ["dashboard","speakers","flyer","ranking"];
+  const mobileLabel    = { dashboard:"ダッシュ", speakers:"講師管理", flyer:"チラシ", ranking:"ランキング" };
+
+  const sidebarBtn = (t, isActive, secondary) => (
+    <button key={t.id} onClick={() => setTab(t.id)}
+      style={{ display:"flex", alignItems:"center", gap:9, width:"100%", padding: secondary ? "8px 12px" : "10px 12px", borderRadius:8, border:"none", background: isActive ? "rgba(255,255,255,.18)" : "transparent", color: isActive ? "#fff" : secondary ? "rgba(255,255,255,.52)" : "rgba(255,255,255,.72)", cursor:"pointer", fontWeight: isActive ? 700 : secondary ? 400 : 500, textAlign:"left", fontSize: secondary ? 12 : 13, marginBottom:2, transition:"background .15s" }}>
+      <span style={{ fontSize: secondary ? 15 : 17, width:22, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
+      <span style={{ flex:1 }}>{t.label}</span>
+      {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:10 }}>{t.badge}</span>}
+    </button>
+  );
 
   if (loading) return (
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
@@ -524,77 +539,127 @@ export default function App() {
   );
 
   return (
-    <div style={{ minHeight:"100vh" }}>
-      <header className="no-print" style={HDR.header}>
-        <div style={HDR.hInner}>
-          <div>
-            <div style={HDR.orgLabel}>倫理法人会　南部地区事務局</div>
-            <h1 style={HDR.appTitle}>南部地区5単会タスク管理</h1>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", marginTop:2, display:"flex", alignItems:"center", gap:8 }}>
-              <span>{today.toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric', weekday:'short' })}</span>
-              {lastUpdated && <span style={{ opacity:.6 }}>最終更新 {lastUpdated.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' })}</span>}
-              {refreshing && <span aria-label="更新中" style={{ display:"inline-block", animation:"spin 1s linear infinite", fontSize:12 }}>⟳</span>}
+    <div style={{ display:"flex", minHeight:"100vh", background:"#F0F2F5" }}>
+
+      {/* ── Desktop Sidebar ──────────────────────────── */}
+      {!isMobile && (
+        <aside className="no-print" style={{ width:228, background:"linear-gradient(180deg,#0D1B3E 0%,#122B56 55%,#1A3A6B 100%)", display:"flex", flexDirection:"column", height:"100vh", position:"sticky", top:0, flexShrink:0, overflowY:"auto" }}>
+          <div style={{ padding:"18px 16px 12px", borderBottom:"1px solid rgba(255,255,255,.1)" }}>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.55)", letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
+            <div style={{ fontSize:14, fontWeight:700, color:"#fff", marginTop:4, lineHeight:1.4 }}>南部地区5単会<br/>タスク管理</div>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,.5)", marginTop:6 }}>
+              {today.toLocaleDateString("ja-JP", { year:"numeric", month:"long", day:"numeric", weekday:"short" })}
+            </div>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,.38)", marginTop:2, display:"flex", alignItems:"center", gap:4 }}>
+              {lastUpdated && <>更新 {lastUpdated.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" })}</>}
+              {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>}
             </div>
           </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-            <div style={HDR.chBadges}>
+          <nav style={{ flex:1, padding:"12px 8px" }}>
+            {TABS.filter(t => primaryTabIds.has(t.id)).map(t => sidebarBtn(t, activeNavId === t.id, false))}
+            <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"10px 8px" }} />
+            {TABS.filter(t => secondaryTabIds.has(t.id)).map(t => sidebarBtn(t, activeNavId === t.id, true))}
+          </nav>
+          <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.1)" }}>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:3, marginBottom:8 }}>
               {CHAPTERS.map(ch => (
-                <span key={ch.id} style={{ ...HDR.badge, background: ch.color }}>
-                  {ch.short}｜{ch.dayName}
-                </span>
+                <span key={ch.id} style={{ fontSize:9, background:ch.color, color:"#fff", padding:"2px 6px", borderRadius:8, fontWeight:600 }}>{ch.short}｜{ch.dayName.replace("曜日","")}</span>
               ))}
             </div>
-            <button aria-label="キーボードショートカット一覧" title="ショートカット (?)" onClick={() => setShowHelp(h => !h)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.7)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>?</button>
-            <button aria-label="データをバックアップ" title="全データをJSONでエクスポート" onClick={exportBackup} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.8)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>📤 BK</button>
-            <label aria-label="バックアップから復元" title="JSONバックアップからインポート" style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.25)", borderRadius:6, color:"rgba(255,255,255,.7)", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>
-              📥 復元
-              <input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} />
-            </label>
-            <button aria-label="データを更新" title="データを再読み込み" onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"4px 9px", fontSize:11, cursor:"pointer", fontWeight:600, flexShrink:0 }}>⟳ 更新</button>
+            <div style={{ display:"flex", gap:4 }}>
+              <button onClick={() => setShowHelp(h => !h)} title="ショートカット" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"5px 2px", fontSize:11, cursor:"pointer" }}>?</button>
+              <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"5px 2px", fontSize:11, cursor:"pointer" }}>📤</button>
+              <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"5px 2px", fontSize:11, cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
+              <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.18)", border:"1px solid rgba(255,255,255,.35)", borderRadius:6, color:"#fff", padding:"5px 2px", fontSize:11, cursor:"pointer" }}>⟳</button>
+              <button onClick={() => setSettingsOpen(true)} title="設定" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"5px 2px", fontSize:11, cursor:"pointer" }}>⚙</button>
+            </div>
           </div>
-        </div>
-        <nav style={HDR.nav}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              aria-current={tab === t.id ? "page" : undefined}
-              style={{ ...HDR.navBtn, ...(tab === t.id ? HDR.navOn : {}) }}>
-              <span>{t.icon}</span> {t.label}
-              {!!t.badge && t.badge > 0 && <span style={HDR.navBadge} aria-label={`${t.badge}件`}>{t.badge}</span>}
+        </aside>
+      )}
+
+      {/* ── Main area ──────────────────────────── */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, minHeight:"100vh" }}>
+
+        {isMobile && (
+          <header className="no-print" style={{ background:"linear-gradient(135deg,#0D1B3E,#1A3A6B)", color:"#fff", padding:"10px 16px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,.2)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div>
+                <div style={{ fontSize:10, opacity:.6 }}>倫理法人会 南部地区事務局</div>
+                <div style={{ fontSize:15, fontWeight:700 }}>南部地区5単会タスク管理</div>
+              </div>
+              <div style={{ display:"flex", gap:5 }}>
+                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"4px 8px", fontSize:10, cursor:"pointer" }}>⟳</button>
+                <button onClick={() => setSettingsOpen(true)} style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.8)", padding:"4px 8px", fontSize:11, cursor:"pointer" }}>⚙</button>
+              </div>
+            </div>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,.48)", marginTop:3, display:"flex", alignItems:"center", gap:8 }}>
+              {today.toLocaleDateString("ja-JP", { month:"long", day:"numeric", weekday:"short" })}
+              {lastUpdated && <span>更新 {lastUpdated.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" })}</span>}
+              {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>}
+            </div>
+          </header>
+        )}
+
+        {!isOnline && (
+          <div role="status" style={{ background:"#37474F", color:"#fff", padding:"6px 22px", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
+            <span>📡</span>
+            <span>オフライン — キャッシュデータを表示しています。保存操作はオンライン復帰後に反映されます。</span>
+          </div>
+        )}
+
+        {todaysSpeakers.length > 0 && (
+          <div role="banner" style={{ background:"linear-gradient(90deg,#B71C1C,#C62828)", color:"#fff", padding:"8px 22px", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+            <span style={{ fontSize:16 }}>🎤</span>
+            <span>本日のモーニングセミナー：</span>
+            {todaysSpeakers.map(sp => {
+              const ch = getChapter(sp.chapterId);
+              return <span key={sp.id} style={{ background:"rgba(255,255,255,.2)", padding:"2px 10px", borderRadius:12 }}>{ch.name}　{sp.speakerName} 様「{sp.topic}」</span>;
+            })}
+          </div>
+        )}
+
+        {["document","sptasks","tasks","calendar"].includes(tab) && (
+          <div className="no-print" style={{ padding:"8px 20px 0" }}>
+            <button onClick={() => setTab(["document","sptasks"].includes(tab) ? "speakers" : "dashboard")}
+              style={{ background:"none", border:"none", color:"#1A3A6B", cursor:"pointer", fontSize:12, fontWeight:600, display:"inline-flex", alignItems:"center", gap:4, padding:"4px 0" }}>
+              ← {["document","sptasks"].includes(tab) ? "講師管理" : "ダッシュボード"}へ戻る
             </button>
-          ))}
-        </nav>
-      </header>
+          </div>
+        )}
 
-      {!isOnline && (
-        <div role="status" style={{ background:"#37474F", color:"#fff", padding:"6px 22px", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
-          <span>📡</span>
-          <span>オフライン — キャッシュデータを表示しています。保存操作はオンライン復帰後に反映されます。</span>
-        </div>
-      )}
+        <main style={{ flex:1, padding:"16px 20px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box", paddingBottom: isMobile ? 76 : 16 }}>
+          <ErrorBoundary key={tab}>
+            {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
+            {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
+            {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} />}
+            {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
+            {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
+            {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
+            {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} />}
+            {tab === "ranking"   && <RankingView tasks={tasks} speakers={speakers} today={today} />}
+          </ErrorBoundary>
+        </main>
 
-      {todaysSpeakers.length > 0 && (
-        <div role="banner" style={{ background:"linear-gradient(90deg,#B71C1C,#C62828)", color:"#fff", padding:"8px 22px", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-          <span style={{ fontSize:16 }}>🎤</span>
-          <span>本日のモーニングセミナー：</span>
-          {todaysSpeakers.map(sp => {
-            const ch = getChapter(sp.chapterId);
-            return <span key={sp.id} style={{ background:"rgba(255,255,255,.2)", padding:"2px 10px", borderRadius:12 }}>{ch.name}　{sp.speakerName} 様「{sp.topic}」</span>;
-          })}
-        </div>
-      )}
-
-      <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
-        <ErrorBoundary key={tab}>
-          {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
-          {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
-          {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} />}
-          {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
-          {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} showToast={showToast} />}
-          {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
-          {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} />}
-          {tab === "ranking"   && <RankingView tasks={tasks} speakers={speakers} today={today} />}
-        </ErrorBoundary>
-      </main>
+        {isMobile && (
+          <nav className="no-print" style={{ position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ECEFF1", display:"flex", zIndex:100, boxShadow:"0 -2px 10px rgba(0,0,0,.08)" }}>
+            {mobileTabIds.map(id => {
+              const t = TABS.find(x => x.id === id);
+              if (!t) return null;
+              const isActive = activeNavId === id;
+              return (
+                <button key={id} onClick={() => setTab(id)}
+                  style={{ flex:1, padding:"8px 4px 10px", border:"none", background:"transparent", color: isActive ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:9, fontWeight: isActive ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:2, position:"relative" }}>
+                  <span style={{ fontSize:20, lineHeight:1 }}>{t.icon}</span>
+                  <span>{mobileLabel[id] || t.label}</span>
+                  {!!t.badge && t.badge > 0 && (
+                    <span style={{ position:"absolute", top:4, right:"50%", transform:"translateX(14px)", background:"#EF5350", color:"#fff", fontSize:8, fontWeight:700, padding:"1px 4px", borderRadius:8, lineHeight:1.2 }}>{t.badge}</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        )}
+      </div>
 
       {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} />}
       {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
@@ -641,22 +706,18 @@ export default function App() {
                 {[
                   ["?", "このヘルプを表示 / 非表示"],
                   ["R", "データを再読み込み"],
-                  ["N（講師管理タブ）", "新規講師登録フォームを開く"],
-                  ["E（確認書タブ）", "現在の講師を編集フォームで開く"],
+                  ["N（講師管理）", "新規講師登録フォームを開く"],
+                  ["E（確認書）", "現在の講師を編集フォームで開く"],
                   ["Ctrl + Enter（フォーム内）", "講師フォームを保存"],
-                  ["← →（確認書タブ）", "前後の講師に移動"],
+                  ["← →（確認書）", "前後の講師に移動"],
                   ["Esc", "モーダル・ダイアログを閉じる"],
                   ["1", "ダッシュボードへ"],
-                  ["2", "カレンダーへ"],
-                  ["3", "講師管理へ"],
-                  ["4", "確認書作成へ"],
-                  ["5", "講師タスクへ"],
-                  ["6", "チラシ管理へ"],
-                  ["7", "タスク管理へ"],
-                  ["8", "完了ランキングへ"],
+                  ["2", "講師管理へ"],
+                  ["3", "チラシ管理へ"],
+                  ["4", "完了ランキングへ"],
                 ].map(([key, desc]) => (
                   <tr key={key} style={{ borderBottom:"1px solid #F5F5F5" }}>
-                    <td style={{ padding:"8px 12px", width:180 }}><kbd style={{ background:"#ECEFF1", border:"1px solid #CFD8DC", borderRadius:4, padding:"2px 8px", fontSize:12, fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
+                    <td style={{ padding:"8px 12px", width:200 }}><kbd style={{ background:"#ECEFF1", border:"1px solid #CFD8DC", borderRadius:4, padding:"2px 8px", fontSize:12, fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
                     <td style={{ padding:"8px 12px", fontSize:12, color:"#546E7A" }}>{desc}</td>
                   </tr>
                 ))}
@@ -666,9 +727,7 @@ export default function App() {
               <div style={{ fontWeight:700, marginBottom:6 }}>💡 機能ヒント</div>
               <ul style={{ lineHeight:1.8, paddingLeft:16 }}>
                 <li>ダッシュボードの 📝 事務局メモ で電話メモや申し送りを記録できます（自分のブラウザのみ）</li>
-                <li>講師管理タブの「⚡ 要対応のみ」で30日以内の未確認・情報不足の講師を絞り込めます</li>
-                <li>確認書タブ上部に「最近見た講師」ショートカットが表示されます</li>
-                <li>タスク管理の「▦ グループ表示」で期限別（超過/今日/今週/来週）に整理できます</li>
+                <li>講師管理の「⚡ 要対応のみ」で30日以内の未確認・情報不足の講師を絞り込めます</li>
                 <li>変更はリアルタイムで全ユーザーに反映されます（Supabase Realtime）</li>
               </ul>
             </div>
@@ -682,7 +741,7 @@ export default function App() {
         const isInfo = toast.type === "info";
         const bg = isErr ? "#B71C1C" : isInfo ? "#1565C0" : "#1B5E20";
         return (
-          <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom:20, left:"50%", transform:"translateX(-50%)", background: bg, color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 16px rgba(0,0,0,.35)", zIndex:2000, display:"flex", alignItems:"center", gap:10, maxWidth:"90vw", whiteSpace:"nowrap" }}>
+          <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom: isMobile ? 66 : 20, left:"50%", transform:"translateX(-50%)", background: bg, color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 16px rgba(0,0,0,.35)", zIndex:2000, display:"flex", alignItems:"center", gap:10, maxWidth:"90vw", whiteSpace:"nowrap" }}>
             <span>{toast.msg}</span>
             {toast.action && (
               <button onClick={() => { setToast(null); toast.action(); }} style={{ background:"rgba(255,255,255,.25)", border:"none", borderRadius:4, color:"#fff", padding:"3px 9px", fontSize:11, cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>{toast.actionLabel || "取り消し"}</button>
