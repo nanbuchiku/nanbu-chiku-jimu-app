@@ -8,13 +8,14 @@ const MEDALS = ["🥇","🥈","🥉","4位","5位"];
 export default memo(function RankingView({ tasks, speakers = [], today }) {
   const months = useMemo(() => {
     const arr = [];
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    for (let i = 3; i >= -3; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
       arr.push({ value: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`, label: `${d.getFullYear()}年${d.getMonth()+1}月` });
     }
     return arr;
   }, [today]);
-  const [selMonth, setSelMonth] = useState(() => months[0].value);
+  const currentMonthValue = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}`;
+  const [selMonth, setSelMonth] = useState(currentMonthValue);
 
   const ranking = useMemo(() => CHAPTERS.map(ch => {
     const done = tasks.filter(t =>
