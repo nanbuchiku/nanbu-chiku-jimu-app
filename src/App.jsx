@@ -65,6 +65,7 @@ export default function App() {
   const [settingsOpen,   setSettingsOpen]  = useState(false);
   const [settingsSaving, setSettingsSaving]= useState(false);
   const [windowWidth,    setWindowWidth]   = useState(() => window.innerWidth);
+  const [mobileDrawer,   setMobileDrawer]  = useState(false);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -537,8 +538,9 @@ ${ch.name}単会事務局`;
     tab;
   const primaryTabIds  = new Set(["dashboard","speakers"]);
   const secondaryTabIds = new Set(["flyer","tasks","ranking"]);
-  const mobileTabIds   = ["dashboard","speakers","flyer","ranking"];
-  const mobileLabel    = { dashboard:"ダッシュ", speakers:"講師管理", flyer:"チラシ", ranking:"ランキング" };
+  const mobileTabIds   = ["dashboard","calendar","speakers","tasks"];
+  const mobileLabel    = { dashboard:"ホーム", calendar:"カレンダー", speakers:"講師", tasks:"タスク" };
+  const mobileIcon     = { dashboard:"⊞", calendar:"▦", speakers:"♟", tasks:"✓" };
 
   const sidebarBtn = (t, isActive, secondary) => (
     <button key={t.id} onClick={() => setTab(t.id)}
@@ -612,20 +614,26 @@ ${ch.name}単会事務局`;
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, minHeight:"100vh" }}>
 
         {isMobile && (
-          <header className="no-print" style={{ background:"linear-gradient(135deg,#0D1B3E,#1A3A6B)", color:"#fff", padding:"10px 16px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,.2)" }}>
+          <header className="no-print" style={{ background:"linear-gradient(135deg,#0D1B3E,#1A3A6B)", color:"#fff", padding:"12px 16px 10px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,.2)" }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div>
-                <div style={{ fontSize:14, opacity:.6 }}>倫理法人会 南部地区事務局</div>
-                <div style={{ fontSize:20, fontWeight:700 }}>南部地区5単会タスク管理</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:11, opacity:.55, letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
+                <div style={{ fontSize:19, fontWeight:700, letterSpacing:"0.02em" }}>
+                  {TABS.find(t => t.id === activeNavId)?.label || "南部地区5単会タスク管理"}
+                </div>
               </div>
-              <div style={{ display:"flex", gap:5 }}>
-                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.3)", borderRadius:6, color:"#fff", padding:"8px 14px", fontSize:18, cursor:"pointer" }}>⟳</button>
+              <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
+                {lastUpdated && !refreshing && (
+                  <span style={{ fontSize:11, opacity:.5 }}>
+                    {lastUpdated.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" })}
+                  </span>
+                )}
+                {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block", fontSize:16, opacity:.7 }}>⟳</span>}
+                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:16, cursor:"pointer" }}>⟳</button>
+                <button onClick={() => setMobileDrawer(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:18, cursor:"pointer", lineHeight:1 }} aria-label="メニュー">
+                  ☰
+                </button>
               </div>
-            </div>
-            <div style={{ fontSize:13, color:"rgba(255,255,255,.48)", marginTop:3, display:"flex", alignItems:"center", gap:8 }}>
-              {today.toLocaleDateString("ja-JP", { month:"long", day:"numeric", weekday:"short" })}
-              {lastUpdated && <span>更新 {lastUpdated.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" })}</span>}
-              {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>}
             </div>
           </header>
         )}
@@ -671,30 +679,87 @@ ${ch.name}単会事務局`;
         </main>
 
         {isMobile && (
-          <nav className="no-print" style={{ position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ECEFF1", display:"flex", zIndex:100, boxShadow:"0 -2px 10px rgba(0,0,0,.08)" }}>
+          <nav className="no-print" style={{ position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ECEFF1", display:"flex", zIndex:100, boxShadow:"0 -2px 10px rgba(0,0,0,.08)", paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
             {mobileTabIds.map(id => {
               const t = TABS.find(x => x.id === id);
               if (!t) return null;
               const isActive = activeNavId === id;
               return (
                 <button key={id} onClick={() => setTab(id)}
-                  style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: isActive ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:14, fontWeight: isActive ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3, position:"relative" }}>
-                  <span style={{ fontSize:28, lineHeight:1 }}>{t.icon}</span>
+                  style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: isActive ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:12, fontWeight: isActive ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3, position:"relative" }}>
+                  {isActive && <span style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:36, height:3, borderRadius:2, background:"#1A3A6B" }} />}
+                  <span style={{ fontSize:24, lineHeight:1 }}>{mobileIcon[id] || t.icon}</span>
                   <span>{mobileLabel[id] || t.label}</span>
                   {!!t.badge && t.badge > 0 && (
-                    <span style={{ position:"absolute", top:4, right:"50%", transform:"translateX(18px)", background:"#EF5350", color:"#fff", fontSize:12, fontWeight:700, padding:"2px 6px", borderRadius:8, lineHeight:1.2 }}>{t.badge}</span>
+                    <span style={{ position:"absolute", top:4, right:"50%", transform:"translateX(18px)", background:"#EF5350", color:"#fff", fontSize:11, fontWeight:700, padding:"2px 6px", borderRadius:8, lineHeight:1.2 }}>{t.badge}</span>
                   )}
                 </button>
               );
             })}
-            <button onClick={() => setSettingsOpen(true)}
-              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: settingsOpen ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:14, fontWeight: settingsOpen ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-              <span style={{ fontSize:28, lineHeight:1 }}>⚙</span>
-              <span>設定</span>
+            <button onClick={() => setMobileDrawer(true)}
+              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color:"#90A4AE", cursor:"pointer", fontSize:12, fontWeight:400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+              <span style={{ fontSize:24, lineHeight:1 }}>☰</span>
+              <span>メニュー</span>
             </button>
           </nav>
         )}
       </div>
+
+      {/* ── Mobile drawer ── */}
+      {isMobile && mobileDrawer && (
+        <>
+          <div onClick={() => setMobileDrawer(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.45)", zIndex:200 }} />
+          <div style={{ position:"fixed", top:0, right:0, bottom:0, width:280, background:"linear-gradient(180deg,#0D1B3E 0%,#1A3A6B 100%)", zIndex:201, display:"flex", flexDirection:"column", boxShadow:"-4px 0 24px rgba(0,0,0,.3)", paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
+            <div style={{ padding:"18px 16px 14px", borderBottom:"1px solid rgba(255,255,255,.1)", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+              <div>
+                <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
+                <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginTop:3 }}>南部地区5単会<br/>タスク管理</div>
+              </div>
+              <button onClick={() => setMobileDrawer(false)} style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:8, color:"#fff", padding:"8px 12px", fontSize:18, cursor:"pointer" }}>✕</button>
+            </div>
+            <nav style={{ flex:1, overflowY:"auto", padding:"10px 8px" }}>
+              {TABS.filter(t => primaryTabIds.has(t.id)).map(t => (
+                <button key={t.id} onClick={() => { setTab(t.id); setMobileDrawer(false); }}
+                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"13px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.75)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 500, textAlign:"left", fontSize:17, marginBottom:2 }}>
+                  <span style={{ fontSize:22, width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
+                  <span style={{ flex:1 }}>{t.label}</span>
+                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:13, fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
+                </button>
+              ))}
+              <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"8px 8px" }} />
+              {TABS.filter(t => secondaryTabIds.has(t.id)).map(t => (
+                <button key={t.id} onClick={() => { setTab(t.id); setMobileDrawer(false); }}
+                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.55)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 400, textAlign:"left", fontSize:16, marginBottom:2 }}>
+                  <span style={{ fontSize:20, width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
+                  <span style={{ flex:1 }}>{t.label}</span>
+                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:13, fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
+                </button>
+              ))}
+              {TABS.filter(t => !primaryTabIds.has(t.id) && !secondaryTabIds.has(t.id) && !mobileTabIds.includes(t.id)).map(t => (
+                <button key={t.id} onClick={() => { setTab(t.id); setMobileDrawer(false); }}
+                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.55)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 400, textAlign:"left", fontSize:16, marginBottom:2 }}>
+                  <span style={{ fontSize:20, width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
+                  <span style={{ flex:1 }}>{t.label}</span>
+                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:13, fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
+                </button>
+              ))}
+              <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"8px 8px" }} />
+              <button onClick={() => { setSettingsOpen(true); setMobileDrawer(false); }}
+                style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background:"transparent", color:"rgba(255,255,255,.55)", cursor:"pointer", fontWeight:400, textAlign:"left", fontSize:16, marginBottom:2 }}>
+                <span style={{ fontSize:20, width:28, textAlign:"center", flexShrink:0 }}>⚙</span>
+                <span>設定</span>
+              </button>
+            </nav>
+            <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.1)" }}>
+              <div style={{ display:"flex", gap:4 }}>
+                <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:18, cursor:"pointer" }}>⟳</button>
+                <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:18, cursor:"pointer" }}>📤</button>
+                <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:18, cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value=""; setMobileDrawer(false); }} /></label>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} />}
       {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
