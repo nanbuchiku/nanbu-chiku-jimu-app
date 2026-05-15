@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate } from '../utils';
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
 import FileViewModal from './FileViewModal';
 
@@ -213,6 +213,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       <div className="sp-screen-main" style={{ display:"flex", flexDirection:"column", gap:12 }}>
         {filtered.map(sp => {
           const ch = getChapter(sp.chapterId);
+          const st = getSeminarType(sp.seminarType || "ms");
           const daysUntil = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
           const isPast   = daysUntil !== null && daysUntil < 0;
           const isToday  = daysUntil === 0;
@@ -223,7 +224,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           const isPhoto = sp.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split("?")[0] || "");
 
           return (
-            <div key={sp.id} style={{ background: isToday ? "#FFF5F5" : "#fff", borderRadius:12, border:`1px solid ${isToday ? "#EF9A9A" : isUrgent ? "#FFE082" : "#E8ECF0"}`, boxShadow:"0 1px 5px rgba(0,0,0,.06)", padding:"clamp(12px,3vw,18px) clamp(12px,3vw,20px)", opacity: isPast ? 0.68 : 1, display:"flex", flexDirection:"column", gap:14 }}>
+            <div key={sp.id} style={{ background: isToday ? "#FFF5F5" : "#fff", borderRadius:12, border:`2px solid ${st.color}`, borderLeft:`8px solid ${st.color}`, boxShadow: isToday ? `0 0 0 2px #EF9A9A, 0 1px 5px rgba(0,0,0,.06)` : isUrgent ? `0 0 0 2px #FFE082, 0 1px 5px rgba(0,0,0,.06)` : "0 1px 5px rgba(0,0,0,.06)", padding:"clamp(12px,3vw,18px) clamp(12px,3vw,20px)", opacity: isPast ? 0.68 : 1, display:"flex", flexDirection:"column", gap:14 }}>
 
               {/* Top: photo + info + status + edit/delete */}
               <div style={{ display:"flex", gap:"clamp(10px,2.5vw,16px)", alignItems:"flex-start", flexWrap:"wrap" }}>
@@ -250,6 +251,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   {sp.speakerKana && <div style={{ fontSize:"clamp(14px,2.4vw,22px)", color:"#78909C", marginBottom:5 }}>{sp.speakerKana}</div>}
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginBottom:6 }}>
                     <span style={{ fontSize:"clamp(13px,2.2vw,20px)", fontWeight:700, color:"#fff", background:ch.color, padding:"3px 12px", borderRadius:12 }}>{ch.name}</span>
+                    <span style={{ fontSize:"clamp(12px,2vw,18px)", fontWeight:700, color:"#fff", background:st.color, padding:"3px 12px", borderRadius:12 }}>{st.label}</span>
                     {sp.seminarDate && (
                       <span style={{ fontSize:"clamp(14px,2.4vw,22px)", color:"#546E7A" }}>
                         {sp.seminarDate}（{ch.dayName.replace("曜日","")}）
