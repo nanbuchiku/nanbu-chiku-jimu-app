@@ -568,7 +568,7 @@ ${ch.name}単会事務局`;
   );
 
   return (
-    <div style={{ display:"flex", height:"100%", background:"#F0F2F5", overflow:"hidden" }}>
+    <div style={{ display:"flex", minHeight:"100%", background:"#F0F2F5" }}>
 
       {/* ── Desktop Sidebar ──────────────────────────── */}
       {!isMobile && (
@@ -611,7 +611,7 @@ ${ch.name}単会事務局`;
       )}
 
       {/* ── Main area ──────────────────────────── */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, minHeight:0, overflow:"hidden" }}>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
 
         {isMobile && (
           <header className="no-print" style={{ background:"linear-gradient(135deg,#0D1B3E,#1A3A6B)", color:"#fff", padding:"12px 16px 10px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,.2)" }}>
@@ -665,7 +665,7 @@ ${ch.name}単会事務局`;
           </div>
         )}
 
-        <main style={{ flex:1, minHeight:0, overflowY:"auto", overscrollBehavior:"contain", WebkitOverflowScrolling:"touch", padding:"16px 20px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box", paddingBottom: isMobile ? 100 : 16 }}>
+        <main style={{ flex:1, padding:"16px 20px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box", paddingBottom: isMobile ? 100 : 16 }}>
           <ErrorBoundary key={tab}>
             {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
             {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
