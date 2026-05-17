@@ -552,14 +552,14 @@ ${ch.name}単会事務局`;
   );
 
   if (loading) return (
-    <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
+    <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
       <div aria-hidden="true" style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #1A3A6B", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
       <div style={{ color:"#1A3A6B", fontSize:14, fontWeight:600 }}>データを読み込み中...</div>
     </div>
   );
 
   if (loadError) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
       <div style={{ fontSize:40 }}>⚠️</div>
       <div style={{ color:"#B71C1C", fontSize:15, fontWeight:700 }}>データの読み込みに失敗しました</div>
       <div style={{ color:"#78909C", fontSize:12 }}>{loadError}</div>
@@ -568,11 +568,11 @@ ${ch.name}単会事務局`;
   );
 
   return (
-    <div style={{ display:"flex", minHeight:"100vh", background:"#F0F2F5" }}>
+    <div style={{ display:"flex", height:"100%", background:"#F0F2F5", overflow:"hidden" }}>
 
       {/* ── Desktop Sidebar ──────────────────────────── */}
       {!isMobile && (
-        <aside className="no-print" style={{ width:260, background:"linear-gradient(180deg,#0D1B3E 0%,#122B56 55%,#1A3A6B 100%)", display:"flex", flexDirection:"column", height:"100vh", position:"sticky", top:0, flexShrink:0, overflowY:"auto" }}>
+        <aside className="no-print" style={{ width:260, background:"linear-gradient(180deg,#0D1B3E 0%,#122B56 55%,#1A3A6B 100%)", display:"flex", flexDirection:"column", height:"100%", flexShrink:0, overflowY:"auto" }}>
           <div style={{ padding:"18px 16px 12px", borderBottom:"1px solid rgba(255,255,255,.1)" }}>
             <div style={{ fontSize:14, color:"rgba(255,255,255,.55)", letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
             <div style={{ fontSize:20, fontWeight:700, color:"#fff", marginTop:4, lineHeight:1.4 }}>南部地区5単会<br/>タスク管理</div>
@@ -611,7 +611,7 @@ ${ch.name}単会事務局`;
       )}
 
       {/* ── Main area ──────────────────────────── */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, minHeight:"100vh" }}>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, height:"100%", overflow:"hidden" }}>
 
         {isMobile && (
           <header className="no-print" style={{ background:"linear-gradient(135deg,#0D1B3E,#1A3A6B)", color:"#fff", padding:"12px 16px 10px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,.2)" }}>
@@ -665,7 +665,7 @@ ${ch.name}単会事務局`;
           </div>
         )}
 
-        <main style={{ flex:1, padding:"16px 20px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box", paddingBottom: isMobile ? 100 : 16 }}>
+        <main style={{ flex:1, overflowY:"auto", overscrollBehavior:"contain", WebkitOverflowScrolling:"touch", padding:"16px 20px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box", paddingBottom: isMobile ? 100 : 16 }}>
           <ErrorBoundary key={tab}>
             {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
             {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
