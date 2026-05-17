@@ -54,7 +54,7 @@ export default function App() {
   const [lineModal,   setLineModal]  = useState(null);
   const [emailModal,  setEmailModal] = useState(null);
   const [formUrlModal,setFormUrlModal]=useState(undefined);
-  const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
+  const [newTask,     setNewTask]    = useState({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium", url:"" });
   const [toast,          setToast]         = useState(null);
   const [isSaving,       setIsSaving]      = useState(false);
   const [confirm,        setConfirm]       = useState(null);

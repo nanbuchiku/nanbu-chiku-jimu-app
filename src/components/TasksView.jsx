@@ -31,7 +31,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
 
   const startEdit = useCallback(t => {
     setEditingId(t.id);
-    setEditForm({ title: t.title, dueDate: t.dueDate, priority: t.priority, chapterId: t.chapterId });
+    setEditForm({ title: t.title, dueDate: t.dueDate, priority: t.priority, chapterId: t.chapterId, url: t.url || "" });
   }, []);
 
   const saveEdit = useCallback(id => {
@@ -80,7 +80,8 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
         `DTSTART:${ymd}T090000`,
         `DTEND:${ymd}T093000`,
         `SUMMARY:${esc(`【${ch.name}】${t.title}`)}`,
-        `DESCRIPTION:${esc(`単会：${ch.name}／優先度：${prio}／期限：${t.dueDate}`)}`,
+        `DESCRIPTION:${esc(`単会：${ch.name}／優先度：${prio}／期限：${t.dueDate}${t.url ? `\n関連URL：${t.url}` : ''}`)}`,
+        ...(t.url ? [`URL:${t.url}`] : []),
         "BEGIN:VALARM",
         "ACTION:DISPLAY",
         "TRIGGER:-P1D",
@@ -178,6 +179,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
         <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
           <input aria-label="タスク内容" style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} onKeyDown={e => e.key === "Enter" && onAdd()} />
+          <input aria-label="関連URL" type="url" style={{ ...INP, flex:2, minWidth:140 }} placeholder="関連URL（フォーム・Drive等）任意" value={newTask.url || ""} onChange={e => setNewTask({ ...newTask, url: e.target.value })} />
           <select aria-label="担当単会" style={SEL} value={newTask.chapterId} onChange={e => setNewTask({ ...newTask, chapterId: e.target.value })}>
             {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
           </select>
@@ -245,7 +247,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                             <td style={TD}><select style={{ ...SEL, fontSize:11 }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>{CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
                             <td style={{ ...TD, maxWidth:200 }}><input autoFocus style={{ ...INP, width:"100%", fontSize:12 }} value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }} /></td>
                             <td style={TD}><input type="date" style={{ ...INP, fontSize:11 }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} /></td>
-                            <td style={TD} />
+                            <td style={TD}><input type="url" style={{ ...INP, fontSize:11, width:160 }} placeholder="関連URL（任意）" value={editForm.url || ""} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} /></td>
                             <td style={TD}><select style={{ ...SEL, fontSize:11 }} value={editForm.priority} onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))}><option value="high">🔴 高</option><option value="medium">🟡 中</option><option value="low">🟢 低</option></select></td>
                             <td style={TD}><div style={{ display:"flex", gap:3 }}><button style={{ ...BSM, background:"#1A3A6B", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button><button style={{ ...BSM, color:"#546E7A" }} onClick={() => setEditingId(null)}>取消</button></div></td>
                           </tr>
@@ -259,7 +261,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
                           <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
                           <td style={TD}><span style={{ fontWeight:700, fontSize:11, color: dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
                           <td style={TD}><span style={{ fontSize:9, padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
-                          <td style={TD}><div style={{ display:"flex", gap:3 }}><button style={{ ...BSM, color:"#1565C0" }} onClick={() => startEdit(t)}>編集</button><button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></div></td>
+                          <td style={TD}><div style={{ display:"flex", gap:3, alignItems:"center" }}>{t.url && <a href={t.url} target="_blank" rel="noopener noreferrer" style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", textDecoration:"none" }} title={t.url}>🔗</a>}<button style={{ ...BSM, color:"#1565C0" }} onClick={() => startEdit(t)}>編集</button><button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></div></td>
                         </tr>
                       );
                     })
