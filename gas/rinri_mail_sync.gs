@@ -201,8 +201,16 @@ function appendToSheet_(sheet, row) {
 // 初回セットアップ用（手動実行）
 // ===================================================
 function setup() {
-  // 時間ベーストリガー設定（毎時）
   ScriptApp.getProjectTriggers().forEach(function(t){ ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('syncRinriMails').timeBased().everyHours(1).create();
   Logger.log('トリガー設定完了。DRIVE_FOLDER_ID を設定してください。');
+}
+
+// ===================================================
+// 再取得用：LAST_RUN_DATE をリセットして30日分を再同期
+// ===================================================
+function resetAndSync() {
+  PropertiesService.getScriptProperties().deleteProperty('LAST_RUN_DATE');
+  Logger.log('LAST_RUN_DATE をリセットしました。過去30日分を再取得します。');
+  syncRinriMails();
 }
