@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
-import { db, fromDB, toDB, taskFromDB, taskToDB } from './lib/supabase';
+import { db, fromDB, toDB, taskFromDB, taskToDB, emailFromDB } from './lib/supabase';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks } from './utils';
 import { OV, MOD, MH, BC, BG } from './styles';
 import Dashboard from './components/Dashboard';
@@ -19,6 +19,7 @@ export default function App() {
   const [tab,         setTab]        = useState("dashboard");
   const [speakers,    setSpeakers]   = useState([]);
   const [tasks,       setTasks]      = useState([]);
+  const [emails,      setEmails]     = useState([]);
   const [loading,     setLoading]    = useState(true);
   const [weekOffset,  setWeekOffset] = useState(0);
   const [showForm,    setShowForm]   = useState(false);
@@ -39,12 +40,14 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: spData }, { data: tkData }] = await Promise.all([
+      const [{ data: spData }, { data: tkData }, { data: emData }] = await Promise.all([
         db.from('speakers').select('*').eq('district_id', DISTRICT_ID).order('seminar_date'),
         db.from('tasks').select('*').eq('district_id', DISTRICT_ID).order('due_date'),
+        db.from('rinri_emails').select('*').eq('district_id', DISTRICT_ID).order('received_at', { ascending: false }).limit(50),
       ]);
       if (spData) setSpeakers(spData.map(fromDB));
       if (tkData) setTasks(tkData.map(taskFromDB));
+      if (emData) setEmails(emData.map(emailFromDB));
       setLoading(false);
     })();
   }, []);
@@ -146,7 +149,7 @@ export default function App() {
         {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={sp => { setDocSpeaker(sp); setTab("document"); }} />}
         {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={setFilterCh} setFilterSt={setFilterSt} today={today} onEdit={sp => { setEditSpeaker(sp); setShowForm(true); }} onDelete={deleteSpeaker} onStatusChange={(id, st) => { updateSpeaker(id, { status: st }); showToast("更新しました ✓"); }} onDoc={sp => { setDocSpeaker(sp); setTab("document"); }} onEmail={setEmailModal} onFormUrl={setFormUrlModal} updateSpeaker={updateSpeaker} showToast={showToast} onAdd={() => { setEditSpeaker(null); setShowForm(true); }} />}
         {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} />}
-        {tab === "tasks"     && <TasksView tasks={tasks} today={today} newTask={newTask} setNewTask={setNewTask}
+        {tab === "tasks"     && <TasksView tasks={tasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask}
             onToggle={async id => {
               const t = tasks.find(x => x.id === id);
               const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };

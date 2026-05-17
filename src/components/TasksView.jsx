@@ -3,7 +3,87 @@ import { CHAPTERS } from '../constants';
 import { getChapter } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
-export default function TasksView({ tasks, today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
+function EmailInbox({ emails }) {
+  const [open, setOpen] = useState(true);
+  const [selected, setSelected] = useState(null);
+
+  const fmt = dt => {
+    if (!dt) return '';
+    const d = new Date(dt);
+    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+
+  return (
+    <div style={{ ...CARD, marginBottom:14 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: open ? 10 : 0 }}>
+        <span style={{ fontSize:13, fontWeight:700, color:"#1A3A6B" }}>📬 倫理メール受信ボックス</span>
+        {emails.length > 0 && (
+          <span style={{ background:"#1565C0", color:"#fff", fontSize:10, fontWeight:700, padding:"1px 7px", borderRadius:10 }}>{emails.length}</span>
+        )}
+        <button
+          style={{ marginLeft:"auto", background:"#ECEFF1", border:"none", borderRadius:6, padding:"4px 10px", fontSize:11, cursor:"pointer", fontWeight:600, color:"#37474F" }}
+          onClick={() => setOpen(v => !v)}
+        >
+          {open ? "▲ 閉じる" : "▼ 開く"}
+        </button>
+      </div>
+
+      {open && (
+        emails.length === 0 ? (
+          <div style={{ color:"#90A4AE", fontSize:12, padding:"14px 0", textAlign:"center" }}>メールなし（GAS連携後に表示されます）</div>
+        ) : (
+          <div>
+            {emails.map(em => (
+              <div key={em.id}>
+                <div
+                  onClick={() => setSelected(selected === em.id ? null : em.id)}
+                  style={{
+                    display:"flex", alignItems:"flex-start", gap:8, padding:"9px 10px",
+                    borderRadius:7, cursor:"pointer", marginBottom:3,
+                    background: selected === em.id ? "#E3F2FD" : "#F8FAFB",
+                    border: "1px solid " + (em.hasDeadline ? "#FFCDD2" : "#E0E0E0"),
+                  }}
+                >
+                  <div style={{ flexShrink:0, marginTop:1 }}>
+                    {em.hasDeadline
+                      ? <span style={{ background:"#FFEBEE", color:"#C62828", fontSize:9, fontWeight:700, padding:"2px 5px", borderRadius:4 }}>締切あり</span>
+                      : <span style={{ background:"#F5F5F5", color:"#757575", fontSize:9, fontWeight:600, padding:"2px 5px", borderRadius:4 }}>参考</span>
+                    }
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:"#1A237E", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {em.subject || '（件名なし）'}
+                    </div>
+                    <div style={{ fontSize:10, color:"#78909C", marginTop:2, display:"flex", gap:8 }}>
+                      <span>{fmt(em.receivedAt)}</span>
+                      <span>{em.fromEmail}</span>
+                      {em.hasDeadline && em.deadlineDate && (
+                        <span style={{ color:"#C62828", fontWeight:700 }}>締切: {em.deadlineDate}</span>
+                      )}
+                    </div>
+                  </div>
+                  {em.driveUrl && (
+                    <a href={em.driveUrl} target="_blank" rel="noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      style={{ flexShrink:0, fontSize:10, color:"#1565C0", textDecoration:"none", padding:"2px 7px", border:"1px solid #90CAF9", borderRadius:4, whiteSpace:"nowrap" }}
+                    >Drive ↗</a>
+                  )}
+                </div>
+                {selected === em.id && em.bodyPreview && (
+                  <div style={{ margin:"0 4px 6px", padding:"10px 12px", background:"#FAFAFA", borderRadius:6, border:"1px solid #E0E0E0", fontSize:11, color:"#37474F", lineHeight:1.7, whiteSpace:"pre-wrap", maxHeight:160, overflowY:"auto" }}>
+                    {em.bodyPreview}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+export default function TasksView({ tasks, emails = [], today, newTask, setNewTask, onToggle, onDelete, onAdd }) {
   const [showDone, setShowDone] = useState(false);
   const visible = tasks.filter(t => showDone || !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
   const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
@@ -16,6 +96,8 @@ export default function TasksView({ tasks, today, newTask, setNewTask, onToggle,
           {showDone ? "完了を隠す" : "完了済も表示"}
         </button>
       </div>
+
+      <EmailInbox emails={emails} />
 
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>

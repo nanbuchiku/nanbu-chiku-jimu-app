@@ -40,3 +40,10 @@ export const taskToDB = o => ({
   title: o.title, due_date: o.dueDate, done: o.done,
   priority: o.priority, completed_at: o.completedAt,
 });
+
+export const emailFromDB = r => ({
+  id: r.id, fromEmail: r.from_email, subject: r.subject,
+  receivedAt: r.received_at, hasDeadline: r.has_deadline,
+  deadlineDate: r.deadline_date, bodyPreview: r.body_preview,
+  driveUrl: r.drive_url,
+});
