@@ -487,7 +487,8 @@ ${ch.name}単会事務局`;
     const tabLabel = TABS.find(t => t.id === tab)?.label;
     document.title = tabLabel ? `${tabLabel} | 南部地区5単会タスク管理` : "南部地区5単会タスク管理";
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [tab, TABS]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   useEffect(() => {
     const onKey = e => {

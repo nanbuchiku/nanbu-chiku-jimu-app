@@ -444,14 +444,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                           {HOTEL_ITEMS.map(it => {
                             const on = !!checks[it.id];
                             return (
-                              <label key={it.id} style={{ display:"flex", alignItems:"center", gap:5, fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", padding:"2px 5px", borderRadius:4, background: on ? "#E8F5E9" : "transparent" }}>
+                              <label key={it.id} style={{ display:"flex", alignItems:"center", gap:8, fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", padding:"6px 8px", borderRadius:6, background: on ? "#E8F5E9" : "transparent", minHeight:40 }}>
                                 <input type="checkbox" checked={on}
                                   onChange={async () => {
                                     const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
                                     const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
                                     if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
                                   }}
-                                  style={{ cursor:"pointer", width:13, height:13, flexShrink:0 }} />
+                                  style={{ cursor:"pointer", width:22, height:22, flexShrink:0, accentColor:"#2E7D32" }} />
                                 <span>{it.icon}</span>
                                 <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
                               </label>
