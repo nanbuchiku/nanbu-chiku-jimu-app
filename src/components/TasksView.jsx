@@ -54,6 +54,52 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
     showToast?.("CSVをエクスポートしました 📥");
   }, [visible, showToast]);
 
+  const exportICS = useCallback(() => {
+    const targets = visible.filter(t => !t.done && t.dueDate);
+    if (targets.length === 0) { showToast?.("⚠ 出力できる未完了タスクがありません"); return; }
+    const esc = s => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    const pad = n => String(n).padStart(2, "0");
+    const now = new Date();
+    const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth()+1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//rinri-nanbu//task//JA",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:南部地区タスク",
+    ];
+    targets.forEach(t => {
+      const ch = getChapter(t.chapterId);
+      const ymd = t.dueDate.replace(/-/g, "");
+      const prio = PRIO[t.priority]?.label || t.priority || "";
+      lines.push(
+        "BEGIN:VEVENT",
+        `UID:${t.id}@rinri-nanbu`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART:${ymd}T090000`,
+        `DTEND:${ymd}T093000`,
+        `SUMMARY:${esc(`【${ch.name}】${t.title}`)}`,
+        `DESCRIPTION:${esc(`単会：${ch.name}／優先度：${prio}／期限：${t.dueDate}`)}`,
+        "BEGIN:VALARM",
+        "ACTION:DISPLAY",
+        "TRIGGER:-P1D",
+        `DESCRIPTION:${esc(`【明日が期限】${t.title}`)}`,
+        "END:VALARM",
+        "END:VEVENT",
+      );
+    });
+    lines.push("END:VCALENDAR");
+    const ics = lines.join("\r\n");
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8;" })),
+      download: `南部地区タスク_${new Date().toISOString().slice(0,10)}.ics`,
+    });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast?.(`${targets.length}件をカレンダー形式で出力しました 📅`);
+  }, [visible, showToast]);
+
   const [groupByDate, setGroupByDate] = useState(true);
   const hasFilter = filterCh !== "all" || filterPrio !== "all";
 
@@ -104,6 +150,7 @@ export default memo(function TasksView({ tasks, today, newTask, setNewTask, onTo
             {groupByDate ? "▦ グループ表示" : "≡ 一覧表示"}
           </button>
           <button style={{ background:"#2E7D32", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:700 }} onClick={exportCSV}>📥 CSV</button>
+          <button style={{ background:"#1565C0", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:11, cursor:"pointer", fontWeight:700 }} onClick={exportICS} title="期限1日前の通知付きでカレンダーに出力（Googleカレンダー等にインポート）">📅 カレンダー</button>
         </div>
       </div>
 
