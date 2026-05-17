@@ -1019,6 +1019,7 @@ async function submitForm() {
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
 
     if (speakerId) {
+      payload.status = 'confirmed';
       const staffNotes = extractStaffNotes(existingData?.notes || '');
       if (staffNotes) payload.notes += '\n\n' + staffNotes;
       const { error } = await db.from('speakers').update(payload).eq('id', speakerId);
