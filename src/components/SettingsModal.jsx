@@ -21,6 +21,7 @@ const DEFAULTS = ch => ({
   hotelParking:    '',
   hotelMapUrl:     '',
   contactPerson:   ch.staff     || '',
+  chapterEmail:    '',
 });
 
 function SectionTitle({ children }) {
@@ -161,6 +162,9 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           <SectionTitle>👤 担当者</SectionTitle>
           <Row label="単会担当者名">
             <Inp value={form.contactPerson} onChange={v => set('contactPerson', v)} placeholder={activeCh.staff || '例: 山田 太郎'} />
+          </Row>
+          <Row label="単会メールアドレス">
+            <Inp value={form.chapterEmail} onChange={v => set('chapterEmail', v)} placeholder="例: shiki.jimu@example.com" type="email" />
           </Row>
 
           <div style={{ height:8 }} />
