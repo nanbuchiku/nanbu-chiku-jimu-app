@@ -40,16 +40,13 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
 
   const downloadZipAndExcel = useCallback(async () => {
     setDownloading(true);
-    showToast('📦 ZIP＋Excelを作成中...');
+    showToast('📊 Excel作成中...');
     try {
-      const zip = new JSZip();
-      const photoFolder = zip.folder('顔写真');
-
-      // Excel ヘッダー行
-      const rows = [['単会名','曜日','開催日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真ファイル名']];
-
-      // 写真フェッチ用 Promise リスト
-      const fetches = [];
+      // ── Excel 生成（写真はURLのみ記載、ファイル本体は含めない） ──
+      const rows = [[
+        '単会名','曜日','開催日','講師名','ふりがな',
+        '所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真URL（クリックでダウンロード）',
+      ]];
 
       flyerData.forEach(({ ch, sps }) => {
         if (sps.length === 0) {
@@ -57,9 +54,13 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
         } else {
           sps.forEach(sp => {
             const ext = sp.materialUrl ? (sp.materialUrl.split('.').pop().split('?')[0] || 'jpg') : '';
-            const photoName = sp.materialUrl
+            const dlName = sp.materialUrl
               ? `${(sp.seminarDate || '').replace(/-/g,'')}_${ch.name}_${sp.speakerName || ''}_顔写真.${ext}`
               : '';
+            // ?download=ファイル名 を付けてクリックでそのままダウンロードできるURLにする
+            const photoUrl = sp.materialUrl
+              ? `${sp.materialUrl}?download=${encodeURIComponent(dlName)}`
+              : '（未受領）';
             rows.push([
               ch.name, ch.dayName,
               sp.seminarDate || '',
@@ -70,37 +71,37 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
               sp.company || '',
               sp.companyRole || '',
               sp.topic || '',
-              photoName,
+              photoUrl,
             ]);
-            if (sp.materialUrl && photoName) {
-              fetches.push(
-                fetch(sp.materialUrl)
-                  .then(r => r.arrayBuffer())
-                  .then(buf => photoFolder.file(photoName, buf))
-                  .catch(() => {})
-              );
-            }
           });
         }
       });
 
-      // 写真を並行フェッチ
-      await Promise.all(fetches);
-
-      // Excel 生成
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet(rows);
       ws['!cols'] = [
         {wch:12},{wch:8},{wch:12},{wch:14},{wch:14},
-        {wch:18},{wch:12},{wch:20},{wch:14},{wch:30},{wch:44},
+        {wch:18},{wch:12},{wch:20},{wch:14},{wch:30},{wch:80},
       ];
+      // URL列（K列=インデックス10）をハイパーリンクとして設定
+      rows.slice(1).forEach((row, i) => {
+        const url = row[10];
+        if (url && url.startsWith('http')) {
+          const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: 10 });
+          if (!ws[cellRef]) ws[cellRef] = { t:'s', v: url };
+          ws[cellRef].l = { Target: url, Tooltip: 'クリックしてダウンロード' };
+        }
+      });
+
       const sheetName = `${selMonth.replace('-','年')}月号`;
       XLSX.utils.book_append_sheet(wb, ws, sheetName);
       const excelBuf = XLSX.write(wb, { type:'array', bookType:'xlsx' });
-      zip.file(`流し込みデータ_${selMonth}.xlsx`, excelBuf);
 
-      // ZIP ダウンロード
+      // ── ZIP に Excel だけ入れる（写真はURL参照のため軽量） ──
+      const zip = new JSZip();
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, excelBuf);
       const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
+
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href = url;
@@ -109,7 +110,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('✅ ZIP＋Excelのダウンロード完了！');
+      showToast('✅ Excelダウンロード完了！写真URLをクリックすると個別DL可能です');
     } catch (e) {
       showToast('⚠ ダウンロードに失敗しました: ' + (e.message || ''));
     } finally {
