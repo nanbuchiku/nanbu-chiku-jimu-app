@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType, toDateStr } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractMaterialLinks } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 import { db } from '../lib/supabase';
 
@@ -38,8 +38,12 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
   const [uploading, setUploading] = useState(false);
+  const [docUploading1, setDocUploading1] = useState(false);
+  const [docUploading2, setDocUploading2] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
-  const fileInputRef = useRef(null);
+  const fileInputRef  = useRef(null);
+  const docInput1Ref  = useRef(null);
+  const docInput2Ref  = useRef(null);
 
   const set = (k, v) => {
     setErr("");
@@ -79,6 +83,41 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
+  // notes の中の【資料0N】URLを挿入・上書きするヘルパー
+  const upsertDocInNotes = (notes, label, url) => {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`【${escaped}】\\s*https?://\\S+`);
+    if (pattern.test(notes || '')) return (notes || '').replace(pattern, `【${label}】${url}`);
+    const sep = (notes && !notes.endsWith('\n')) ? '\n\n' : '\n';
+    return (notes || '') + sep + `【${label}】${url}`;
+  };
+
+  const handleDocUpload = async (e, docNum, setLoading, inputRef) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true);
+    setUploadErr('');
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const safeName = (form.speakerName || 'speaker').replace(/[\s\/\\]/g, '_');
+      const path = `speakers/${Date.now()}_${safeName}_doc${docNum}.${ext}`;
+      const { error } = await db.storage.from('speaker-files').upload(path, file, {
+        upsert: true, contentType: file.type,
+      });
+      if (error) throw error;
+      const { data: { publicUrl } } = db.storage.from('speaker-files').getPublicUrl(path);
+      const label = `資料0${docNum}`;
+      set('notes', upsertDocInNotes(form.notes, label, publicUrl));
+    } catch (err) {
+      setUploadErr(`資料アップロード失敗: ${err.message}`);
+    } finally {
+      setLoading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const currentDocs = useMemo(() => extractMaterialLinks(form.notes || ''), [form.notes]);
+
   const ch = getChapter(form.chapterId);
   const st = getSeminarType(form.seminarType || "ms");
 
@@ -242,6 +281,38 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>資料ファイル名・メモ</div>
             <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="例：山田太郎_顔写真.jpg　資料あり" value={form.materialName || ""} onChange={e => set("materialName", e.target.value)} />
+          </div>
+
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:6, fontWeight:600 }}>📄 講話資料アップロード（PDF・画像 最大2件）</div>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              {/* 資料1 */}
+              <div style={{ flex:"1 1 200px" }}>
+                <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: docUploading1 ? "#90A4AE" : "#E65100", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: docUploading1 ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", userSelect:"none" }}>
+                  {docUploading1 ? "⏳ 送信中…" : "📄 資料①をアップロード"}
+                  <input ref={docInput1Ref} type="file" accept="image/*,.pdf" style={{ display:"none" }} onChange={e => handleDocUpload(e, 1, setDocUploading1, docInput1Ref)} disabled={docUploading1 || saving} />
+                </label>
+                {currentDocs.find(d => d.label === '資料01') && (
+                  <div style={{ marginTop:5, display:"flex", alignItems:"center", gap:6, fontSize:"clamp(12px,1.4vw,14px)" }}>
+                    <span style={{ color:"#2E7D32", fontWeight:700 }}>✅ 資料①アップロード済</span>
+                    <a href={currentDocs.find(d => d.label === '資料01').url} target="_blank" rel="noopener noreferrer" style={{ color:"#1565C0", textDecoration:"underline" }}>確認</a>
+                  </div>
+                )}
+              </div>
+              {/* 資料2 */}
+              <div style={{ flex:"1 1 200px" }}>
+                <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: docUploading2 ? "#90A4AE" : "#4E342E", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: docUploading2 ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", userSelect:"none" }}>
+                  {docUploading2 ? "⏳ 送信中…" : "📄 資料②をアップロード"}
+                  <input ref={docInput2Ref} type="file" accept="image/*,.pdf" style={{ display:"none" }} onChange={e => handleDocUpload(e, 2, setDocUploading2, docInput2Ref)} disabled={docUploading2 || saving} />
+                </label>
+                {currentDocs.find(d => d.label === '資料02') && (
+                  <div style={{ marginTop:5, display:"flex", alignItems:"center", gap:6, fontSize:"clamp(12px,1.4vw,14px)" }}>
+                    <span style={{ color:"#2E7D32", fontWeight:700 }}>✅ 資料②アップロード済</span>
+                    <a href={currentDocs.find(d => d.label === '資料02').url} target="_blank" rel="noopener noreferrer" style={{ color:"#1565C0", textDecoration:"underline" }}>確認</a>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
