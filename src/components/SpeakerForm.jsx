@@ -59,6 +59,14 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     });
   };
 
+  // Supabase Storage パスに使えるASCII文字列に変換（日本語・記号を除去）
+  const toAsciiPath = (name) =>
+    (name || 'speaker')
+      .replace(/[^\x00-\x7F]/g, '')   // 日本語・全角文字を削除
+      .replace(/[^a-zA-Z0-9_-]/g, '_') // 記号をアンダースコアに
+      .replace(/^_+|_+$/g, '')          // 前後のアンダースコアを除去
+      || `spk${Date.now()}`;            // 全部消えた場合のフォールバック
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -66,7 +74,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     setUploadErr('');
     try {
       const ext = file.name.split('.').pop().toLowerCase();
-      const safeName = (form.speakerName || 'speaker').replace(/[\s\/\\]/g, '_');
+      const safeName = toAsciiPath(form.speakerName);
       const path = `speakers/${Date.now()}_${safeName}.${ext}`;
       const { error } = await db.storage.from('speaker-files').upload(path, file, {
         upsert: true,
@@ -99,7 +107,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     setUploadErr('');
     try {
       const ext = file.name.split('.').pop().toLowerCase();
-      const safeName = (form.speakerName || 'speaker').replace(/[\s\/\\]/g, '_');
+      const safeName = toAsciiPath(form.speakerName);
       const path = `speakers/${Date.now()}_${safeName}_doc${docNum}.${ext}`;
       const { error } = await db.storage.from('speaker-files').upload(path, file, {
         upsert: true, contentType: file.type,
