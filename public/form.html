@@ -308,7 +308,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
           ▼ このフォームから直接アップロードする場合<br>
           　下のアップロードエリアからファイルを選択してください。<br><br>
           ▼ メールで送付する場合<br>
-          　<a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#5C35CC;">nanbugoudou.jimu@gmail.com</a> へ添付してお送りください。<br>
+          　<a href="mailto:rinri.nanbu@gmail.com" style="color:#5C35CC;">rinri.nanbu@gmail.com</a> へ添付してお送りください。<br>
           　件名：【講話資料】氏名
         </div>
 
@@ -397,7 +397,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
     <div class="info-box" style="margin-bottom:8px;">
       ✉ 送信後、担当者より確認のご連絡をいたします。<br>
-      ご不明点は <strong>nanbugoudou.jimu@gmail.com</strong> までご連絡ください。
+      ご不明点は <strong>rinri.nanbu@gmail.com</strong> までご連絡ください。
     </div>
 
     <div class="btn-row">
@@ -415,7 +415,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
         ご回答ありがとうございました。<br>
         担当者より改めてご連絡いたします。<br><br>
         <strong>倫理法人会 南部地区合同事務局</strong><br>
-        <a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#1565C0;">nanbugoudou.jimu@gmail.com</a>
+        <a href="mailto:rinri.nanbu@gmail.com" style="color:#1565C0;">rinri.nanbu@gmail.com</a>
       </div>
     </div>
   </div>
@@ -423,8 +423,8 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 </div><!-- /container -->
 
 <script>
-const SUPABASE_URL = 'https://leqavpnmtylmankbcdkd.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_sAahVVEPRHnLDsOxawsI5w_XtGZe25O';
+const SUPABASE_URL = 'https://euxssgbhbnmnxyzeehea.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_y3S-bGIi1TaJIh73_r9syA_ZvoTseeU';
 const DISTRICT_ID  = '11111111-1111-1111-1111-111111111111';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let existingData = null; // 更新時の既存DBデータを保持（スタッフメモ引継ぎ用）
@@ -855,7 +855,7 @@ function extractStaffNotes(notes) {
 }
 
 // 講師依頼確認書メールを自動で開く（宛先：講師＋南部地区事務局）
-const NANBU_MAIL = 'nanbugoudou.jimu@gmail.com';
+const NANBU_MAIL = 'rinri.nanbu@gmail.com'; // 南部地区合同事務局
 
 function openConfirmationMail(payload, extraUrls) {
   const val   = id   => document.getElementById(id)?.value.trim() || '';
@@ -1040,7 +1040,7 @@ async function submitForm() {
       doneTitle.textContent = urlName ? `${urlName} 様、${speakerId ? '更新' : '送信'}ありがとうございました` : (speakerId ? '更新が完了しました' : '送信が完了しました');
     }
     if (doneMsg && speakerId) {
-      doneMsg.innerHTML = '情報を更新しました。<br>引き続きご不明な点がございましたらご連絡ください。<br><br><strong>倫理法人会 南部地区合同事務局</strong><br><a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#1565C0;">nanbugoudou.jimu@gmail.com</a>';
+      doneMsg.innerHTML = '情報を更新しました。<br>引き続きご不明な点がございましたらご連絡ください。<br><br><strong>倫理法人会 南部地区合同事務局</strong><br><a href="mailto:rinri.nanbu@gmail.com" style="color:#1565C0;">rinri.nanbu@gmail.com</a>';
     }
     try { openConfirmationMail(payload, extraUrls); } catch (mailErr) { console.error('確認書メール起動に失敗', mailErr); }
   } catch (e) {
