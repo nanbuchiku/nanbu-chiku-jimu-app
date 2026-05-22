@@ -1,83 +1,689 @@
-import React from 'react';
-import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, isSameDay, formatDate } from '../utils';
-import { CARD, BSM, PILL } from '../styles';
+import React, { useMemo, useState, useCallback, memo } from 'react';
+import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
+import { getChapter, getSeminarType, toDateStr, parseDate, formatDate } from '../utils';
+import { CARD, BSM, PILL, OV, MOD, MH, BC, BP } from '../styles';
 
-export default function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl }) {
-  const thisWeek = speakers.filter(sp => weekDates.some(wd => isSameDay(wd, new Date(sp.seminarDate))));
+const HOTEL_ITEMS = [
+  { id:"hotel_booked",   label:"予約完了",                 icon:"🏨" },
+  { id:"hotel_sent",     label:"講師へホテル情報を送信済み", icon:"📧" },
+  { id:"hotel_pickup",   label:"お迎え場所など相談済み",     icon:"🚗" },
+  { id:"hotel_greeting", label:"会長からの挨拶連絡済み",     icon:"💬" },
+  { id:"hotel_paid",     label:"支払い完了",                 icon:"💴" },
+];
+
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings }) {
+  const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
+  const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
+  const [hotelOpen, setHotelOpen] = useState(() => { try { return localStorage.getItem('dashboard_hotel_open') === '1'; } catch { return false; } });
+  const [monthSpeakerView, setMonthSpeakerView] = useState(null);
+  const toggleHotel = useCallback(() => {
+    setHotelOpen(o => {
+      const next = !o;
+      try { localStorage.setItem('dashboard_hotel_open', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }, []);
+  const saveMemo = useCallback(v => {
+    setMemoText(v);
+    try { localStorage.setItem('dashboard_memo', v); } catch {}
+  }, []);
+  const toggleMemo = useCallback(() => {
+    setMemoOpen(o => {
+      const next = !o;
+      try { localStorage.setItem('dashboard_memo_open', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }, []);
+
+  const thisWeek = useMemo(() => {
+    const weekStrs = new Set(weekDates.map(toDateStr));
+    return speakers.filter(sp => sp.seminarDate && weekStrs.has(sp.seminarDate));
+  }, [speakers, weekDates]);
+
+  const nextWeek = useMemo(() => {
+    const nextStrs = new Set(weekDates.map(d => {
+      const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7);
+      return toDateStr(nd);
+    }));
+    return speakers.filter(sp => sp.seminarDate && nextStrs.has(sp.seminarDate));
+  }, [speakers, weekDates]);
+  const todayStr = useMemo(() => toDateStr(today), [today]);
+  const topTasks = useMemo(
+    () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
+    [tasks]
+  );
+  const overdueTasks = useMemo(
+    () => tasks.filter(t => !t.done && t.dueDate && t.dueDate < todayStr).sort((a, b) => a.dueDate.localeCompare(b.dueDate)),
+    [tasks, todayStr]
+  );
+  const overdueCount = overdueTasks.length;
+
+  const materialPending = useMemo(() => {
+    const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14);
+    const cutoffStr = toDateStr(cutoff);
+    const todayStr = toDateStr(today);
+    return speakers.filter(sp =>
+      sp.status !== "cancelled" &&
+      sp.seminarDate &&
+      sp.seminarDate >= todayStr &&
+      sp.seminarDate <= cutoffStr &&
+      !sp.materialUrl
+    ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today]);
+
+  const hotelNeeded = useMemo(() => {
+    const todayStr = toDateStr(today);
+    return speakers.filter(sp =>
+      sp.status !== "cancelled" &&
+      sp.seminarDate &&
+      sp.seminarDate >= todayStr &&
+      sp.lodging && sp.lodging !== "不要"
+    ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today]);
+
+  const unassignedMS = useMemo(() => {
+    const assigned = new Set(speakers.filter(sp => sp.seminarType === "ms" || !sp.seminarType).map(sp => `${sp.chapterId}|${sp.seminarDate}`));
+    const cutoff = new Date(today.getFullYear(), today.getMonth() + 2, 1);
+    const result = [];
+    CHAPTERS.forEach(ch => {
+      const d = new Date(today);
+      const daysToFirst = (ch.day - d.getDay() + 7) % 7 || 7;
+      d.setDate(d.getDate() + daysToFirst);
+      for (let i = 0; i < 16; i++) {
+        if (d >= cutoff) {
+          const key = `${ch.id}|${toDateStr(d)}`;
+          if (!assigned.has(key)) result.push({ ch, dateStr: toDateStr(d), date: new Date(d) });
+        }
+        d.setDate(d.getDate() + 7);
+      }
+    });
+    return result.sort((a, b) => a.date - b.date).slice(0, 25);
+  }, [speakers, today]);
+
+  const upcoming14 = useMemo(() => {
+    const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14);
+    const endStr = toDateStr(endDate);
+    return speakers
+      .filter(sp => sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= endStr && sp.status !== "cancelled")
+      .sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today, todayStr]);
+
+  const pendingTooLong = useMemo(() => {
+    const cutoff = new Date(today);
+    cutoff.setDate(today.getDate() - 7);
+    const cutoffStr = toDateStr(cutoff);
+    return speakers.filter(sp =>
+      sp.status === "pending" &&
+      sp.seminarDate >= todayStr &&
+      sp.requestDate &&
+      sp.requestDate <= cutoffStr
+    ).sort((a, b) => a.requestDate.localeCompare(b.requestDate));
+  }, [speakers, today, todayStr]);
+
+  const missingInfoSoon = useMemo(() => {
+    const cutoff = new Date(today);
+    cutoff.setDate(today.getDate() + 30);
+    const cutoffStr = toDateStr(cutoff);
+    return speakers.filter(sp =>
+      sp.status === "confirmed" &&
+      sp.seminarDate &&
+      sp.seminarDate >= todayStr &&
+      sp.seminarDate <= cutoffStr &&
+      (!sp.topic || !sp.speakerKana || !sp.email)
+    ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+  }, [speakers, today, todayStr]);
+
+  const monthCoverage = useMemo(() => Array.from({ length: 3 }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+    return {
+      label: `${d.getFullYear()}年${d.getMonth()+1}月`,
+      ym,
+      chapters: CHAPTERS.map(ch => {
+        const sp = speakers.find(s =>
+          s.chapterId === ch.id &&
+          s.seminarDate?.startsWith(ym) &&
+          s.status !== "cancelled" &&
+          (!s.seminarType || s.seminarType === "ms")
+        );
+        return { ch, sp };
+      }),
+    };
+  }), [speakers, today]);
+
+  const yearStats = useMemo(() => {
+    const year = today.getFullYear();
+    const yearSpeakers = speakers.filter(sp => sp.seminarDate?.startsWith(String(year)) && sp.status !== "cancelled");
+    const uniqueNames = new Set(yearSpeakers.map(sp => sp.speakerName).filter(Boolean));
+    const completed = yearSpeakers.filter(sp => sp.status === "completed").length;
+    const withMaterial = yearSpeakers.filter(sp => sp.materialUrl).length;
+    return { year, total: yearSpeakers.length, unique: uniqueNames.size, completed, withMaterial };
+  }, [speakers, today]);
+
+  const tasksByChapter = useMemo(() => CHAPTERS.map(ch => {
+    const total  = tasks.filter(t => t.chapterId === ch.id).length;
+    const done   = tasks.filter(t => t.chapterId === ch.id && t.done).length;
+    const undone = total - done;
+    return { ch, total, done, undone, pct: total > 0 ? Math.round(done / total * 100) : 100 };
+  }).filter(s => s.total > 0), [tasks]);
+
+  const stats = useMemo(() => [
+    { label:"今週の開催",  val: thisWeek.length,                                      sub:"/5単会", color:"#1A3A6B", action: () => setTab("calendar") },
+    { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
+    { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
+    { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A", action: () => setTab("tasks") },
+    ...(overdueCount > 0 ? [{ label:"期限超過",    val: overdueCount,                 sub:"件 ⚠",  color:"#B71C1C", action: () => setTab("tasks") }] : []),
+  ], [thisWeek, speakers, tasks, overdueCount, setTab, onGoSpeakers]);
 
   return (
     <div>
-      <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B", marginBottom:13 }}>ダッシュボード</div>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:13, flexWrap:"wrap" }}>
+        <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:700, color:"#1A3A6B" }}>ダッシュボード</div>
+        <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
+          {onOpenSettings && (
+            <button onClick={onOpenSettings} style={{ fontSize:"clamp(12px,1.6vw,14px)", background:"#E8EAF6", color:"#3949AB", border:"1px solid #C5CAE9", borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
+              ⚙ 設定
+            </button>
+          )}
+          <button onClick={toggleMemo} style={{ fontSize:"clamp(12px,1.6vw,14px)", background: memoOpen ? "#FFF9C4" : "#ECEFF1", color: memoOpen ? "#F57F17" : "#546E7A", border:`1px solid ${memoOpen ? "#FFE082" : "#CFD8DC"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
+            📝 事務局メモ {memoOpen ? "▲" : "▼"} {memoText && !memoOpen ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
+          </button>
+        </div>
+      </div>
+      {memoOpen && (
+        <div style={{ marginBottom:12, background:"#FFFDE7", border:"2px solid #FFE082", borderRadius:8, padding:"10px 13px" }}>
+          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#F57F17", marginBottom:6 }}>📝 事務局メモ（ローカル保存・自分だけ表示）</div>
+          <textarea
+            autoFocus
+            rows={3}
+            style={{ width:"100%", border:"1px solid #FFE082", borderRadius:6, padding:"7px", fontSize:"clamp(14px,2vw,18px)", fontFamily:"inherit", resize:"vertical", background:"#FFFFF0", boxSizing:"border-box" }}
+            placeholder="電話メモ・やること・申し送り事項など..."
+            value={memoText}
+            onChange={e => saveMemo(e.target.value)}
+          />
+          {memoText && (
+            <div style={{ textAlign:"right", marginTop:4 }}>
+              <button onClick={() => saveMemo('')} style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#90A4AE", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}>クリア</button>
+            </div>
+          )}
+        </div>
+      )}
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:14 }}>
-        {[
-          { label:"今週の開催",  val: thisWeek.length,                                     sub:"/5単会", color:"#1A3A6B" },
-          { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20" },
-          { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C" },
-          { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A" },
-        ].map((it, i) => (
-          <div key={i} style={{ ...CARD, borderTop:`4px solid ${it.color}`, marginBottom:0 }}>
-            <div style={{ fontSize:28, fontWeight:800, lineHeight:1, color: it.color }}>{it.val}<span style={{ fontSize:11, fontWeight:400, marginLeft:3 }}>{it.sub}</span></div>
-            <div style={{ fontSize:11, color:"#78909C", marginTop:3 }}>{it.label}</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))", gap:10, marginBottom:14 }}>
+        {stats.map((it, i) => (
+          <div key={i} onClick={it.action} style={{ ...CARD, borderTop:`4px solid ${it.color}`, marginBottom:0, cursor:"pointer", transition:"box-shadow .15s" }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,.14)"}
+            onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.08)"}>
+            <div style={{ fontSize:"clamp(24px,3.5vw,34px)", fontWeight:800, lineHeight:1, color: it.color }}>{it.val}<span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, marginLeft:3 }}>{it.sub}</span></div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#78909C", marginTop:3 }}>{it.label}</div>
+            <div style={{ fontSize:"clamp(12px,1.6vw,14px)", color: it.color, marginTop:4, fontWeight:600, opacity:.7 }}>クリックで詳細 →</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
-        <div>
-          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>今週のモーニングセミナー</div>
-          <div style={CARD}>
-            {CHAPTERS.map(ch => {
-              const sp = thisWeek.find(x => x.chapterId === ch.id);
+      {overdueTasks.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #B71C1C", padding:"10px 14px", background:"#FFEBEE" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
+            <div style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, color:"#B71C1C" }}>⚠ 期限超過タスク　{overdueTasks.length}件</div>
+            <button onClick={() => setTab("tasks")} style={{ fontSize:"clamp(12px,1.6vw,14px)", background:"#B71C1C", color:"#fff", border:"none", borderRadius:10, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}>タスク管理へ →</button>
+          </div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            {overdueTasks.slice(0, 6).map(t => {
+              const ch = getChapter(t.chapterId);
+              const overDays = Math.ceil((today - parseDate(t.dueDate)) / 86400000);
               return (
-                <div key={ch.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
-                  <div style={{ color:"#fff", fontSize:10, padding:"2px 7px", borderRadius:12, fontWeight:700, background: ch.color, minWidth:26, textAlign:"center" }}>{ch.dayName.replace("曜日","")}</div>
-                  <div style={{ fontWeight:700, fontSize:12, minWidth:70, color: ch.color }}>{ch.name}</div>
-                  {sp ? (
-                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", flex:1 }}>
-                      <span style={{ fontSize:12, fontWeight:600 }}>{sp.speakerName}</span>
-                      <span style={{ fontSize:11, color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
-                      <span style={{ fontSize:11, padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status].color, background: STATUS[sp.status].bg }}>{STATUS[sp.status].label}</span>
-                      <button style={BSM} onClick={() => onView(sp)}>確認書</button>
-                    </div>
-                  ) : <span style={{ color:"#9E9E9E", fontSize:11 }}>── 講師未設定</span>}
-                </div>
+                <span key={t.id} style={{ fontSize:"clamp(13px,1.8vw,16px)", background:"#FFCDD2", border:"1px solid #EF9A9A", borderRadius:6, padding:"3px 9px", color:"#B71C1C", display:"flex", gap:5, alignItems:"center" }}>
+                  <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
+                  <span style={{ fontWeight:600 }}>{t.title}</span>
+                  <span style={{ fontSize:"clamp(11px,1.4vw,13px)", opacity:.8 }}>({overDays}日超過)</span>
+                </span>
+              );
+            })}
+            {overdueTasks.length > 6 && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#B71C1C", fontWeight:600 }}>…他{overdueTasks.length - 6}件</span>}
+          </div>
+        </div>
+      )}
+
+      {materialPending.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #E65100", padding:"10px 14px", background:"#FFF8E1" }}>
+          <div style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, color:"#E65100", marginBottom:6 }}>
+            📭 顔写真・資料未受領（14日以内の開催）　{materialPending.length}件
+          </div>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+            {materialPending.map(sp => {
+              const ch = getChapter(sp.chapterId);
+              return (
+                <span key={sp.id} style={{ fontSize:"clamp(13px,1.8vw,16px)", background:"#FFF3CD", border:"1px solid #FFE082", borderRadius:6, padding:"3px 9px", color:"#E65100", fontWeight:600 }}>
+                  {sp.seminarDate} {ch.name} {sp.speakerName}
+                </span>
               );
             })}
           </div>
         </div>
+      )}
 
-        <div>
-          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>優先タスク（期限近い順）</div>
-          <div style={CARD}>
-            {tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5).map(t => {
-              const ch = getChapter(t.chapterId);
-              const dl = Math.ceil((new Date(t.dueDate) - today) / 86400000);
+      {pendingTooLong.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #FF8F00", padding:"10px 14px", background:"#FFF8E1" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
+            <div style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, color:"#E65100" }}>⏳ 確認未取得（依頼から7日超）　{pendingTooLong.length}件</div>
+            <button onClick={() => onGoSpeakers("pending")} style={{ fontSize:"clamp(12px,1.6vw,14px)", background:"#E65100", color:"#fff", border:"none", borderRadius:10, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}>講師管理へ →</button>
+          </div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            {pendingTooLong.map(sp => {
+              const ch = getChapter(sp.chapterId);
+              const pendingDays = Math.ceil((today - parseDate(sp.requestDate)) / 86400000);
               return (
-                <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
-                  <span style={PILL(ch)}>{ch.name}</span>
-                  <span style={{ flex:1, fontSize:12 }}>{t.title}</span>
-                  <span style={{ fontSize:11, fontWeight:700, color: dl < 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : "#546E7A" }}>{dl < 0 ? "超過" : `${dl}日`}</span>
+                <span key={sp.id} onClick={() => onGoSpeakers("pending")} style={{ fontSize:"clamp(13px,1.8vw,16px)", background:"#FFE0B2", border:"1px solid #FFCC80", borderRadius:6, padding:"3px 9px", color:"#E65100", display:"flex", gap:5, alignItems:"center", cursor:"pointer" }}>
+                  <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
+                  <span style={{ fontWeight:600 }}>{sp.speakerName}</span>
+                  <span style={{ fontSize:"clamp(11px,1.4vw,13px)", opacity:.8 }}>{sp.seminarDate}｜{pendingDays}日経過</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {missingInfoSoon.length > 0 && (
+        <div style={{ ...CARD, marginBottom:12, borderLeft:"5px solid #6D4C9F", padding:"10px 14px", background:"#F3E5F5" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
+            <div style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, color:"#6D4C9F" }}>⚠ 確定済み — 必須情報が未入力(30日以内)　{missingInfoSoon.length}件</div>
+            <button onClick={() => onGoSpeakers("confirmed")} style={{ fontSize:"clamp(12px,1.6vw,14px)", background:"#6D4C9F", color:"#fff", border:"none", borderRadius:10, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}>講師管理へ →</button>
+          </div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            {missingInfoSoon.map(sp => {
+              const ch = getChapter(sp.chapterId);
+              const missing = [!sp.topic && "テーマ", !sp.speakerKana && "ふりがな", !sp.email && "メール"].filter(Boolean);
+              return (
+                <span key={sp.id} onClick={() => onGoSpeakers("confirmed")} style={{ fontSize:"clamp(13px,1.8vw,16px)", background:"#E1BEE7", border:"1px solid #CE93D8", borderRadius:6, padding:"3px 9px", color:"#4A148C", display:"flex", gap:5, alignItems:"center", cursor:"pointer" }}>
+                  <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, background: ch.color, color:"#fff", padding:"1px 4px", borderRadius:8 }}>{ch.short || ch.name}</span>
+                  <span style={{ fontWeight:600 }}>{sp.speakerName}</span>
+                  <span style={{ fontSize:"clamp(11px,1.4vw,13px)", opacity:.8 }}>{sp.seminarDate}｜未:{missing.join("・")}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>
+            今週のモーニングセミナー
+            {weekDates.length >= 6 && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#90A4AE", marginLeft:6 }}>{weekDates[1].getMonth()+1}/{weekDates[1].getDate()} 〜 {weekDates[5].getMonth()+1}/{weekDates[5].getDate()}</span>}
+          </div>
+          <div style={CARD}>
+            {CHAPTERS.map(ch => {
+              const sp = thisWeek.find(x => x.chapterId === ch.id);
+              const isToday = sp && sp.seminarDate === toDateStr(today);
+              return (
+                <div key={ch.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5", background: isToday ? "#FFEBEE" : "transparent", borderRadius: isToday ? 4 : 0, paddingLeft: isToday ? 4 : 0 }}>
+                  <div style={{ color:"#fff", fontSize:"clamp(12px,1.6vw,14px)", padding:"2px 7px", borderRadius:12, fontWeight:700, background: ch.color, minWidth:26, textAlign:"center" }}>{ch.dayName.replace("曜日","")}</div>
+                  <div style={{ fontWeight:700, fontSize:"clamp(14px,2vw,18px)", minWidth:70, color: ch.color }}>{ch.name}</div>
+                  {sp ? (
+                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", flex:1 }}>
+                      {isToday && <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#B71C1C", color:"#fff", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>今日！</span>}
+                      <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:600 }}>{sp.speakerName}</span>
+                      <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
+                      <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                      <button style={BSM} onClick={() => onView(sp)}>確認書</button>
+                    </div>
+                  ) : (
+                    <div style={{ display:"flex", alignItems:"center", gap:6, flex:1 }}>
+                      <span style={{ color:"#9E9E9E", fontSize:"clamp(13px,1.8vw,16px)" }}>── 講師未設定</span>
+                      {onAddForDate && (() => {
+                        const wd = weekDates.find(d => d.getDay() === ch.day);
+                        return wd ? (
+                          <button onClick={() => onAddForDate(toDateStr(wd), ch.id)} style={{ fontSize:"clamp(12px,1.6vw,14px)", padding:"2px 8px", borderRadius:10, border:"1px solid #90CAF9", background:"#E3F2FD", color:"#1565C0", cursor:"pointer", fontWeight:700, lineHeight:1.4 }}>＋ 登録</button>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
                 </div>
               );
             })}
-            {tasks.filter(t => !t.done).length === 0 && <div style={{ color:"#90A4AE", fontSize:12, textAlign:"center", padding:12 }}>タスクなし ✓</div>}
-            <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:12, cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("tasks")}>全タスクを見る →</button>
+          </div>
+          {nextWeek.length > 0 && (
+            <div style={{ marginTop:10, padding:"8px 12px", background:"#F5F6FA", border:"1px solid #D0D7E2", borderRadius:8 }}>
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#78909C", marginBottom:5 }}>来週の講師</div>
+              {nextWeek.map(sp => {
+                const ch = getChapter(sp.chapterId);
+                return (
+                  <div key={sp.id} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:3 }}>
+                    <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, color:"#fff", background: ch.color, padding:"1px 5px", borderRadius:8 }}>{ch.short}</span>
+                    <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:600 }}>{sp.speakerName}</span>
+                    <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#78909C" }}>「{sp.topic}」</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>優先タスク（期限近い順）</div>
+          <div style={CARD}>
+            {topTasks.map(t => {
+              const ch = getChapter(t.chapterId);
+              const dl = Math.ceil((parseDate(t.dueDate) - today) / 86400000);
+              return (
+                <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
+                  <span style={PILL(ch)}>{ch.name}</span>
+                  <span style={{ flex:1, fontSize:"clamp(14px,2vw,18px)" }}>{t.title}</span>
+                  <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : "#546E7A" }}>{dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span>
+                </div>
+              );
+            })}
+            {topTasks.length === 0 && <div style={{ color:"#90A4AE", fontSize:"clamp(14px,2vw,18px)", textAlign:"center", padding:12 }}>タスクなし ✓</div>}
+            <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:"clamp(14px,2vw,18px)", cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("tasks")}>全タスクを見る →</button>
+          </div>
+
+          {tasksByChapter.length > 0 && (
+            <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0 }}>
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#546E7A", marginBottom:8 }}>単会別タスク達成率</div>
+              {tasksByChapter.map(({ ch, done, total, pct }) => (
+                <div key={ch.id} style={{ marginBottom:7 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", fontSize:"clamp(12px,1.6vw,14px)", marginBottom:2 }}>
+                    <span style={{ color: ch.color, fontWeight:700 }}>{ch.name}</span>
+                    <span style={{ color: pct === 100 ? "#2E7D32" : "#546E7A" }}>{done}/{total}件 ({pct}%)</span>
+                  </div>
+                  <div style={{ background:"#E0E0E0", borderRadius:4, height:7, overflow:"hidden" }}>
+                    <div style={{ width:`${pct}%`, background: pct === 100 ? "#2E7D32" : ch.color, borderRadius:4, height:7, transition:"width .4s" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, borderLeft:"4px solid #00838F" }}>
+            <div onClick={toggleHotel} role="button" tabIndex={0}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleHotel(); } }}
+              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none", marginBottom: hotelOpen ? 8 : 0 }}>
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#00838F", display:"flex", alignItems:"center", gap:6 }}>
+                <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", transition:"transform .15s", transform: hotelOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                🏨 ホテル予約管理
+                {hotelNeeded.length > 0 && (
+                  <span style={{ fontWeight:400, color:"#546E7A", marginLeft:2 }}>{hotelNeeded.length}件</span>
+                )}
+              </div>
+              {hotelNeeded.length > 0 && (() => {
+                const pending = hotelNeeded.filter(sp => !HOTEL_ITEMS.every(it => (sp.speakerChecks || {})[it.id])).length;
+                return pending > 0
+                  ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#FFCDD2", color:"#B71C1C", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>未対応 {pending}件</span>
+                  : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#C8E6C9", color:"#2E7D32", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>✓ 全完了</span>;
+              })()}
+            </div>
+            {hotelOpen && (
+              <>
+                <a href="https://www.toyoko-inn.com/search/detail/00324/" target="_blank" rel="noopener noreferrer"
+                  style={{ display:"flex", alignItems:"center", gap:8, background:"#E0F7FA", border:"2px solid #00ACC1", borderRadius:8, padding:"8px 12px", marginBottom:10, textDecoration:"none", color:"#006064", fontWeight:700, fontSize:"clamp(14px,2vw,18px)" }}>
+                  <span style={{ fontSize:"clamp(18px,2.5vw,24px)" }}>🏨</span>
+                  <span>東横イン志木東口</span>
+                  <span style={{ marginLeft:"auto", fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", background:"#B2EBF2", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>予約サイトを開く →</span>
+                </a>
+                {hotelNeeded.length === 0 ? (
+                  <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
+                ) : (
+                  hotelNeeded.map((sp, idx) => {
+                    const ch = getChapter(sp.chapterId);
+                    const checks = sp.speakerChecks || {};
+                    const allDone = HOTEL_ITEMS.every(it => checks[it.id]);
+                    const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
+                    return (
+                      <div key={sp.id} style={{ marginBottom: idx < hotelNeeded.length - 1 ? 10 : 0, paddingBottom: idx < hotelNeeded.length - 1 ? 10 : 0, borderBottom: idx < hotelNeeded.length - 1 ? "1px solid #E0F7FA" : "none" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:4 }}>
+                          <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, background: ch.color, color:"#fff", padding:"1px 6px", borderRadius:10 }}>{ch.short || ch.name}</span>
+                          <span style={{ fontWeight:700, fontSize:"clamp(14px,2vw,18px)" }}>{sp.speakerName}</span>
+                          {allDone
+                            ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color:"#2E7D32", fontWeight:700 }}>✓完了</span>
+                            : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color: daysUntil <= 7 ? "#B71C1C" : "#78909C", fontWeight:700 }}>あと{daysUntil}日</span>
+                          }
+                        </div>
+                        <div style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#546E7A", marginBottom:5, background:"#E0F7FA", borderRadius:4, padding:"2px 6px", display:"inline-block" }}>{sp.lodging} | {sp.seminarDate}</div>
+                        <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                          {HOTEL_ITEMS.map(it => {
+                            const on = !!checks[it.id];
+                            return (
+                              <label key={it.id} style={{ display:"flex", alignItems:"center", gap:8, fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", padding:"6px 8px", borderRadius:6, background: on ? "#E8F5E9" : "transparent", minHeight:40 }}>
+                                <input type="checkbox" checked={on}
+                                  onChange={async () => {
+                                    const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
+                                    const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
+                                    if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
+                                  }}
+                                  style={{ cursor:"pointer", width:22, height:22, flexShrink:0, accentColor:"#2E7D32" }} />
+                                <span>{it.icon}</span>
+                                <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </>
+            )}
           </div>
 
           <div style={{ marginTop:12, background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>📝</div>
+              <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(18px,2.5vw,24px)", flexShrink:0 }}>📝</div>
               <div>
-                <div style={{ fontSize:13, fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
-                <div style={{ fontSize:11, color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
+                <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
+                <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
               </div>
-              <div style={{ marginLeft:"auto", fontSize:18, color:"#7E57C2" }}>›</div>
+              <div style={{ marginLeft:"auto", fontSize:"clamp(18px,2.5vw,24px)", color:"#7E57C2" }}>›</div>
             </div>
           </div>
         </div>
       </div>
+
+      {upcoming14.length > 0 && (
+        <div style={{ marginBottom:12 }}>
+          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>
+            今後14日の開催予定
+            <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{upcoming14.length}件</span>
+          </div>
+          <div style={{ ...CARD, marginBottom:0, padding:"8px 12px" }}>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {upcoming14.map(sp => {
+                const ch = getChapter(sp.chapterId);
+                const dl = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
+                const isToday = dl === 0;
+                const isUrgent = dl <= 3;
+                return (
+                  <div key={sp.id} style={{ display:"flex", alignItems:"center", gap:6, background: isToday ? "#FFEBEE" : isUrgent ? "#FFF8E1" : "#FAFAFA", border:`1px solid ${isToday ? "#EF9A9A" : isUrgent ? "#FFE082" : ch.accent}`, borderRadius:8, padding:"6px 11px", transition:"box-shadow .1s" }}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,.1)"}
+                    onMouseLeave={e => e.currentTarget.style.boxShadow="none"}
+                  >
+                    <div onClick={() => onView(sp)} style={{ cursor:"pointer", display:"flex", alignItems:"center", gap:6, flex:1 }}>
+                      <div style={{ textAlign:"center" }}>
+                        <div style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, color:"#fff", background: ch.color, padding:"1px 5px", borderRadius:8 }}>{ch.short}</div>
+                        <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: isToday ? "#B71C1C" : isUrgent ? "#E65100" : "#546E7A", marginTop:2 }}>{isToday ? "今日" : `${dl}日後`}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, color:"#263238" }}>{sp.speakerName}</div>
+                        <div style={{ fontSize:"clamp(11px,1.4vw,13px)", color:"#78909C" }}>{sp.seminarDate}｜{STATUS[sp.status]?.label ?? sp.status}</div>
+                      </div>
+                    </div>
+                    {sp.status === "pending" && updateSpeaker && (
+                      <button onClick={async () => { const ok = await updateSpeaker(sp.id, { status:"confirmed" }); if (ok) showToast?.(`${sp.speakerName} 様を確定にしました ✓`); }}
+                        style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, background:"#E8F5E9", color:"#2E7D32", border:"1px solid #A5D6A7", borderRadius:6, padding:"2px 7px", cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}>
+                        確定 →
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:"clamp(14px,2vw,18px)", cursor:"pointer", padding:"6px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("calendar")}>カレンダーで確認 →</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginBottom:12 }}>
+        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:5 }}>今後3ヶ月 講師確定情報</div>
+        <div style={{ ...CARD, marginBottom:0, padding:"8px 10px", overflowX:"auto" }}>
+          <div style={{ display:"grid", gridTemplateColumns:`90px repeat(${CHAPTERS.length},1fr)`, gap:1, minWidth:320 }}>
+            <div />
+            {CHAPTERS.map(ch => (
+              <div key={ch.id} style={{ textAlign:"center", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#fff", background: ch.color, padding:"2px 1px", borderRadius:3 }}>{ch.short||ch.name}</div>
+            ))}
+            {monthCoverage.map(({ label, ym, chapters }) => {
+              const covered = chapters.filter(c => c.sp).length;
+              return (
+                <React.Fragment key={ym}>
+                  <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#37474F", display:"flex", alignItems:"center", gap:4 }}>
+                    {label}
+                    <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:600, color: covered === 5 ? "#2E7D32" : covered >= 3 ? "#E65100" : "#B71C1C" }}>{covered}/5</span>
+                  </div>
+                  {chapters.map(({ ch, sp }) => (
+                    <div key={ch.id} onClick={() => setMonthSpeakerView({ chapterId: ch.id, ym })}
+                      style={{ textAlign:"center", padding:"4px 1px", borderRadius:3, background: sp ? (sp.speakerName && sp.topic ? ch.light : "#FFF8E1") : "#FFEBEE", cursor:"pointer", border:`1px solid ${sp ? (sp.speakerName && sp.topic ? ch.accent : "#FFE082") : "#FFCDD2"}` }}
+                      title={`${ch.name}単会 ${ym} の講師一覧を表示`}>
+                      {sp ? (
+                        <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: sp.speakerName && sp.topic ? ch.color : "#E65100" }}>
+                          {sp.speakerName ? "✓" : "▲"}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#EF9A9A", fontWeight:700 }}>＋</span>
+                      )}
+                    </div>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </div>
+          <div style={{ marginTop:6, fontSize:"clamp(13px,1.8vw,16px)", color:"#90A4AE", display:"flex", gap:12, flexWrap:"wrap" }}>
+            <span><span style={{ fontWeight:700, color:"#2E7D32" }}>✓</span> 確定</span>
+            <span><span style={{ fontWeight:700, color:"#E65100" }}>▲</span> 情報不足</span>
+            <span><span style={{ fontWeight:700, color:"#B71C1C" }}>＋</span> 未登録</span>
+          </div>
+        </div>
+      </div>
+
+      {unassignedMS.length > 0 && (
+        <div>
+          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>
+            未設定のモーニングセミナー日程
+            <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{unassignedMS.length}件（{today.getMonth() + 3 > 12 ? today.getMonth() + 3 - 12 : today.getMonth() + 3}月以降）</span>
+          </div>
+          <div style={{ ...CARD, marginBottom:0 }}>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {unassignedMS.map(({ ch, dateStr, date }) => {
+                const dl = Math.ceil((date - today) / 86400000);
+                return (
+                  <div key={`${ch.id}|${dateStr}`} style={{ display:"flex", alignItems:"center", gap:6, background:"#FAFAFA", border:"1px solid #ECEFF1", borderRadius:6, padding:"5px 10px", cursor:"pointer" }} title="クリックで講師を新規登録" onClick={() => onAddForDate ? onAddForDate(dateStr, ch.id) : setTab("speakers")}>
+                    <span style={{ fontSize:"clamp(12px,1.6vw,14px)", fontWeight:700, color:"#fff", background: ch.color, padding:"1px 6px", borderRadius:10 }}>{ch.short}</span>
+                    <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:600, color:"#37474F" }}>{dateStr}</span>
+                    <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color: dl <= 14 ? "#E65100" : "#90A4AE" }}>あと{dl}日</span>
+                  </div>
+                );
+              })}
+            </div>
+            <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:"clamp(14px,2vw,18px)", cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("speakers")}>講師管理で登録 →</button>
+          </div>
+        </div>
+      )}
+
+      {monthSpeakerView && (() => {
+        const ch = getChapter(monthSpeakerView.chapterId);
+        const [yStr, mStr] = monthSpeakerView.ym.split("-");
+        const y = Number(yStr), m = Number(mStr);
+        const monthSpeakers = speakers.filter(sp =>
+          sp.chapterId === monthSpeakerView.chapterId &&
+          sp.seminarDate?.startsWith(monthSpeakerView.ym) &&
+          sp.status !== "cancelled"
+        ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
+
+        const msDates = [];
+        const last = new Date(y, m, 0).getDate();
+        for (let day = 1; day <= last; day++) {
+          const d = new Date(y, m - 1, day);
+          if (d.getDay() === ch.day) msDates.push(toDateStr(d));
+        }
+        const msAssigned = new Set(monthSpeakers.filter(s => !s.seminarType || s.seminarType === "ms").map(s => s.seminarDate));
+        const otherSpeakers = monthSpeakers.filter(s => s.seminarType && s.seminarType !== "ms");
+
+        const close = () => setMonthSpeakerView(null);
+
+        return (
+          <div style={OV} onClick={close} role="presentation">
+            <div role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}
+              style={{ background:"#fff", borderRadius:10, width:"100%", maxWidth:560, maxHeight:"90vh", display:"flex", flexDirection:"column", padding:18 }}>
+              <div style={{ ...MH, marginBottom:12 }}>
+                <span style={{ background: ch.color, color:"#fff", padding:"3px 10px", borderRadius:12, fontSize:"clamp(14px,2vw,18px)" }}>{ch.name}</span>
+                <span>{y}年{m}月の講師一覧</span>
+                <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#90A4AE", marginLeft:"auto" }}>{monthSpeakers.length}件</span>
+              </div>
+
+              <div style={{ flex:1, overflowY:"auto" }}>
+                <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#546E7A", background:"#ECEFF1", padding:"4px 10px", borderRadius:4, marginBottom:6 }}>
+                  🌅 モーニングセミナー（毎週{ch.dayName}）
+                </div>
+                {msDates.map(dateStr => {
+                  const sp = monthSpeakers.find(s => (!s.seminarType || s.seminarType === "ms") && s.seminarDate === dateStr);
+                  const dt = parseDate(dateStr);
+                  return (
+                    <div key={dateStr} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 9px", borderBottom:"1px solid #F5F5F5", background: sp ? "#FAFAFA" : "#FFEBEE", borderRadius:4, marginBottom:3, cursor: sp ? "pointer" : "default" }}
+                      onClick={() => { if (sp) { close(); onView(sp); } }}>
+                      <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: sp ? "#37474F" : "#B71C1C", minWidth:62 }}>
+                        {m}/{dt.getDate()}（{ch.dayName.replace("曜日","")}）
+                      </div>
+                      {sp ? (
+                        <>
+                          <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, flex:1 }}>{sp.speakerName || <span style={{ color:"#E65100" }}>名前未入力</span>}</span>
+                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:10 }}>「{sp.topic}」</span>}
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#B71C1C", fontWeight:600, flex:1 }}>未登録</span>
+                          {onAddForDate && (
+                            <button onClick={e => { e.stopPropagation(); close(); onAddForDate(dateStr, ch.id); }}
+                              style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, background:"#E3F2FD", color:"#1565C0", border:"1px solid #90CAF9", borderRadius:6, padding:"3px 10px", cursor:"pointer" }}>
+                              ＋ 登録
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {otherSpeakers.length > 0 && (
+                  <>
+                    <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#546E7A", background:"#ECEFF1", padding:"4px 10px", borderRadius:4, margin:"12px 0 6px" }}>
+                      📚 その他の講座
+                    </div>
+                    {otherSpeakers.map(sp => {
+                      const stype = getSeminarType(sp.seminarType);
+                      return (
+                        <div key={sp.id} onClick={() => { close(); onView(sp); }}
+                          style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 9px", borderBottom:"1px solid #F5F5F5", background:"#FAFAFA", borderRadius:4, marginBottom:3, cursor:"pointer" }}>
+                          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#37474F", minWidth:62 }}>
+                            {sp.seminarDate.slice(5).replace("-","/")}
+                          </div>
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#fff", background: stype.color, padding:"2px 7px", borderRadius:10 }}>{stype.short}</span>
+                          <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, flex:1 }}>{sp.speakerName}</span>
+                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A" }}>「{sp.topic}」</span>}
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+
+              <div style={{ display:"flex", gap:8, marginTop:14, paddingTop:10, borderTop:"1px solid #ECEFF1" }}>
+                <button style={{ ...BP, flex:1 }} onClick={() => { close(); setTab("speakers"); }}>講師管理で詳細</button>
+                <button style={BC} onClick={close}>閉じる</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
-}
+});

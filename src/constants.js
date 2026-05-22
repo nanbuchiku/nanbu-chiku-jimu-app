@@ -11,7 +11,7 @@ export const CHAPTERS = [
     time:"AM6:30〜7:30", venue:"元郷四丁目町会会館", address:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）", venueTel:"―", mapUrl:"https://share.google/nIYPjDL6MsMpt1ek8", staff:"" },
 ];
 
-export const JIMU = { email:"nanbugoudou.jimu@gmail.com", tel:"" };
+export const JIMU = { email:"nanbu@rinri-saitama.org", cc:"nizashikirinri@gmail.com", tel:"" };
 
 export const STATUS = {
   pending:   { label:"依頼中",     color:"#FF8F00", bg:"#FFF8E1" },

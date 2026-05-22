@@ -131,10 +131,10 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
     <div class="event-banner-label">📅 ご依頼内容の確認</div>
     <div class="event-banner-body">
       <div class="event-item"><span class="event-label">講師名</span><span class="event-value" id="ev-name">—</span></div>
-      <div class="event-item"><span class="event-label">所属組織</span><span class="event-value" id="ev-unit">—</span></div>
-      <div class="event-item"><span class="event-label">倫理法人会の役職</span><span class="event-value" id="ev-ethics">—</span></div>
+      <div class="event-item"><span class="event-label">所属法人会名</span><span class="event-value" id="ev-unit">—</span></div>
+      <div class="event-item"><span class="event-label">法人会役職</span><span class="event-value" id="ev-ethics">—</span></div>
       <div class="event-item"><span class="event-label">セミナー種別</span><span class="event-value" id="ev-type">—</span></div>
-      <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date">—</span></div>
+      <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date" style="white-space:pre-line;">—</span></div>
     </div>
     <div class="event-note">※ 記載内容に誤りがある場合は事務局までご連絡ください</div>
   </div>
@@ -158,21 +158,21 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       <div class="section-header">👤 講師プロフィール</div>
       <div class="section-body">
         <div class="field" id="f-kana">
-          <label>お名前（ふりがな）<span class="req">*</span><span class="hint">ひらがな</span></label>
+          <label>ふりがな<span class="req">*</span><span class="hint">ひらがな</span></label>
           <input type="text" id="speakerKana" placeholder="やまだ たろう">
           <div class="error-msg">ふりがなを入力してください</div>
         </div>
 
         <div class="field" id="f-company">
-          <label>企業名・法人名<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <label>勤務先<span class="req">*</span><span class="hint">チラシに記載します</span></label>
           <input type="text" id="company" placeholder="株式会社○○">
-          <div class="error-msg">企業名を入力してください</div>
+          <div class="error-msg">勤務先を入力してください</div>
         </div>
 
-        <div class="field" id="f-role">
-          <label>企業での役職<span class="req">*</span><span class="hint">チラシに記載します</span></label>
-          <input type="text" id="role" placeholder="代表取締役">
-          <div class="error-msg">役職を入力してください</div>
+        <div class="field" id="f-companyRole">
+          <label>勤務先役職名<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <input type="text" id="companyRole" placeholder="代表取締役">
+          <div class="error-msg">勤務先役職名を入力してください</div>
         </div>
 
         <div class="field" id="f-phone">
@@ -222,7 +222,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
         </div>
 
         <div class="field" id="f-prepare">
-          <label>単会で準備するもの<span class="req">*</span><span class="hint">複数選択可</span></label>
+          <label>必要機材など<span class="req">*</span><span class="hint">複数選択可</span></label>
           <div class="checkbox-group" id="prepare-group">
             <label class="check-item"><input type="checkbox" name="prepare" value="プロジェクタ"> プロジェクタ</label>
             <label class="check-item"><input type="checkbox" name="prepare" value="パソコン"> パソコン</label>
@@ -367,9 +367,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
             <button type="button" class="btn-zip" onclick="lookupZip()">住所を自動入力</button>
           </div>
           <div class="zip-help">
-            📮 <a href="javascript:void(0)" onclick="lookupZipByAddress()">住所から郵便番号を調べる</a>
-            ・
-            <a href="https://www.post.japanpost.jp/zipcode/" target="_blank">郵便局公式検索</a>
+            📮 <a href="https://www.post.japanpost.jp/zipcode/" target="_blank">郵便番号が不明な場合はこちら →</a>
           </div>
         </div>
 
@@ -429,6 +427,7 @@ const SUPABASE_URL = 'https://leqavpnmtylmankbcdkd.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_sAahVVEPRHnLDsOxawsI5w_XtGZe25O';
 const DISTRICT_ID  = '11111111-1111-1111-1111-111111111111';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let existingData = null; // 更新時の既存DBデータを保持（スタッフメモ引継ぎ用）
 
 // URLパラメータから事務局入力情報を取得
 const urlParams  = new URLSearchParams(location.search);
@@ -452,10 +451,101 @@ document.addEventListener('DOMContentLoaded', () => {
     set('ev-unit',   urlUnit);
     set('ev-ethics', urlEthics);
     set('ev-type',   SEMINAR_LABELS[urlType] || urlType);
-    set('ev-date',   urlDate ? fmt(urlDate) : '');
+    if (urlType === 'kiso' && urlDate) {
+      const d2 = new Date(urlDate + 'T00:00:00');
+      d2.setDate(d2.getDate() + 1);
+      const msDateStr = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+      set('ev-date', `${fmt(urlDate)}　【基礎講座】\n${fmt(msDateStr)}　【モーニングセミナー】`);
+    } else {
+      set('ev-date', urlDate ? fmt(urlDate) : '');
+    }
     document.getElementById('eventBanner').style.display = 'block';
   }
+  if (speakerId) {
+    const infoBox = document.querySelector('#page1 .info-box');
+    if (infoBox) infoBox.innerHTML = '⏳ 以前の回答内容を読み込み中...';
+    prefillFromDB();
+  }
 });
+
+// 更新フォーム: 既存回答を取得して事前入力
+async function prefillFromDB() {
+  try {
+    const { data, error } = await db.from('speakers').select('*').eq('id', speakerId).single();
+    if (error || !data) return;
+    existingData = data;
+
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+    const triggerRadio = (name, value) => {
+      const r = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
+    };
+    const triggerCheck = (name, value) => {
+      const c = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (c) { c.checked = true; c.dispatchEvent(new Event('change')); }
+    };
+
+    // ページ1
+    setVal('speakerKana', data.speaker_kana);
+    setVal('company',     data.company);
+    let companyRole = data.company_role || '';
+    if (!companyRole && data.role && urlEthics && data.role.startsWith(urlEthics + '・')) {
+      companyRole = data.role.slice(urlEthics.length + 1);
+    }
+    setVal('companyRole', companyRole);
+    setVal('phone', data.phone);
+
+    // ページ2
+    setVal('topic', data.topic);
+    if (data.notes) {
+      const sm = data.notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
+      if (sm) { document.getElementById('summary').value = sm[1].trim(); updateCharCount(); }
+      const tm = data.notes.match(/【交通手段】([^\n]+)/);
+      if (tm) triggerRadio('transport', tm[1].trim());
+      const pm = data.notes.match(/【単会で準備】([^\n]+)/);
+      if (pm) pm[1].split('・').forEach(v => triggerCheck('prepare', v.trim()));
+    }
+    if (data.lodging) triggerRadio('lodging', data.lodging === '不要' ? '不要' : '要');
+    if (data.lodging !== '不要' && data.notes) {
+      const rm = data.notes.match(/【禁煙ルーム】([^／\n]+)/);
+      if (rm) triggerRadio('room', rm[1].trim());
+      const pkm = data.notes.match(/【お迎え】([^\n]+)/);
+      if (pkm) triggerRadio('pickup', pkm[1].trim());
+    }
+    if (data.material_url) triggerRadio('material', 'あり');
+    if (data.print_required) {
+      const pr = data.print_required;
+      const prVal = (pr === 'あり' || pr.startsWith('要')) ? '要（単会で印刷）' : '不要（持参）';
+      triggerRadio('print', prVal);
+    }
+
+    // ページ3 (領収証・写真利用範囲)
+    if (data.notes) {
+      const rm  = data.notes.match(/【領収証宛名】([^\n]+)/);
+      if (rm)  triggerRadio('receiptType', rm[1].trim());
+      const zm  = data.notes.match(/【領収証郵便番号】([^\n]+)/);
+      if (zm)  setVal('zipcode', zm[1].trim());
+      const am  = data.notes.match(/【領収証住所】([^\n]+)/);
+      if (am)  setVal('address', am[1].trim());
+      const pum = data.notes.match(/【顔写真の使用範囲】([^\n]+)/);
+      if (pum) triggerRadio('photoUse', pum[1].trim());
+    }
+
+    const infoBox = document.querySelector('#page1 .info-box');
+    if (infoBox) infoBox.innerHTML = '🔄 以前の回答内容を読み込みました。変更が必要な箇所のみご修正のうえ、再度送信してください。';
+    if (data.material_url) {
+      const photoLabel = document.querySelector('#f-photo label');
+      if (photoLabel) {
+        const req = photoLabel.querySelector('.req');
+        if (req) req.remove();
+        photoLabel.insertAdjacentHTML('beforeend', '<span class="hint">（写真登録済み。変更する場合のみ選択）</span>');
+      }
+    }
+  } catch (e) {
+    const infoBox = document.querySelector('#page1 .info-box');
+    if (infoBox) infoBox.innerHTML = '⚠ 以前のデータの読み込みに失敗しました。新規入力として送信してください。';
+  }
+}
 
 // 郵便番号から住所を自動入力
 async function lookupZip() {
@@ -479,23 +569,6 @@ async function lookupZip() {
 }
 
 // 住所から郵便番号を検索
-async function lookupZipByAddress() {
-  const addr = prompt('調べたい住所を入力してください\n（例：埼玉県川口市元郷）');
-  if (!addr) return;
-  try {
-    const res = await fetch(`https://zipcoda.net/api?address=${encodeURIComponent(addr)}`);
-    const j   = await res.json();
-    if (j.items && j.items.length) {
-      const list = j.items.slice(0,5).map(x => `〒${x.zipcode}  ${x.address}`).join('\n');
-      alert('検索結果（上位5件）:\n\n' + list + '\n\n該当の郵便番号を入力してください');
-    } else {
-      alert('該当する郵便番号が見つかりませんでした');
-    }
-  } catch(e) {
-    alert('検索に失敗しました。郵便局公式サイトをご利用ください');
-  }
-}
-
 // ページ遷移
 function goPage(n) {
   if (n === 2 && !validatePage1()) return;
@@ -533,10 +606,10 @@ function requiredRadio(name, errId, wrapperId) {
 
 function validatePage1() {
   let ok = true;
-  ok = required('speakerKana','f-kana')   && ok;
-  ok = required('company',    'f-company')&& ok;
-  ok = required('role',       'f-role')   && ok;
-  ok = required('phone',      'f-phone')  && ok;
+  ok = required('speakerKana','f-kana')       && ok;
+  ok = required('company',    'f-company')    && ok;
+  ok = required('companyRole','f-companyRole')&& ok;
+  ok = required('phone',      'f-phone')      && ok;
   return ok;
 }
 
@@ -566,12 +639,13 @@ function validatePage2() {
 function validatePage3() {
   let ok = true;
 
-  // 顔写真アップロード必須
+  // 顔写真アップロード（更新時は既存写真があれば省略可）
   const photoFile = document.getElementById('photoFile').files[0];
+  const hasExistingPhoto = speakerId && existingData?.material_url;
   const pe = document.getElementById('photo-error');
   const pf = document.getElementById('f-photo');
-  if (!photoFile) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
-  else            { pe.style.display='none';  pf.classList.remove('has-error'); }
+  if (!photoFile && !hasExistingPhoto) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
+  else                                 { pe.style.display='none';  pf.classList.remove('has-error'); }
 
   ok = requiredRadio('receiptType','receipt-error', 'f-receipt')  && ok;
   ok = required('address','f-address') && ok;
@@ -612,6 +686,13 @@ document.querySelectorAll('.radio-item input').forEach(inp => {
   });
 });
 
+// チェックボックスのスタイル更新
+document.querySelectorAll('.check-item input').forEach(inp => {
+  inp.addEventListener('change', () => {
+    inp.closest('.check-item')?.classList.toggle('selected', inp.checked);
+  });
+});
+
 // ファイル選択時のUI更新
 function onFileSelect(type) {
   const input = document.getElementById(type + 'File');
@@ -634,7 +715,9 @@ function onFileSelect(type) {
     e.preventDefault(); el.classList.remove('dragover');
     const type = id.replace('-drop','');
     const fileInput = document.getElementById(type + 'File');
-    fileInput.files = e.dataTransfer.files;
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    fileInput.files = dt.files;
     onFileSelect(type);
   });
 });
@@ -674,37 +757,81 @@ async function compressImage(file, maxKB = 700) {
   });
 }
 
-// ファイル名生成ルール
-//   写真   : 名前_単会名_講話日.jpg
-//   資料01 : 資料01_名前_単会名_講話日.ext
-//   資料02 : 資料02_名前_単会名_講話日.ext
+// ひらがな／カタカナ → ローマ字（Supabase Storage キーはASCIIのみ対応のため）
+const KANA_ROMAJI = {
+  'きゃ':'kya','きゅ':'kyu','きょ':'kyo','しゃ':'sha','しゅ':'shu','しょ':'sho',
+  'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+  'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','みゃ':'mya','みゅ':'myu','みょ':'myo',
+  'りゃ':'rya','りゅ':'ryu','りょ':'ryo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+  'じゃ':'ja','じゅ':'ju','じょ':'jo','びゃ':'bya','びゅ':'byu','びょ':'byo',
+  'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo','ぢゃ':'ja','ぢゅ':'ju','ぢょ':'jo',
+  'あ':'a','い':'i','う':'u','え':'e','お':'o',
+  'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+  'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+  'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+  'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+  'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+  'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+  'や':'ya','ゆ':'yu','よ':'yo',
+  'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+  'わ':'wa','を':'o','ん':'n',
+  'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+  'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+  'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
+  'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+  'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+  'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o',
+};
+function kanaToRomaji(str) {
+  if (!str) return '';
+  // カタカナ→ひらがな、空白・記号除去
+  let s = str.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60))
+             .replace(/[\s　ー・]/g, '');
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const two = s.substr(i, 2);
+    if (KANA_ROMAJI[two]) { out += KANA_ROMAJI[two]; i++; continue; }
+    if (s[i] === 'っ') { const n = KANA_ROMAJI[s.substr(i+1,2)] || KANA_ROMAJI[s[i+1]] || ''; out += n[0] || ''; continue; }
+    out += KANA_ROMAJI[s[i]] ?? '';
+  }
+  return out.toLowerCase();
+}
+
+// 格納パス生成ルール
+//   単会ID / 開催日(YYYYMMDD) / 講師名(ローマ字) / {種別}.ext
 function buildFileName(type, ext, speakerName, unit, date) {
-  const d = date ? date.replace(/-/g, '') : 'nodate'; // 20260506
-  const n = (speakerName || '').replace(/\s/g, '');
-  const u = (unit || '').replace(/\s/g, '');
-  if (type === '顔写真') return `${n}_${u}_${d}.jpg`;
-  // 資料01 / 資料02 どちらにも対応
-  return `${type}_${n}_${u}_${d}.${ext}`;
+  const d = date ? date.replace(/-/g, '') : String(Date.now());
+  const kana = document.getElementById('speakerKana')?.value.trim() || '';
+  // 講師名：ふりがな→ローマ字。空なら名前のASCII部、それも無ければタイムスタンプ
+  const name = kanaToRomaji(kana)
+    || (speakerName || '').replace(/[^\x21-\x7E]/g, '').replace(/\s/g, '').toLowerCase()
+    || String(Date.now());
+  const ch = (chapterId || 'unknown').replace(/[^\x21-\x7E]/g, '');
+  const typeKey = type === '顔写真' ? 'photo' : type === '資料01' ? 'doc1' : 'doc2';
+  const fileExt = type === '顔写真' ? 'jpg' : ext;
+  return `${ch}/${d}/${name}/${typeKey}.${fileExt}`;
 }
 
 // Supabase Storageへのアップロード
-async function uploadToStorage(file, speakerName, type) {
+// type: ファイル種別名（ファイル名に使用）'顔写真'|'資料01'|'資料02'
+// idPrefix: DOM要素のIDプレフィックス 'photo'|'material'|'material2'
+async function uploadToStorage(file, speakerName, type, idPrefix) {
   const isImage = file.type.startsWith('image/');
   const unit    = document.getElementById('speakerUnit')?.value.trim() || urlUnit;
   const date    = urlDate;
-  const progressBar = document.getElementById(type + '-progress-bar');
-  const progressEl  = document.getElementById(type + '-progress');
-  const label       = document.getElementById(type + '-label');
-  progressEl.style.display = 'block';
-  progressBar.style.width = '20%';
+  const progressBar = idPrefix ? document.getElementById(idPrefix + '-progress-bar') : null;
+  const progressEl  = idPrefix ? document.getElementById(idPrefix + '-progress') : null;
+  const label       = idPrefix ? document.getElementById(idPrefix + '-label') : null;
+  if (progressEl) progressEl.style.display = 'block';
+  if (progressBar) progressBar.style.width = '20%';
 
   let uploadFile = file;
   if (isImage) {
-    label.textContent = '🔄 圧縮中...';
+    if (label) label.textContent = '🔄 圧縮中...';
     uploadFile = await compressImage(file, 700);
     const sizeMB = (uploadFile.size / 1024 / 1024).toFixed(2);
-    label.textContent = `✓ 圧縮完了（${sizeMB} MB）`;
-    progressBar.style.width = '50%';
+    if (label) label.textContent = `✓ 圧縮完了（${sizeMB} MB）`;
+    if (progressBar) progressBar.style.width = '50%';
   }
 
   const ext      = isImage ? 'jpg' : file.name.split('.').pop();
@@ -712,9 +839,110 @@ async function uploadToStorage(file, speakerName, type) {
   const { error } = await db.storage.from('speaker-files').upload(fileName, uploadFile, { upsert: true });
   if (error) throw new Error('アップロード失敗: ' + error.message);
 
-  progressBar.style.width = '100%';
+  if (progressBar) progressBar.style.width = '100%';
   const { data } = db.storage.from('speaker-files').getPublicUrl(fileName);
   return data.publicUrl;
+}
+
+// スタッフが手入力したメモ部分だけを抽出（構造化タグ行を除去）
+function extractStaffNotes(notes) {
+  if (!notes) return '';
+  return notes
+    .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
+    .replace(/【[^】]+】[^\n]*/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// 講師依頼確認書メールを自動で開く（宛先：講師＋南部地区事務局）
+const NANBU_MAIL = 'nanbugoudou.jimu@gmail.com';
+
+function openConfirmationMail(payload, extraUrls) {
+  const val   = id   => document.getElementById(id)?.value.trim() || '';
+  const radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+  const checks= name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(x=>x.value).join('・');
+  const fmtD  = d => { if (!d) return '未定'; const dt = new Date(d + 'T00:00:00'); return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日（${"日月火水木金土"[dt.getDay()]}）`; };
+
+  const seminarLabel = SEMINAR_LABELS[payload.seminar_type] || payload.seminar_type || 'セミナー';
+  let dateLine = fmtD(payload.seminar_date);
+  if (payload.seminar_type === 'kiso' && payload.seminar_date) {
+    const d2 = new Date(payload.seminar_date + 'T00:00:00');
+    d2.setDate(d2.getDate() + 1);
+    const ms = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+    dateLine = `${fmtD(payload.seminar_date)}【基礎講座】\n　　　　${fmtD(ms)}【モーニングセミナー】`;
+  }
+
+  const lodging = radio('lodging');
+  const lines = [
+    '━━━━━━━━━━━━━━━━━━━━',
+    '　　　　　講師依頼確認書',
+    '━━━━━━━━━━━━━━━━━━━━',
+    '',
+    '講師依頼フォームへご入力頂きありがとうございました。',
+    '後日、講師依頼確認書を改めてお送りさせていただきます。',
+    '',
+    '【① 講師情報】',
+    `　お名前　　　：${payload.speaker_name || ''} 様`,
+    `　ふりがな　　：${payload.speaker_kana || ''}`,
+    `　所属法人会　：${payload.speaker_unit || ''}`,
+    `　法人会役職　：${payload.role || ''}`,
+    `　勤務先　　　：${payload.company || ''}`,
+    `　勤務先役職　：${payload.company_role || ''}`,
+    `　連絡先TEL　 ：${payload.phone || ''}`,
+    `　メール　　　：${payload.email || ''}`,
+    '',
+    '【② 開催情報】',
+    `　セミナー種別：${seminarLabel}`,
+    `　開催日　　　：${dateLine}`,
+    `　テーマ　　　：${payload.topic || ''}`,
+    '',
+    '【③ 内容要約】',
+    `${val('summary') || '（未記入）'}`,
+    '',
+    '【④ 交通・準備】',
+    `　交通手段　　：${radio('transport') || '未回答'}`,
+    `　資料印刷　　：${payload.print_required || '不要'}`,
+    `　単会で準備　：${checks('prepare') || 'なし'}`,
+    '',
+    '【⑤ 宿泊】',
+    `　前泊　　　　：${lodging || '不要'}`,
+    lodging === '要' ? `　お部屋　　　：${radio('room') || '未回答'}` : '',
+    lodging === '要' ? `　お迎え　　　：${radio('pickup') || '未回答'}` : '',
+    `　領収証宛名　：${radio('receiptType') || ''}`,
+    val('zipcode') ? `　郵便番号　　：${val('zipcode')}` : '',
+    val('address') ? `　住所　　　　：${val('address')}` : '',
+    '',
+    '【⑥ 顔写真・資料】',
+    `　顔写真　　　：${payload.material_url ? '受領済' : '未受領'}`,
+    `　講話資料　　：${(extraUrls && extraUrls.length) ? '受領済' : '未受領'}`,
+    `　使用範囲　　：${radio('photoUse') || '未回答'}`,
+    '',
+    '━━━━━━━━━━━━━━━━━━━━',
+    '内容に相違がございましたら、本メールにご返信ください。',
+    '',
+    '倫理法人会 南部地区合同事務局',
+    NANBU_MAIL,
+    '━━━━━━━━━━━━━━━━━━━━',
+  ].filter(l => l !== '');
+
+  const to      = payload.email || NANBU_MAIL;
+  const cc      = payload.email ? NANBU_MAIL : '';
+  const subject = `【講師依頼確認書】${fmtD(payload.seminar_date)} ${seminarLabel} ${payload.speaker_name || ''}様`;
+  const href    = `mailto:${to}?${cc ? 'cc=' + encodeURIComponent(cc) + '&' : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
+
+  const a = document.createElement('a');
+  a.href = href;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  // 完了画面に再送ボタンを表示（自動オープンがブロックされた場合のフォールバック）
+  const doneMsg = document.querySelector('.done-msg');
+  if (doneMsg) {
+    doneMsg.insertAdjacentHTML('afterbegin',
+      `<a href="${href.replace(/"/g, '&quot;')}" style="display:inline-block;background:#1B5E20;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-weight:800;margin-bottom:14px;">📧 確認書メールを開く</a><br>` +
+      `<span style="font-size:13px;color:#78909C;">確認書を講師ご本人と事務局へ送付できます。<br>メール画面が開かない場合は上のボタンを押してください。</span><br><br>`);
+  }
 }
 
 // 送信
@@ -749,17 +977,20 @@ async function submitForm() {
     speaker_unit: urlUnit,
     phone:   val('phone'),
     email:   urlEmail,
-    company: val('company'),
-    role:    [urlEthics, val('role')].filter(Boolean).join('・'),
-    topic:   val('topic'),
+    company:      val('company'),
+    company_role: val('companyRole'),
+    role:         urlEthics || '',
+    topic:        val('topic'),
     notes:   notesLines,
     lodging: radio('lodging'),
     print_required: radio('print') || '不要',
     seminar_type: urlType || 'ms',
     seminar_date: urlDate || null,
-    status:       'pending',
-    request_date: new Date().toISOString().slice(0, 10),
   };
+  if (!speakerId) {
+    payload.status = 'pending';
+    payload.request_date = new Date().toISOString().slice(0, 10);
+  }
 
   try {
     // ファイルアップロード処理（顔写真は必須、資料は任意）
@@ -769,32 +1000,49 @@ async function submitForm() {
     const material2File = document.getElementById('material2File').files[0];
 
     if (photoFile) {
-      const url = await uploadToStorage(photoFile, speakerName, '顔写真');
+      const url = await uploadToStorage(photoFile, speakerName, '顔写真', 'photo');
       payload.material_url  = url;
       payload.material_name = '顔写真';
+    } else if (speakerId && existingData?.material_url) {
+      payload.material_url  = existingData.material_url;
+      payload.material_name = existingData.material_name || '顔写真';
     }
     const extraUrls = [];
     if (materialFile) {
-      const url = await uploadToStorage(materialFile, speakerName, '資料01');
+      const url = await uploadToStorage(materialFile, speakerName, '資料01', 'material');
       extraUrls.push('【資料01】' + url);
     }
     if (material2File) {
-      const url = await uploadToStorage(material2File, speakerName, '資料02');
+      const url = await uploadToStorage(material2File, speakerName, '資料02', 'material2');
       extraUrls.push('【資料02】' + url);
     }
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
 
     if (speakerId) {
-      await db.from('speakers').update(payload).eq('id', speakerId);
+      payload.status = 'confirmed';
+      const staffNotes = extractStaffNotes(existingData?.notes || '');
+      if (staffNotes) payload.notes += '\n\n' + staffNotes;
+      const { error } = await db.from('speakers').update(payload).eq('id', speakerId);
+      if (error) throw new Error(error.message);
     } else {
       payload.id = 's' + Date.now();
-      await db.from('speakers').insert(payload);
+      const { error } = await db.from('speakers').insert(payload);
+      if (error) throw new Error(error.message);
     }
     document.getElementById('loadingOverlay').classList.remove('show');
     document.querySelectorAll('#page1,#page2,#page3').forEach(el => el.classList.remove('active'));
     document.getElementById('done').classList.add('active');
     document.getElementById('progLabel').textContent = '完了';
     ['prog1','prog2','prog3'].forEach(id => document.getElementById(id).className = 'progress-step done');
+    const doneTitle = document.querySelector('.done-title');
+    const doneMsg = document.querySelector('.done-msg');
+    if (doneTitle) {
+      doneTitle.textContent = urlName ? `${urlName} 様、${speakerId ? '更新' : '送信'}ありがとうございました` : (speakerId ? '更新が完了しました' : '送信が完了しました');
+    }
+    if (doneMsg && speakerId) {
+      doneMsg.innerHTML = '情報を更新しました。<br>引き続きご不明な点がございましたらご連絡ください。<br><br><strong>倫理法人会 南部地区合同事務局</strong><br><a href="mailto:nanbugoudou.jimu@gmail.com" style="color:#1565C0;">nanbugoudou.jimu@gmail.com</a>';
+    }
+    try { openConfirmationMail(payload, extraUrls); } catch (mailErr) { console.error('確認書メール起動に失敗', mailErr); }
   } catch (e) {
     document.getElementById('loadingOverlay').classList.remove('show');
     btn.disabled = false;

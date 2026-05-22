@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, memo } from 'react';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 
-export default function EmailModal({ speaker: sp, onClose, onDone }) {
+export default memo(function EmailModal({ speaker: sp, onClose, onDone }) {
   const ch = getChapter(sp.chapterId);
   const [mailType, setMailType] = useState("request");
   const [freeSubject, setFreeSubject] = useState("");
   const [freeBody,    setFreeBody]    = useState("");
 
-  const d = new Date(sp.seminarDate); d.setDate(d.getDate() - 14);
-  const matDL = d.toISOString().slice(0, 10);
+  const matDL = useMemo(() => {
+    if (!sp.seminarDate) return '';
+    const [y, m, d] = sp.seminarDate.split('-').map(Number);
+    const dt = new Date(y, m - 1, d - 14);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }, [sp.seminarDate]);
 
-  const TEMPLATES = {
+  const TEMPLATES = useMemo(() => ({
     request: {
       label: "📋 講師依頼確認",
       subject: `【${ch.name}単会 モーニングセミナー】講師依頼のご確認`,
@@ -61,25 +65,109 @@ ${sp.speakerName}様の貴重なお話は、参加者一同にとって大変心
 ${ch.name}単会 担当
 ━━━━━━━━━━━━━━━━━`,
     },
+    material: {
+      label: "📎 資料・写真の催促",
+      subject: `【${ch.name}単会 MS】顔写真・講話資料のご送付のお願い`,
+      body:
+`${sp.speakerName} 様
+
+いつもお世話になっております。${ch.name}単会 事務局です。
+
+${formatDate(sp.seminarDate)}（${ch.time}）にご登壇いただきますが、現在下記の資料がまだ届いておりません。
+
+【ご送付をお願いしたい資料】
+□ 顔写真（データ形式：JPG/PNG、合同チラシ掲載に使用）
+□ 当日のレジュメ・資料ファイル（あれば）
+□ 講話タイトル（未決定の場合はお知らせください）
+
+お手数ですが、 ${matDL} までに下記メールアドレスへご送付いただけますようお願いいたします。
+
+Mail：nanbugoudou.jimu@gmail.com
+
+何かご不明な点がございましたら、お気軽にご連絡ください。
+引き続きどうぞよろしくお願いいたします。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区合同事務局
+━━━━━━━━━━━━━━━━━`,
+    },
+    reminder: {
+      label: "🔔 前日リマインダー",
+      subject: `【${ch.name}単会 モーニングセミナー】明日のご講話について`,
+      body:
+`${sp.speakerName} 様
+
+明日、${ch.name}単会 モーニングセミナーにてご講話をいただきます。
+どうぞよろしくお願いいたします。
+
+【開催日時】${formatDate(sp.seminarDate)}　${ch.time}
+【会　　場】${ch.venue}
+【住　　所】${ch.address || ch.venue}
+
+開始の15分前（5:45頃）にお越しいただけますと幸いです。
+ご不明な点がございましたら、お気軽にご連絡ください。
+
+お忙しいところ恐れ入りますが、明日のご登壇をどうぞよろしくお願いいたします。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区事務局
+${ch.name}単会 担当
+━━━━━━━━━━━━━━━━━`,
+    },
+    promo: {
+      label: "📣 講話の宣伝・ご案内",
+      subject: `【${ch.name}単会MS】${formatDate(sp.seminarDate)} ${sp.speakerName}様 ご講話のご案内`,
+      body:
+`各位
+
+いつもお世話になっております。${ch.name}単会 事務局です。
+
+このたびのモーニングセミナーにて、${sp.company ? `${sp.company}${sp.companyRole ? `にて${sp.companyRole}として` : "にて"}ご活躍中の` : ""}${sp.speakerName}様にご講話をいただきます。${[sp.speakerUnit, sp.role].filter(Boolean).join("　") ? `\n（所属：${[sp.speakerUnit, sp.role].filter(Boolean).join("　")}）` : ""}
+
+━━━━━━━━━━━━━━━━━
+　演題「${sp.topic}」
+━━━━━━━━━━━━━━━━━
+
+${sp.company
+  ? `${sp.company}での豊富なご経験に裏打ちされた「${sp.topic}」のお話は、経営・リーダーシップ・人材育成、そして日々の生き方に直結する学びにあふれています。`
+  : `「${sp.topic}」をテーマに、実践に活きる示唆に富んだお話を伺えます。`}
+明日からの仕事と人生に活かせるヒントが満載の、またとない機会です。
+
+【開催日時】${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
+【会　　場】${ch.venue}
+【住　　所】${ch.address || ch.venue}
+
+会員の皆様はもちろん、ご友人・お知り合いの経営者の方もお誘い合わせの上、ぜひご参加ください。早朝のひとときが一日の活力となります。
+
+皆様のご参加を心よりお待ちしております。
+
+━━━━━━━━━━━━━━━━━
+倫理法人会 南部地区事務局
+${ch.name}単会 担当
+━━━━━━━━━━━━━━━━━`,
+    },
     free: {
       label: "✏️ フリーメール",
       subject: "",
       body: "",
     },
-  };
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, ch.name, ch.venue, ch.dayName, ch.address, ch.time, matDL]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
   const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
 
   return (
-    <div style={OV} onClick={onClose}>
-      <div style={{ ...MOD, maxWidth:580 }} onClick={e => e.stopPropagation()}>
+    <div style={OV} onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-label="メール送信" style={{ ...MOD, maxWidth:580 }} onClick={e => e.stopPropagation()}>
         <div style={MH}>📧 メール送信</div>
 
-        <div style={{ background:"#E3F2FD", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
+        <div style={{ background: sp.email ? "#E3F2FD" : "#FFEBEE", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
           <div style={{ fontSize:11, color:"#546E7A" }}>送信先</div>
-          <div style={{ fontWeight:700, fontSize:14, color:"#1565C0" }}>{sp.email}</div>
+          {sp.email
+            ? <div style={{ fontWeight:700, fontSize:14, color:"#1565C0" }}>{sp.email}</div>
+            : <div style={{ fontWeight:700, fontSize:13, color:"#B71C1C" }}>⚠ メールアドレスが未登録です</div>
+          }
           <div style={{ fontSize:11, color:"#546E7A", marginTop:2 }}>{sp.speakerName}　{formatDate(sp.seminarDate)}</div>
         </div>
 
@@ -101,11 +189,11 @@ ${ch.name}単会 担当
         }
 
         <div style={{ display:"flex", gap:8, marginTop:14 }}>
-          <button style={{ ...BP, flex:1 }} onClick={() => { window.open(`mailto:${sp.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
+          <button style={{ ...BP, flex:1, opacity: sp.email ? 1 : .4, cursor: sp.email ? "pointer" : "not-allowed" }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
           <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${subject}\n\n${body}`).catch(() => {}); onDone(); }}>📋 コピーして手動送信</button>
           <button style={BC} onClick={onClose}>閉じる</button>
         </div>
       </div>
     </div>
   );
-}
+});

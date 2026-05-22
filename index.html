@@ -3,11 +3,52 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>南部地区5単会タスク管理</title>
+    <meta name="description" content="倫理法人会 南部地区合同事務局 — 講師管理・タスク管理・チラシデータ管理" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="theme-color" content="#1A3A6B" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="南部タスク管理" />
+    <link rel="apple-touch-icon" href="/rinri-nanbu/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/rinri-nanbu/favicon.svg" />
+    <link rel="manifest" href="/rinri-nanbu/manifest.json" />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background: #F0F2F5; color: #263238; overscroll-behavior: none; }
+      button, a, label, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+      .hover-row:hover td { background: #F8FAFC !important; transition: background .1s; }
+      button { transition: opacity .15s, box-shadow .15s; }
+      button:hover:not(:disabled) { opacity: .88; }
+      button:active:not(:disabled) { opacity: .75; }
+      select, input, textarea { outline: none; font-family: inherit; }
+      select:focus, input:focus, textarea:focus { border-color: #1A3A6B !important; box-shadow: 0 0 0 2px rgba(26,58,107,.1); }
+      button:focus-visible { outline: 2px solid #64B5F6; outline-offset: 2px; }
+      html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #F5F5F5; }
+      ::-webkit-scrollbar-thumb { background: #CFD8DC; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #90A4AE; }
+      @media (max-width: 600px) { main { padding: 10px !important; } }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      nav::-webkit-scrollbar { display: none; }
+      .sp-print-only { display: none; }
+      @media print {
+        .no-print { display: none !important; }
+        .sp-screen-main { display: none !important; }
+        .sp-print-only { display: block !important; }
+        body { background: white !important; }
+        main { padding: 8px !important; max-width: 100% !important; }
+        #print-doc { box-shadow: none !important; border: none !important; max-width: 100% !important; padding: 20px 24px !important; margin: 0 !important; }
+        [role="alert"], [role="status"], [role="banner"] { display: none !important; }
+        * { box-shadow: none !important; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <noscript><div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#B71C1C;font-size:14px;text-align:center;padding:24px">JavaScriptを有効にしてください。このアプリの動作に必要です。</div></noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

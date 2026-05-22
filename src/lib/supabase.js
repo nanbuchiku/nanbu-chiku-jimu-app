@@ -9,7 +9,7 @@ export const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 export const fromDB = r => ({
   id: r.id, chapterId: r.chapter_id, seminarType: r.seminar_type,
   speakerName: r.speaker_name, speakerKana: r.speaker_kana, speakerUnit: r.speaker_unit,
-  company: r.company, role: r.role, seminarDate: r.seminar_date, topic: r.topic,
+  company: r.company, role: r.role, companyRole: r.company_role, seminarDate: r.seminar_date, topic: r.topic,
   status: r.status, phone: r.phone, email: r.email, requestDate: r.request_date,
   notes: r.notes, venue: r.venue, lineNotified: r.line_notified,
   materialUrl: r.material_url, materialName: r.material_name,
@@ -21,7 +21,7 @@ export const fromDB = r => ({
 export const toDB = o => ({
   id: o.id, chapter_id: o.chapterId, district_id: DISTRICT_ID,
   seminar_type: o.seminarType, speaker_name: o.speakerName, speaker_kana: o.speakerKana,
-  speaker_unit: o.speakerUnit, company: o.company, role: o.role,
+  speaker_unit: o.speakerUnit, company: o.company, role: o.role, company_role: o.companyRole,
   seminar_date: o.seminarDate, topic: o.topic, status: o.status,
   phone: o.phone, email: o.email, request_date: o.requestDate, notes: o.notes,
   venue: o.venue, line_notified: o.lineNotified, material_url: o.materialUrl,
