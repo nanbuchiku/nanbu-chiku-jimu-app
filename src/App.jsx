@@ -18,32 +18,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
 import LoginPage from './components/LoginPage';
 
-// ── 認証ラッパー（App本体と分離することでHooksルール違反を防ぐ）──
-export default function AppWrapper() {
-  const [session,     setSession]     = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  useEffect(() => {
-    db.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthLoading(false);
-    });
-    const { data: { subscription } } = db.auth.onAuthStateChange((_e, session) => {
-      setSession(session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (authLoading) return (
-    <div style={{ minHeight:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F0F2F5' }}>
-      <div style={{ fontSize:16, color:'#90A4AE', fontWeight:600 }}>読み込み中...</div>
-    </div>
-  );
-  if (!session) return <LoginPage />;
-  return <App />;
-}
-
-function App() {
+export default function App() {
   const [tab, setTabRaw] = useState(() => {
     try {
       const hash = window.location.hash.slice(1);
