@@ -85,9 +85,9 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
         {/* Header */}
         <div style={{ ...MH, marginBottom:10, position:'relative', paddingRight:36 }}>
           📎 <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayName}</span>
-          {speaker?.speakerName && <span style={{ fontSize:11, fontWeight:400, color:'#90A4AE', whiteSpace:'nowrap' }}>{speaker.speakerName}</span>}
+          {speaker?.speakerName && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:'#90A4AE', whiteSpace:'nowrap' }}>{speaker.speakerName}</span>}
           <button onClick={onClose} aria-label="閉じる"
-            style={{ position:'absolute', top:-4, right:-4, width:32, height:32, borderRadius:'50%', border:'none', background:'#ECEFF1', color:'#37474F', fontSize:18, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+            style={{ position:'absolute', top:-4, right:-4, width:32, height:32, borderRadius:'50%', border:'none', background:'#ECEFF1', color:'#37474F', fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
             ×
           </button>
         </div>
@@ -102,16 +102,16 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
               style={{ width:'100%', height:440, border:'none', borderRadius:8 }} />
           ) : (
             <div style={{ textAlign:'center', color:'#90A4AE', padding:48 }}>
-              <div style={{ fontSize:56, lineHeight:1 }}>📄</div>
-              <div style={{ fontSize:14, marginTop:14, color:'#CFD8DC' }}>{displayName}</div>
-              <div style={{ fontSize:11, marginTop:6 }}>このファイル形式はプレビューできません</div>
+              <div style={{ fontSize:"clamp(20px,3vw,28px)", lineHeight:1 }}>📄</div>
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", marginTop:14, color:'#CFD8DC' }}>{displayName}</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", marginTop:6 }}>このファイル形式はプレビューできません</div>
             </div>
           )}
         </div>
 
         {/* Drive Toast */}
         {driveToast && (
-          <div style={{ background:'#E8F5E9', border:'1px solid #A5D6A7', borderRadius:6, padding:'7px 12px', fontSize:11, color:'#2E7D32', marginBottom:10, lineHeight:1.6 }}>
+          <div style={{ background:'#E8F5E9', border:'1px solid #A5D6A7', borderRadius:6, padding:'7px 12px', fontSize:"clamp(12px,1.4vw,14px)", color:'#2E7D32', marginBottom:10, lineHeight:1.6 }}>
             ✅ ファイルをダウンロードしました。<br />
             Googleドライブ（新規 → ファイルのアップロード）からアップロードしてください。
           </div>
@@ -147,14 +147,14 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
 
         {/* 事務局メール宛先表示 */}
         {speaker && JIMU.email && (
-          <div style={{ fontSize:10, color:'#78909C', marginBottom:8, padding:'5px 9px', background:'#FFF3E0', borderRadius:4, lineHeight:1.6 }}>
+          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:'#78909C', marginBottom:8, padding:'5px 9px', background:'#FFF3E0', borderRadius:4, lineHeight:1.6 }}>
             <div>📮 To：{JIMU.email}</div>
             {JIMU.cc && <div>📋 CC：{JIMU.cc}</div>}
           </div>
         )}
 
         <button onClick={onClose}
-          style={{ width:'100%', background:'#37474F', color:'#fff', border:'none', borderRadius:8, padding:'12px', fontSize:14, fontWeight:700, cursor:'pointer' }}>
+          style={{ width:'100%', background:'#37474F', color:'#fff', border:'none', borderRadius:8, padding:'12px', fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, cursor:'pointer' }}>
           ✕ 閉じる
         </button>
       </div>

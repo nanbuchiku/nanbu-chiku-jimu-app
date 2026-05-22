@@ -163,29 +163,29 @@ ${ch.name}単会 担当
         <div style={MH}>📧 メール送信</div>
 
         <div style={{ background: sp.email ? "#E3F2FD" : "#FFEBEE", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
-          <div style={{ fontSize:11, color:"#546E7A" }}>送信先</div>
+          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>送信先</div>
           {sp.email
-            ? <div style={{ fontWeight:700, fontSize:14, color:"#1565C0" }}>{sp.email}</div>
-            : <div style={{ fontWeight:700, fontSize:13, color:"#B71C1C" }}>⚠ メールアドレスが未登録です</div>
+            ? <div style={{ fontWeight:700, fontSize:"clamp(13px,1.8vw,16px)", color:"#1565C0" }}>{sp.email}</div>
+            : <div style={{ fontWeight:700, fontSize:"clamp(13px,1.8vw,16px)", color:"#B71C1C" }}>⚠ メールアドレスが未登録です</div>
           }
-          <div style={{ fontSize:11, color:"#546E7A", marginTop:2 }}>{sp.speakerName}　{formatDate(sp.seminarDate)}</div>
+          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A", marginTop:2 }}>{sp.speakerName}　{formatDate(sp.seminarDate)}</div>
         </div>
 
-        <div style={{ fontSize:11, color:"#78909C", marginBottom:4, fontWeight:600 }}>メールの種類</div>
-        <select style={{ ...INP, width:"100%", marginBottom:12, fontSize:12 }} value={mailType} onChange={e => setMailType(e.target.value)}>
+        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>メールの種類</div>
+        <select style={{ ...INP, width:"100%", marginBottom:12, fontSize:"clamp(12px,1.4vw,14px)" }} value={mailType} onChange={e => setMailType(e.target.value)}>
           {Object.entries(TEMPLATES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
 
-        <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
+        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
         {isFree
           ? <input style={{ ...INP, width:"100%", marginBottom:10 }} placeholder="件名を入力..." value={freeSubject} onChange={e => setFreeSubject(e.target.value)} />
-          : <div style={{ fontSize:12, background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{subject}</div>
+          : <div style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{subject}</div>
         }
 
-        <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>本文</div>
+        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>本文</div>
         {isFree
-          ? <textarea style={{ ...INP, width:"100%", minHeight:180, resize:"vertical", fontSize:11, lineHeight:1.8 }} placeholder="本文を入力..." value={freeBody} onChange={e => setFreeBody(e.target.value)} />
-          : <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:220, overflowY:"auto" }}>{body}</pre>
+          ? <textarea style={{ ...INP, width:"100%", minHeight:180, resize:"vertical", fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8 }} placeholder="本文を入力..." value={freeBody} onChange={e => setFreeBody(e.target.value)} />
+          : <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:220, overflowY:"auto" }}>{body}</pre>
         }
 
         <div style={{ display:"flex", gap:8, marginTop:14 }}>

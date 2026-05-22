@@ -415,8 +415,8 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       {/* ── Print-only table ─────────────────────────────── */}
       <div className="sp-print-only">
         <div style={{ marginBottom:10, borderBottom:"2px solid #1A3A6B", paddingBottom:8 }}>
-          <div style={{ fontSize:18, fontWeight:700, color:"#1A3A6B" }}>倫理法人会 南部地区 講師一覧</div>
-          <div style={{ fontSize:11, color:"#546E7A", marginTop:3 }}>
+          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B" }}>倫理法人会 南部地区 講師一覧</div>
+          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A", marginTop:3 }}>
             出力日: {new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric' })}
             {filterCh !== "all" && `　単会: ${CHAPTERS.find(c=>c.id===filterCh)?.name}`}
             {filterSt !== "all" && `　ステータス: ${STATUS[filterSt]?.label}`}
@@ -424,7 +424,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             　{filtered.length}件
           </div>
         </div>
-        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"clamp(12px,1.4vw,14px)" }}>
           <thead>
             <tr style={{ background:"#ECEFF1" }}>
               {["開催日","単会","講師名","所属法人会・役職／勤務先","テーマ","ステータス","資料","前泊","メモ"].map(h => (
@@ -440,7 +440,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", whiteSpace:"nowrap" }}>{sp.seminarDate}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontWeight:700, color: ch.color }}>{ch.name}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontWeight:600 }}>{sp.speakerName}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontSize:11 }}>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontSize:"clamp(12px,1.4vw,14px)" }}>
                     {[sp.speakerUnit, sp.role].filter(Boolean).join("　")}
                     {(sp.company || sp.companyRole) && <div style={{ color:"#78909C" }}>{[sp.company, sp.companyRole].filter(Boolean).join("　")}</div>}
                   </td>
@@ -448,13 +448,13 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{STATUS[sp.status]?.label || sp.status}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{[sp.materialUrl && "写真", extractMaterialLinks(sp.notes).length && "資料"].filter(Boolean).join("・") || "未受領"}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.lodging || "不要"}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", maxWidth:120, fontSize:10 }}>{extractStaffNotes(sp.notes)}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", maxWidth:120, fontSize:"clamp(12px,1.4vw,14px)" }}>{extractStaffNotes(sp.notes)}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div style={{ marginTop:10, fontSize:10, color:"#90A4AE", textAlign:"right" }}>倫理法人会 南部地区合同事務局</div>
+        <div style={{ marginTop:10, fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", textAlign:"right" }}>倫理法人会 南部地区合同事務局</div>
       </div>
 
       {/* ── Notes modal ─────────────────────────────── */}
