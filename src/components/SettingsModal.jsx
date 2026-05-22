@@ -164,7 +164,7 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           <Row label="単会担当者名">
             <Inp value={form.contactPerson} onChange={v => set('contactPerson', v)} placeholder={activeCh.staff || '例: 山田 太郎'} />
           </Row>
-          <Row label="担当者電話">
+          <Row label="担当者連絡先">
             <Inp value={form.contactTel} onChange={v => set('contactTel', v)} placeholder="例: 090-0000-0000" />
           </Row>
           <Row label="単会メールアドレス">
