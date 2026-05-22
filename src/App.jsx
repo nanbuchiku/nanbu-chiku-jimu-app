@@ -178,12 +178,18 @@ export default function App() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const { data, error } = await db.storage.from('speaker-files').download('settings/chapter_settings.json');
-      if (error || !data) return;
-      const text = await data.text();
-      const settings = JSON.parse(text);
-      setChSettings(settings);
-      try { localStorage.setItem('chapterSettings', JSON.stringify(settings)); } catch {}
+      const { data, error } = await db.from('chapter_settings').select('chapter_id, settings');
+      if (error || !data || data.length === 0) return;
+      const merged = {};
+      CHAPTERS.forEach(ch => {
+        const row = data.find(r => r.chapter_id === ch.id);
+        merged[ch.id] = {
+          ...(DEFAULT_CHAPTER_SETTINGS[ch.id] || {}),
+          ...(row?.settings || {}),
+        };
+      });
+      setChSettings(merged);
+      try { localStorage.setItem('chapterSettings', JSON.stringify(merged)); } catch {}
     } catch {}
   }, []);
 
@@ -193,7 +199,14 @@ export default function App() {
       const next = { ...chapterSettings, [chapterId]: data };
       setChSettings(next);
       try { localStorage.setItem('chapterSettings', JSON.stringify(next)); } catch {}
+      const { error } = await db.from('chapter_settings').upsert(
+        { chapter_id: chapterId, settings: data, updated_at: new Date().toISOString() },
+        { onConflict: 'chapter_id' }
+      );
+      if (error) throw error;
       showToast("設定を保存しました ✓");
+    } catch (e) {
+      showToast("⚠ 設定の保存に失敗しました: " + (e?.message || ""));
     } finally {
       setSettingsSaving(false);
     }
