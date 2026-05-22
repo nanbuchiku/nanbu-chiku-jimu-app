@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { DISTRICT_ID } from '../constants';
 
-const SUPABASE_URL = 'https://euxssgbhbnmnxyzeehea.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_y3S-bGIi1TaJIh73_r9syA_ZvoTseeU';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY;
 
 export const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
