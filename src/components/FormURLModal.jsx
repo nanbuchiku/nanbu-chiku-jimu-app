@@ -20,7 +20,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast 
   const ch = getChapter(isNew ? form.chapterId : sp.chapterId);
 
   const formUrl = useMemo(() => {
-    const BASE = 'https://hosina0447-ctrl.github.io/rinri-nanbu/form.html';
+    const BASE = 'https://nanbuchiku.github.io/nanbu-chiku-jimu-app/form.html';
     const params = new URLSearchParams({
       id:     sp.id || '',
       name:   (isNew ? form.speakerName : sp.speakerName)  || '',
