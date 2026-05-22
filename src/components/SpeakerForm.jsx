@@ -133,6 +133,11 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
               ) : (
                 <input disabled={saving} autoFocus={k === "speakerName"} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
               )}
+              {k === "seminarType" && form.seminarType === "kiso" && (
+                <div style={{ marginTop:5, background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 10px", fontSize:10, color:"#2E7D32", fontWeight:600 }}>
+                  ⓘ 基礎講座の講師依頼は、「基礎講座」を選ぶとMS分も同時に作成されます。
+                </div>
+              )}
               {k === "seminarDate" && form.seminarType === "kiso" && form.seminarDate && (() => {
                 const d = new Date(form.seminarDate + 'T00:00:00');
                 d.setDate(d.getDate() + 1);
