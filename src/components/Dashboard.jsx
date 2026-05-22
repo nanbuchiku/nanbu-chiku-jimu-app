@@ -168,7 +168,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
   }).filter(s => s.total > 0), [tasks]);
 
   const stats = useMemo(() => [
-    { label:"今週の開催",  val: thisWeek.length,                                      sub:"/5単会", color:"#1A3A6B", action: () => setTab("calendar") },
     { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
     { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
     { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A", action: () => setTab("tasks") },
@@ -306,6 +305,90 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         </div>
       )}
 
+      {/* 講師依頼フォームを作成 - 全幅 */}
+      <div style={{ marginBottom:12, background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(18px,2.5vw,24px)", flexShrink:0 }}>📝</div>
+          <div>
+            <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
+          </div>
+          <div style={{ marginLeft:"auto", fontSize:"clamp(18px,2.5vw,24px)", color:"#7E57C2" }}>›</div>
+        </div>
+      </div>
+
+      {/* ホテル予約管理 - 全幅 */}
+      <div style={{ marginBottom:12, ...CARD, padding:"10px 13px", borderLeft:"4px solid #00838F" }}>
+        <div onClick={toggleHotel} role="button" tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleHotel(); } }}
+          style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none", marginBottom: hotelOpen ? 8 : 0 }}>
+          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#00838F", display:"flex", alignItems:"center", gap:6 }}>
+            <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", transition:"transform .15s", transform: hotelOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+            🏨 ホテル予約管理
+            {hotelNeeded.length > 0 && (
+              <span style={{ fontWeight:400, color:"#546E7A", marginLeft:2 }}>{hotelNeeded.length}件</span>
+            )}
+          </div>
+          {hotelNeeded.length > 0 && (() => {
+            const pending = hotelNeeded.filter(sp => !HOTEL_ITEMS.every(it => (sp.speakerChecks || {})[it.id])).length;
+            return pending > 0
+              ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#FFCDD2", color:"#B71C1C", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>未対応 {pending}件</span>
+              : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#C8E6C9", color:"#2E7D32", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>✓ 全完了</span>;
+          })()}
+        </div>
+        {hotelOpen && (
+          <>
+            <a href="https://www.toyoko-inn.com/search/detail/00324/" target="_blank" rel="noopener noreferrer"
+              style={{ display:"flex", alignItems:"center", gap:8, background:"#E0F7FA", border:"2px solid #00ACC1", borderRadius:8, padding:"8px 12px", marginBottom:10, textDecoration:"none", color:"#006064", fontWeight:700, fontSize:"clamp(14px,2vw,18px)" }}>
+              <span style={{ fontSize:"clamp(18px,2.5vw,24px)" }}>🏨</span>
+              <span>東横イン志木東口</span>
+              <span style={{ marginLeft:"auto", fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", background:"#B2EBF2", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>予約サイトを開く →</span>
+            </a>
+            {hotelNeeded.length === 0 ? (
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
+            ) : (
+              hotelNeeded.map((sp, idx) => {
+                const ch = getChapter(sp.chapterId);
+                const checks = sp.speakerChecks || {};
+                const allDone = HOTEL_ITEMS.every(it => checks[it.id]);
+                const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
+                return (
+                  <div key={sp.id} style={{ marginBottom: idx < hotelNeeded.length - 1 ? 10 : 0, paddingBottom: idx < hotelNeeded.length - 1 ? 10 : 0, borderBottom: idx < hotelNeeded.length - 1 ? "1px solid #E0F7FA" : "none" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:4 }}>
+                      <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, background: ch.color, color:"#fff", padding:"1px 6px", borderRadius:10 }}>{ch.short || ch.name}</span>
+                      <span style={{ fontWeight:700, fontSize:"clamp(14px,2vw,18px)" }}>{sp.speakerName}</span>
+                      {allDone
+                        ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color:"#2E7D32", fontWeight:700 }}>✓完了</span>
+                        : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color: daysUntil <= 7 ? "#B71C1C" : "#78909C", fontWeight:700 }}>あと{daysUntil}日</span>
+                      }
+                    </div>
+                    <div style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#546E7A", marginBottom:5, background:"#E0F7FA", borderRadius:4, padding:"2px 6px", display:"inline-block" }}>{sp.lodging} | {sp.seminarDate}</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                      {HOTEL_ITEMS.map(it => {
+                        const on = !!checks[it.id];
+                        return (
+                          <label key={it.id} style={{ display:"flex", alignItems:"center", gap:8, fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", padding:"6px 8px", borderRadius:6, background: on ? "#E8F5E9" : "transparent", minHeight:40 }}>
+                            <input type="checkbox" checked={on}
+                              onChange={async () => {
+                                const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
+                                const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
+                                if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
+                              }}
+                              style={{ cursor:"pointer", width:22, height:22, flexShrink:0, accentColor:"#2E7D32" }} />
+                            <span>{it.icon}</span>
+                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </>
+        )}
+      </div>
+
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:12, marginBottom:12 }}>
         <div>
           <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>
@@ -395,87 +478,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             </div>
           )}
 
-          <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0, borderLeft:"4px solid #00838F" }}>
-            <div onClick={toggleHotel} role="button" tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleHotel(); } }}
-              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", userSelect:"none", marginBottom: hotelOpen ? 8 : 0 }}>
-              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#00838F", display:"flex", alignItems:"center", gap:6 }}>
-                <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", transition:"transform .15s", transform: hotelOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
-                🏨 ホテル予約管理
-                {hotelNeeded.length > 0 && (
-                  <span style={{ fontWeight:400, color:"#546E7A", marginLeft:2 }}>{hotelNeeded.length}件</span>
-                )}
-              </div>
-              {hotelNeeded.length > 0 && (() => {
-                const pending = hotelNeeded.filter(sp => !HOTEL_ITEMS.every(it => (sp.speakerChecks || {})[it.id])).length;
-                return pending > 0
-                  ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#FFCDD2", color:"#B71C1C", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>未対応 {pending}件</span>
-                  : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#C8E6C9", color:"#2E7D32", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>✓ 全完了</span>;
-              })()}
-            </div>
-            {hotelOpen && (
-              <>
-                <a href="https://www.toyoko-inn.com/search/detail/00324/" target="_blank" rel="noopener noreferrer"
-                  style={{ display:"flex", alignItems:"center", gap:8, background:"#E0F7FA", border:"2px solid #00ACC1", borderRadius:8, padding:"8px 12px", marginBottom:10, textDecoration:"none", color:"#006064", fontWeight:700, fontSize:"clamp(14px,2vw,18px)" }}>
-                  <span style={{ fontSize:"clamp(18px,2.5vw,24px)" }}>🏨</span>
-                  <span>東横イン志木東口</span>
-                  <span style={{ marginLeft:"auto", fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", background:"#B2EBF2", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>予約サイトを開く →</span>
-                </a>
-                {hotelNeeded.length === 0 ? (
-                  <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
-                ) : (
-                  hotelNeeded.map((sp, idx) => {
-                    const ch = getChapter(sp.chapterId);
-                    const checks = sp.speakerChecks || {};
-                    const allDone = HOTEL_ITEMS.every(it => checks[it.id]);
-                    const daysUntil = Math.ceil((parseDate(sp.seminarDate) - today) / 86400000);
-                    return (
-                      <div key={sp.id} style={{ marginBottom: idx < hotelNeeded.length - 1 ? 10 : 0, paddingBottom: idx < hotelNeeded.length - 1 ? 10 : 0, borderBottom: idx < hotelNeeded.length - 1 ? "1px solid #E0F7FA" : "none" }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:4 }}>
-                          <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, background: ch.color, color:"#fff", padding:"1px 6px", borderRadius:10 }}>{ch.short || ch.name}</span>
-                          <span style={{ fontWeight:700, fontSize:"clamp(14px,2vw,18px)" }}>{sp.speakerName}</span>
-                          {allDone
-                            ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color:"#2E7D32", fontWeight:700 }}>✓完了</span>
-                            : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color: daysUntil <= 7 ? "#B71C1C" : "#78909C", fontWeight:700 }}>あと{daysUntil}日</span>
-                          }
-                        </div>
-                        <div style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#546E7A", marginBottom:5, background:"#E0F7FA", borderRadius:4, padding:"2px 6px", display:"inline-block" }}>{sp.lodging} | {sp.seminarDate}</div>
-                        <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                          {HOTEL_ITEMS.map(it => {
-                            const on = !!checks[it.id];
-                            return (
-                              <label key={it.id} style={{ display:"flex", alignItems:"center", gap:8, fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", padding:"6px 8px", borderRadius:6, background: on ? "#E8F5E9" : "transparent", minHeight:40 }}>
-                                <input type="checkbox" checked={on}
-                                  onChange={async () => {
-                                    const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
-                                    const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
-                                    if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
-                                  }}
-                                  style={{ cursor:"pointer", width:22, height:22, flexShrink:0, accentColor:"#2E7D32" }} />
-                                <span>{it.icon}</span>
-                                <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </>
-            )}
-          </div>
-
-          <div style={{ marginTop:12, background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(18px,2.5vw,24px)", flexShrink:0 }}>📝</div>
-              <div>
-                <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
-                <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
-              </div>
-              <div style={{ marginLeft:"auto", fontSize:"clamp(18px,2.5vw,24px)", color:"#7E57C2" }}>›</div>
-            </div>
-          </div>
         </div>
       </div>
 
