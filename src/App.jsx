@@ -18,8 +18,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
 import LoginPage from './components/LoginPage';
 
-export default function App() {
-  // ── 認証セッション管理 ──────────────────────────────
+// ── 認証ラッパー（App本体と分離することでHooksルール違反を防ぐ）──
+export default function AppWrapper() {
   const [session,     setSession]     = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -40,7 +40,10 @@ export default function App() {
     </div>
   );
   if (!session) return <LoginPage />;
-  // ────────────────────────────────────────────────────
+  return <App />;
+}
+
+function App() {
   const [tab, setTabRaw] = useState(() => {
     try {
       const hash = window.location.hash.slice(1);
