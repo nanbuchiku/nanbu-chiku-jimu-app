@@ -64,11 +64,11 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>🏆 タスク完了ランキング</div>
+        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B" }}>🏆 タスク完了ランキング</div>
         <select style={{ ...SEL, marginLeft:"auto" }} value={selMonth} onChange={e => setSelMonth(e.target.value)}>
           {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
-        <button style={{ ...BC, fontSize:11 }} onClick={exportCSV}>📥 CSV</button>
+        <button style={{ ...BC, fontSize:"clamp(12px,1.4vw,14px)" }} onClick={exportCSV}>📥 CSV</button>
       </div>
 
       <div style={{ display:"grid", gap:10, marginBottom:16 }}>
@@ -83,18 +83,18 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
               <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
                 <div style={{ fontSize: i < 3 ? 28 : 18, minWidth:40, textAlign:"center", lineHeight:1 }}>{noData ? "－" : MEDALS[i]}</div>
                 <div style={{ minWidth:90 }}>
-                  <div style={{ fontWeight:800, fontSize:13, color: r.ch.color }}>{r.ch.name}</div>
-                  <div style={{ fontSize:10, color:"#90A4AE" }}>{r.ch.dayName}</div>
+                  <div style={{ fontWeight:800, fontSize:"clamp(13px,1.8vw,16px)", color: r.ch.color }}>{r.ch.name}</div>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE" }}>{r.ch.dayName}</div>
                 </div>
                 <div style={{ flex:1, minWidth:160 }}>
                   {noData ? (
-                    <div style={{ fontSize:11, color:"#B0BEC5" }}>完了タスクなし</div>
+                    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#B0BEC5" }}>完了タスクなし</div>
                   ) : (
                     <div>
                       <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-                        <span style={{ fontSize:20, fontWeight:800, color: isEarly ? "#1B5E20" : "#B71C1C" }}>{isEarly ? "+" : ""}{r.avgDays.toFixed(1)}</span>
-                        <span style={{ fontSize:11, color:"#78909C" }}>日（平均）</span>
-                        <span style={{ fontSize:11, color:"#546E7A", marginLeft:4 }}>{isEarly ? "⬆ 期限より早い" : "⬇ 期限より遅い"}</span>
+                        <span style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:800, color: isEarly ? "#1B5E20" : "#B71C1C" }}>{isEarly ? "+" : ""}{r.avgDays.toFixed(1)}</span>
+                        <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C" }}>日（平均）</span>
+                        <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A", marginLeft:4 }}>{isEarly ? "⬆ 期限より早い" : "⬇ 期限より遅い"}</span>
                       </div>
                       <div style={{ background:"#ECEFF1", borderRadius:4, height:10, overflow:"hidden" }}>
                         <div style={{ height:"100%", borderRadius:4, width:`${barW}%`, background: isEarly ? `linear-gradient(90deg, ${r.ch.color}, ${r.ch.accent})` : "linear-gradient(90deg, #EF5350, #FFCDD2)", transition:"width .4s" }} />
@@ -103,8 +103,8 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
                   )}
                 </div>
                 <div style={{ textAlign:"center", minWidth:60 }}>
-                  <div style={{ fontSize:22, fontWeight:800, color: r.ch.color }}>{r.count}</div>
-                  <div style={{ fontSize:10, color:"#90A4AE" }}>件完了</div>
+                  <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:800, color: r.ch.color }}>{r.count}</div>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE" }}>件完了</div>
                 </div>
               </div>
             </div>
@@ -112,7 +112,7 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
         })}
       </div>
 
-      <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>完了タスク詳細（{months.find(m => m.value === selMonth)?.label}）</div>
+      <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>完了タスク詳細（{months.find(m => m.value === selMonth)?.label}）</div>
       <div style={CARD}>
         <div style={{ overflowX:"auto" }}>
           <table style={TBL}>
@@ -132,9 +132,9 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
                     <tr key={t.id} className="hover-row">
                       <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
                       <td style={{ ...TD, maxWidth:200 }}>{t.title}</td>
-                      <td style={{ ...TD, fontSize:11 }}>{t.dueDate}</td>
-                      <td style={{ ...TD, fontSize:11 }}>{compStr}</td>
-                      <td style={TD}><span style={{ fontWeight:700, fontSize:12, color: days >= 0 ? "#1B5E20" : "#B71C1C" }}>{days >= 0 ? `+${days}日早` : `${Math.abs(days)}日遅`}</span></td>
+                      <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{t.dueDate}</td>
+                      <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{compStr}</td>
+                      <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color: days >= 0 ? "#1B5E20" : "#B71C1C" }}>{days >= 0 ? `+${days}日早` : `${Math.abs(days)}日遅`}</span></td>
                     </tr>
                   );
                 })}
@@ -147,15 +147,15 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
       </div>
       {allTimeStats.some(s => s.count > 0) && (
         <div style={{ marginTop:12 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>累計タスク完了数（全期間）</div>
+          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>累計タスク完了数（全期間）</div>
           <div style={CARD}>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {allTimeStats.filter(s => s.count > 0).map(s => (
                 <div key={s.ch.id} style={{ display:"flex", alignItems:"center", gap:6, background:"#FAFAFA", border:`1px solid ${s.ch.accent}`, borderRadius:8, padding:"7px 12px", minWidth:130 }}>
-                  <span style={{ fontSize:10, fontWeight:700, color:"#fff", background: s.ch.color, padding:"1px 7px", borderRadius:10 }}>{s.ch.short}</span>
+                  <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#fff", background: s.ch.color, padding:"1px 7px", borderRadius:10 }}>{s.ch.short}</span>
                   <div>
-                    <div style={{ fontSize:20, fontWeight:800, color: s.ch.color, lineHeight:1 }}>{s.count}<span style={{ fontSize:10, fontWeight:400, marginLeft:2 }}>件</span></div>
-                    {s.avgDays !== null && <div style={{ fontSize:10, color: s.avgDays >= 0 ? "#2E7D32" : "#B71C1C" }}>{s.avgDays >= 0 ? `+${s.avgDays.toFixed(1)}日` : `${s.avgDays.toFixed(1)}日`}</div>}
+                    <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:800, color: s.ch.color, lineHeight:1 }}>{s.count}<span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, marginLeft:2 }}>件</span></div>
+                    {s.avgDays !== null && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color: s.avgDays >= 0 ? "#2E7D32" : "#B71C1C" }}>{s.avgDays >= 0 ? `+${s.avgDays.toFixed(1)}日` : `${s.avgDays.toFixed(1)}日`}</div>}
                   </div>
                 </div>
               ))}
@@ -163,7 +163,7 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
           </div>
         </div>
       )}
-      <div style={{ padding:"8px 12px", background:"#E3F2FD", borderRadius:6, fontSize:11, color:"#1565C0", marginBottom:12 }}>
+      <div style={{ padding:"8px 12px", background:"#E3F2FD", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#1565C0", marginBottom:12 }}>
         💡 タスク管理タブでチェックを入れると自動でタイムスタンプが記録され、ランキングに反映されます
       </div>
 
@@ -174,20 +174,20 @@ export default memo(function RankingView({ tasks, speakers = [], today }) {
         const maxCount = Math.max(...arts.map(a => a.count), 1);
         return (
           <div>
-            <div style={{ fontSize:13, fontWeight:700, color:"#37474F", marginBottom:7 }}>📖 栞・条の使用回数（全期間）</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>📖 栞・条の使用回数（全期間）</div>
             <div style={{ ...CARD, padding:"12px 14px" }}>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))", gap:6 }}>
                 {arts.map(({ art, count }) => (
                   <div key={art} style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 0" }}>
-                    <span style={{ fontSize:11, fontWeight:700, color:"#37474F", minWidth:52 }}>{art}</span>
+                    <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#37474F", minWidth:52 }}>{art}</span>
                     <div style={{ flex:1, background:"#ECEFF1", borderRadius:3, height:8, overflow:"hidden" }}>
                       <div style={{ height:8, borderRadius:3, width:`${(count/maxCount)*100}%`, background: count === 0 ? "transparent" : count >= 3 ? "#FF8F00" : "#1A3A6B", transition:"width .3s" }} />
                     </div>
-                    <span style={{ fontSize:10, fontWeight:700, minWidth:20, textAlign:"right", color: count === 0 ? "#B0BEC5" : count >= 3 ? "#E65100" : "#546E7A" }}>{count}</span>
+                    <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, minWidth:20, textAlign:"right", color: count === 0 ? "#B0BEC5" : count >= 3 ? "#E65100" : "#546E7A" }}>{count}</span>
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop:8, fontSize:10, color:"#90A4AE", display:"flex", gap:12 }}>
+              <div style={{ marginTop:8, fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", display:"flex", gap:12 }}>
                 <span><span style={{ color:"#B0BEC5", fontWeight:700 }}>0</span> 未使用</span>
                 <span><span style={{ color:"#1A3A6B", fontWeight:700 }}>1-2</span> 使用済</span>
                 <span><span style={{ color:"#E65100", fontWeight:700 }}>3+</span> 要注意（多用）</span>

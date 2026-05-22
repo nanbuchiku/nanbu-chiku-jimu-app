@@ -68,8 +68,8 @@ Mail：nanbugoudou.jimu@gmail.com
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); }, [mailSubject, mailBody, showToast, onClose]);
   const openMail = useCallback(() => { window.open(`mailto:${displayEmail || ''}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`, '_blank'); onClose(); }, [displayEmail, mailSubject, mailBody, onClose]);
 
-  const LB   = { display:"block", fontSize:11, fontWeight:700, color:"#4527A0", marginBottom:3 };
-  const INP2 = { width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:12, background:"#fff" };
+  const LB   = { display:"block", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#4527A0", marginBottom:3 };
+  const INP2 = { width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:"clamp(12px,1.4vw,14px)", background:"#fff" };
 
   return (
     <div style={OV} onClick={onClose} role="presentation">
@@ -78,7 +78,7 @@ Mail：nanbugoudou.jimu@gmail.com
 
         {isNew && !generated && (
           <div style={{ background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:12, padding:"18px 20px", marginTop:12 }}>
-            <div style={{ fontSize:13, fontWeight:800, color:"#4527A0", marginBottom:14 }}>事務局入力項目</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, color:"#4527A0", marginBottom:14 }}>事務局入力項目</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>単会 *</label>
@@ -114,7 +114,7 @@ Mail：nanbugoudou.jimu@gmail.com
               </div>
             </div>
             <button
-              style={{ marginTop:16, width:"100%", background: canGenerate ? "#7E57C2" : "#B0BEC5", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:13, fontWeight:700, cursor: canGenerate ? "pointer" : "not-allowed" }}
+              style={{ marginTop:16, width:"100%", background: canGenerate ? "#7E57C2" : "#B0BEC5", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, cursor: canGenerate ? "pointer" : "not-allowed" }}
               disabled={!canGenerate}
               onClick={() => setGenerated(true)}>
               フォームURLを生成する →
@@ -125,28 +125,28 @@ Mail：nanbugoudou.jimu@gmail.com
         {generated && (
           <div style={{ background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:12, padding:"20px 22px", marginTop:12 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-              <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>📝</div>
+              <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(20px,3vw,28px)", flexShrink:0 }}>📝</div>
               <div>
-                <div style={{ fontSize:16, fontWeight:800, color:"#4527A0" }}>{displayName || '（名前未入力）'} 様への確認フォーム</div>
-                <div style={{ fontSize:12, color:"#7E57C2", marginTop:2 }}>{ch?.name}単会　{displayDate ? formatDate(displayDate) : '日程未定'}</div>
+                <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:800, color:"#4527A0" }}>{displayName || '（名前未入力）'} 様への確認フォーム</div>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#7E57C2", marginTop:2 }}>{ch?.name}単会　{displayDate ? formatDate(displayDate) : '日程未定'}</div>
               </div>
             </div>
             <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", marginBottom:12, border:"1px solid #CE93D8" }}>
-              <div style={{ fontSize:10, color:"#9C27B0", fontWeight:700, marginBottom:4 }}>フォームURL</div>
-              <div style={{ fontSize:11, color:"#37474F", wordBreak:"break-all", lineHeight:1.6 }}>{formUrl}</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#9C27B0", fontWeight:700, marginBottom:4 }}>フォームURL</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", wordBreak:"break-all", lineHeight:1.6 }}>{formUrl}</div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-              <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:12, fontWeight:700, cursor:"pointer" }} onClick={copyUrl}>📋 URLだけコピー</button>
-              <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:12, fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ メールアプリで開く</button>
-              <button style={{ background:"#fff", color:"#4527A0", border:"2px solid #7E57C2", borderRadius:8, padding:"11px", fontSize:12, fontWeight:700, cursor:"pointer", gridColumn:"1/-1" }} onClick={copyMail}>📋 メール文ごとコピー（手動送信）</button>
+              <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={copyUrl}>📋 URLだけコピー</button>
+              <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ メールアプリで開く</button>
+              <button style={{ background:"#fff", color:"#4527A0", border:"2px solid #7E57C2", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", gridColumn:"1/-1" }} onClick={copyMail}>📋 メール文ごとコピー（手動送信）</button>
             </div>
           </div>
         )}
 
         {generated && (
           <div style={{ marginTop:14 }}>
-            <div style={{ fontSize:11, color:"#78909C", fontWeight:700, marginBottom:5 }}>送付メール本文プレビュー</div>
-            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:200, overflowY:"auto", border:"1px solid #E0E0E0" }}>{mailBody}</pre>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:700, marginBottom:5 }}>送付メール本文プレビュー</div>
+            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:200, overflowY:"auto", border:"1px solid #E0E0E0" }}>{mailBody}</pre>
           </div>
         )}
 

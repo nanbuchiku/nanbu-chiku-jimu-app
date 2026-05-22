@@ -551,23 +551,23 @@ ${ch.name}単会事務局`;
       style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding: secondary ? "10px 14px" : "12px 14px", borderRadius:8, border:"none", background: isActive ? "rgba(255,255,255,.18)" : "transparent", color: isActive ? "#fff" : secondary ? "rgba(255,255,255,.52)" : "rgba(255,255,255,.72)", cursor:"pointer", fontWeight: isActive ? 700 : secondary ? 400 : 500, textAlign:"left", fontSize: secondary ? 18 : 20, marginBottom:2, transition:"background .15s" }}>
       <span style={{ fontSize: secondary ? 22 : 26, width:30, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
       <span style={{ flex:1 }}>{t.label}</span>
-      {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:14, fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
+      {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
     </button>
   );
 
   if (loading) return (
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
       <div aria-hidden="true" style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #1A3A6B", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
-      <div style={{ color:"#1A3A6B", fontSize:14, fontWeight:600 }}>データを読み込み中...</div>
+      <div style={{ color:"#1A3A6B", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:600 }}>データを読み込み中...</div>
     </div>
   );
 
   if (loadError) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
-      <div style={{ fontSize:40 }}>⚠️</div>
-      <div style={{ color:"#B71C1C", fontSize:15, fontWeight:700 }}>データの読み込みに失敗しました</div>
-      <div style={{ color:"#78909C", fontSize:12 }}>{loadError}</div>
-      <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontSize:14, cursor:"pointer", fontWeight:600 }} onClick={() => window.location.reload()}>再読み込み</button>
+      <div style={{ fontSize:"clamp(20px,3vw,28px)" }}>⚠️</div>
+      <div style={{ color:"#B71C1C", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700 }}>データの読み込みに失敗しました</div>
+      <div style={{ color:"#78909C", fontSize:"clamp(12px,1.4vw,14px)" }}>{loadError}</div>
+      <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", fontWeight:600 }} onClick={() => window.location.reload()}>再読み込み</button>
     </div>
   );
 
@@ -578,12 +578,12 @@ ${ch.name}単会事務局`;
       {!isMobile && (
         <aside className="no-print" style={{ width:260, background:"linear-gradient(180deg,#0D1B3E 0%,#122B56 55%,#1A3A6B 100%)", display:"flex", flexDirection:"column", height:"100%", flexShrink:0, overflowY:"auto" }}>
           <div style={{ padding:"18px 16px 12px", borderBottom:"1px solid rgba(255,255,255,.1)" }}>
-            <div style={{ fontSize:14, color:"rgba(255,255,255,.55)", letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
-            <div style={{ fontSize:20, fontWeight:700, color:"#fff", marginTop:4, lineHeight:1.4 }}>南部地区5単会<br/>タスク管理</div>
-            <div style={{ fontSize:14, color:"rgba(255,255,255,.5)", marginTop:6 }}>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"rgba(255,255,255,.55)", letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
+            <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:700, color:"#fff", marginTop:4, lineHeight:1.4 }}>南部地区5単会<br/>タスク管理</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"rgba(255,255,255,.5)", marginTop:6 }}>
               {today.toLocaleDateString("ja-JP", { year:"numeric", month:"long", day:"numeric", weekday:"short" })}
             </div>
-            <div style={{ fontSize:13, color:"rgba(255,255,255,.38)", marginTop:2, display:"flex", alignItems:"center", gap:4 }}>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"rgba(255,255,255,.38)", marginTop:2, display:"flex", alignItems:"center", gap:4 }}>
               {lastUpdated && <>更新 {lastUpdated.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" })}</>}
               {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>}
             </div>
@@ -593,22 +593,22 @@ ${ch.name}単会事務局`;
             <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"10px 8px" }} />
             {TABS.filter(t => secondaryTabIds.has(t.id)).map(t => sidebarBtn(t, activeNavId === t.id, true))}
             <button onClick={() => setSettingsOpen(true)}
-              style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding:"10px 14px", borderRadius:8, border:"none", background: settingsOpen ? "rgba(255,255,255,.18)" : "transparent", color: settingsOpen ? "#fff" : "rgba(255,255,255,.52)", cursor:"pointer", fontWeight: settingsOpen ? 700 : 400, textAlign:"left", fontSize:18, marginBottom:2, transition:"background .15s" }}>
-              <span style={{ fontSize:22, width:30, textAlign:"center", flexShrink:0 }}>⚙</span>
+              style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding:"10px 14px", borderRadius:8, border:"none", background: settingsOpen ? "rgba(255,255,255,.18)" : "transparent", color: settingsOpen ? "#fff" : "rgba(255,255,255,.52)", cursor:"pointer", fontWeight: settingsOpen ? 700 : 400, textAlign:"left", fontSize:"clamp(16px,2.4vw,20px)", marginBottom:2, transition:"background .15s" }}>
+              <span style={{ fontSize:"clamp(20px,3vw,28px)", width:30, textAlign:"center", flexShrink:0 }}>⚙</span>
               <span style={{ flex:1 }}>設定</span>
             </button>
           </nav>
           <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.1)" }}>
             <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
               {CHAPTERS.map(ch => (
-                <span key={ch.id} style={{ fontSize:13, background:ch.color, color:"#fff", padding:"3px 8px", borderRadius:8, fontWeight:600 }}>{ch.short}｜{ch.dayName.replace("曜日","")}</span>
+                <span key={ch.id} style={{ fontSize:"clamp(13px,1.8vw,16px)", background:ch.color, color:"#fff", padding:"3px 8px", borderRadius:8, fontWeight:600 }}>{ch.short}｜{ch.dayName.replace("曜日","")}</span>
               ))}
             </div>
             <div style={{ display:"flex", gap:4 }}>
-              <button onClick={() => setShowHelp(h => !h)} title="ショートカット" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:18, cursor:"pointer" }}>?</button>
-              <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:18, cursor:"pointer" }}>📤</button>
-              <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:18, cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
-              <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.18)", border:"1px solid rgba(255,255,255,.35)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:18, cursor:"pointer" }}>⟳</button>
+              <button onClick={() => setShowHelp(h => !h)} title="ショートカット" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>?</button>
+              <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>📤</button>
+              <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
+              <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.18)", border:"1px solid rgba(255,255,255,.35)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
             </div>
           </div>
         </aside>
@@ -621,20 +621,20 @@ ${ch.name}単会事務局`;
           <header className="no-print" style={{ background:"linear-gradient(135deg,#0D1B3E,#1A3A6B)", color:"#fff", padding:"12px 16px 10px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,.2)" }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:11, opacity:.55, letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
-                <div style={{ fontSize:19, fontWeight:700, letterSpacing:"0.02em" }}>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", opacity:.55, letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
+                <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, letterSpacing:"0.02em" }}>
                   {TABS.find(t => t.id === activeNavId)?.label || "南部地区5単会タスク管理"}
                 </div>
               </div>
               <div style={{ display:"flex", gap:8, alignItems:"center", flexShrink:0 }}>
                 {lastUpdated && !refreshing && (
-                  <span style={{ fontSize:11, opacity:.5 }}>
+                  <span style={{ fontSize:"clamp(12px,1.4vw,14px)", opacity:.5 }}>
                     {lastUpdated.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" })}
                   </span>
                 )}
-                {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block", fontSize:16, opacity:.7 }}>⟳</span>}
-                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:16, cursor:"pointer" }}>⟳</button>
-                <button onClick={() => setMobileDrawer(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:18, cursor:"pointer", lineHeight:1 }} aria-label="メニュー">
+                {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block", fontSize:"clamp(16px,2.4vw,20px)", opacity:.7 }}>⟳</span>}
+                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
+                <button onClick={() => setMobileDrawer(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer", lineHeight:1 }} aria-label="メニュー">
                   ☰
                 </button>
               </div>
@@ -643,15 +643,15 @@ ${ch.name}単会事務局`;
         )}
 
         {!isOnline && (
-          <div role="status" style={{ background:"#37474F", color:"#fff", padding:"6px 22px", fontSize:11, fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
+          <div role="status" style={{ background:"#37474F", color:"#fff", padding:"6px 22px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, display:"flex", alignItems:"center", gap:8 }}>
             <span>📡</span>
             <span>オフライン — キャッシュデータを表示しています。保存操作はオンライン復帰後に反映されます。</span>
           </div>
         )}
 
         {todaysSpeakers.length > 0 && (
-          <div role="banner" style={{ background:"linear-gradient(90deg,#B71C1C,#C62828)", color:"#fff", padding:"8px 22px", fontSize:12, fontWeight:700, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
-            <span style={{ fontSize:16 }}>🎤</span>
+          <div role="banner" style={{ background:"linear-gradient(90deg,#B71C1C,#C62828)", color:"#fff", padding:"8px 22px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+            <span style={{ fontSize:"clamp(16px,2.4vw,20px)" }}>🎤</span>
             <span>本日のモーニングセミナー：</span>
             {todaysSpeakers.map(sp => {
               const ch = getChapter(sp.chapterId);
@@ -663,7 +663,7 @@ ${ch.name}単会事務局`;
         {["document","sptasks","tasks","calendar"].includes(tab) && (
           <div className="no-print" style={{ padding:"8px 20px 0" }}>
             <button onClick={() => setTab(["document","sptasks"].includes(tab) ? "speakers" : "dashboard")}
-              style={{ background:"none", border:"none", color:"#1A3A6B", cursor:"pointer", fontSize:12, fontWeight:600, display:"inline-flex", alignItems:"center", gap:4, padding:"4px 0" }}>
+              style={{ background:"none", border:"none", color:"#1A3A6B", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, display:"inline-flex", alignItems:"center", gap:4, padding:"4px 0" }}>
               ← {["document","sptasks"].includes(tab) ? "講師管理" : "ダッシュボード"}へ戻る
             </button>
           </div>
@@ -690,19 +690,19 @@ ${ch.name}単会事務局`;
               const isActive = activeNavId === id;
               return (
                 <button key={id} onClick={() => setTab(id)}
-                  style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: isActive ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:12, fontWeight: isActive ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3, position:"relative" }}>
+                  style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: isActive ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: isActive ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3, position:"relative" }}>
                   {isActive && <span style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:36, height:3, borderRadius:2, background:"#1A3A6B" }} />}
-                  <span style={{ fontSize:24, lineHeight:1 }}>{mobileIcon[id] || t.icon}</span>
+                  <span style={{ fontSize:"clamp(20px,3vw,28px)", lineHeight:1 }}>{mobileIcon[id] || t.icon}</span>
                   <span>{mobileLabel[id] || t.label}</span>
                   {!!t.badge && t.badge > 0 && (
-                    <span style={{ position:"absolute", top:4, right:"50%", transform:"translateX(18px)", background:"#EF5350", color:"#fff", fontSize:11, fontWeight:700, padding:"2px 6px", borderRadius:8, lineHeight:1.2 }}>{t.badge}</span>
+                    <span style={{ position:"absolute", top:4, right:"50%", transform:"translateX(18px)", background:"#EF5350", color:"#fff", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, padding:"2px 6px", borderRadius:8, lineHeight:1.2 }}>{t.badge}</span>
                   )}
                 </button>
               );
             })}
             <button onClick={() => setSettingsOpen(true)}
-              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: settingsOpen ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:12, fontWeight: settingsOpen ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
-              <span style={{ fontSize:24, lineHeight:1 }}>⚙</span>
+              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: settingsOpen ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: settingsOpen ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+              <span style={{ fontSize:"clamp(20px,3vw,28px)", lineHeight:1 }}>⚙</span>
               <span>設定</span>
             </button>
           </nav>
@@ -716,49 +716,49 @@ ${ch.name}単会事務局`;
           <div style={{ position:"fixed", top:0, right:0, bottom:0, width:280, background:"linear-gradient(180deg,#0D1B3E 0%,#1A3A6B 100%)", zIndex:201, display:"flex", flexDirection:"column", boxShadow:"-4px 0 24px rgba(0,0,0,.3)", paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
             <div style={{ padding:"18px 16px 14px", borderBottom:"1px solid rgba(255,255,255,.1)", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
               <div>
-                <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
-                <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginTop:3 }}>南部地区5単会<br/>タスク管理</div>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"rgba(255,255,255,.5)", letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
+                <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#fff", marginTop:3 }}>南部地区5単会<br/>タスク管理</div>
               </div>
-              <button onClick={() => setMobileDrawer(false)} style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:8, color:"#fff", padding:"8px 12px", fontSize:18, cursor:"pointer" }}>✕</button>
+              <button onClick={() => setMobileDrawer(false)} style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:8, color:"#fff", padding:"8px 12px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>✕</button>
             </div>
             <nav style={{ flex:1, overflowY:"auto", padding:"10px 8px" }}>
               {TABS.filter(t => primaryTabIds.has(t.id)).map(t => (
                 <button key={t.id} onClick={() => { setTab(t.id); setMobileDrawer(false); }}
-                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"13px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.75)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 500, textAlign:"left", fontSize:17, marginBottom:2 }}>
-                  <span style={{ fontSize:22, width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
+                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"13px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.75)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 500, textAlign:"left", fontSize:"clamp(16px,2.4vw,20px)", marginBottom:2 }}>
+                  <span style={{ fontSize:"clamp(20px,3vw,28px)", width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
                   <span style={{ flex:1 }}>{t.label}</span>
-                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:13, fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
+                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
                 </button>
               ))}
               <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"8px 8px" }} />
               {TABS.filter(t => secondaryTabIds.has(t.id)).map(t => (
                 <button key={t.id} onClick={() => { setTab(t.id); setMobileDrawer(false); }}
-                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.55)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 400, textAlign:"left", fontSize:16, marginBottom:2 }}>
-                  <span style={{ fontSize:20, width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
+                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.55)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 400, textAlign:"left", fontSize:"clamp(16px,2.4vw,20px)", marginBottom:2 }}>
+                  <span style={{ fontSize:"clamp(20px,3vw,28px)", width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
                   <span style={{ flex:1 }}>{t.label}</span>
-                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:13, fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
+                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
                 </button>
               ))}
               {TABS.filter(t => !primaryTabIds.has(t.id) && !secondaryTabIds.has(t.id) && !mobileTabIds.includes(t.id)).map(t => (
                 <button key={t.id} onClick={() => { setTab(t.id); setMobileDrawer(false); }}
-                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.55)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 400, textAlign:"left", fontSize:16, marginBottom:2 }}>
-                  <span style={{ fontSize:20, width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
+                  style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.55)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 400, textAlign:"left", fontSize:"clamp(16px,2.4vw,20px)", marginBottom:2 }}>
+                  <span style={{ fontSize:"clamp(20px,3vw,28px)", width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
                   <span style={{ flex:1 }}>{t.label}</span>
-                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:13, fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
+                  {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
                 </button>
               ))}
               <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"8px 8px" }} />
               <button onClick={() => { setSettingsOpen(true); setMobileDrawer(false); }}
-                style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background:"transparent", color:"rgba(255,255,255,.55)", cursor:"pointer", fontWeight:400, textAlign:"left", fontSize:16, marginBottom:2 }}>
-                <span style={{ fontSize:20, width:28, textAlign:"center", flexShrink:0 }}>⚙</span>
+                style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background:"transparent", color:"rgba(255,255,255,.55)", cursor:"pointer", fontWeight:400, textAlign:"left", fontSize:"clamp(16px,2.4vw,20px)", marginBottom:2 }}>
+                <span style={{ fontSize:"clamp(20px,3vw,28px)", width:28, textAlign:"center", flexShrink:0 }}>⚙</span>
                 <span>設定</span>
               </button>
             </nav>
             <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.1)" }}>
               <div style={{ display:"flex", gap:4 }}>
-                <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:18, cursor:"pointer" }}>⟳</button>
-                <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:18, cursor:"pointer" }}>📤</button>
-                <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:18, cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value=""; setMobileDrawer(false); }} /></label>
+                <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
+                <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>📤</button>
+                <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value=""; setMobileDrawer(false); }} /></label>
               </div>
             </div>
           </div>
@@ -773,8 +773,8 @@ ${ch.name}単会事務局`;
       {lineModal && (
         <div style={OV} onClick={() => setLineModal(null)} role="presentation">
           <div role="dialog" aria-modal="true" aria-label="LINEグループ送信プレビュー" style={{ ...MOD, maxWidth:480 }} onClick={e => e.stopPropagation()}>
-            <div style={MH}><span style={{ color:"#06C755", fontSize:20 }}>●</span> LINEグループ送信プレビュー</div>
-            <pre style={{ background:"#E8F5E9", borderRadius:8, padding:12, fontSize:12, lineHeight:1.8, whiteSpace:"pre-wrap", border:"1px solid #A5D6A7", marginTop:10, maxHeight:260, overflowY:"auto" }}>{lineModal.msg}</pre>
+            <div style={MH}><span style={{ color:"#06C755", fontSize:"clamp(20px,3vw,28px)" }}>●</span> LINEグループ送信プレビュー</div>
+            <pre style={{ background:"#E8F5E9", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", border:"1px solid #A5D6A7", marginTop:10, maxHeight:260, overflowY:"auto" }}>{lineModal.msg}</pre>
             <div style={{ display:"flex", gap:8, marginTop:14 }}>
               <button style={BG} onClick={() => {
                 navigator.clipboard?.writeText(lineModal.msg).catch(() => {});
@@ -791,8 +791,8 @@ ${ch.name}単会事務局`;
       {confirm && (
         <div style={OV} role="presentation">
           <div role="alertdialog" aria-modal="true" aria-label="確認" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth:360, width:"100%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
-            <div style={{ fontSize:15, fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>⚠ 確認</div>
-            <div style={{ fontSize:13, color:"#37474F", marginBottom:20 }}>{confirm.msg}</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>⚠ 確認</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#37474F", marginBottom:20 }}>{confirm.msg}</div>
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={BC} onClick={() => setConfirm(null)}>キャンセル</button>
               <button style={{ ...BP, background: confirm.okLabel ? "#1A3A6B" : "#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>{confirm.okLabel || "削除する"}</button>
@@ -821,13 +821,13 @@ ${ch.name}単会事務局`;
                   ["4", "完了ランキングへ"],
                 ].map(([key, desc]) => (
                   <tr key={key} style={{ borderBottom:"1px solid #F5F5F5" }}>
-                    <td style={{ padding:"8px 12px", width:200 }}><kbd style={{ background:"#ECEFF1", border:"1px solid #CFD8DC", borderRadius:4, padding:"2px 8px", fontSize:12, fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
-                    <td style={{ padding:"8px 12px", fontSize:12, color:"#546E7A" }}>{desc}</td>
+                    <td style={{ padding:"8px 12px", width:200 }}><kbd style={{ background:"#ECEFF1", border:"1px solid #CFD8DC", borderRadius:4, padding:"2px 8px", fontSize:"clamp(12px,1.4vw,14px)", fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
+                    <td style={{ padding:"8px 12px", fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>{desc}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div style={{ marginTop:14, padding:"10px 14px", background:"#E3F2FD", borderRadius:8, fontSize:11, color:"#1565C0" }}>
+            <div style={{ marginTop:14, padding:"10px 14px", background:"#E3F2FD", borderRadius:8, fontSize:"clamp(12px,1.4vw,14px)", color:"#1565C0" }}>
               <div style={{ fontWeight:700, marginBottom:6 }}>💡 機能ヒント</div>
               <ul style={{ lineHeight:1.8, paddingLeft:16 }}>
                 <li>ダッシュボードの 📝 事務局メモ で電話メモや申し送りを記録できます（自分のブラウザのみ）</li>
@@ -845,12 +845,12 @@ ${ch.name}単会事務局`;
         const isInfo = toast.type === "info";
         const bg = isErr ? "#B71C1C" : isInfo ? "#1565C0" : "#1B5E20";
         return (
-          <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom: isMobile ? 92 : 20, left:"50%", transform:"translateX(-50%)", background: bg, color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:12, fontWeight:600, boxShadow:"0 4px 16px rgba(0,0,0,.35)", zIndex:2000, display:"flex", alignItems:"center", gap:10, maxWidth:"90vw", whiteSpace:"nowrap" }}>
+          <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom: isMobile ? 92 : 20, left:"50%", transform:"translateX(-50%)", background: bg, color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, boxShadow:"0 4px 16px rgba(0,0,0,.35)", zIndex:2000, display:"flex", alignItems:"center", gap:10, maxWidth:"90vw", whiteSpace:"nowrap" }}>
             <span>{toast.msg}</span>
             {toast.action && (
-              <button onClick={() => { setToast(null); toast.action(); }} style={{ background:"rgba(255,255,255,.25)", border:"none", borderRadius:4, color:"#fff", padding:"3px 9px", fontSize:11, cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>{toast.actionLabel || "取り消し"}</button>
+              <button onClick={() => { setToast(null); toast.action(); }} style={{ background:"rgba(255,255,255,.25)", border:"none", borderRadius:4, color:"#fff", padding:"3px 9px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>{toast.actionLabel || "取り消し"}</button>
             )}
-            <button onClick={() => setToast(null)} aria-label="閉じる" style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:4, color:"#fff", padding:"3px 7px", fontSize:11, cursor:"pointer", fontWeight:700, marginLeft:2 }}>✕</button>
+            <button onClick={() => setToast(null)} aria-label="閉じる" style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:4, color:"#fff", padding:"3px 7px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:700, marginLeft:2 }}>✕</button>
           </div>
         );
       })()}

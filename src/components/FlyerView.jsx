@@ -115,7 +115,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>📋 チラシ流し込みデータ管理</div>
+        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B" }}>📋 チラシ流し込みデータ管理</div>
         <select style={{ ...SEL, fontWeight:700 }} value={selMonth} onChange={e => setSelMonth(e.target.value)}>
           {months.map(m => <option key={m.value} value={m.value}>{m.isPast ? "📁 " : ""}{m.label}　{m.readyCount === 5 ? "✓完成" : `${m.readyCount}/5`}</option>)}
         </select>
@@ -128,34 +128,34 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
       <div style={{ ...CARD, marginBottom:12, borderLeft:`5px solid ${deadlineColor}`, padding:"10px 16px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
           <div>
-            <div style={{ fontSize:11, color:"#546E7A" }}>データ送付締め切り</div>
-            <div style={{ fontSize:16, fontWeight:800, color: deadlineColor }}>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>データ送付締め切り</div>
+            <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:800, color: deadlineColor }}>
               {year}年{month}月10日
-              <span style={{ fontSize:13, marginLeft:10 }}>
+              <span style={{ fontSize:"clamp(13px,1.8vw,16px)", marginLeft:10 }}>
                 {daysLeft < 0 ? `⚠ ${Math.abs(daysLeft)}日超過` : daysLeft === 0 ? "⚠ 本日締め切り！" : `残り ${daysLeft}日`}
               </span>
             </div>
           </div>
           <div style={{ marginLeft:"auto", textAlign:"center" }}>
-            <div style={{ fontSize:24, fontWeight:800, color: readyCount === 5 ? "#1B5E20" : "#E65100" }}>{readyCount}<span style={{ fontSize:13, fontWeight:400 }}>/5単会</span></div>
-            <div style={{ fontSize:11, color:"#78909C" }}>データ揃い</div>
+            <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:800, color: readyCount === 5 ? "#1B5E20" : "#E65100" }}>{readyCount}<span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400 }}>/5単会</span></div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C" }}>データ揃い</div>
           </div>
         </div>
       </div>
 
       <div style={{ ...CARD, padding:"10px 14px", marginBottom:8 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:8 }}>単会別 データ完成度</div>
+        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:8 }}>単会別 データ完成度</div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))", gap:8 }}>
           {completeness.map(({ ch, pct, missing }) => (
             <div key={ch.id} style={{ padding:"7px 10px", background: pct === 100 ? "#E8F5E9" : pct === 0 ? "#FFEBEE" : "#FFF8E1", borderRadius:7, border:`1px solid ${pct === 100 ? "#A5D6A7" : pct === 0 ? "#EF9A9A" : "#FFE082"}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                <span style={{ fontSize:10, fontWeight:700, color: ch.color }}>{ch.name}</span>
-                <span style={{ fontSize:12, fontWeight:800, color: pct === 100 ? "#2E7D32" : pct === 0 ? "#B71C1C" : "#E65100" }}>{pct}%</span>
+                <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color }}>{ch.name}</span>
+                <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:800, color: pct === 100 ? "#2E7D32" : pct === 0 ? "#B71C1C" : "#E65100" }}>{pct}%</span>
               </div>
               <div style={{ background:"#E0E0E0", borderRadius:3, height:5, overflow:"hidden" }}>
                 <div style={{ height:5, borderRadius:3, width:`${pct}%`, background: pct === 100 ? "#2E7D32" : pct === 0 ? "#B71C1C" : "#FF8F00", transition:"width .4s" }} />
               </div>
-              {missing.length > 0 && <div style={{ fontSize:9, color:"#78909C", marginTop:3 }}>未：{missing.join("・")}</div>}
+              {missing.length > 0 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginTop:3 }}>未：{missing.join("・")}</div>}
             </div>
           ))}
         </div>
@@ -177,29 +177,29 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                 const none = <span style={{ color:"#B0BEC5" }}>―</span>;
                 return (
                   <tr key={ch.id} className="hover-row">
-                    <td style={TD}><span style={PILL(ch)}>{ch.name}</span><div style={{ fontSize:10, color:"#90A4AE", marginTop:2 }}>{ch.dayName}</div></td>
-                    <td style={{ ...TD, fontSize:12, whiteSpace:"nowrap" }}>{sp?.seminarDate || none}</td>
-                    <td style={{ ...TD, fontWeight:700, fontSize:12, whiteSpace:"nowrap" }}>{sp?.speakerName || <span style={{ color:"#B71C1C" }}>未登録</span>}</td>
-                    <td style={{ ...TD, fontSize:11, color:"#546E7A" }}>{sp?.speakerKana || none}</td>
-                    <td style={{ ...TD, fontSize:11 }}>{sp?.speakerUnit || none}</td>
-                    <td style={{ ...TD, fontSize:11 }}>{sp?.role || none}</td>
-                    <td style={{ ...TD, fontSize:11 }}>{sp?.company || none}</td>
-                    <td style={{ ...TD, fontSize:11 }}>{sp?.companyRole || none}</td>
-                    <td style={{ ...TD, fontSize:11, maxWidth:160 }}>{sp?.topic ? `「${sp.topic}」` : none}</td>
+                    <td style={TD}><span style={PILL(ch)}>{ch.name}</span><div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", marginTop:2 }}>{ch.dayName}</div></td>
+                    <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap" }}>{sp?.seminarDate || none}</td>
+                    <td style={{ ...TD, fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap" }}>{sp?.speakerName || <span style={{ color:"#B71C1C" }}>未登録</span>}</td>
+                    <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>{sp?.speakerKana || none}</td>
+                    <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{sp?.speakerUnit || none}</td>
+                    <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{sp?.role || none}</td>
+                    <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{sp?.company || none}</td>
+                    <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{sp?.companyRole || none}</td>
+                    <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)", maxWidth:160 }}>{sp?.topic ? `「${sp.topic}」` : none}</td>
                     <td style={TD}>
                       {sp?.materialUrl ? (
-                        <a href={sp.materialUrl} target="_blank" rel="noreferrer" style={{ fontSize:11, color:"#1565C0", display:"flex", alignItems:"center", gap:6, textDecoration:"none", whiteSpace:"nowrap" }}>
+                        <a href={sp.materialUrl} target="_blank" rel="noreferrer" style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#1565C0", display:"flex", alignItems:"center", gap:6, textDecoration:"none", whiteSpace:"nowrap" }}>
                           {/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/') ? (
                             <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:40, height:40, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
                           ) : null}
                           <span>📁 開く</span>
                         </a>
-                      ) : <span style={{ fontSize:11, color:"#B0BEC5" }}>📭 未設定</span>}
+                      ) : <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#B0BEC5" }}>📭 未設定</span>}
                     </td>
                     <td style={TD}>
-                      <span style={{ fontSize:11, fontWeight:700, color:statusColor, background:statusBg, padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>{statusLabel}</span>
+                      <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:statusColor, background:statusBg, padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>{statusLabel}</span>
                       {partial && (
-                        <div style={{ marginTop:4, fontSize:9, color:"#FF8F00", lineHeight:1.6 }}>
+                        <div style={{ marginTop:4, fontSize:"clamp(12px,1.4vw,14px)", color:"#FF8F00", lineHeight:1.6 }}>
                           {!sp.speakerKana && <div>• ふりがな未入力</div>}
                           {!sp.topic && <div>• テーマ未入力</div>}
                           {!sp.materialUrl && <div>• 顔写真URL未設定</div>}
@@ -208,7 +208,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                     </td>
                     <td style={TD}>
                       {sp && (
-                        <button style={{ fontSize:10, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"3px 8px", cursor:"pointer", color:"#1565C0", fontWeight:700, whiteSpace:"nowrap" }}
+                        <button style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"3px 8px", cursor:"pointer", color:"#1565C0", fontWeight:700, whiteSpace:"nowrap" }}
                           onClick={() => {
                             const lines = [
                               `■ ${ch.name}（${ch.dayName}）`,
@@ -230,8 +230,8 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
         </div>
       </div>
 
-      <div style={{ padding:"10px 14px", background:"#FFF8E1", borderRadius:6, fontSize:11, color:"#E65100", display:"flex", gap:8, alignItems:"flex-start" }}>
-        <span style={{ fontSize:16 }}>💡</span>
+      <div style={{ padding:"10px 14px", background:"#FFF8E1", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#E65100", display:"flex", gap:8, alignItems:"flex-start" }}>
+        <span style={{ fontSize:"clamp(16px,2.4vw,20px)" }}>💡</span>
         <div>
           <strong>顔写真フォルダURLの登録方法</strong>：講師管理タブの「編集」→「講話資料URL」欄にGoogleドライブのフォルダURLを入力してください。<br/>
           <span style={{ color:"#78909C" }}>写真URLが未設定の場合は「別途メール添付」として送付文に記載されます。</span>
@@ -242,12 +242,12 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
         <div style={OV} onClick={() => setShowEmailModal(false)} role="presentation">
           <div role="dialog" aria-modal="true" aria-label="印刷会社へのメール送信" style={{ ...MOD, maxWidth:600 }} onClick={e => e.stopPropagation()}>
             <div style={MH}>📧 印刷会社へのメール送信</div>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>印刷会社のメールアドレス</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>印刷会社のメールアドレス</div>
             <input style={{ ...INP, width:"100%", marginBottom:12 }} placeholder="print@example.com" value={printEmail} onChange={e => savePrintEmail(e.target.value)} />
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
-            <div style={{ fontSize:12, background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{emailSubject}</div>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>本文プレビュー</div>
-            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:11, lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:280, overflowY:"auto", marginBottom:12 }}>{buildEmailBody}</pre>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{emailSubject}</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>本文プレビュー</div>
+            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:280, overflowY:"auto", marginBottom:12 }}>{buildEmailBody}</pre>
             <div style={{ display:"flex", gap:8 }}>
               <button style={{ ...BP, flex:1 }} onClick={() => { window.open(`mailto:${printEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(buildEmailBody)}`, "_blank"); setShowEmailModal(false); showToast("メールアプリを開きました 📧"); }}>✉ メールアプリで開く</button>
               <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${emailSubject}\n\n${buildEmailBody}`).catch(() => {}); setShowEmailModal(false); showToast("メール文をコピーしました 📋"); }}>📋 コピーして送信</button>

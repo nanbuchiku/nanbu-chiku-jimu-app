@@ -125,7 +125,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             { l:"依頼日",      k:"requestDate", t:"date" },
           ].map(({ l, k, t, p, o }) => (
             <div key={k}>
-              <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>{l}</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>{l}</div>
               {t === "select" ? (
                 <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form[k] || ""} onChange={e => set(k, e.target.value)}>
                   {o.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
@@ -134,7 +134,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 <input disabled={saving} autoFocus={k === "speakerName"} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
               )}
               {k === "seminarType" && form.seminarType === "kiso" && (
-                <div style={{ marginTop:5, background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 10px", fontSize:10, color:"#2E7D32", fontWeight:600 }}>
+                <div style={{ marginTop:5, background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 10px", fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:600 }}>
                   ⓘ 基礎講座の講師依頼は、「基礎講座」を選ぶとMS分も同時に作成されます。
                 </div>
               )}
@@ -144,16 +144,16 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 const msStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
                 const dow = ["日","月","火","水","木","金","土"][d.getDay()];
                 return (
-                  <div style={{ marginTop:5, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"4px 10px", fontSize:10, color:"#1565C0", fontWeight:600 }}>
+                  <div style={{ marginTop:5, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"4px 10px", fontSize:"clamp(12px,1.4vw,14px)", color:"#1565C0", fontWeight:600 }}>
                     MS日（翌日）：{msStr}（{dow}）
                   </div>
                 );
               })()}
               {k === "seminarDate" && !form.seminarDate && suggestDates.length > 0 && (
                 <div style={{ marginTop:5, display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
-                  <span style={{ fontSize:9, color:"#90A4AE", fontWeight:600 }}>次回：</span>
+                  <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", fontWeight:600 }}>次回：</span>
                   {suggestDates.map(d => (
-                    <button key={d} type="button" style={{ fontSize:10, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:10, padding:"2px 8px", color:"#1565C0", cursor:"pointer", fontWeight:700 }} onClick={() => set("seminarDate", d)}>{d}</button>
+                    <button key={d} type="button" style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:10, padding:"2px 8px", color:"#1565C0", cursor:"pointer", fontWeight:700 }} onClick={() => set("seminarDate", d)}>{d}</button>
                   ))}
                 </div>
               )}
@@ -161,7 +161,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           ))}
 
           <div>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>前泊・宿泊</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>前泊・宿泊</div>
             <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.lodging || "不要"} onChange={e => set("lodging", e.target.value)}>
               <option value="不要">不要</option>
               <option value="あり（前泊）">あり（前泊）</option>
@@ -169,7 +169,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             </select>
           </div>
           <div>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>資料印刷</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>資料印刷</div>
             <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.printRequired || "不要"} onChange={e => set("printRequired", e.target.value)}>
               <option value="不要">不要（持参 or なし）</option>
               <option value="あり">あり（単会で印刷）</option>
@@ -177,9 +177,9 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           </div>
 
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>
               開催場所
-              {st.venueFixed && <span style={{ fontSize:10, color:"#90A4AE", marginLeft:6 }}>※ 単会マスターから自動取得</span>}
+              {st.venueFixed && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", marginLeft:6 }}>※ 単会マスターから自動取得</span>}
             </div>
             {st.venueFixed ? (
               <div style={{ ...INP, background:"#F5F5F5", color:"#90A4AE", cursor:"not-allowed", display:"flex", alignItems:"center" }}>
@@ -190,27 +190,27 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             )}
           </div>
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>テーマ</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>テーマ</div>
             <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料フォルダURL</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料フォルダURL</div>
             <input disabled={saving} type="url" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="https://drive.google.com/..." value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>資料ファイル名・メモ</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>資料ファイル名・メモ</div>
             <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="例：山田太郎_顔写真.jpg　資料あり" value={form.materialName || ""} onChange={e => set("materialName", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
             <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:54, resize:"vertical", opacity: saving ? .6 : 1 }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
           </div>
 
           <div style={{ gridColumn:"1/-1", borderTop:"2px dashed #E0E0E0", paddingTop:12, marginTop:4 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:"#546E7A", marginBottom:8 }}>📝 講話後メモ（終了後に記入）</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:8 }}>📝 講話後メモ（終了後に記入）</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div>
-                <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>お酒を飲むか</div>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>お酒を飲むか</div>
                 <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.drinksAlcohol || ""} onChange={e => set("drinksAlcohol", e.target.value)}>
                   <option value="">未確認</option>
                   <option value="飲む">飲む</option>
@@ -219,18 +219,18 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 </select>
               </div>
               <div>
-                <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>栞・第何条</div>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>栞・第何条</div>
                 <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.shioriArticle || ""} onChange={e => set("shioriArticle", e.target.value)}>
                   <option value="">未記入</option>
                   {Array.from({length:17},(_,i)=>`第${i+1}条`).map(v=><option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
               <div style={{ gridColumn:"1/-1" }}>
-                <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>講話内容・特記事項・次回への申し送り</div>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>講話内容・特記事項・次回への申し送り</div>
                 <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:80, resize:"vertical", opacity: saving ? .6 : 1 }} placeholder="講話の内容、参加者の反応、次回依頼時の注意点など自由に記入" value={form.postNotes || ""} onChange={e => set("postNotes", e.target.value)} />
               </div>
               {shioriConflict && shioriConflict.length > 0 && (
-                <div style={{ gridColumn:"1/-1", padding:"6px 10px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:11, color:"#E65100" }}>
+                <div style={{ gridColumn:"1/-1", padding:"6px 10px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#E65100" }}>
                   <span style={{ fontWeight:700 }}>⚠ この条は他の講師も使用済み：</span>
                   {shioriConflict.map(sp => { const c = getChapter(sp.chapterId); return <span key={sp.id} style={{ marginLeft:6 }}>{sp.seminarDate} {c.name} {sp.speakerName}</span>; })}
                 </div>
@@ -239,11 +239,11 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           </div>
         </div>
         {pastTalks.length > 0 && (
-          <div style={{ marginTop:10, padding:"8px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+          <div style={{ marginTop:10, padding:"8px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#1565C0" }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:5, flexWrap:"wrap", gap:6 }}>
               <div style={{ fontWeight:700 }}>📚 この講師の過去講話（{pastTalks.length}件）</div>
               {canAutofill && (
-                <button style={{ fontSize:10, background:"#1565C0", color:"#fff", border:"none", borderRadius:8, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}
+                <button style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#1565C0", color:"#fff", border:"none", borderRadius:8, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}
                   onClick={() => setForm(f => ({
                     ...f,
                     speakerKana:  f.speakerKana  || latestPast.speakerKana  || "",
@@ -261,31 +261,31 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             {pastTalks.slice(0, 3).map(sp => {
               const ch = getChapter(sp.chapterId);
               return (
-                <div key={sp.id} style={{ fontSize:11, color:"#37474F", marginBottom:2 }}>
+                <div key={sp.id} style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", marginBottom:2 }}>
                   {sp.seminarDate} ｜ {ch.name} ｜「{sp.topic}」
                 </div>
               );
             })}
-            {pastTalks.length > 3 && <div style={{ fontSize:10, color:"#90A4AE" }}>…他{pastTalks.length - 3}件</div>}
+            {pastTalks.length > 3 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE" }}>…他{pastTalks.length - 3}件</div>}
           </div>
         )}
         {duplicate && (
-          <div style={{ marginTop:10, padding:"8px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:12, color:"#E65100", fontWeight:600 }}>
+          <div style={{ marginTop:10, padding:"8px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#E65100", fontWeight:600 }}>
             ⚠ 同じ単会・開催日の講師が既に登録されています（{duplicate.speakerName}）。続けて登録することもできます。
           </div>
         )}
         {hasDraft && isNew && !initial && (
-          <div style={{ marginTop:8, padding:"6px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:11, color:"#E65100", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ marginTop:8, padding:"6px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#E65100", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <span>📝 前回の入力内容を復元しました</span>
-            <button style={{ background:"none", border:"none", fontSize:10, color:"#90A4AE", cursor:"pointer", textDecoration:"underline" }} onClick={() => { clearDraft(); setForm({ ...BLANK, chapterId: form.chapterId, requestDate: form.requestDate }); }}>クリア</button>
+            <button style={{ background:"none", border:"none", fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", cursor:"pointer", textDecoration:"underline" }} onClick={() => { clearDraft(); setForm({ ...BLANK, chapterId: form.chapterId, requestDate: form.requestDate }); }}>クリア</button>
           </div>
         )}
         {isPastDate && (
-          <div style={{ marginTop:8, padding:"6px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+          <div style={{ marginTop:8, padding:"6px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#1565C0" }}>
             ℹ 過去の日付が入力されています。終了済み講師を記録する場合はそのまま登録できます。
           </div>
         )}
-        {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:12, color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
+        {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
         <div style={{ display:"flex", gap:8, marginTop:10 }}>
           <button style={{ ...BP, opacity: saving ? .6 : 1 }} disabled={saving} onClick={() => {
             if (!form.speakerName) return setErr("講師名は必須です");

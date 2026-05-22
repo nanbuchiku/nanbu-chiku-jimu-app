@@ -25,7 +25,7 @@ const DEFAULTS = ch => ({
 
 function SectionTitle({ children }) {
   return (
-    <div style={{ fontSize:11, fontWeight:700, color:'#546E7A', background:'#ECEFF1',
+    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:'#546E7A', background:'#ECEFF1',
       padding:'5px 10px', borderRadius:4, margin:'12px 0 6px' }}>
       {children}
     </div>
@@ -35,7 +35,7 @@ function SectionTitle({ children }) {
 function Row({ label, children }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-      <div style={{ width:140, fontSize:11, color:'#546E7A', flexShrink:0, textAlign:'right', lineHeight:1.3 }}>
+      <div style={{ width:140, fontSize:"clamp(12px,1.4vw,14px)", color:'#546E7A', flexShrink:0, textAlign:'right', lineHeight:1.3 }}>
         {label}
       </div>
       <div style={{ flex:1 }}>{children}</div>
@@ -47,7 +47,7 @@ function Inp({ value, onChange, placeholder, type }) {
   return (
     <input type={type || 'text'} value={value || ''} placeholder={placeholder || ''}
       onChange={e => onChange(e.target.value)}
-      style={{ ...INP, width:'100%', fontSize:12, boxSizing:'border-box' }} />
+      style={{ ...INP, width:'100%', fontSize:"clamp(12px,1.4vw,14px)", boxSizing:'border-box' }} />
   );
 }
 
@@ -77,7 +77,7 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
           {CHAPTERS.map(ch => (
             <button key={ch.id} onClick={() => setActiveId(ch.id)}
-              style={{ padding:'5px 13px', fontSize:12, fontWeight:700, borderRadius:20, border:'none',
+              style={{ padding:'5px 13px', fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, borderRadius:20, border:'none',
                 cursor:'pointer', transition:'background .15s',
                 background: activeId === ch.id ? ch.color : '#ECEFF1',
                 color:      activeId === ch.id ? '#fff'   : '#546E7A' }}>
@@ -86,7 +86,7 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           ))}
         </div>
 
-        <div style={{ fontSize:12, fontWeight:700, color: activeCh.color, marginBottom:10,
+        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: activeCh.color, marginBottom:10,
           padding:'5px 10px', background: activeCh.light, borderRadius:6 }}>
           {activeCh.name}単会 の設定
         </div>
@@ -129,12 +129,12 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           </Row>
           <Row label={<>倫理経営基礎講座<br />テキスト 第<span style={{fontWeight:700}}>〜</span>講</>}>
             <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-              <span style={{ fontSize:12, color:'#37474F' }}>第</span>
+              <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:'#37474F' }}>第</span>
               <input type="number" min="1" max="20" value={form.kisoTextChapter || ''}
                 onChange={e => set('kisoTextChapter', e.target.value)}
                 placeholder="3"
-                style={{ ...INP, width:60, fontSize:13, fontWeight:700, textAlign:'center' }} />
-              <span style={{ fontSize:12, color:'#37474F' }}>講</span>
+                style={{ ...INP, width:60, fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, textAlign:'center' }} />
+              <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:'#37474F' }}>講</span>
             </div>
           </Row>
 

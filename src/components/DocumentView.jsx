@@ -117,7 +117,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
   return (
     <div>
       <div className="no-print" style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>講師依頼確認書</div>
+        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B" }}>講師依頼確認書</div>
         <select style={{ ...SEL, minWidth:260 }} value={sel} onChange={e => { setSel(e.target.value); setDocSpeaker(speakers.find(x => x.id === e.target.value) || null); }}>
           <option value="">── 講師を選択 ──</option>
           {sortedSpeakers.map(sp => {
@@ -127,12 +127,12 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         </select>
         {recentSpeakers.length > 0 && (
           <div style={{ display:"flex", gap:5, alignItems:"center", flexWrap:"wrap", marginLeft:4 }}>
-            <span style={{ fontSize:10, color:"#90A4AE", fontWeight:600, whiteSpace:"nowrap" }}>最近：</span>
+            <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", fontWeight:600, whiteSpace:"nowrap" }}>最近：</span>
             {recentSpeakers.filter(r => r.id !== sel).slice(0,4).map(r => {
               const rc = getChapter(r.chapterId);
               return (
                 <button key={r.id} onClick={() => { setSel(r.id); setDocSpeaker(r); }}
-                  style={{ fontSize:10, background: rc.light, color: rc.color, border:`1px solid ${rc.accent}`, borderRadius:10, padding:"2px 9px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
+                  style={{ fontSize:"clamp(12px,1.4vw,14px)", background: rc.light, color: rc.color, border:`1px solid ${rc.accent}`, borderRadius:10, padding:"2px 9px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
                   {r.speakerName}
                 </button>
               );
@@ -169,11 +169,11 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               }}
             >📎 PDF保存＋講師へメール</button>
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
-              {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:11, color:"#90A4AE", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
-              <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }}
+              {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
+              <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}
                 disabled={sortedSpeakers.findIndex(x => x.id === sel) <= 0}
                 onClick={() => { const i = sortedSpeakers.findIndex(x => x.id === sel); if (i > 0) { const prev = sortedSpeakers[i-1]; setSel(prev.id); setDocSpeaker(prev); } }}>‹ 前</button>
-              <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }}
+              <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}
                 disabled={sortedSpeakers.findIndex(x => x.id === sel) >= sortedSpeakers.length - 1}
                 onClick={() => { const i = sortedSpeakers.findIndex(x => x.id === sel); if (i < sortedSpeakers.length - 1) { const next = sortedSpeakers[i+1]; setSel(next.id); setDocSpeaker(next); } }}>次 ›</button>
             </div>
@@ -517,7 +517,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           </div>
         );
       })() : (
-        <div style={{ textAlign:"center", padding:38, color:"#90A4AE", fontSize:13,
+        <div style={{ textAlign:"center", padding:38, color:"#90A4AE", fontSize:"clamp(13px,1.8vw,16px)",
           background:"#fff", borderRadius:8, border:"2px dashed #CFD8DC" }}>
           ← 上のセレクトボックスから講師を選択してください
         </div>
