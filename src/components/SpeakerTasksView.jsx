@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks } from '../utils';
-import { CARD, BP, BC, SEL, PILL } from '../styles';
+import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate } from '../utils';
+import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
   "依頼": "#1A3A6B",
@@ -11,22 +11,65 @@ const TASK_CATEGORY_COLOR = {
   "講話後": "#546E7A",
 };
 
-export default function SpeakerTasksView({ speakers, today, updateSpeaker, showToast }) {
-  const [filterCh,   setFilterCh]   = useState("all");
-  const [filterDone, setFilterDone] = useState("undone");
-  const [expandedId, setExpandedId] = useState(null);
+export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail, onEdit }) {
+  const [filterCh,      setFilterCh]     = useState("all");
+  const [filterDone,    setFilterDone]   = useState("undone");
+  const [filterPast,    setFilterPast]   = useState(false);
+  const [filterUpcoming,setFilterUpcoming] = useState(false);
+  const [expandedId,  setExpandedId] = useState(null);
+  const [expandAll,   setExpandAll]  = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search,      setSearch]     = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const filtered = speakers
-    .filter(sp => sp.status !== "cancelled")
-    .filter(sp => filterCh === "all" || sp.chapterId === filterCh)
-    .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || ""));
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return speakers
+      .filter(sp => sp.status !== "cancelled")
+      .filter(sp => filterCh === "all" || sp.chapterId === filterCh)
+      .filter(sp => !q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.companyRole?.toLowerCase().includes(q) || sp.speakerUnit?.toLowerCase().includes(q) || sp.role?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.notes?.toLowerCase().includes(q))
+      .sort((a, b) => (a.seminarDate || "").localeCompare(b.seminarDate || ""));
+  }, [speakers, filterCh, search]);
 
-  const toggleTask = (sp, taskId) => {
+  const visible = useMemo(() => {
+    let base = filtered;
+    if (filterDone !== "all") {
+      base = base.filter(sp => {
+        const checks = sp.speakerChecks || {};
+        const tasks = buildSpeakerTasks(sp);
+        const allDone = tasks.every(t => checks[t.id]);
+        return filterDone === "done" ? allDone : !allDone;
+      });
+    }
+    if (filterPast) {
+      const todayStr = toDateStr(today);
+      base = base.filter(sp => {
+        const isPast = sp.seminarDate && sp.seminarDate < todayStr;
+        const checks = sp.speakerChecks || {};
+        const tasks = buildSpeakerTasks(sp);
+        const allDone = tasks.every(t => checks[t.id]);
+        return isPast && !allDone;
+      });
+    }
+    if (filterUpcoming) {
+      const todayStr = toDateStr(today);
+      const cutoff = new Date(today);
+      cutoff.setDate(today.getDate() + 30);
+      const cutoffStr = toDateStr(cutoff);
+      base = base.filter(sp => sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr);
+    }
+    return base;
+  }, [filtered, filterDone, filterPast, filterUpcoming, today]);
+
+  const toggleTask = useCallback(async (sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
     checks[taskId] = !checks[taskId];
-    updateSpeaker(sp.id, { speakerChecks: checks });
-    showToast(checks[taskId] ? "✓ 完了にしました" : "未完了に戻しました");
-  };
+    const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
+    if (ok) showToast(checks[taskId] ? "✓ 完了にしました" : "未完了に戻しました");
+  }, [updateSpeaker, showToast]);
 
   const getProgress = sp => {
     const tasks = buildSpeakerTasks(sp);
@@ -35,32 +78,55 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
     return { done, total: tasks.length, pct: tasks.length ? Math.round(done / tasks.length * 100) : 0 };
   };
 
+  const globalStats = useMemo(() => {
+    let totalTasks = 0, doneTasks = 0, completeSpeakers = 0;
+    filtered.forEach(sp => {
+      const tasks = buildSpeakerTasks(sp);
+      const checks = sp.speakerChecks || {};
+      const done = tasks.filter(t => checks[t.id]).length;
+      totalTasks += tasks.length;
+      doneTasks += done;
+      if (done === tasks.length) completeSpeakers++;
+    });
+    return { totalTasks, doneTasks, completeSpeakers, total: filtered.length, pct: totalTasks ? Math.round(doneTasks / totalTasks * 100) : 100 };
+  }, [filtered]);
+
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理</div>
+        <div>
+          <div style={{ fontSize:17, fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理 <span style={{ fontSize:12, fontWeight:400, color:"#90A4AE" }}>{visible.length}件</span></div>
+          {filtered.length > 0 && <div style={{ fontSize:10, color:"#78909C", marginTop:2 }}>全{filtered.length}名　タスク完了率 <span style={{ fontWeight:700, color: globalStats.pct === 100 ? "#2E7D32" : "#1A3A6B" }}>{globalStats.pct}%</span>（{globalStats.doneTasks}/{globalStats.totalTasks}件）　完全完了 {globalStats.completeSpeakers}名</div>}
+        </div>
+        <input style={{ ...INP, width:140, fontSize:11 }} placeholder="🔍 名前・会社検索" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
         <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
           <option value="all">全単会</option>
           {CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <div style={{ display:"flex", gap:4 }}>
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
           {[["undone","未完了のみ"],["all","すべて"],["done","完了のみ"]].map(([v,l]) => (
             <button key={v} style={{ ...(filterDone===v ? BP : BC), padding:"5px 12px", fontSize:11 }} onClick={() => setFilterDone(v)}>{l}</button>
           ))}
         </div>
+        <button style={{ ...(filterPast ? { ...BP, background:"#B71C1C" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => { setFilterPast(v => !v); setFilterUpcoming(false); }}>
+          {filterPast ? "⚠ 未完了超過" : "超過のみ"}
+        </button>
+        <button style={{ ...(filterUpcoming ? { ...BP, background:"#6D4C9F" } : BC), padding:"5px 12px", fontSize:11 }} onClick={() => { setFilterUpcoming(v => !v); setFilterPast(false); }}>
+          {filterUpcoming ? "📅 30日以内" : "30日以内"}
+        </button>
+        <button style={{ ...BC, padding:"5px 12px", fontSize:11 }} onClick={() => setExpandAll(v => !v)}>
+          {expandAll ? "▲ すべて折りたたむ" : "▼ すべて展開"}
+        </button>
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:14 }}>
-        {filtered.map(sp => {
+        {visible.map(sp => {
           const ch = getChapter(sp.chapterId);
           const tasks = buildSpeakerTasks(sp);
           const checks = sp.speakerChecks || {};
           const prog = getProgress(sp);
           const allDone = prog.done === prog.total;
-          const isExpanded = expandedId === sp.id;
-
-          if (filterDone === "done"   && !allDone) return null;
-          if (filterDone === "undone" && allDone)  return null;
+          const isExpanded = expandAll || expandedId === sp.id;
 
           const byCategory = {};
           tasks.forEach(t => {
@@ -74,19 +140,36 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
                 <div>
                   <span style={PILL(ch)}>{ch?.name}</span>
                   <span style={{ fontSize:10, color:"#90A4AE", marginLeft:6 }}>{sp.seminarDate}</span>
+                  {(() => {
+                    const d = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
+                    if (d === null) return null;
+                    if (d === 0) return <span style={{ fontSize:10, background:"#FFEBEE", color:"#B71C1C", fontWeight:700, padding:"2px 6px", borderRadius:8, marginLeft:4 }}>今日！</span>;
+                    if (d > 0 && d <= 7) return <span style={{ fontSize:10, background: d <= 3 ? "#FFF8E1" : "#F5F5F5", color: d <= 3 ? "#E65100" : "#78909C", fontWeight:700, padding:"2px 6px", borderRadius:8, marginLeft:4 }}>あと{d}日</span>;
+                    return null;
+                  })()}
                   {allDone && <span style={{ fontSize:10, background:"#E8F5E9", color:"#2E7D32", fontWeight:700, padding:"2px 7px", borderRadius:10, marginLeft:6 }}>✓ 完了</span>}
                 </div>
-                <button style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#90A4AE" }} onClick={() => setExpandedId(isExpanded ? null : sp.id)}>
+                <button aria-label={isExpanded ? "折りたたむ" : "すべてのタスクを表示"} style={{ background:"none", border:"none", cursor:"pointer", fontSize:16, color:"#90A4AE" }} onClick={() => { if (expandAll) { setExpandAll(false); setExpandedId(null); } else setExpandedId(isExpanded ? null : sp.id); }}>
                   {isExpanded ? "▲" : "▼"}
                 </button>
               </div>
-              <div style={{ fontWeight:700, fontSize:18, marginBottom:2, lineHeight:1.3,
-                ...(sp.speakerName && sp.speakerName.length > 6 ? { fontSize:"clamp(14px,3vw,18px)" } : {}) }}>
-                {sp.speakerName} 様
+              <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:2, flexWrap:"wrap" }}>
+                <div style={{ fontWeight:700, fontSize:18, lineHeight:1.3,
+                  ...(sp.speakerName && sp.speakerName.length > 6 ? { fontSize:"clamp(14px,3vw,18px)" } : {}) }}>
+                  {sp.speakerName} 様
+                </div>
+                {onEmail && sp.email && (
+                  <button title="メール送信" style={{ background:"none", border:"1px solid #90CAF9", borderRadius:4, padding:"2px 6px", fontSize:10, cursor:"pointer", color:"#1565C0" }} onClick={() => onEmail(sp)}>📧</button>
+                )}
+                {onEdit && (
+                  <button title="講師情報を編集" style={{ background:"none", border:"1px solid #B0BEC5", borderRadius:4, padding:"2px 6px", fontSize:10, cursor:"pointer", color:"#546E7A" }} onClick={() => onEdit(sp)}>✏ 編集</button>
+                )}
               </div>
               <div style={{ fontSize:12, color:"#546E7A", marginBottom:8, display:"flex", gap:6, flexWrap:"wrap" }}>
                 {sp.speakerUnit && <span style={{ background:"#E8EAF6", color:"#3949AB", padding:"1px 7px", borderRadius:10, fontWeight:600 }}>{sp.speakerUnit}</span>}
                 {sp.role && <span style={{ background:"#F3E5F5", color:"#7B1FA2", padding:"1px 7px", borderRadius:10 }}>{sp.role}</span>}
+                {sp.company && <span style={{ background:"#ECEFF1", color:"#546E7A", padding:"1px 7px", borderRadius:10 }}>{sp.company}</span>}
+                {sp.companyRole && <span style={{ background:"#FFF3E0", color:"#E65100", padding:"1px 7px", borderRadius:10 }}>{sp.companyRole}</span>}
               </div>
 
               <div style={{ marginBottom:10 }}>
@@ -102,9 +185,24 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
               {Object.entries(byCategory).map(([cat, catTasks]) => {
                 const visibleTasks = isExpanded ? catTasks : catTasks.filter(t => !checks[t.id]);
                 if (visibleTasks.length === 0) return null;
+                const catAllDone = catTasks.every(t => checks[t.id]);
+                const catColor = TASK_CATEGORY_COLOR[cat] || "#546E7A";
                 return (
                   <div key={cat} style={{ marginBottom:8 }}>
-                    <div style={{ fontSize:10, fontWeight:700, color: TASK_CATEGORY_COLOR[cat] || "#546E7A", marginBottom:4, letterSpacing:"0.05em" }}>▸ {cat}</div>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+                      <div style={{ fontSize:10, fontWeight:700, color: catColor, letterSpacing:"0.05em" }}>▸ {cat}</div>
+                      {!catAllDone && (
+                        <button style={{ fontSize:8, background: catColor+"18", color: catColor, border:`1px solid ${catColor}44`, borderRadius:8, padding:"1px 6px", cursor:"pointer", fontWeight:700 }}
+                          onClick={async () => {
+                            const newChecks = { ...checks };
+                            catTasks.forEach(t => { newChecks[t.id] = true; });
+                            const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
+                            if (ok) showToast(`${cat}を完了 ✓`);
+                          }}>
+                          {cat}完了
+                        </button>
+                      )}
+                    </div>
                     {visibleTasks.map(t => (
                       <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: checks[t.id] ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${checks[t.id] ? "#C5E1A5" : "#EEEEEE"}` }}>
                         <input type="checkbox" checked={!!checks[t.id]} onChange={() => toggleTask(sp, t.id)} style={{ width:15, height:15, cursor:"pointer", accentColor: TASK_CATEGORY_COLOR[cat] }} />
@@ -120,9 +218,25 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
                   ✓ 完了済み {prog.done}件を非表示 <span style={{ cursor:"pointer", color:"#1565C0" }} onClick={() => setExpandedId(sp.id)}>すべて見る</span>
                 </div>
               )}
+              {!allDone && (
+                <button style={{ marginTop:8, width:"100%", background:"#F1F8E9", border:"1px solid #C5E1A5", borderRadius:6, color:"#2E7D32", fontSize:11, fontWeight:700, cursor:"pointer", padding:"6px" }}
+                  onClick={async () => {
+                    const allChecks = {};
+                    tasks.forEach(t => { allChecks[t.id] = true; });
+                    const ok = await updateSpeaker(sp.id, { speakerChecks: allChecks });
+                    if (ok) showToast(`${sp.speakerName} 様のタスクをすべて完了にしました ✓`);
+                  }}>
+                  ✓ すべて完了にする
+                </button>
+              )}
 
+              {extractStaffNotes(sp.notes) && (
+                <div style={{ marginTop:6, padding:"5px 8px", background:"#F3E5F5", borderRadius:5, borderLeft:"3px solid #CE93D8", fontSize:10, color:"#4A148C", whiteSpace:"pre-wrap" }}>
+                  <span style={{ fontWeight:700 }}>📝 メモ：</span>{extractStaffNotes(sp.notes)}
+                </div>
+              )}
               {(sp.postNotes || sp.drinksAlcohol || sp.shioriArticle) && (
-                <div style={{ marginTop:10, padding:"8px 10px", background:"#F8F9FA", borderRadius:6, borderLeft:"3px solid #78909C" }}>
+                <div style={{ marginTop:6, padding:"8px 10px", background:"#F8F9FA", borderRadius:6, borderLeft:"3px solid #78909C" }}>
                   <div style={{ fontSize:11, fontWeight:700, color:"#546E7A", marginBottom:4 }}>📝 講話後メモ</div>
                   {sp.drinksAlcohol && <div style={{ fontSize:11, color:"#546E7A" }}>お酒：{sp.drinksAlcohol}</div>}
                   {sp.shioriArticle && <div style={{ fontSize:11, color:"#546E7A" }}>栞：{sp.shioriArticle}</div>}
@@ -134,14 +248,11 @@ export default function SpeakerTasksView({ speakers, today, updateSpeaker, showT
         })}
       </div>
 
-      {filtered.filter(sp => {
-        const allDone = getProgress(sp).done === getProgress(sp).total;
-        if (filterDone === "done"   && !allDone) return false;
-        if (filterDone === "undone" && allDone)  return false;
-        return true;
-      }).length === 0 && (
-        <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>該当する講師タスクがありません</div>
+      {visible.length === 0 && (
+        <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>
+          {filtered.length === 0 ? "講師データがありません" : "該当する講師タスクがありません"}
+        </div>
       )}
     </div>
   );
-}
+});

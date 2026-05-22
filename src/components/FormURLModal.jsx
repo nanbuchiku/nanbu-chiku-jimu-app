@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { CHAPTERS } from '../constants';
+import React, { useState, useMemo, useCallback, memo } from 'react';
+import { CHAPTERS, SEMINAR_TYPES } from '../constants';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 
-export default function FormURLModal({ speaker: spProp, onClose, showToast }) {
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast }) {
   const isNew = !spProp;
   const [form, setForm] = useState({
     chapterId:   spProp?.chapterId   || 'kawaguchi',
@@ -18,26 +18,30 @@ export default function FormURLModal({ speaker: spProp, onClose, showToast }) {
 
   const sp = isNew ? { ...form, id: '' } : spProp;
   const ch = getChapter(isNew ? form.chapterId : sp.chapterId);
-  const BASE = 'https://hosina0447-ctrl.github.io/rinri-nanbu/form.html';
-  const params = new URLSearchParams({
-    id:     sp.id || '',
-    name:   (isNew ? form.speakerName : sp.speakerName)  || '',
-    unit:   (isNew ? form.speakerUnit : sp.speakerUnit)  || ch?.name || '',
-    date:   (isNew ? form.seminarDate : sp.seminarDate)  || '',
-    ch:     (isNew ? form.chapterId   : sp.chapterId)    || '',
-    type:   (isNew ? form.seminarType : sp.seminarType)  || 'ms',
-    ethics: (isNew ? form.role        : sp.role)         || '',
-    email:  (isNew ? form.email       : sp.email)        || '',
-  });
-  const formUrl = `${BASE}?${params.toString()}`;
+
+  const formUrl = useMemo(() => {
+    const BASE = 'https://hosina0447-ctrl.github.io/rinri-nanbu/form.html';
+    const params = new URLSearchParams({
+      id:     sp.id || '',
+      name:   (isNew ? form.speakerName : sp.speakerName)  || '',
+      unit:   (isNew ? form.speakerUnit : sp.speakerUnit)  || ch?.name || '',
+      date:   (isNew ? form.seminarDate : sp.seminarDate)  || '',
+      ch:     (isNew ? form.chapterId   : sp.chapterId)    || '',
+      type:   (isNew ? form.seminarType : sp.seminarType)  || 'ms',
+      ethics: (isNew ? form.role        : sp.role)         || '',
+      email:  (isNew ? form.email       : sp.email)        || '',
+    });
+    return `${BASE}?${params.toString()}`;
+  }, [isNew, form, sp, ch]);
+
   const canGenerate = !isNew || (form.speakerName && form.seminarDate && form.email);
 
   const displayName  = isNew ? form.speakerName : sp.speakerName;
   const displayDate  = isNew ? form.seminarDate : sp.seminarDate;
   const displayEmail = isNew ? form.email       : sp.email;
 
-  const mailSubject = `【${ch?.name}単会 モーニングセミナー】講師確認フォームのご案内`;
-  const mailBody =
+  const mailSubject = useMemo(() => `【${ch?.name}単会 モーニングセミナー】講師確認フォームのご案内`, [ch]);
+  const mailBody = useMemo(() =>
 `${displayName || '　　　'} 様
 
 このたびは、${ch?.name}単会 モーニングセミナーの講師をお引き受けいただき、誠にありがとうございます。
@@ -58,18 +62,18 @@ ${formUrl}
 ━━━━━━━━━━━━━━━━━
 倫理法人会 南部地区合同事務局
 Mail：nanbugoudou.jimu@gmail.com
-━━━━━━━━━━━━━━━━━`;
+━━━━━━━━━━━━━━━━━`, [displayName, displayDate, ch, formUrl]);
 
-  const copyUrl  = () => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); };
-  const copyMail = () => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); };
-  const openMail = () => { window.open(`mailto:${displayEmail || ''}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`, '_blank'); onClose(); };
+  const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
+  const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); }, [mailSubject, mailBody, showToast, onClose]);
+  const openMail = useCallback(() => { window.open(`mailto:${displayEmail || ''}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`, '_blank'); onClose(); }, [displayEmail, mailSubject, mailBody, onClose]);
 
   const LB   = { display:"block", fontSize:11, fontWeight:700, color:"#4527A0", marginBottom:3 };
   const INP2 = { width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:12, background:"#fff" };
 
   return (
-    <div style={OV} onClick={onClose}>
-      <div style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
+    <div style={OV} onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-label="講話依頼確認フォーム作成" style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
         <div style={MH}>📝 講話依頼確認フォーム作成</div>
 
         {isNew && !generated && (
@@ -91,21 +95,17 @@ Mail：nanbugoudou.jimu@gmail.com
                 <input type="text" style={INP2} placeholder="例：山田 太郎" value={form.speakerName} onChange={e => setForm(f => ({ ...f, speakerName: e.target.value }))} />
               </div>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={LB}>所属組織（単会・研究所など）</label>
+                <label style={LB}>所属法人会名</label>
                 <input type="text" style={INP2} placeholder="例：川口倫理法人会" value={form.speakerUnit} onChange={e => setForm(f => ({ ...f, speakerUnit: e.target.value }))} />
               </div>
               <div>
-                <label style={LB}>倫理法人会の役職</label>
+                <label style={LB}>法人会役職</label>
                 <input type="text" style={INP2} placeholder="例：幹事" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
               </div>
               <div>
                 <label style={LB}>セミナー種別</label>
                 <select style={INP2} value={form.seminarType} onChange={e => setForm(f => ({ ...f, seminarType: e.target.value }))}>
-                  <option value="ms">モーニングセミナー</option>
-                  <option value="msbasic">MS基礎</option>
-                  <option value="ethics">倫経セミナー</option>
-                  <option value="tsudoi">集い</option>
-                  <option value="other">その他セミナー</option>
+                  {SEMINAR_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
               </div>
               <div style={{ gridColumn:"1/-1" }}>
@@ -157,4 +157,4 @@ Mail：nanbugoudou.jimu@gmail.com
       </div>
     </div>
   );
-}
+});

@@ -1,29 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType } from '../utils';
+import { getChapter, getSeminarType, toDateStr } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 
-export default function SpeakerForm({ initial, onSave, onClose }) {
-  const blank = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate: new Date().toISOString().slice(0,10), notes:"", venue:"", seminarType:"ms" };
-  const [form, setForm] = useState(initial || blank);
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", companyRole:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"", materialName:"" };
+
+const DRAFT_KEY = 'speakerFormDraft';
+
+export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, saving }) {
+  const isNew = !initial?.id;
+  const normalizeLodging = v => (!v || v === "不要" || v === "なし") ? "不要" : v === "要" ? "あり（前泊）" : v;
+  const normalizePrint = v => (!v || v === "不要" || v?.startsWith("不要")) ? "不要" : (v === "あり" || v?.startsWith("要")) ? "あり" : "不要";
+  const normalizeInitial = obj => obj ? { ...obj, lodging: normalizeLodging(obj.lodging), printRequired: normalizePrint(obj.printRequired) } : obj;
+  const [form, setForm] = useState(() => {
+    if (!isNew) return normalizeInitial(initial);
+    const savedChapter = (() => { try { return localStorage.getItem('form_lastChapter') || "kawaguchi"; } catch { return "kawaguchi"; } })();
+    const base = { ...BLANK, chapterId: savedChapter, requestDate: new Date().toISOString().slice(0,10) };
+    if (initial) return { ...base, ...normalizeInitial(initial) };
+    try {
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) return JSON.parse(draft);
+    } catch {}
+    return base;
+  });
+  const [err, setErr] = useState("");
+  const [hasDraft] = useState(() => {
+    if (!isNew || initial) return false;
+    try { return !!localStorage.getItem(DRAFT_KEY); } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (!isNew) return;
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch {}
+  }, [form, isNew]);
+
+  const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
+
+  const set = (k, v) => {
+    setErr("");
+    if (k === 'chapterId') { try { localStorage.setItem('form_lastChapter', v); } catch {} }
+    setForm(f => {
+      const next = { ...f, [k]: v };
+      if (k === 'seminarType' || k === 'chapterId') {
+        const newSt = getSeminarType(k === 'seminarType' ? v : f.seminarType);
+        const newCh = getChapter(k === 'chapterId' ? v : f.chapterId);
+        if (newSt?.venueFixed && newCh) next.venue = newCh.venue;
+      }
+      return next;
+    });
+  };
   const ch = getChapter(form.chapterId);
   const st = getSeminarType(form.seminarType || "ms");
 
+  const duplicate = useMemo(() => {
+    if (!form.chapterId || !form.seminarDate || !speakers) return null;
+    return speakers.find(sp =>
+      sp.chapterId === form.chapterId &&
+      sp.seminarDate === form.seminarDate &&
+      sp.id !== form.id &&
+      sp.status !== "cancelled"
+    ) || null;
+  }, [form.chapterId, form.seminarDate, form.id, speakers]);
+
+  const pastTalks = useMemo(() => {
+    const name = form.speakerName?.trim();
+    if (!name || !speakers) return [];
+    return speakers
+      .filter(sp => sp.speakerName === name && sp.id !== form.id)
+      .sort((a, b) => new Date(b.seminarDate) - new Date(a.seminarDate));
+  }, [form.speakerName, form.id, speakers]);
+
+  const latestPast = pastTalks[0];
+  const canAutofill = isNew && latestPast && (!form.company || !form.speakerKana);
+
+  const suggestDates = useMemo(() => {
+    const chapter = getChapter(form.chapterId);
+    if (!chapter || chapter.day < 0) return [];
+    const now = new Date();
+    const todayDay = now.getDay();
+    const baseOffset = (chapter.day - todayDay + 7) % 7 || 7;
+    return Array.from({ length: 5 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() + baseOffset + i * 7);
+      return toDateStr(d);
+    });
+  }, [form.chapterId]);
+
+  const shioriConflict = useMemo(() => {
+    if (!form.shioriArticle || !speakers) return null;
+    return speakers.filter(sp =>
+      sp.id !== form.id &&
+      sp.shioriArticle === form.shioriArticle &&
+      sp.status !== "cancelled"
+    ).sort((a, b) => new Date(b.seminarDate) - new Date(a.seminarDate)).slice(0, 3);
+  }, [form.shioriArticle, form.id, speakers]);
+
+  const isPastDate = useMemo(() => {
+    if (!form.seminarDate || initial?.id) return false;
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    return form.seminarDate < todayStr;
+  }, [form.seminarDate, initial?.id]);
+
   return (
-    <div style={OV} onClick={onClose}>
-      <div style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
-        <div style={{ ...MH, borderBottomColor: st.color }}>{initial ? "講師情報を編集" : "新規講師登録"}</div>
+    <div style={OV} onClick={onClose} role="presentation">
+      <div role="dialog" aria-modal="true" aria-label={initial ? "講師情報を編集" : "新規講師登録"} style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()} onKeyDown={e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !saving) { e.preventDefault(); if (!form.speakerName) return setErr("講師名は必須です"); if (!form.seminarDate) return setErr("開催日は必須です"); if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("メールアドレスの形式が正しくありません"); clearDraft(); onSave(form); } }}>
+        <div style={{ ...MH, borderBottomColor: st.color }}>
+          {initial?.id ? `📝 ${initial.speakerName} を編集` : "新規講師登録"}
+        </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:14 }}>
           {[
             { l:"種別 *",      k:"seminarType", t:"select", o: SEMINAR_TYPES.map(t => ({ v:t.id, l:t.label })) },
             { l:"単会",        k:"chapterId",   t:"select", o: CHAPTERS.map(c => ({ v:c.id, l:c.name })) },
-            { l:"開催日 *",    k:"seminarDate", t:"date" },
+            { l: form.seminarType === "kiso" ? "基礎講座日 *" : "開催日 *", k:"seminarDate", t:"date" },
             { l:"講師名 *",    k:"speakerName", t:"text",  p:"山田 太郎" },
             { l:"ふりがな",    k:"speakerKana", t:"text",  p:"やまだ たろう" },
-            { l:"所属単会",    k:"speakerUnit", t:"text",  p:"川口単会" },
-            { l:"企業名",      k:"company",     t:"text",  p:"株式会社○○" },
-            { l:"役職・役目",  k:"role",        t:"text",  p:"会長・専任幹事など" },
+            { l:"所属法人会名",    k:"speakerUnit",  t:"text",  p:"川口倫理法人会" },
+            { l:"法人会役職",      k:"role",         t:"text",  p:"会長・専任幹事など" },
+            { l:"勤務先",          k:"company",      t:"text",  p:"株式会社○○" },
+            { l:"勤務先役職名",    k:"companyRole",  t:"text",  p:"代表取締役" },
             { l:"メール *",    k:"email",       t:"email", p:"email@example.com" },
             { l:"電話",        k:"phone",       t:"text",  p:"090-0000-0000" },
             { l:"ステータス",  k:"status",      t:"select", o: Object.entries(STATUS).map(([k, v]) => ({ v:k, l:v.label })) },
@@ -32,14 +127,50 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
             <div key={k}>
               <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>{l}</div>
               {t === "select" ? (
-                <select style={{ ...INP, width:"100%" }} value={form[k] || ""} onChange={e => set(k, e.target.value)}>
+                <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form[k] || ""} onChange={e => set(k, e.target.value)}>
                   {o.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
                 </select>
               ) : (
-                <input type={t} style={{ ...INP, width:"100%" }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
+                <input disabled={saving} autoFocus={k === "speakerName"} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
+              )}
+              {k === "seminarDate" && form.seminarType === "kiso" && form.seminarDate && (() => {
+                const d = new Date(form.seminarDate + 'T00:00:00');
+                d.setDate(d.getDate() + 1);
+                const msStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                const dow = ["日","月","火","水","木","金","土"][d.getDay()];
+                return (
+                  <div style={{ marginTop:5, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, padding:"4px 10px", fontSize:10, color:"#1565C0", fontWeight:600 }}>
+                    MS日（翌日）：{msStr}（{dow}）
+                  </div>
+                );
+              })()}
+              {k === "seminarDate" && !form.seminarDate && suggestDates.length > 0 && (
+                <div style={{ marginTop:5, display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
+                  <span style={{ fontSize:9, color:"#90A4AE", fontWeight:600 }}>次回：</span>
+                  {suggestDates.map(d => (
+                    <button key={d} type="button" style={{ fontSize:10, background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:10, padding:"2px 8px", color:"#1565C0", cursor:"pointer", fontWeight:700 }} onClick={() => set("seminarDate", d)}>{d}</button>
+                  ))}
+                </div>
               )}
             </div>
           ))}
+
+          <div>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>前泊・宿泊</div>
+            <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.lodging || "不要"} onChange={e => set("lodging", e.target.value)}>
+              <option value="不要">不要</option>
+              <option value="あり（前泊）">あり（前泊）</option>
+              <option value="あり（当日のみ）">あり（当日のみ）</option>
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>資料印刷</div>
+            <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.printRequired || "不要"} onChange={e => set("printRequired", e.target.value)}>
+              <option value="不要">不要（持参 or なし）</option>
+              <option value="あり">あり（単会で印刷）</option>
+            </select>
+          </div>
+
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>
               開催場所
@@ -50,16 +181,24 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
                 {ch.venue}
               </div>
             ) : (
-              <input type="text" style={{ ...INP, width:"100%" }} placeholder="会場名を入力" value={form.venue || ""} onChange={e => set("venue", e.target.value)} />
+              <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="会場名を入力" value={form.venue || ""} onChange={e => set("venue", e.target.value)} />
             )}
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>テーマ</div>
-            <input type="text" style={{ ...INP, width:"100%" }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
+            <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
+          </div>
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料フォルダURL</div>
+            <input disabled={saving} type="url" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="https://drive.google.com/..." value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
+          </div>
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>資料ファイル名・メモ</div>
+            <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="例：山田太郎_顔写真.jpg　資料あり" value={form.materialName || ""} onChange={e => set("materialName", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
-            <textarea style={{ ...INP, width:"100%", minHeight:54, resize:"vertical" }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
+            <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:54, resize:"vertical", opacity: saving ? .6 : 1 }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
           </div>
 
           <div style={{ gridColumn:"1/-1", borderTop:"2px dashed #E0E0E0", paddingTop:12, marginTop:4 }}>
@@ -67,7 +206,7 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div>
                 <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>お酒を飲むか</div>
-                <select style={{ ...INP, width:"100%" }} value={form.drinksAlcohol || ""} onChange={e => set("drinksAlcohol", e.target.value)}>
+                <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.drinksAlcohol || ""} onChange={e => set("drinksAlcohol", e.target.value)}>
                   <option value="">未確認</option>
                   <option value="飲む">飲む</option>
                   <option value="飲まない">飲まない</option>
@@ -76,25 +215,85 @@ export default function SpeakerForm({ initial, onSave, onClose }) {
               </div>
               <div>
                 <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>栞・第何条</div>
-                <select style={{ ...INP, width:"100%" }} value={form.shioriArticle || ""} onChange={e => set("shioriArticle", e.target.value)}>
+                <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form.shioriArticle || ""} onChange={e => set("shioriArticle", e.target.value)}>
                   <option value="">未記入</option>
                   {Array.from({length:17},(_,i)=>`第${i+1}条`).map(v=><option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <div style={{ fontSize:11, color:"#78909C", marginBottom:3, fontWeight:600 }}>講話内容・特記事項・次回への申し送り</div>
-                <textarea style={{ ...INP, width:"100%", minHeight:80, resize:"vertical" }} placeholder="講話の内容、参加者の反応、次回依頼時の注意点など自由に記入" value={form.postNotes || ""} onChange={e => set("postNotes", e.target.value)} />
+                <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:80, resize:"vertical", opacity: saving ? .6 : 1 }} placeholder="講話の内容、参加者の反応、次回依頼時の注意点など自由に記入" value={form.postNotes || ""} onChange={e => set("postNotes", e.target.value)} />
               </div>
+              {shioriConflict && shioriConflict.length > 0 && (
+                <div style={{ gridColumn:"1/-1", padding:"6px 10px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:11, color:"#E65100" }}>
+                  <span style={{ fontWeight:700 }}>⚠ この条は他の講師も使用済み：</span>
+                  {shioriConflict.map(sp => { const c = getChapter(sp.chapterId); return <span key={sp.id} style={{ marginLeft:6 }}>{sp.seminarDate} {c.name} {sp.speakerName}</span>; })}
+                </div>
+              )}
             </div>
           </div>
         </div>
-        <div style={{ display:"flex", gap:8, marginTop:14 }}>
-          <button style={BP} onClick={() => { if (!form.speakerName || !form.seminarDate) return alert("講師名・開催日は必須です"); onSave(form); }}>
-            {initial ? "💾 変更を保存" : "✓ 登録する"}
+        {pastTalks.length > 0 && (
+          <div style={{ marginTop:10, padding:"8px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:5, flexWrap:"wrap", gap:6 }}>
+              <div style={{ fontWeight:700 }}>📚 この講師の過去講話（{pastTalks.length}件）</div>
+              {canAutofill && (
+                <button style={{ fontSize:10, background:"#1565C0", color:"#fff", border:"none", borderRadius:8, padding:"2px 10px", cursor:"pointer", fontWeight:700 }}
+                  onClick={() => setForm(f => ({
+                    ...f,
+                    speakerKana:  f.speakerKana  || latestPast.speakerKana  || "",
+                    speakerUnit:  f.speakerUnit  || latestPast.speakerUnit  || "",
+                    company:      f.company      || latestPast.company      || "",
+                    role:         f.role         || latestPast.role         || "",
+                    companyRole:  f.companyRole  || latestPast.companyRole  || "",
+                    email:        f.email        || latestPast.email        || "",
+                    phone:        f.phone        || latestPast.phone        || "",
+                  }))}>
+                  前回情報を自動入力
+                </button>
+              )}
+            </div>
+            {pastTalks.slice(0, 3).map(sp => {
+              const ch = getChapter(sp.chapterId);
+              return (
+                <div key={sp.id} style={{ fontSize:11, color:"#37474F", marginBottom:2 }}>
+                  {sp.seminarDate} ｜ {ch.name} ｜「{sp.topic}」
+                </div>
+              );
+            })}
+            {pastTalks.length > 3 && <div style={{ fontSize:10, color:"#90A4AE" }}>…他{pastTalks.length - 3}件</div>}
+          </div>
+        )}
+        {duplicate && (
+          <div style={{ marginTop:10, padding:"8px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:12, color:"#E65100", fontWeight:600 }}>
+            ⚠ 同じ単会・開催日の講師が既に登録されています（{duplicate.speakerName}）。続けて登録することもできます。
+          </div>
+        )}
+        {hasDraft && isNew && !initial && (
+          <div style={{ marginTop:8, padding:"6px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:11, color:"#E65100", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span>📝 前回の入力内容を復元しました</span>
+            <button style={{ background:"none", border:"none", fontSize:10, color:"#90A4AE", cursor:"pointer", textDecoration:"underline" }} onClick={() => { clearDraft(); setForm({ ...BLANK, chapterId: form.chapterId, requestDate: form.requestDate }); }}>クリア</button>
+          </div>
+        )}
+        {isPastDate && (
+          <div style={{ marginTop:8, padding:"6px 12px", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:6, fontSize:11, color:"#1565C0" }}>
+            ℹ 過去の日付が入力されています。終了済み講師を記録する場合はそのまま登録できます。
+          </div>
+        )}
+        {err && <div style={{ marginTop:10, padding:"8px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:12, color:"#B71C1C", fontWeight:600 }}>⚠ {err}</div>}
+        <div style={{ display:"flex", gap:8, marginTop:10 }}>
+          <button style={{ ...BP, opacity: saving ? .6 : 1 }} disabled={saving} onClick={() => {
+            if (!form.speakerName) return setErr("講師名は必須です");
+            if (!form.seminarDate) return setErr("開催日は必須です");
+            if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("メールアドレスの形式が正しくありません");
+            clearDraft();
+            onSave(form);
+          }}>
+            {saving ? "⏳ 保存中..." : initial ? "💾 変更を保存" : "✓ 登録する"}
           </button>
-          <button style={BC} onClick={onClose}>キャンセル</button>
+          <button style={BC} disabled={saving} onClick={() => { clearDraft(); onClose(); }}>キャンセル</button>
         </div>
       </div>
     </div>
   );
-}
+});
