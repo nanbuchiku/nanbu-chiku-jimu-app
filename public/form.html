@@ -308,7 +308,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
           ▼ このフォームから直接アップロードする場合<br>
           　下のアップロードエリアからファイルを選択してください。<br><br>
           ▼ メールで送付する場合<br>
-          　<a href="mailto:rinri.nanbu@gmail.com" style="color:#5C35CC;">rinri.nanbu@gmail.com</a> へ添付してお送りください。<br>
+          　<a id="contact-mail-upload" href="mailto:rinri.nanbu@gmail.com" style="color:#5C35CC;">rinri.nanbu@gmail.com</a> へ添付してお送りください。<br>
           　件名：【講話資料】氏名
         </div>
 
@@ -397,7 +397,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
     <div class="info-box" style="margin-bottom:8px;">
       ✉ 送信後、担当者より確認のご連絡をいたします。<br>
-      ご不明点は <strong>rinri.nanbu@gmail.com</strong> までご連絡ください。
+      ご不明点は <strong id="contact-mail-footer">rinri.nanbu@gmail.com</strong> までご連絡ください。
     </div>
 
     <div class="btn-row">
@@ -415,7 +415,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
         ご回答ありがとうございました。<br>
         担当者より改めてご連絡いたします。<br><br>
         <strong>倫理法人会 南部地区合同事務局</strong><br>
-        <a href="mailto:rinri.nanbu@gmail.com" style="color:#1565C0;">rinri.nanbu@gmail.com</a>
+        <a id="contact-mail-done" href="mailto:rinri.nanbu@gmail.com" style="color:#1565C0;">rinri.nanbu@gmail.com</a>
       </div>
     </div>
   </div>
@@ -465,6 +465,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const infoBox = document.querySelector('#page1 .info-box');
     if (infoBox) infoBox.innerHTML = '⏳ 以前の回答内容を読み込み中...';
     prefillFromDB();
+  }
+
+  // 単会設定からメールアドレスを取得して差し替える
+  if (chapterId) {
+    (async () => {
+      try {
+        const { data } = await db.from('chapter_settings').select('settings').eq('chapter_id', chapterId).single();
+        const email = data?.settings?.chapterEmail;
+        if (email) {
+          NANBU_MAIL = email;
+          const updateEl = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el.tagName === 'A') el.href = 'mailto:' + email;
+            el.textContent = email;
+          };
+          updateEl('contact-mail-upload');
+          updateEl('contact-mail-footer');
+          updateEl('contact-mail-done');
+        }
+      } catch {}
+    })();
   }
 });
 
@@ -855,7 +877,7 @@ function extractStaffNotes(notes) {
 }
 
 // 講師依頼確認書メールを自動で開く（宛先：講師＋南部地区事務局）
-const NANBU_MAIL = 'rinri.nanbu@gmail.com'; // 南部地区合同事務局
+let NANBU_MAIL = 'rinri.nanbu@gmail.com'; // デフォルト（単会設定がない場合のフォールバック）
 
 function openConfirmationMail(payload, extraUrls) {
   const val   = id   => document.getElementById(id)?.value.trim() || '';
