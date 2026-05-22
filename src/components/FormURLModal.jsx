@@ -61,7 +61,7 @@ ${formUrl}
 
 ━━━━━━━━━━━━━━━━━
 倫理法人会 南部地区合同事務局
-Mail：nanbugoudou.jimu@gmail.com
+Mail：rinri.nanbu@gmail.com
 ━━━━━━━━━━━━━━━━━`, [displayName, displayDate, ch, formUrl]);
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
