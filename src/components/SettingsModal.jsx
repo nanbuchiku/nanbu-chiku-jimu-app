@@ -21,6 +21,7 @@ const DEFAULTS = ch => ({
   hotelParking:    '',
   hotelMapUrl:     '',
   contactPerson:   ch.staff     || '',
+  contactTel:      '',
   chapterEmail:    '',
 });
 
@@ -162,6 +163,9 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           <SectionTitle>👤 担当者</SectionTitle>
           <Row label="単会担当者名">
             <Inp value={form.contactPerson} onChange={v => set('contactPerson', v)} placeholder={activeCh.staff || '例: 山田 太郎'} />
+          </Row>
+          <Row label="担当者電話">
+            <Inp value={form.contactTel} onChange={v => set('contactTel', v)} placeholder="例: 090-0000-0000" />
           </Row>
           <Row label="単会メールアドレス">
             <Inp value={form.chapterEmail} onChange={v => set('chapterEmail', v)} placeholder="例: shiki.jimu@example.com" type="email" />
