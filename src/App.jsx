@@ -16,8 +16,31 @@ import FlyerView from './components/FlyerView';
 import SpeakerForm from './components/SpeakerForm';
 import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
+import LoginPage from './components/LoginPage';
 
 export default function App() {
+  // ── 認証セッション管理 ──────────────────────────────
+  const [session,     setSession]     = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    db.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = db.auth.onAuthStateChange((_e, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (authLoading) return (
+    <div style={{ minHeight:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', background:'#F0F2F5' }}>
+      <div style={{ fontSize:16, color:'#90A4AE', fontWeight:600 }}>読み込み中...</div>
+    </div>
+  );
+  if (!session) return <LoginPage />;
+  // ────────────────────────────────────────────────────
   const [tab, setTabRaw] = useState(() => {
     try {
       const hash = window.location.hash.slice(1);
@@ -609,6 +632,7 @@ ${ch.name}単会事務局`;
               <button onClick={exportBackup} title="バックアップ" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>📤</button>
               <label title="復元" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer", textAlign:"center" }}>📥<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
               <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.18)", border:"1px solid rgba(255,255,255,.35)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
+              <button onClick={() => db.auth.signOut()} title="ログアウト" style={{ flex:1, background:"rgba(220,50,50,.25)", border:"1px solid rgba(255,100,100,.4)", borderRadius:6, color:"rgba(255,180,180,.9)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⏻</button>
             </div>
           </div>
         </aside>
