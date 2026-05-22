@@ -125,7 +125,13 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
           lines.push(`  勤務先：${sp.company || "―"}`);
           lines.push(`  勤務先役職名：${sp.companyRole || "―"}`);
           lines.push(`  テーマ：「${sp.topic || "未定"}」`);
-          lines.push(`  顔写真：${sp.materialUrl || "※別途メール添付"}`);
+          if (sp.materialUrl) {
+            const ext = sp.materialUrl.split('.').pop().split('?')[0] || 'jpg';
+            const dlName = `${(sp.seminarDate || '').replace(/-/g,'')}_${ch.name}_${sp.speakerName || ''}_顔写真.${ext}`;
+            lines.push(`  顔写真：${sp.materialUrl}?download=${encodeURIComponent(dlName)}`);
+          } else {
+            lines.push(`  顔写真：※別途メール添付`);
+          }
         });
       }
       lines.push(``);
