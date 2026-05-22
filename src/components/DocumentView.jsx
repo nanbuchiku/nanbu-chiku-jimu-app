@@ -188,6 +188,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         const stKiso = getSeminarType("kiso");
         const lodgingRequired = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
         const contactPerson = chSettings.contactPerson || ch.staff || "";
+        const contactTel    = chSettings.contactTel    || "";
+        const chapterEmail  = chSettings.chapterEmail  || "";
 
         // kiso day + 1 = MS day
         const msDateStr = isKiso && sp.seminarDate ? (() => {
@@ -210,6 +212,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <div style={{ fontSize:"10.5pt", color:"#78909C", letterSpacing:"0.05em" }}>
               {sp.requestDate ? `受付日：${sp.requestDate}` : "受付日：　　　　年　　月　　日"}
               {"　　担当："}{contactPerson || "　　　　　　　　"}
+              {contactTel && `　TEL：${contactTel}`}
             </div>
           </div>
         );
@@ -395,13 +398,20 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
 
         const mkFooter = (c) => (
           <div style={{ marginTop:16, paddingTop:10, borderTop:`2px solid ${c}`,
-            fontSize:"10.5pt", color:"#546E7A", display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+            fontSize:"10.5pt", color:"#546E7A", display:"flex", flexDirection:"column", gap:4 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+              <div>
+                <span style={{ fontWeight:700 }}>【単会担当者】　{contactPerson || "　　　　　　"}</span>
+                {contactTel   && <span>　TEL：{contactTel}</span>}
+                {chapterEmail && <span>　Mail：<span style={{ color:"#1565C0" }}>{chapterEmail}</span></span>}
+              </div>
+              <div style={{ color:"#90A4AE" }}>確認日　　年　　月　　日</div>
+            </div>
             <div>
-              <span style={{ fontWeight:700 }}>【事務局連絡先】　倫理法人会　南部地区合同事務局</span>
+              <span style={{ fontWeight:700 }}>【合同事務局】　倫理法人会　南部地区合同事務局</span>
               {JIMU.tel && <span>　TEL：{JIMU.tel}</span>}
               <span>　Mail：<span style={{ color:"#1565C0" }}>{JIMU.email}</span></span>
             </div>
-            <div style={{ color:"#90A4AE" }}>確認日　　年　　月　　日</div>
           </div>
         );
 
