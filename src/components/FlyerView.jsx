@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
+import JSZip from 'jszip';
+import * as XLSX from 'xlsx';
 import { CHAPTERS, JIMU } from '../constants';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL } from '../styles';
 
@@ -33,6 +35,87 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
     setPrintEmail(v);
     try { localStorage.setItem('flyer_printEmail', v); } catch {}
   }, []);
+
+  const [downloading, setDownloading] = useState(false);
+
+  const downloadZipAndExcel = useCallback(async () => {
+    setDownloading(true);
+    showToast('📦 ZIP＋Excelを作成中...');
+    try {
+      const zip = new JSZip();
+      const photoFolder = zip.folder('顔写真');
+
+      // Excel ヘッダー行
+      const rows = [['単会名','曜日','開催日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真ファイル名']];
+
+      // 写真フェッチ用 Promise リスト
+      const fetches = [];
+
+      flyerData.forEach(({ ch, sps }) => {
+        if (sps.length === 0) {
+          rows.push([ch.name, ch.dayName, '未登録', '', '', '', '', '', '', '', '']);
+        } else {
+          sps.forEach(sp => {
+            const ext = sp.materialUrl ? (sp.materialUrl.split('.').pop().split('?')[0] || 'jpg') : '';
+            const photoName = sp.materialUrl
+              ? `${(sp.seminarDate || '').replace(/-/g,'')}_${ch.name}_${sp.speakerName || ''}_顔写真.${ext}`
+              : '';
+            rows.push([
+              ch.name, ch.dayName,
+              sp.seminarDate || '',
+              sp.speakerName || '',
+              sp.speakerKana || '',
+              sp.speakerUnit || '',
+              sp.role || '',
+              sp.company || '',
+              sp.companyRole || '',
+              sp.topic || '',
+              photoName,
+            ]);
+            if (sp.materialUrl && photoName) {
+              fetches.push(
+                fetch(sp.materialUrl)
+                  .then(r => r.arrayBuffer())
+                  .then(buf => photoFolder.file(photoName, buf))
+                  .catch(() => {})
+              );
+            }
+          });
+        }
+      });
+
+      // 写真を並行フェッチ
+      await Promise.all(fetches);
+
+      // Excel 生成
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        {wch:12},{wch:8},{wch:12},{wch:14},{wch:14},
+        {wch:18},{wch:12},{wch:20},{wch:14},{wch:30},{wch:44},
+      ];
+      const sheetName = `${selMonth.replace('-','年')}月号`;
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      const excelBuf = XLSX.write(wb, { type:'array', bookType:'xlsx' });
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, excelBuf);
+
+      // ZIP ダウンロード
+      const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `${selMonth}月号_チラシデータ.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('✅ ZIP＋Excelのダウンロード完了！');
+    } catch (e) {
+      showToast('⚠ ダウンロードに失敗しました: ' + (e.message || ''));
+    } finally {
+      setDownloading(false);
+    }
+  }, [flyerData, selMonth, showToast]);
 
   const { year, month, daysLeft, deadlineColor } = useMemo(() => {
     const [y, m] = selMonth.split("-").map(Number);
@@ -160,6 +243,11 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
         <div style={{ marginLeft:"auto", display:"flex", gap:8, flexWrap:"wrap" }}>
           <button style={BP} onClick={() => { navigator.clipboard?.writeText(buildLineText).catch(() => {}); showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱"); }}>📱 LINE共有テキストをコピー</button>
           <button style={{ ...BP, background:"#1B5E20" }} onClick={() => setShowEmailModal(true)}>📧 印刷会社にメール送信</button>
+          <button
+            style={{ ...BP, background: downloading ? "#90A4AE" : "#6A1B9A", cursor: downloading ? "not-allowed" : "pointer" }}
+            onClick={downloadZipAndExcel}
+            disabled={downloading}
+          >{downloading ? '⏳ 作成中...' : '📦 ZIP＋Excel ダウンロード'}</button>
         </div>
       </div>
 
