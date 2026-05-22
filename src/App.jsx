@@ -18,6 +18,50 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
 import LoginPage from './components/LoginPage';
 
+// 単会設定のデフォルト値（localStorage / Supabase Storage に保存済みデータがない場合のフォールバック）
+const DEFAULT_CHAPTER_SETTINGS = {
+  todawarabi: {
+    name:"とだわらび", msVenue:"戸田市商工会館", msAddress:"戸田市上戸田１−２１−２３",
+    msStation:"", msMapUrl:"https://share.google/LBrDQ6899ccNm89hv",
+    msParking:"", msVenueTel:"０４８−４４１−２６１７",
+    kisoVenue:"", kisoAddress:"", kisoMapUrl:"", kisoTextChapter:"",
+    hotelName:"", hotelTel:"", hotelAddress:"", hotelStation:"", hotelParking:"", hotelMapUrl:"",
+    contactPerson:"", contactTel:"", chapterEmail:"",
+  },
+  kawaguchi_east: {
+    name:"川口東", msVenue:"川口緑化センター　樹里安", msAddress:"川口安行領家８４４−２",
+    msStation:"", msMapUrl:"https://share.google/7QSKHBQCh0the5Cb7",
+    msParking:"", msVenueTel:"―",
+    kisoVenue:"", kisoAddress:"", kisoMapUrl:"", kisoTextChapter:"",
+    hotelName:"", hotelTel:"", hotelAddress:"", hotelStation:"", hotelParking:"", hotelMapUrl:"",
+    contactPerson:"", contactTel:"", chapterEmail:"",
+  },
+  niizashiki: {
+    name:"新座・志木", msVenue:"CKスクエア新座　６F", msAddress:"新座市野火止５−２−１０（駐車場：４F無料）",
+    msStation:"", msMapUrl:"https://share.google/rSXTQ2jqiGDttsCyE",
+    msParking:"４F無料", msVenueTel:"―",
+    kisoVenue:"", kisoAddress:"", kisoMapUrl:"", kisoTextChapter:"3",
+    hotelName:"東横イン志木東口", hotelTel:"", hotelAddress:"", hotelStation:"志木駅 徒歩2分", hotelParking:"有料駐車場あり", hotelMapUrl:"",
+    contactPerson:"小林靖会長", contactTel:"", chapterEmail:"nizashikirinri@gmail.com",
+  },
+  asaka: {
+    name:"朝霞", msVenue:"浜崎会館　２Fホール（氷川神社境内）", msAddress:"朝霞市浜崎３丁目９番地",
+    msStation:"", msMapUrl:"https://maps.app.goo.gl/phdDu7hZSuUbmErN6",
+    msParking:"", msVenueTel:"―",
+    kisoVenue:"", kisoAddress:"", kisoMapUrl:"", kisoTextChapter:"",
+    hotelName:"", hotelTel:"", hotelAddress:"", hotelStation:"", hotelParking:"", hotelMapUrl:"",
+    contactPerson:"", contactTel:"", chapterEmail:"",
+  },
+  kawaguchi: {
+    name:"川口", msVenue:"元郷四丁目町会会館", msAddress:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）",
+    msStation:"", msMapUrl:"https://share.google/nIYPjDL6MsMpt1ek8",
+    msParking:"（株）もといち　川口市元郷４−８−２４", msVenueTel:"―",
+    kisoVenue:"", kisoAddress:"", kisoMapUrl:"", kisoTextChapter:"",
+    hotelName:"", hotelTel:"", hotelAddress:"", hotelStation:"", hotelParking:"", hotelMapUrl:"",
+    contactPerson:"", contactTel:"", chapterEmail:"",
+  },
+};
+
 export default function App() {
   const [tab, setTabRaw] = useState(() => {
     try {
@@ -63,7 +107,18 @@ export default function App() {
   const [showHelp,       setShowHelp]      = useState(false);
   const [isOnline,       setIsOnline]      = useState(() => navigator.onLine);
   const [refreshing,     setRefreshing]    = useState(false);
-  const [chapterSettings,setChSettings]   = useState(() => { try { const c = localStorage.getItem('chapterSettings'); return c ? JSON.parse(c) : {}; } catch { return {}; } });
+  const [chapterSettings,setChSettings]   = useState(() => {
+    try {
+      const c = localStorage.getItem('chapterSettings');
+      const saved = c ? JSON.parse(c) : {};
+      // 各単会: デフォルト値 → 保存済み値 の順でマージ（保存済みが優先）
+      const merged = {};
+      CHAPTERS.forEach(ch => {
+        merged[ch.id] = { ...(DEFAULT_CHAPTER_SETTINGS[ch.id] || {}), ...(saved[ch.id] || {}) };
+      });
+      return merged;
+    } catch { return DEFAULT_CHAPTER_SETTINGS; }
+  });
   const [settingsOpen,   setSettingsOpen]  = useState(false);
   const [settingsSaving, setSettingsSaving]= useState(false);
   const [windowWidth,    setWindowWidth]   = useState(() => window.innerWidth);
@@ -136,12 +191,9 @@ export default function App() {
     setSettingsSaving(true);
     try {
       const next = { ...chapterSettings, [chapterId]: data };
-      const file = new Blob([JSON.stringify(next)], { type: 'application/json' });
-      const { error } = await db.storage.from('speaker-files')
-        .upload('settings/chapter_settings.json', file, { upsert: true });
       setChSettings(next);
       try { localStorage.setItem('chapterSettings', JSON.stringify(next)); } catch {}
-      showToast(error ? "設定をローカルに保存しました（ストレージ書き込みエラー）" : "設定を保存しました ✓");
+      showToast("設定を保存しました ✓");
     } finally {
       setSettingsSaving(false);
     }
