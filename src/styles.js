@@ -1,8 +1,8 @@
 export const CARD = { background:"#fff", borderRadius:8, padding:"13px", boxShadow:"0 1px 4px rgba(0,0,0,.08)", marginBottom:12 };
-export const OV   = { position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:16 };
-export const MOD  = { background:"#fff", borderRadius:10, padding:22, width:"100%", maxWidth:560, maxHeight:"90vh", overflowY:"auto" };
-export const MH   = { fontSize:14, fontWeight:700, color:"#1A3A6B", borderBottom:"2px solid #1A3A6B", paddingBottom:7, display:"flex", alignItems:"center", gap:7, marginBottom:8 };
-export const BP   = { background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:700, cursor:"pointer" };
+export const OV   = { position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:"clamp(6px,2vw,16px)" };
+export const MOD  = { background:"#fff", borderRadius:10, padding:"clamp(14px,3vw,22px)", width:"100%", maxWidth:560, maxHeight:"min(92dvh, 92vh)", overflowY:"auto", WebkitOverflowScrolling:"touch" };
+export const MH   = { fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#1A3A6B", borderBottom:"2px solid #1A3A6B", paddingBottom:7, display:"flex", alignItems:"center", gap:7, marginBottom:8 };
+export const BP   = { background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" };
 export const BC   = { background:"#ECEFF1", color:"#546E7A", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:600, cursor:"pointer" };
 export const BG   = { background:"#06C755", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:12, fontWeight:700, cursor:"pointer" };
 export const SEL  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"5px 8px", fontSize:11, background:"#fff", cursor:"pointer" };
