@@ -1,7 +1,29 @@
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { JIMU } from '../constants';
 import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr } from '../utils';
 import { BP, SEL } from '../styles';
+
+/** PDF ファイル名生成: 日付_単会名_講師名_講師依頼確認書.pdf */
+function makePdfFilename(sp) {
+  const date  = (sp.seminarDate || "").replace(/-/g, "") || String(Date.now());
+  const unit  = (getChapter(sp.chapterId).name || "単会").replace(/[/\\:*?"<>|]/g, "_");
+  const name  = (sp.speakerName || "講師").replace(/[/\\:*?"<>|]/g, "_");
+  return `${date}_${unit}_${name}_講師依頼確認書.pdf`;
+}
+
+/** html2pdf で確認書を直接ダウンロード */
+async function downloadPdf(elementId, filename) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const { default: html2pdf } = await import('html2pdf.js');
+  await html2pdf().set({
+    margin: 0,
+    filename,
+    image: { type: "jpeg", quality: 0.95 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+  }).from(el).save();
+}
 
 function DocSection({ title, color, children }) {
   const c = color || "#1A3A6B";
@@ -127,6 +149,25 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               window.print();
               setTimeout(restore, 1000);
             }}>🖨 印刷 / PDF保存</button>
+            <button style={{ ...BP, background:"#2E7D32" }} onClick={async () => {
+              const isKiso = sp.seminarType === "kiso";
+              await downloadPdf(isKiso ? "print-doc" : "print-doc", makePdfFilename(sp));
+            }}>💾 PDFダウンロード</button>
+            <button
+              style={{ ...BP, background:"#1565C0", opacity: sp.email ? 1 : 0.5 }}
+              disabled={!sp.email}
+              title={sp.email ? `PDFダウンロード後に ${sp.email} へメール送信` : "メールアドレス未入力"}
+              onClick={async () => {
+                const ch2 = getChapter(sp.chapterId);
+                const stConfig = getSeminarType(sp.seminarType || "ms");
+                const unitName = ch2.name + "倫理法人会";
+                const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
+                const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\n講師依頼確認書をPDFにてお送りします。\nご確認のほど、よろしくお願いいたします。`;
+                const mailto = `mailto:${encodeURIComponent(sp.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                await downloadPdf("print-doc", makePdfFilename(sp));
+                setTimeout(() => { window.location.href = mailto; }, 500);
+              }}
+            >📎 PDF保存＋講師へメール</button>
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
               {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:11, color:"#90A4AE", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
               <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:12, cursor:"pointer", fontWeight:600, color:"#37474F" }}
