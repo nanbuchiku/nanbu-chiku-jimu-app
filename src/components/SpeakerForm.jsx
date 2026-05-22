@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect, memo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType, toDateStr } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
+import { db } from '../lib/supabase';
 
 const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUnit:"", company:"", role:"", companyRole:"", seminarDate:"", topic:"", status:"pending", phone:"", email:"", requestDate:"", notes:"", venue:"", seminarType:"ms", lodging:"不要", printRequired:"不要", materialUrl:"", materialName:"" };
 
@@ -36,6 +37,10 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
 
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState('');
+  const fileInputRef = useRef(null);
+
   const set = (k, v) => {
     setErr("");
     if (k === 'chapterId') { try { localStorage.setItem('form_lastChapter', v); } catch {} }
@@ -48,6 +53,31 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       }
       return next;
     });
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadErr('');
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const safeName = (form.speakerName || 'speaker').replace(/[\s\/\\]/g, '_');
+      const path = `speakers/${Date.now()}_${safeName}.${ext}`;
+      const { error } = await db.storage.from('speaker-files').upload(path, file, {
+        upsert: true,
+        contentType: file.type,
+      });
+      if (error) throw error;
+      const { data: { publicUrl } } = db.storage.from('speaker-files').getPublicUrl(path);
+      set('materialUrl', publicUrl);
+      if (!form.materialName) set('materialName', `${safeName}_顔写真.${ext}`);
+    } catch (err) {
+      setUploadErr(`アップロード失敗: ${err.message}`);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
   const ch = getChapter(form.chapterId);
   const st = getSeminarType(form.seminarType || "ms");
@@ -194,8 +224,20 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料フォルダURL</div>
-            <input disabled={saving} type="url" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="https://drive.google.com/..." value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料URL（URLを貼るか、ファイルをアップロード）</div>
+            <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+              <input disabled={saving || uploading} type="url" style={{ ...INP, flex:1, opacity:(saving||uploading) ? .6 : 1 }}
+                placeholder="https://... またはアップロードボタンを使用" value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
+              <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: uploading ? "#90A4AE" : "#1565C0", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: uploading ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", flexShrink:0, userSelect:"none" }}>
+                {uploading ? "⏳ 送信中…" : "📤 アップロード"}
+                <input ref={fileInputRef} type="file" accept="image/*,.pdf" style={{ display:"none" }} onChange={handleFileUpload} disabled={uploading || saving} />
+              </label>
+            </div>
+            {form.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(form.materialUrl?.split('?')[0] || '') && (
+              <img src={form.materialUrl} alt="プレビュー"
+                style={{ marginTop:8, width:80, height:80, objectFit:"cover", borderRadius:"50%", border:"3px solid #90CAF9", display:"block" }} />
+            )}
+            {uploadErr && <div style={{ marginTop:5, fontSize:"clamp(12px,1.4vw,14px)", color:"#B71C1C" }}>⚠ {uploadErr}</div>}
           </div>
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>資料ファイル名・メモ</div>
