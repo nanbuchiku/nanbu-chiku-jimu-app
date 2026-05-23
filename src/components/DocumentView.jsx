@@ -88,12 +88,14 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
 
   const parsedNotes = useMemo(() => {
     if (!sp?.notes) return {};
+    // 旧データに紛れ込んでいる literal "\n" 文字列を実改行に正規化
+    const notes = String(sp.notes).replace(/\\n/g, '\n');
     const result = {};
-    const summaryMatch = sp.notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
+    const summaryMatch = notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
     if (summaryMatch) result['内容要約'] = summaryMatch[1].trim();
     const tagLine = /【([^】]+)】([^\n【]*)/g;
     let m;
-    while ((m = tagLine.exec(sp.notes)) !== null) {
+    while ((m = tagLine.exec(notes)) !== null) {
       if (m[1] !== '内容要約') result[m[1]] = m[2].trim();
     }
     return result;

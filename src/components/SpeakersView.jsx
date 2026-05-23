@@ -7,12 +7,14 @@ import FaxPrintModal from './FaxPrintModal';
 
 function extractStructuredNotes(notes) {
   if (!notes) return '';
+  // 旧データに紛れ込んでいる literal "\n" を実改行に正規化
+  const normalized = String(notes).replace(/\\n/g, '\n');
   const lines = [];
-  const sm = notes.match(/【内容要約】\n[\s\S]*?(?=\n【|$)/);
+  const sm = normalized.match(/【内容要約】\n[\s\S]*?(?=\n【|$)/);
   if (sm) lines.push(sm[0].trim());
   const re = /【([^】]+)】([^\n]*)/g;
   let m;
-  while ((m = re.exec(notes)) !== null) {
+  while ((m = re.exec(normalized)) !== null) {
     if (m[1] !== '内容要約') lines.push(`【${m[1]}】${m[2]}`);
   }
   return lines.join('\n');
