@@ -3,6 +3,7 @@ import { CHAPTERS, STATUS } from '../constants';
 import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate } from '../utils';
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
 import FileViewModal from './FileViewModal';
+import FaxPrintModal from './FaxPrintModal';
 
 function extractStructuredNotes(notes) {
   if (!notes) return '';
@@ -38,6 +39,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const [showActionOnly, setShowActionOnly] = useState(false);
   const [fileModal, setFileModal] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  const [showFaxModal, setShowFaxModal] = useState(false);
   const notesRef = useRef("");
 
   useEffect(() => {
@@ -179,9 +181,18 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
             </button>
           )}
           <button style={{ ...BC, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 18px" }} onClick={() => window.print()} title="印刷">🖨 印刷</button>
+          <button style={{ ...BC, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 18px", background:"#E8EAF6", color:"#1A3A6B", borderColor:"#1A3A6B", fontWeight:700 }} onClick={() => setShowFaxModal(true)} title="FAX用 講師依頼確認書を印刷">📠 FAX</button>
           <button style={{ ...BP, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 20px" }} onClick={onAdd}>＋ 新規登録</button>
         </div>
       </div>
+
+      {showFaxModal && (
+        <FaxPrintModal
+          defaultChapterId={filterCh}
+          onClose={() => setShowFaxModal(false)}
+          showToast={showToast}
+        />
+      )}
 
       {/* ── Filters ─────────────────────────────── */}
       <div className="no-print" style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
