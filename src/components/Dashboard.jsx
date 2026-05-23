@@ -40,13 +40,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     return speakers.filter(sp => sp.seminarDate && weekStrs.has(sp.seminarDate));
   }, [speakers, weekDates]);
 
-  const nextWeek = useMemo(() => {
-    const nextStrs = new Set(weekDates.map(d => {
-      const nd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7);
-      return toDateStr(nd);
-    }));
-    return speakers.filter(sp => sp.seminarDate && nextStrs.has(sp.seminarDate));
-  }, [speakers, weekDates]);
   const todayStr = useMemo(() => toDateStr(today), [today]);
   const topTasks = useMemo(
     () => tasks.filter(t => !t.done).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 5),
@@ -407,21 +400,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               );
             })}
           </div>
-          {nextWeek.length > 0 && (
-            <div style={{ marginTop:10, padding:"8px 12px", background:"#F5F6FA", border:"1px solid #D0D7E2", borderRadius:8 }}>
-              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#78909C", marginBottom:5 }}>来週の講師</div>
-              {nextWeek.map(sp => {
-                const ch = getChapter(sp.chapterId);
-                return (
-                  <div key={sp.id} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:3 }}>
-                    <span style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, color:"#fff", background: ch.color, padding:"1px 5px", borderRadius:8 }}>{ch.short}</span>
-                    <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:600 }}>{sp.speakerName}</span>
-                    <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#78909C" }}>「{sp.topic}」</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         <div>
