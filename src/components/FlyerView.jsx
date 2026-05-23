@@ -40,6 +40,19 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
   const [downloadingFull, setDownloadingFull] = useState(false); // 写真込みZIP
   const [savingDrive,     setSavingDrive]     = useState(false); // Google Drive
 
+  // ── flyerData（buildExcelBuffer より前に定義する必要あり） ────────
+  const flyerData = useMemo(() => CHAPTERS.map(ch => {
+    const sps = speakers
+      .filter(s =>
+        (!s.seminarType || s.seminarType === "ms") &&
+        s.chapterId === ch.id &&
+        s.seminarDate?.startsWith(selMonth) &&
+        s.status !== "cancelled"
+      )
+      .sort((a, b) => (a.seminarDate || '').localeCompare(b.seminarDate || ''));
+    return { ch, sps };
+  }), [speakers, selMonth]);
+
   // ── 共通: Excelバッファ生成（写真はURLのみ） ──────────────────────
   const buildExcelBuffer = useCallback(() => {
     const rows = [['単会名','曜日','開催日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真URL（クリックでDL）']];
@@ -166,19 +179,6 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
     const days = Math.ceil((dl - today) / 86400000);
     return { year: y, month: m, deadline: dl, daysLeft: days, deadlineColor: days < 0 ? "#B71C1C" : days <= 3 ? "#E65100" : days <= 7 ? "#FF8F00" : "#2E7D32" };
   }, [selMonth, today]);
-
-  // 各単会の全講師リスト（複数対応）
-  const flyerData = useMemo(() => CHAPTERS.map(ch => {
-    const sps = speakers
-      .filter(s =>
-        (!s.seminarType || s.seminarType === "ms") &&
-        s.chapterId === ch.id &&
-        s.seminarDate?.startsWith(selMonth) &&
-        s.status !== "cancelled"
-      )
-      .sort((a, b) => (a.seminarDate || '').localeCompare(b.seminarDate || ''));
-    return { ch, sps };
-  }), [speakers, selMonth]);
 
   // 完成度（予定人数基準）
   const completeness = useMemo(() => flyerData.map(({ ch, sps }) => {
