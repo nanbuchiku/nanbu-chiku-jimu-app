@@ -146,8 +146,8 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
       <div class="field"><div class="field-label">法人会役職</div><div class="field-input"></div></div>
     </div>
     <div class="two-col">
-      <div class="field"><div class="field-label">勤　務　先<span class="req">*</span><span class="hint">チラシ記載</span></div><div class="field-input"></div></div>
-      <div class="field"><div class="field-label">勤務先役職名<span class="req">*</span><span class="hint">チラシ記載</span></div><div class="field-input"></div></div>
+      <div class="field"><div class="field-label">勤　務　先<span class="hint">任意・チラシ記載</span></div><div class="field-input"></div></div>
+      <div class="field"><div class="field-label">勤務先役職名<span class="hint">任意・チラシ記載</span></div><div class="field-input"></div></div>
     </div>
     <div class="two-col">
       <div class="field"><div class="field-label">連絡先TEL<span class="req">*</span></div><div class="field-input"></div></div>
