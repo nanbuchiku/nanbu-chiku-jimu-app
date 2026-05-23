@@ -164,15 +164,13 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
         </div>
 
         <div class="field" id="f-company">
-          <label>勤務先<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <label>勤務先<span class="hint">任意・チラシに記載します</span></label>
           <input type="text" id="company" placeholder="株式会社○○">
-          <div class="error-msg">勤務先を入力してください</div>
         </div>
 
         <div class="field" id="f-companyRole">
-          <label>勤務先役職名<span class="req">*</span><span class="hint">チラシに記載します</span></label>
+          <label>勤務先役職名<span class="hint">任意・チラシに記載します</span></label>
           <input type="text" id="companyRole" placeholder="代表取締役">
-          <div class="error-msg">勤務先役職名を入力してください</div>
         </div>
 
         <div class="field" id="f-phone">
@@ -629,8 +627,6 @@ function requiredRadio(name, errId, wrapperId) {
 function validatePage1() {
   let ok = true;
   ok = required('speakerKana','f-kana')       && ok;
-  ok = required('company',    'f-company')    && ok;
-  ok = required('companyRole','f-companyRole')&& ok;
   ok = required('phone',      'f-phone')      && ok;
   return ok;
 }
