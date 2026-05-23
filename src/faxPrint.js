@@ -63,14 +63,14 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
   /* フィールド */
   .field { margin-bottom: 2mm; display: flex; align-items: flex-start; gap: 2mm; }
   .field:last-child { margin-bottom: 0; }
-  .field-label { width: 30mm; flex-shrink: 0; font-size: 9pt; font-weight: 700; color:#37474F; padding-top: 1.5mm; }
+  .field-label { width: 34mm; flex-shrink: 0; font-size: 9pt; font-weight: 700; color:#37474F; padding-top: 1.5mm; line-height: 1.3; word-break: keep-all; }
   .field-label .req { color:#E53935; margin-left: 2px; }
-  .field-label .hint { display: block; font-size: 7.5pt; color:#90A4AE; font-weight: 400; margin-top: 0.3mm; }
-  .field-input { flex: 1; min-height: 7mm; background:#FAFAFA; border: 1px solid #CFD8DC; border-radius: 1.5mm; padding: 1.5mm 2mm; font-size: 10pt; color:#263238; }
+  .field-label .hint { display: block; font-size: 7.5pt; color:#90A4AE; font-weight: 400; margin-top: 0.3mm; line-height: 1.3; }
+  .field-input { flex: 1; min-height: 7mm; background:#FAFAFA; border: 1px solid #CFD8DC; border-radius: 1.5mm; padding: 1.5mm 2mm; font-size: 10pt; color:#263238; box-sizing: border-box; }
   .field-input.printed { background: #fff; border-color:#fff; padding-left: 0; font-weight: 600; }
   .field-input.tall { min-height: 14mm; }
   .field-input.xtall { min-height: 32mm; }
-  .field-input.short { max-width: 60mm; }
+  .field-input.short { flex: 0 0 50mm; max-width: 50mm; }
 
   /* 2カラム */
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; }
@@ -206,10 +206,7 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
   <div class="section-header">🧾 領収証</div>
   <div class="section-body">
     <div class="field"><div class="field-label">宛　　名<span class="req">*</span></div><div style="flex:1;"><div class="cbrow">${cb('個人宛')}${cb('会社宛')}</div></div></div>
-    <div class="two-col">
-      <div class="field"><div class="field-label">郵便番号<span class="hint">7桁</span></div><div class="field-input short"></div></div>
-      <div></div>
-    </div>
+    <div class="field"><div class="field-label">郵便番号<span class="hint">7桁</span></div><div class="field-input short"></div></div>
     <div class="field"><div class="field-label">住　　所<span class="req">*</span></div><div class="field-input tall"></div></div>
   </div>
 </div>
