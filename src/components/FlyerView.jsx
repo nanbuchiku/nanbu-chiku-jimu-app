@@ -36,87 +36,129 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
     try { localStorage.setItem('flyer_printEmail', v); } catch {}
   }, []);
 
-  const [downloading, setDownloading] = useState(false);
+  const [downloading,     setDownloading]     = useState(false); // Excel-only ZIP
+  const [downloadingFull, setDownloadingFull] = useState(false); // 写真込みZIP
+  const [savingDrive,     setSavingDrive]     = useState(false); // Google Drive
 
-  const downloadZipAndExcel = useCallback(async () => {
+  // ── 共通: Excelバッファ生成（写真はURLのみ） ──────────────────────
+  const buildExcelBuffer = useCallback(() => {
+    const rows = [['単会名','曜日','開催日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真URL（クリックでDL）']];
+    flyerData.forEach(({ ch, sps }) => {
+      if (sps.length === 0) {
+        rows.push([ch.name, ch.dayName, '未登録', '', '', '', '', '', '', '', '']);
+      } else {
+        sps.forEach(sp => {
+          const ext = sp.materialUrl ? (sp.materialUrl.split('.').pop().split('?')[0] || 'jpg') : '';
+          const dlName = sp.materialUrl ? `${(sp.seminarDate||'').replace(/-/g,'')}_${ch.name}_${sp.speakerName||''}_顔写真.${ext}` : '';
+          const photoUrl = sp.materialUrl ? `${sp.materialUrl}?download=${encodeURIComponent(dlName)}` : '（未受領）';
+          rows.push([ch.name, ch.dayName, sp.seminarDate||'', sp.speakerName||'', sp.speakerKana||'', sp.speakerUnit||'', sp.role||'', sp.company||'', sp.companyRole||'', sp.topic||'', photoUrl]);
+        });
+      }
+    });
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{wch:12},{wch:8},{wch:12},{wch:14},{wch:14},{wch:18},{wch:12},{wch:20},{wch:14},{wch:30},{wch:80}];
+    rows.slice(1).forEach((row, i) => {
+      const u = row[10];
+      if (u && u.startsWith('http')) {
+        const ref = XLSX.utils.encode_cell({ r: i+1, c: 10 });
+        if (!ws[ref]) ws[ref] = { t:'s', v: u };
+        ws[ref].l = { Target: u, Tooltip: 'クリックしてダウンロード' };
+      }
+    });
+    XLSX.utils.book_append_sheet(wb, ws, `${selMonth.replace('-','年')}月号`);
+    return XLSX.write(wb, { type:'array', bookType:'xlsx' });
+  }, [flyerData, selMonth]);
+
+  // ── ① Excel-only ZIP（軽量・メール添付用） ───────────────────────
+  const downloadExcelZip = useCallback(async () => {
     setDownloading(true);
     showToast('📊 Excel作成中...');
     try {
-      // ── Excel 生成（写真はURLのみ記載、ファイル本体は含めない） ──
-      const rows = [[
-        '単会名','曜日','開催日','講師名','ふりがな',
-        '所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真URL（クリックでダウンロード）',
-      ]];
-
-      flyerData.forEach(({ ch, sps }) => {
-        if (sps.length === 0) {
-          rows.push([ch.name, ch.dayName, '未登録', '', '', '', '', '', '', '', '']);
-        } else {
-          sps.forEach(sp => {
-            const ext = sp.materialUrl ? (sp.materialUrl.split('.').pop().split('?')[0] || 'jpg') : '';
-            const dlName = sp.materialUrl
-              ? `${(sp.seminarDate || '').replace(/-/g,'')}_${ch.name}_${sp.speakerName || ''}_顔写真.${ext}`
-              : '';
-            // ?download=ファイル名 を付けてクリックでそのままダウンロードできるURLにする
-            const photoUrl = sp.materialUrl
-              ? `${sp.materialUrl}?download=${encodeURIComponent(dlName)}`
-              : '（未受領）';
-            rows.push([
-              ch.name, ch.dayName,
-              sp.seminarDate || '',
-              sp.speakerName || '',
-              sp.speakerKana || '',
-              sp.speakerUnit || '',
-              sp.role || '',
-              sp.company || '',
-              sp.companyRole || '',
-              sp.topic || '',
-              photoUrl,
-            ]);
-          });
-        }
-      });
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [
-        {wch:12},{wch:8},{wch:12},{wch:14},{wch:14},
-        {wch:18},{wch:12},{wch:20},{wch:14},{wch:30},{wch:80},
-      ];
-      // URL列（K列=インデックス10）をハイパーリンクとして設定
-      rows.slice(1).forEach((row, i) => {
-        const url = row[10];
-        if (url && url.startsWith('http')) {
-          const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: 10 });
-          if (!ws[cellRef]) ws[cellRef] = { t:'s', v: url };
-          ws[cellRef].l = { Target: url, Tooltip: 'クリックしてダウンロード' };
-        }
-      });
-
-      const sheetName = `${selMonth.replace('-','年')}月号`;
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      const excelBuf = XLSX.write(wb, { type:'array', bookType:'xlsx' });
-
-      // ── ZIP に Excel だけ入れる（写真はURL参照のため軽量） ──
       const zip = new JSZip();
-      zip.file(`流し込みデータ_${selMonth}.xlsx`, excelBuf);
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, buildExcelBuffer());
       const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
-
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url;
-      a.download = `${selMonth}月号_チラシデータ.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: `${selMonth}月号_チラシデータ.zip` });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast('✅ Excelダウンロード完了！写真URLをクリックすると個別DL可能です');
-    } catch (e) {
-      showToast('⚠ ダウンロードに失敗しました: ' + (e.message || ''));
-    } finally {
-      setDownloading(false);
-    }
-  }, [flyerData, selMonth, showToast]);
+      showToast('✅ ZIP（Excel）ダウンロード完了！写真はURL列からDL可能です');
+    } catch (e) { showToast('⚠ 失敗: ' + (e.message||'')); }
+    finally { setDownloading(false); }
+  }, [buildExcelBuffer, selMonth, showToast]);
+
+  // ── ② 写真込みZIP（全ファイル同梱） ─────────────────────────────
+  const downloadFullZip = useCallback(async () => {
+    setDownloadingFull(true);
+    showToast('📦 写真を取得中... しばらくお待ちください');
+    try {
+      const zip = new JSZip();
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, buildExcelBuffer());
+      const photoFolder = zip.folder('顔写真');
+      const fetches = [];
+      flyerData.forEach(({ ch, sps }) => {
+        sps.forEach(sp => {
+          if (!sp.materialUrl) return;
+          const ext = sp.materialUrl.split('.').pop().split('?')[0] || 'jpg';
+          const name = `${(sp.seminarDate||'').replace(/-/g,'')}_${ch.name}_${sp.speakerName||''}_顔写真.${ext}`;
+          fetches.push(fetch(sp.materialUrl).then(r => r.arrayBuffer()).then(buf => photoFolder.file(name, buf)).catch(()=>{}));
+        });
+      });
+      await Promise.all(fetches);
+      const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: `${selMonth}月号_チラシデータ（写真込み）.zip` });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('✅ ZIP（写真込み）ダウンロード完了！');
+    } catch (e) { showToast('⚠ 失敗: ' + (e.message||'')); }
+    finally { setDownloadingFull(false); }
+  }, [buildExcelBuffer, flyerData, selMonth, showToast]);
+
+  // ── ③ Googleドライブに保存 ────────────────────────────────────────
+  const saveToDrive = useCallback(async () => {
+    const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!CLIENT_ID) { showToast('⚠ Google Client IDが未設定です。管理者にご連絡ください'); return; }
+    setSavingDrive(true);
+    showToast('☁ Googleドライブに保存中...');
+    try {
+      // GIS スクリプト読み込み
+      if (!window.google?.accounts?.oauth2) {
+        await new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://accounts.google.com/gsi/client';
+          s.onload = res; s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      }
+      // OAuth トークン取得
+      const token = await new Promise((res, rej) => {
+        window.google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: r => r.error ? rej(new Error(r.error)) : res(r.access_token),
+        }).requestAccessToken({ prompt: '' });
+      });
+      // ZIP生成（Excel only・軽量）
+      const zip = new JSZip();
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, buildExcelBuffer());
+      const zipBlob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
+      // Drive API アップロード
+      const meta = { name: `${selMonth}月号_チラシデータ.zip`, mimeType: 'application/zip' };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
+      form.append('file', zipBlob);
+      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form,
+      });
+      if (!res.ok) throw new Error('Drive APIエラー ' + res.status);
+      const { webViewLink } = await res.json();
+      await navigator.clipboard?.writeText(webViewLink).catch(()=>{});
+      showToast('✅ Driveに保存完了！リンクをコピーしました 📋');
+      window.open(webViewLink, '_blank');
+    } catch (e) { showToast('⚠ Drive保存失敗: ' + (e.message||'')); }
+    finally { setSavingDrive(false); }
+  }, [buildExcelBuffer, selMonth, showToast]);
 
   const { year, month, daysLeft, deadlineColor } = useMemo(() => {
     const [y, m] = selMonth.split("-").map(Number);
@@ -242,13 +284,17 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
           {months.map(m => <option key={m.value} value={m.value}>{m.isPast ? "📁 " : ""}{m.label}　{m.readyCount === 5 ? "✓完成" : `${m.readyCount}件`}</option>)}
         </select>
         <div style={{ marginLeft:"auto", display:"flex", gap:8, flexWrap:"wrap" }}>
-          <button style={BP} onClick={() => { navigator.clipboard?.writeText(buildLineText).catch(() => {}); showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱"); }}>📱 LINE共有テキストをコピー</button>
-          <button style={{ ...BP, background:"#1B5E20" }} onClick={() => setShowEmailModal(true)}>📧 印刷会社にメール送信</button>
-          <button
-            style={{ ...BP, background: downloading ? "#90A4AE" : "#6A1B9A", cursor: downloading ? "not-allowed" : "pointer" }}
-            onClick={downloadZipAndExcel}
-            disabled={downloading}
-          >{downloading ? '⏳ 作成中...' : '📦 ZIP＋Excel ダウンロード'}</button>
+          <button style={BP} onClick={() => { navigator.clipboard?.writeText(buildLineText).catch(() => {}); showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱"); }}>📱 LINE</button>
+          <button style={{ ...BP, background:"#1B5E20" }} onClick={() => setShowEmailModal(true)}>📧 印刷会社へメール</button>
+          <button style={{ ...BP, background: downloading ? "#90A4AE" : "#6A1B9A", cursor: downloading ? "not-allowed" : "pointer" }} onClick={downloadExcelZip} disabled={downloading}>
+            {downloading ? '⏳ 作成中...' : '📊 ZIP（メール用）'}
+          </button>
+          <button style={{ ...BP, background: downloadingFull ? "#90A4AE" : "#1565C0", cursor: downloadingFull ? "not-allowed" : "pointer" }} onClick={downloadFullZip} disabled={downloadingFull}>
+            {downloadingFull ? '⏳ 取得中...' : '📦 ZIP（写真込み）'}
+          </button>
+          <button style={{ ...BP, background: savingDrive ? "#90A4AE" : "#1B5E20", cursor: savingDrive ? "not-allowed" : "pointer" }} onClick={saveToDrive} disabled={savingDrive}>
+            {savingDrive ? '⏳ 保存中...' : '☁ Googleドライブに保存'}
+          </button>
         </div>
       </div>
 
