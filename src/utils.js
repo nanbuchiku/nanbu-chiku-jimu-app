@@ -32,7 +32,8 @@ export const isSameDay = (a, b) =>
 
 export function extractStaffNotes(notes) {
   if (!notes) return '';
-  return notes
+  return String(notes)
+    .replace(/\\n/g, '\n') // 旧データの literal \n を正規化
     .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
     .replace(/【[^】]+】[^\n]*/g, '')
     .replace(/\n{3,}/g, '\n\n')
@@ -41,10 +42,11 @@ export function extractStaffNotes(notes) {
 
 export function extractMaterialLinks(notes) {
   if (!notes) return [];
+  const normalized = String(notes).replace(/\\n/g, '\n');
   const out = [];
   const re = /【(資料\d+)】\s*(https?:\/\/\S+)/g;
   let m;
-  while ((m = re.exec(notes)) !== null) out.push({ label: m[1], url: m[2] });
+  while ((m = re.exec(normalized)) !== null) out.push({ label: m[1], url: m[2] });
   return out;
 }
 
