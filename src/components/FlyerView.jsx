@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import JSZip from 'jszip';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL } from '../styles';
 
@@ -53,34 +53,131 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
     return { ch, sps };
   }), [speakers, selMonth]);
 
-  // ── 共通: Excelバッファ生成（写真はURLのみ） ──────────────────────
-  const buildExcelBuffer = useCallback(() => {
-    const rows = [['単会名','曜日','開催日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真URL（クリックでDL）']];
+  // ── 共通: Excelバッファ生成（ExcelJS・体裁整え版） ──────────────
+  const buildExcelBuffer = useCallback(async () => {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = '倫理法人会 南部地区合同事務局';
+    wb.created = new Date();
+    const ws = wb.addWorksheet(`${selMonth.replace('-','年')}月号`, {
+      views: [{ state: 'frozen', ySplit: 1 }],     // ヘッダー固定
+      pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1 },
+    });
+
+    // 列定義（幅・キー）
+    ws.columns = [
+      { header:'単会名',         key:'chapter',    width:14 },
+      { header:'曜日',           key:'day',        width:8  },
+      { header:'開催日',         key:'date',       width:13 },
+      { header:'講師名',         key:'name',       width:18 },
+      { header:'ふりがな',       key:'kana',       width:18 },
+      { header:'所属法人会名',   key:'unit',       width:22 },
+      { header:'法人会役職',     key:'role',       width:14 },
+      { header:'勤務先',         key:'company',    width:24 },
+      { header:'勤務先役職名',   key:'companyRole',width:16 },
+      { header:'テーマ',         key:'topic',      width:36 },
+      { header:'顔写真URL',      key:'photo',      width:60 },
+    ];
+
+    // ── ヘッダー行のスタイル ──
+    const headerRow = ws.getRow(1);
+    headerRow.height = 28;
+    headerRow.eachCell(cell => {
+      cell.font = { name:'Yu Gothic', size:12, bold:true, color:{ argb:'FFFFFFFF' } };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF1A3A6B' } };
+      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+      cell.border = {
+        top:    { style:'medium', color:{ argb:'FF0D1B3E' } },
+        bottom: { style:'medium', color:{ argb:'FF0D1B3E' } },
+        left:   { style:'thin',   color:{ argb:'FF7F8FA8' } },
+        right:  { style:'thin',   color:{ argb:'FF7F8FA8' } },
+      };
+    });
+
+    // 単会ごとの薄い背景色マップ
+    const chBg = { todawarabi:'FFE8F5E9', kawaguchi_east:'FFE3F2FD', niiza_shiki:'FFEDE7F6', asaka:'FFFFF3E0', kawaguchi:'FFFFEBEE' };
+
+    // データ行追加
     flyerData.forEach(({ ch, sps }) => {
       if (sps.length === 0) {
-        rows.push([ch.name, ch.dayName, '未登録', '', '', '', '', '', '', '', '']);
+        const r = ws.addRow({ chapter: ch.name, day: ch.dayName, date:'未登録', name:'', kana:'', unit:'', role:'', company:'', companyRole:'', topic:'', photo:'' });
+        r.eachCell({ includeEmpty:true }, cell => {
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: chBg[ch.id] || 'FFFAFAFA' } };
+        });
       } else {
         sps.forEach(sp => {
           const ext = sp.materialUrl ? (sp.materialUrl.split('.').pop().split('?')[0] || 'jpg') : '';
           const dlName = sp.materialUrl ? `${(sp.seminarDate||'').replace(/-/g,'')}_${ch.name}_${sp.speakerName||''}_顔写真.${ext}` : '';
-          const photoUrl = sp.materialUrl ? `${sp.materialUrl}?download=${encodeURIComponent(dlName)}` : '（未受領）';
-          rows.push([ch.name, ch.dayName, sp.seminarDate||'', sp.speakerName||'', sp.speakerKana||'', sp.speakerUnit||'', sp.role||'', sp.company||'', sp.companyRole||'', sp.topic||'', photoUrl]);
+          const photoUrl = sp.materialUrl ? `${sp.materialUrl}?download=${encodeURIComponent(dlName)}` : '';
+          const r = ws.addRow({
+            chapter: ch.name,
+            day:     ch.dayName,
+            date:    sp.seminarDate || '',
+            name:    sp.speakerName || '',
+            kana:    sp.speakerKana || '',
+            unit:    sp.speakerUnit || '',
+            role:    sp.role || '',
+            company: sp.company || '',
+            companyRole: sp.companyRole || '',
+            topic:   sp.topic || '',
+            photo:   photoUrl || '（未受領）',
+          });
+          // 行全体の背景（単会色）
+          r.eachCell({ includeEmpty:true }, cell => {
+            cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: chBg[ch.id] || 'FFFFFFFF' } };
+          });
+          // 顔写真URLはハイパーリンク化（青文字＋下線）
+          if (photoUrl) {
+            const photoCell = r.getCell('photo');
+            photoCell.value = { text:'📷 写真を開く（クリックでダウンロード）', hyperlink: photoUrl, tooltip:'クリックしてダウンロード' };
+            photoCell.font = { name:'Yu Gothic', size:11, color:{ argb:'FF1565C0' }, underline:true };
+          }
         });
       }
     });
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [{wch:12},{wch:8},{wch:12},{wch:14},{wch:14},{wch:18},{wch:12},{wch:20},{wch:14},{wch:30},{wch:80}];
-    rows.slice(1).forEach((row, i) => {
-      const u = row[10];
-      if (u && u.startsWith('http')) {
-        const ref = XLSX.utils.encode_cell({ r: i+1, c: 10 });
-        if (!ws[ref]) ws[ref] = { t:'s', v: u };
-        ws[ref].l = { Target: u, Tooltip: 'クリックしてダウンロード' };
+
+    // ── 全データ行の共通スタイル ──
+    for (let i = 2; i <= ws.rowCount; i++) {
+      const row = ws.getRow(i);
+      row.height = 26;
+      row.eachCell({ includeEmpty:true }, (cell, colNumber) => {
+        if (!cell.font || (cell.font && !cell.font.color)) {
+          cell.font = { name:'Yu Gothic', size:11 };
+        }
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: (colNumber === 1 || colNumber === 2 || colNumber === 3) ? 'center' : 'left',
+          wrapText: (colNumber === 10), // テーマ列のみ折返し
+        };
+        cell.border = {
+          top:    { style:'thin', color:{ argb:'FFCFD8DC' } },
+          bottom: { style:'thin', color:{ argb:'FFCFD8DC' } },
+          left:   { style:'thin', color:{ argb:'FFCFD8DC' } },
+          right:  { style:'thin', color:{ argb:'FFCFD8DC' } },
+        };
+      });
+      // 単会名・曜日は太字
+      row.getCell('chapter').font = { name:'Yu Gothic', size:11, bold:true, color:{ argb:'FF1A3A6B' } };
+      row.getCell('day').font     = { name:'Yu Gothic', size:11, bold:true, color:{ argb:'FF546E7A' } };
+      // 講師名も少し太字
+      row.getCell('name').font    = { name:'Yu Gothic', size:11.5, bold:true };
+      // 「未登録」「（未受領）」はグレー＋斜体
+      if (row.getCell('date').value === '未登録') {
+        row.getCell('date').font = { name:'Yu Gothic', size:11, italic:true, color:{ argb:'FFB71C1C' }, bold:true };
       }
-    });
-    XLSX.utils.book_append_sheet(wb, ws, `${selMonth.replace('-','年')}月号`);
-    return XLSX.write(wb, { type:'array', bookType:'xlsx' });
+      const photoVal = row.getCell('photo').value;
+      if (photoVal === '（未受領）') {
+        row.getCell('photo').font = { name:'Yu Gothic', size:11, italic:true, color:{ argb:'FF90A4AE' } };
+      }
+    }
+
+    // オートフィルター（並び替え・絞り込み可能に）
+    ws.autoFilter = { from:{ row:1, column:1 }, to:{ row:1, column:ws.columns.length } };
+
+    // 印刷時マージン
+    ws.pageSetup.margins = { left:0.3, right:0.3, top:0.5, bottom:0.5, header:0.3, footer:0.3 };
+
+    // ArrayBuffer に書き出し
+    return await wb.xlsx.writeBuffer();
   }, [flyerData, selMonth]);
 
   // ── ① Excel-only ZIP（軽量・メール添付用） ───────────────────────
@@ -89,7 +186,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
     showToast('📊 Excel作成中...');
     try {
       const zip = new JSZip();
-      zip.file(`流し込みデータ_${selMonth}.xlsx`, buildExcelBuffer());
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, await buildExcelBuffer());
       const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
       const url = URL.createObjectURL(blob);
       const a = Object.assign(document.createElement('a'), { href: url, download: `${selMonth}月号_チラシデータ.zip` });
@@ -106,7 +203,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
     showToast('📦 写真を取得中... しばらくお待ちください');
     try {
       const zip = new JSZip();
-      zip.file(`流し込みデータ_${selMonth}.xlsx`, buildExcelBuffer());
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, await buildExcelBuffer());
       const photoFolder = zip.folder('顔写真');
       const fetches = [];
       flyerData.forEach(({ ch, sps }) => {
@@ -154,7 +251,7 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
       });
       // ZIP生成（Excel only・軽量）
       const zip = new JSZip();
-      zip.file(`流し込みデータ_${selMonth}.xlsx`, buildExcelBuffer());
+      zip.file(`流し込みデータ_${selMonth}.xlsx`, await buildExcelBuffer());
       const zipBlob = await zip.generateAsync({ type:'blob', compression:'DEFLATE' });
       // Drive API アップロード
       const meta = { name: `${selMonth}月号_チラシデータ.zip`, mimeType: 'application/zip' };
