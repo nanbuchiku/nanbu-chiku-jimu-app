@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import JSZip from 'jszip';
 import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
@@ -15,6 +15,20 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
   }), [today, speakers]);
 
   const [selMonth, setSelMonth] = useState(() => months[4].value);
+
+  // スクロールヒント（スマホ用）
+  const tableScrollRef = useRef(null);
+  const [showScrollHint, setShowScrollHint] = useState(true);
+  useEffect(() => {
+    // テーブルが実際にスクロール必要な幅か確認してから表示
+    const el = tableScrollRef.current;
+    if (!el || el.scrollWidth <= el.clientWidth) { setShowScrollHint(false); return; }
+    // 5秒後に自動非表示
+    const t = setTimeout(() => setShowScrollHint(false), 5000);
+    return () => clearTimeout(t);
+  }, [selMonth]); // 月切り替え時にリセット
+  const handleTableScroll = useCallback(() => setShowScrollHint(false), []);
+
   const [printEmail, setPrintEmail] = useState(() => localStorage.getItem('flyer_printEmail') || "");
   const [showEmailModal, setShowEmailModal] = useState(false);
 
@@ -459,7 +473,9 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
 
       {/* 一覧テーブル（複数講師対応） */}
       <div style={CARD}>
-        <div style={{ overflowX:"auto" }}>
+        {/* スクロールヒント（スマホ用） */}
+        <div style={{ position:"relative" }}>
+          <div ref={tableScrollRef} style={{ overflowX:"auto" }} onScroll={handleTableScroll}>
           <table style={TBL}>
             <thead>
               <tr>{["単会名","開催日","講師名（漢字）","ふりがな","所属法人会名","法人会役職","勤務先","勤務先役職名","テーマ","顔写真","状態","コピー"].map(h => <th key={h} style={TH}>{h}</th>)}</tr>
@@ -539,7 +555,28 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
               })}
             </tbody>
           </table>
-        </div>
+          </div>{/* /overflowX:auto */}
+          {/* 右スクロールヒント */}
+          {showScrollHint && (
+            <>
+              {/* 右端グラデーション */}
+              <div style={{ position:"absolute", top:0, right:0, bottom:0, width:60,
+                background:"linear-gradient(to right, transparent, rgba(255,255,255,.95))",
+                pointerEvents:"none", borderRadius:"0 6px 6px 0" }} />
+              {/* ヒントバッジ */}
+              <div onClick={() => setShowScrollHint(false)} style={{
+                position:"absolute", right:6, top:"50%", transform:"translateY(-50%)",
+                background:"#1A3A6B", color:"#fff", borderRadius:20,
+                padding:"5px 11px", fontSize:11, fontWeight:700,
+                whiteSpace:"nowrap", cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,.28)",
+                display:"flex", alignItems:"center", gap:4,
+                animation:"hintPulse 1s ease-in-out infinite alternate",
+              }}>
+                <span style={{ fontSize:13 }}>👉</span> 右にスクロール
+              </div>
+            </>
+          )}
+        </div>{/* /position:relative */}
       </div>
 
       <div style={{ padding:"10px 14px", background:"#FFF8E1", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#E65100", display:"flex", gap:8, alignItems:"flex-start", marginTop:8 }}>
