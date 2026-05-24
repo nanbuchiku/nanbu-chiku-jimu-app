@@ -836,7 +836,7 @@ ${ch.name}単会事務局`;
                   {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
                 </button>
               ))}
-              {TABS.filter(t => !primaryTabIds.has(t.id) && !secondaryTabIds.has(t.id) && !mobileTabIds.includes(t.id)).map(t => (
+              {TABS.filter(t => !primaryTabIds.has(t.id) && !secondaryTabIds.has(t.id) && !mobileTabIds.includes(t.id) && t.id !== 'sptasks').map(t => (
                 <button key={t.id} onClick={() => { setTab(t.id); setMobileDrawer(false); }}
                   style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background: activeNavId === t.id ? "rgba(255,255,255,.18)" : "transparent", color: activeNavId === t.id ? "#fff" : "rgba(255,255,255,.55)", cursor:"pointer", fontWeight: activeNavId === t.id ? 700 : 400, textAlign:"left", fontSize:"clamp(16px,2.4vw,20px)", marginBottom:2 }}>
                   <span style={{ fontSize:"clamp(20px,3vw,28px)", width:28, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
@@ -845,6 +845,30 @@ ${ch.name}単会事務局`;
                 </button>
               ))}
               <div style={{ height:1, background:"rgba(255,255,255,.12)", margin:"8px 8px" }} />
+              {/* 文字サイズ切り替え 大・中・小 */}
+              <div style={{ margin:"4px 8px 10px" }}>
+                <div style={{ fontSize:"clamp(11px,1.4vw,13px)", color:"rgba(255,255,255,.45)", marginBottom:5, paddingLeft:4, letterSpacing:"0.06em" }}>文字サイズ</div>
+                <div style={{ display:"flex", gap:4 }}>
+                  {SCALE_OPTIONS.map(opt => (
+                    <button
+                      key={opt.key}
+                      onClick={() => changeFontScale(opt.key)}
+                      style={{
+                        flex:1,
+                        background: fontScale === opt.key ? "rgba(255,255,255,.3)" : "rgba(255,255,255,.1)",
+                        border: fontScale === opt.key ? "1.5px solid rgba(255,255,255,.65)" : "1px solid rgba(255,255,255,.2)",
+                        borderRadius:8,
+                        color: fontScale === opt.key ? "#fff" : "rgba(255,255,255,.65)",
+                        padding:"10px 4px",
+                        fontSize: opt.key === 'small' ? 13 : opt.key === 'medium' ? 16 : 19,
+                        fontWeight: fontScale === opt.key ? 700 : 500,
+                        cursor:"pointer",
+                        lineHeight:1,
+                      }}
+                    >文{opt.label}</button>
+                  ))}
+                </div>
+              </div>
               <button onClick={() => { setSettingsOpen(true); setMobileDrawer(false); }}
                 style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"11px 14px", borderRadius:10, border:"none", background:"transparent", color:"rgba(255,255,255,.55)", cursor:"pointer", fontWeight:400, textAlign:"left", fontSize:"clamp(16px,2.4vw,20px)", marginBottom:2 }}>
                 <span style={{ fontSize:"clamp(20px,3vw,28px)", width:28, textAlign:"center", flexShrink:0 }}>⚙</span>
