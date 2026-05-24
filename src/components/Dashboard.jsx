@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType, toDateStr, parseDate, formatDate } from '../utils';
-import { CARD, BSM, PILL, OV, MOD, MH, BC, BP } from '../styles';
+import { CARD, BSM, PILL, OV, MOD, MH, BC, BP, FS_MD, FS_SM, FS_XS } from '../styles';
 
 const HOTEL_ITEMS = [
   { id:"hotel_booked",   label:"予約完了",                 icon:"🏨" },
@@ -284,8 +284,8 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(18px,2.5vw,24px)", flexShrink:0 }}>📝</div>
           <div>
-            <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
-            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
+            <div style={{ fontSize:FS_MD, fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
+            <div style={{ fontSize:FS_SM, color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
           </div>
           <div style={{ marginLeft:"auto", fontSize:"clamp(18px,2.5vw,24px)", color:"#7E57C2" }}>›</div>
         </div>

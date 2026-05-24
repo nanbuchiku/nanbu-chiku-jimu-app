@@ -1,14 +1,26 @@
+/**
+ * フォントサイズ定数 (CSS変数 → src/lib/fontScale.js で設定)
+ * --fs-xs : ボタン・補足ラベル
+ * --fs-sm : 本文・入力バー・テーブル
+ * --fs-md : アクションボタン・セクション見出し (max 20px)
+ * --fs-lg : ページタイトル・大見出し
+ */
+export const FS_XS = "var(--fs-xs)";
+export const FS_SM = "var(--fs-sm)";
+export const FS_MD = "var(--fs-md)";
+export const FS_LG = "var(--fs-lg)";
+
 export const CARD = { background:"#fff", borderRadius:8, padding:"13px", boxShadow:"0 1px 4px rgba(0,0,0,.08)", marginBottom:12 };
 export const OV   = { position:"fixed", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:"clamp(6px,2vw,16px)" };
 export const MOD  = { background:"#fff", borderRadius:10, padding:"clamp(14px,3vw,22px)", width:"100%", maxWidth:560, maxHeight:"min(92dvh, 92vh)", overflowY:"auto", WebkitOverflowScrolling:"touch" };
-export const MH   = { fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#1A3A6B", borderBottom:"2px solid #1A3A6B", paddingBottom:7, display:"flex", alignItems:"center", gap:7, marginBottom:8 };
-export const BP   = { background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" };
-export const BC   = { background:"#ECEFF1", color:"#546E7A", border:"none", borderRadius:6, padding:"7px 15px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, cursor:"pointer" };
-export const BG   = { background:"#06C755", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" };
-export const SEL  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"5px 8px", fontSize:"clamp(12px,1.4vw,14px)", background:"#fff", cursor:"pointer" };
-export const INP  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"6px 8px", fontSize:"clamp(12px,1.4vw,14px)", background:"#fff" };
-export const BSM  = { background:"#ECEFF1", border:"none", borderRadius:4, padding:"3px 8px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600 };
+export const MH   = { fontSize:FS_SM, fontWeight:700, color:"#1A3A6B", borderBottom:"2px solid #1A3A6B", paddingBottom:7, display:"flex", alignItems:"center", gap:7, marginBottom:8 };
+export const BP   = { background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:FS_XS, fontWeight:700, cursor:"pointer" };
+export const BC   = { background:"#ECEFF1", color:"#546E7A", border:"none", borderRadius:6, padding:"7px 15px", fontSize:FS_XS, fontWeight:600, cursor:"pointer" };
+export const BG   = { background:"#06C755", color:"#fff", border:"none", borderRadius:6, padding:"7px 15px", fontSize:FS_XS, fontWeight:700, cursor:"pointer" };
+export const SEL  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"5px 8px", fontSize:FS_SM, background:"#fff", cursor:"pointer" };
+export const INP  = { border:"1px solid #CFD8DC", borderRadius:6, padding:"6px 8px", fontSize:FS_SM, background:"#fff" };
+export const BSM  = { background:"#ECEFF1", border:"none", borderRadius:4, padding:"3px 8px", fontSize:FS_XS, cursor:"pointer", fontWeight:600 };
 export const TBL  = { width:"100%", borderCollapse:"collapse" };
-export const TH   = { padding:"8px 10px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, textAlign:"left", color:"#546E7A", background:"#ECEFF1" };
-export const TD   = { padding:"8px 10px", fontSize:"clamp(12px,1.4vw,14px)", verticalAlign:"middle", borderBottom:"1px solid #F5F5F5" };
-export const PILL = (ch) => ({ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 8px", borderRadius:12, fontWeight:700, background: ch.light, color: ch.color });
+export const TH   = { padding:"8px 10px", fontSize:FS_SM, fontWeight:700, textAlign:"left", color:"#546E7A", background:"#ECEFF1" };
+export const TD   = { padding:"8px 10px", fontSize:FS_SM, verticalAlign:"middle", borderBottom:"1px solid #F5F5F5" };
+export const PILL = (ch) => ({ fontSize:FS_XS, padding:"2px 8px", borderRadius:12, fontWeight:700, background: ch.light, color: ch.color });
