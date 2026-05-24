@@ -730,10 +730,8 @@ ${ch.name}単会事務局`;
                   </span>
                 )}
                 {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block", fontSize:"clamp(16px,2.4vw,20px)", opacity:.7 }}>⟳</span>}
-                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
-                <button onClick={() => setMobileDrawer(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, color:"#fff", padding:"7px 12px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer", lineHeight:1 }} aria-label="メニュー">
-                  ☰
-                </button>
+                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:10, color:"#fff", width:46, height:46, fontSize:24, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>⟳</button>
+                <button onClick={() => setMobileDrawer(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:10, color:"#fff", width:46, height:46, fontSize:26, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, lineHeight:1 }} aria-label="メニュー">☰</button>
               </div>
             </div>
           </header>
