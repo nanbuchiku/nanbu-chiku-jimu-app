@@ -3,6 +3,7 @@ import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, taskFromDB, taskToDB, emailFromDB } from './lib/supabase';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr } from './utils';
 import { OV, MOD, MH, BC, BG, BP } from './styles';
+import { initFontScale, applyFontScale, SCALE_OPTIONS, getCurrentScale } from './lib/fontScale';
 import Dashboard from './components/Dashboard';
 import CalendarView from './components/CalendarView';
 import SpeakersView from './components/SpeakersView';
@@ -63,6 +64,13 @@ const DEFAULT_CHAPTER_SETTINGS = {
 };
 
 export default function App() {
+  const [fontScale, setFontScale] = useState(() => initFontScale());
+
+  const changeFontScale = useCallback((key) => {
+    applyFontScale(key);
+    setFontScale(key);
+  }, []);
+
   const [tab, setTabRaw] = useState(() => {
     try {
       const hash = window.location.hash.slice(1);
@@ -668,6 +676,28 @@ ${ch.name}単会事務局`;
             <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:8 }}>
               {CHAPTERS.map(ch => (
                 <span key={ch.id} style={{ fontSize:"clamp(13px,1.8vw,16px)", background:ch.color, color:"#fff", padding:"3px 8px", borderRadius:8, fontWeight:600 }}>{ch.short}｜{ch.dayName.replace("曜日","")}</span>
+              ))}
+            </div>
+            {/* 文字サイズ切り替え 大・中・小 */}
+            <div style={{ display:"flex", gap:3, marginBottom:4 }}>
+              {SCALE_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => changeFontScale(opt.key)}
+                  title={`文字サイズ: ${opt.label}`}
+                  style={{
+                    flex:1,
+                    background: fontScale === opt.key ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.1)",
+                    border: fontScale === opt.key ? "1.5px solid rgba(255,255,255,.7)" : "1px solid rgba(255,255,255,.2)",
+                    borderRadius:6,
+                    color: fontScale === opt.key ? "#fff" : "rgba(255,255,255,.65)",
+                    padding:"5px 4px",
+                    fontSize: opt.key === 'small' ? 11 : opt.key === 'medium' ? 13 : 15,
+                    fontWeight: fontScale === opt.key ? 700 : 500,
+                    cursor:"pointer",
+                    lineHeight:1,
+                  }}
+                >文{opt.label}</button>
               ))}
             </div>
             <div style={{ display:"flex", gap:4 }}>
