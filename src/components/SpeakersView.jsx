@@ -152,9 +152,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
   const sortBtn = (col, label) => (
     <button onClick={() => toggleSort(col)}
-      style={{ background:"none", border:"none", cursor:"pointer", color: sortCol === col ? "#1A3A6B" : "#78909C", fontWeight: sortCol === col ? 700 : 500, fontSize:"clamp(14px,2.4vw,22px)", padding:"4px 6px", display:"flex", alignItems:"center", gap:3 }}>
+      style={{ background:"none", border:"none", cursor:"pointer", color: sortCol === col ? "#1A3A6B" : "#78909C", fontWeight: sortCol === col ? 700 : 500, fontSize:"var(--fs-sm)", padding:"4px 6px", display:"flex", alignItems:"center", gap:3 }}>
       {label}
-      <span style={{ fontSize:"clamp(12px,2vw,18px)", opacity: sortCol === col ? 1 : 0.4 }}>{sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+      <span style={{ fontSize:"var(--fs-xs)", opacity: sortCol === col ? 1 : 0.4 }}>{sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
     </button>
   );
 
@@ -167,24 +167,24 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           <span style={{ fontSize:"clamp(13px,2.6vw,24px)", fontWeight:400, color:"#90A4AE", marginLeft:10 }}>{filtered.length}/{speakers.length}件</span>
         </div>
         <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap", alignItems:"center", minWidth:0 }}>
-          <input style={{ ...INP, flex:"1 1 200px", minWidth:0, maxWidth:340, fontSize:"clamp(16px,2.4vw,22px)", padding:"10px 12px" }} placeholder="🔍 名前・ふりがな・会社・テーマ" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
-          <select style={{ ...SEL, fontSize:"clamp(14px,2.4vw,22px)", padding:"9px 12px" }} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
+          <input style={{ ...INP, flex:"1 1 200px", minWidth:0, maxWidth:340 }} placeholder="🔍 名前・ふりがな・会社・テーマ" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
+          <select style={{ ...SEL }} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
             <option value="all">全単会</option>
             {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
           </select>
-          <select style={{ ...SEL, fontSize:"clamp(14px,2.4vw,22px)", padding:"9px 12px" }} value={filterSt} onChange={e => setFilterSt(e.target.value)}>
+          <select style={{ ...SEL }} value={filterSt} onChange={e => setFilterSt(e.target.value)}>
             <option value="all">全ステータス</option>
             {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <button style={{ ...BP, background:"#2E7D32", fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 20px" }} onClick={exportCSV}>📥 CSV</button>
+          <button style={{ ...BP, background:"#2E7D32" }} onClick={exportCSV}>📥 CSV</button>
           {pastConfirmedCount > 0 && (
-            <button style={{ ...BP, background:"#546E7A", fontSize:"clamp(13px,2.4vw,22px)", padding:"10px 18px" }} onClick={bulkComplete} title={`過去の確定済み${pastConfirmedCount}件を一括終了`}>
+            <button style={{ ...BP, background:"#546E7A" }} onClick={bulkComplete} title={`過去の確定済み${pastConfirmedCount}件を一括終了`}>
               ✓ 過去{pastConfirmedCount}件を終了
             </button>
           )}
-          <button style={{ ...BC, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 18px" }} onClick={() => window.print()} title="印刷">🖨 印刷</button>
-          <button style={{ ...BC, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 18px", background:"#E8EAF6", color:"#1A3A6B", borderColor:"#1A3A6B", fontWeight:700 }} onClick={() => setShowFaxModal(true)} title="FAX用 講師依頼確認書を印刷">📠 FAX</button>
-          <button style={{ ...BP, fontSize:"clamp(14px,2.6vw,24px)", padding:"10px 20px" }} onClick={onAdd}>＋ 新規登録</button>
+          <button style={{ ...BC }} onClick={() => window.print()} title="印刷">🖨 印刷</button>
+          <button style={{ ...BC, background:"#E8EAF6", color:"#1A3A6B", fontWeight:700 }} onClick={() => setShowFaxModal(true)} title="FAX用 講師依頼確認書を印刷">📠 FAX</button>
+          <button style={{ ...BP }} onClick={onAdd}>＋ 新規登録</button>
         </div>
       </div>
 
@@ -198,26 +198,26 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
       {/* ── Filters ─────────────────────────────── */}
       <div className="no-print" style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
-        <span style={{ fontSize:"clamp(13px,2.2vw,22px)", color:"#78909C", fontWeight:600 }}>期間：</span>
+        <span style={{ fontSize:"var(--fs-sm)", color:"#78909C", fontWeight:600 }}>期間：</span>
         <select value={dateRange} onChange={e => setDateRangePersist(e.target.value)}
-          style={{ ...SEL, fontSize:"clamp(13px,2.2vw,22px)", padding:"8px 14px", borderRadius:14, border:`1px solid ${dateRange !== "all" ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange !== "all" ? "#1A3A6B" : "#fff", color: dateRange !== "all" ? "#fff" : "#546E7A", fontWeight: dateRange !== "all" ? 700 : 400, cursor:"pointer" }}>
+          style={{ ...SEL, borderRadius:14, border:`1px solid ${dateRange !== "all" ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange !== "all" ? "#1A3A6B" : "#fff", color: dateRange !== "all" ? "#fff" : "#546E7A", fontWeight: dateRange !== "all" ? 700 : 400 }}>
           {DATE_RANGES.map(r => (
             <option key={r.value} value={r.value} style={{ background:"#fff", color:"#546E7A" }}>{r.label}</option>
           ))}
         </select>
         <button onClick={() => setShowActionOnly(v => !v)}
-          style={{ fontSize:"clamp(13px,2.2vw,22px)", padding:"6px 16px", borderRadius:14, border:`1px solid ${showActionOnly ? "#B71C1C" : "#CFD8DC"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, marginLeft:6 }}>
+          style={{ fontSize:"var(--fs-sm)", padding:"5px 12px", borderRadius:14, border:`1px solid ${showActionOnly ? "#B71C1C" : "#CFD8DC"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, marginLeft:6 }}>
           ⚡ 要対応のみ
         </button>
         <div style={{ display:"flex", gap:4, marginLeft:10, alignItems:"center" }}>
-          <span style={{ fontSize:"clamp(13px,2.2vw,22px)", color:"#78909C" }}>並び：</span>
+          <span style={{ fontSize:"var(--fs-sm)", color:"#78909C" }}>並び：</span>
           {sortBtn("date","日付")}
           {sortBtn("name","名前")}
           {sortBtn("chapter","単会")}
         </div>
         {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" || showActionOnly) && (
           <button onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); setShowActionOnly(false); }}
-            style={{ fontSize:"clamp(13px,2.2vw,22px)", padding:"6px 16px", borderRadius:14, border:"1px solid #EF5350", background:"#FFEBEE", color:"#B71C1C", cursor:"pointer", fontWeight:700, marginLeft:6 }}>
+            style={{ fontSize:"var(--fs-sm)", padding:"5px 12px", borderRadius:14, border:"1px solid #EF5350", background:"#FFEBEE", color:"#B71C1C", cursor:"pointer", fontWeight:700, marginLeft:6 }}>
             ✕ リセット
           </button>
         )}
@@ -331,16 +331,16 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 {/* 6. アクション：メール / LINE */}
                 <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:6 }}>
                   <button onClick={() => onEmail(sp)}
-                    style={{ fontSize:"clamp(12px,1.8vw,16px)", background:"#1565C0", color:"#fff", border:"none", borderRadius:8, padding:"8px 16px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
+                    style={{ fontSize:"var(--fs-xs)", background:"#1565C0", color:"#fff", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
                     ✉ メール
                   </button>
                   {sp.lineNotified ? (
                     <button onClick={async () => { const ok = await updateSpeaker(sp.id,{lineNotified:false}); if(ok)showToast("LINE未送信に戻しました"); }}
-                      style={{ fontSize:"clamp(12px,1.8vw,16px)", background:"#E8F5E9", color:"#06A848", border:"1px solid #A5D6A7", borderRadius:8, padding:"8px 16px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}
+                      style={{ fontSize:"var(--fs-xs)", background:"#E8F5E9", color:"#06A848", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}
                       title="送信済 → 戻す">✓ LINE</button>
                   ) : (
                     <button onClick={() => onLine(sp)}
-                      style={{ fontSize:"clamp(12px,1.8vw,16px)", background:"#06C755", color:"#fff", border:"none", borderRadius:8, padding:"8px 16px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
+                      style={{ fontSize:"var(--fs-xs)", background:"#06C755", color:"#fff", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
                       LINE
                     </button>
                   )}
@@ -353,11 +353,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:10, borderLeft:"1px solid #ECEFF1", paddingLeft:"clamp(8px,1.5vw,14px)" }}>
                   <button onClick={() => onEdit(sp)} title="編集" aria-label={`${sp.speakerName}を編集`}
                     style={{ background:"none", border:"none", cursor:"pointer", color:"#1565C0", fontSize:"clamp(11px,1.6vw,14px)", fontWeight:700, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                    <span style={{ fontSize:"clamp(16px,2.4vw,22px)" }}>✏</span>編集
+                    <span style={{ fontSize:"var(--fs-md)" }}>✏</span>編集
                   </button>
                   <button onClick={() => onDelete(sp.id)} title="削除" aria-label={`${sp.speakerName}を削除`}
                     style={{ background:"none", border:"none", cursor:"pointer", color:"#B71C1C", fontSize:"clamp(11px,1.6vw,14px)", fontWeight:700, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                    <span style={{ fontSize:"clamp(16px,2.4vw,22px)" }}>🗑</span>削除
+                    <span style={{ fontSize:"var(--fs-md)" }}>🗑</span>削除
                   </button>
                 </div>
               </div>
@@ -365,26 +365,26 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               {/* 補助操作（⋯で展開） */}
               {expandedId === sp.id && (
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginTop:12, paddingTop:12, borderTop:`1px solid ${isToday ? "#FFCDD2" : "#F0F4F8"}` }}>
-                  <button onClick={() => onDoc(sp)} style={{ fontSize:"clamp(12px,1.8vw,16px)", background:"#37474F", color:"#fff", border:"none", borderRadius:8, padding:"7px 14px", cursor:"pointer", fontWeight:600 }}>≡ 確認書</button>
+                  <button onClick={() => onDoc(sp)} style={{ fontSize:"var(--fs-xs)", background:"#37474F", color:"#fff", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:600 }}>≡ 確認書</button>
                   {sp.calendarAdded ? (
                     <button onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:false}); if(ok)showToast("未転記に戻しました"); }}
-                      style={{ fontSize:"clamp(12px,1.8vw,16px)", color:"#2E7D32", background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:8, padding:"7px 14px", cursor:"pointer" }} title="転記済 → 戻す">✓📅 転記済</button>
+                      style={{ fontSize:"var(--fs-xs)", color:"#2E7D32", background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="転記済 → 戻す">✓📅 転記済</button>
                   ) : (
                     <button onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:true}); if(ok)showToast("転記済にしました 📅"); }}
-                      style={{ fontSize:"clamp(12px,1.8vw,16px)", background:"#F3F4F6", color:"#546E7A", border:"1px solid #D1D5DB", borderRadius:8, padding:"7px 14px", cursor:"pointer" }} title="カレンダー転記済にする">📅 カレンダー</button>
+                      style={{ fontSize:"var(--fs-xs)", background:"#F3F4F6", color:"#546E7A", border:"1px solid #D1D5DB", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="カレンダー転記済にする">📅 カレンダー</button>
                   )}
                   <button onClick={() => { const t = extractStaffNotes(sp.notes || ""); notesRef.current = t; setNotesText(t); setNotesModal(sp); }}
-                    style={{ fontSize:"clamp(12px,1.8vw,16px)", background: staffMemo ? "#F3E5F5" : "#ECEFF1", color: staffMemo ? "#7B1FA2" : "#90A4AE", border:"none", borderRadius:8, padding:"7px 14px", cursor:"pointer" }}
+                    style={{ fontSize:"var(--fs-xs)", background: staffMemo ? "#F3E5F5" : "#ECEFF1", color: staffMemo ? "#7B1FA2" : "#90A4AE", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }}
                     title={staffMemo ? `メモ: ${staffMemo.slice(0,60)}` : "メモを追加"}>{staffMemo ? "📝 メモ有" : "📝 メモ"}</button>
                   {sp.postNotes && (
-                    <button onClick={() => onEdit(sp)} style={{ fontSize:"clamp(12px,1.8vw,16px)", color:"#2E7D32", background:"#E8F5E9", border:"none", borderRadius:8, padding:"7px 14px", cursor:"pointer" }} title={`講話後メモ: ${sp.postNotes}`}>✓ 後記</button>
+                    <button onClick={() => onEdit(sp)} style={{ fontSize:"var(--fs-xs)", color:"#2E7D32", background:"#E8F5E9", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title={`講話後メモ: ${sp.postNotes}`}>✓ 後記</button>
                   )}
                   {onDuplicate && (
-                    <button onClick={() => onDuplicate(sp)} style={{ fontSize:"clamp(12px,1.8vw,16px)", background:"#E8F5E9", color:"#1B5E20", border:"none", borderRadius:8, padding:"7px 14px", cursor:"pointer" }}>複製</button>
+                    <button onClick={() => onDuplicate(sp)} style={{ fontSize:"var(--fs-xs)", background:"#E8F5E9", color:"#1B5E20", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }}>複製</button>
                   )}
                   {(sp.phone || sp.email) && (
                     <button onClick={() => { const lines = [sp.speakerName, sp.phone && `TEL: ${sp.phone}`, sp.email && `Mail: ${sp.email}`].filter(Boolean); navigator.clipboard?.writeText(lines.join("\n")).catch(() => {}); showToast("連絡先をコピーしました 📋"); }}
-                      style={{ fontSize:"clamp(12px,1.8vw,16px)", background:"#E3F2FD", color:"#1565C0", border:"none", borderRadius:8, padding:"7px 14px", cursor:"pointer" }} title="連絡先をコピー">📋 連絡先</button>
+                      style={{ fontSize:"var(--fs-xs)", background:"#E3F2FD", color:"#1565C0", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="連絡先をコピー">📋 連絡先</button>
                   )}
                 </div>
               )}
@@ -398,7 +398,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               {search || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
             </div>
             {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
-              <button style={{ background:"#ECEFF1", border:"none", borderRadius:8, padding:"10px 22px", fontSize:"clamp(15px,2.6vw,24px)", cursor:"pointer", color:"#546E7A", fontWeight:600 }}
+              <button style={{ ...BC }}
                 onClick={() => { setSearchInput(""); setSearch(""); setFilterCh("all"); setFilterSt("all"); setDateRangePersist("all"); }}>
                 フィルターをリセット
               </button>
@@ -489,20 +489,20 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               rows={5}
               value={notesText}
               onChange={e => { setNotesText(e.target.value); notesRef.current = e.target.value; }}
-              style={{ width:"100%", border:"1px solid #CFD8DC", borderRadius:6, padding:"10px", fontSize:"clamp(15px,2.6vw,24px)", fontFamily:"inherit", resize:"vertical", marginTop:8, boxSizing:"border-box" }}
+              style={{ width:"100%", border:"1px solid #CFD8DC", borderRadius:6, padding:"8px", fontSize:"var(--fs-sm)", fontFamily:"inherit", resize:"vertical", marginTop:8, boxSizing:"border-box" }}
               placeholder="自由メモ（内部のみ表示）"
             />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:6, marginBottom:10 }}>
               <span style={{ fontSize:"clamp(13px,2.2vw,20px)", color:"#90A4AE" }}>{notesText.length}文字　Ctrl+Enterで保存</span>
             </div>
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-              <button style={{ ...BC, fontSize:"clamp(15px,2.6vw,24px)", padding:"10px 20px" }} onClick={() => setNotesModal(null)}>キャンセル</button>
-              <button style={{ ...BC, fontSize:"clamp(15px,2.6vw,24px)", padding:"10px 20px", color:"#B71C1C", borderColor:"#EF9A9A" }} onClick={async () => {
+              <button style={{ ...BC }} onClick={() => setNotesModal(null)}>キャンセル</button>
+              <button style={{ ...BC, color:"#B71C1C", borderColor:"#EF9A9A" }} onClick={async () => {
                 const structured = extractStructuredNotes(notesModal.notes || "");
                 const ok = await updateSpeaker(notesModal.id, { notes: structured || "" });
                 if (ok) { showToast("メモを削除しました"); setNotesModal(null); }
               }}>削除</button>
-              <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:6, padding:"10px 24px", fontSize:"clamp(15px,2.6vw,24px)", fontWeight:700, cursor:"pointer" }} onClick={async () => {
+              <button style={{ ...BP }} onClick={async () => {
                 const structured = extractStructuredNotes(notesModal.notes || "");
                 const merged = [structured, notesText].filter(Boolean).join('\n\n');
                 const ok = await updateSpeaker(notesModal.id, { notes: merged });
