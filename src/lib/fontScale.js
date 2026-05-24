@@ -3,19 +3,19 @@
  * 4種類 × 大中小の切り替えをCSS変数で管理
  */
 
-// 4種類の基準サイズ（中スケール時）
+// 4種類の基準サイズ（中スケール時）— スマホ基準で設定
 const BASE = {
-  xs: { min: 11, vw: 1.4, max: 13 },   // ボタン・補足ラベル
-  sm: { min: 12, vw: 1.4, max: 14 },   // 本文・入力バー
-  md: { min: 16, vw: 2.4, max: 20 },   // アクションボタン・セクション見出し
-  lg: { min: 20, vw: 3.0, max: 28 },   // ページタイトル・大見出し
+  xs: { min: 12, vw: 1.5, max: 14 },   // ボタン・補足ラベル
+  sm: { min: 14, vw: 1.8, max: 16 },   // 本文・入力バー・テーブル
+  md: { min: 18, vw: 2.6, max: 22 },   // アクションボタン・セクション見出し
+  lg: { min: 22, vw: 3.2, max: 30 },   // ページタイトル・大見出し
 };
 
-// スケール係数
+// スケール係数 — 20%ずつ変化
 export const SCALE_OPTIONS = [
-  { key: 'small',  label: '小', factor: 0.875 },
-  { key: 'medium', label: '中', factor: 1.0 },
-  { key: 'large',  label: '大', factor: 1.25 },
+  { key: 'small',  label: '小', factor: 0.8  },   // 基準の80%
+  { key: 'medium', label: '中', factor: 1.0  },   // 基準
+  { key: 'large',  label: '大', factor: 1.2  },   // 基準の120%
 ];
 
 const STORAGE_KEY = 'fontScale';
