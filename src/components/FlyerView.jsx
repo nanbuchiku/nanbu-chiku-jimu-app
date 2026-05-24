@@ -20,11 +20,14 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
   const tableScrollRef = useRef(null);
   const [showScrollHint, setShowScrollHint] = useState(true);
   useEffect(() => {
-    // テーブルが実際にスクロール必要な幅か確認してから表示
+    // 月切り替え時にヒントをリセット → スクロールが必要な幅かチェック
+    setShowScrollHint(true);
     const el = tableScrollRef.current;
-    if (!el || el.scrollWidth <= el.clientWidth) { setShowScrollHint(false); return; }
-    // 5秒後に自動非表示
-    const t = setTimeout(() => setShowScrollHint(false), 5000);
+    if (!el) return;
+    // 少し待ってからDOM幅を確認（レンダリング完了後）
+    const t = setTimeout(() => {
+      if (el.scrollWidth <= el.clientWidth) setShowScrollHint(false);
+    }, 100);
     return () => clearTimeout(t);
   }, [selMonth]); // 月切り替え時にリセット
   const handleTableScroll = useCallback(() => setShowScrollHint(false), []);
@@ -448,15 +451,18 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                   <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:ch.color }}>{ch.name}</span>
                   <span style={{ fontSize:"clamp(13px,1.6vw,15px)", fontWeight:800, color:col }}>{pct}%</span>
                 </div>
-                {/* 予定人数 入力 */}
-                <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:5 }}>
+                {/* 予定人数 ステッパー */}
+                <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:5 }}>
                   <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>予定</span>
-                  <input
-                    type="number" min="1" max="10"
-                    value={expectedCounts[key] || Math.max(registered, 1)}
-                    onChange={e => setExpected(key, e.target.value)}
-                    style={{ ...INP, width:44, textAlign:"center", padding:"2px 4px", fontSize:"clamp(13px,1.6vw,15px)", fontWeight:700 }}
-                  />
+                  <button
+                    onClick={() => setExpected(key, (expectedCounts[key] || Math.max(registered, 1)) - 1)}
+                    style={{ width:26, height:26, borderRadius:5, border:"1px solid #B0BEC5", background:"#ECEFF1", fontSize:16, lineHeight:1, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#546E7A" }}>−</button>
+                  <span style={{ minWidth:22, textAlign:"center", fontSize:"clamp(13px,1.6vw,15px)", fontWeight:800, color:"#1A3A6B" }}>
+                    {expectedCounts[key] || Math.max(registered, 1)}
+                  </span>
+                  <button
+                    onClick={() => setExpected(key, (expectedCounts[key] || Math.max(registered, 1)) + 1)}
+                    style={{ width:26, height:26, borderRadius:5, border:"1px solid #B0BEC5", background:"#ECEFF1", fontSize:16, lineHeight:1, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#546E7A" }}>＋</button>
                   <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>名中 {ready}名完成</span>
                 </div>
                 <div style={{ background:"#E0E0E0", borderRadius:3, height:6, overflow:"hidden" }}>
