@@ -311,12 +311,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         </div>
         {hotelOpen && (
           <>
-            <a href="https://www.toyoko-inn.com/search/detail/00324/" target="_blank" rel="noopener noreferrer"
-              style={{ display:"flex", alignItems:"center", gap:8, background:"#E0F7FA", border:"2px solid #00ACC1", borderRadius:8, padding:"8px 12px", marginBottom:10, textDecoration:"none", color:"#006064", fontWeight:700, fontSize:"clamp(14px,2vw,18px)" }}>
-              <span style={{ fontSize:"clamp(18px,2.5vw,24px)" }}>🏨</span>
-              <span>東横イン志木東口</span>
-              <span style={{ marginLeft:"auto", fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", background:"#B2EBF2", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>予約サイトを開く →</span>
-            </a>
             {hotelNeeded.length === 0 ? (
               <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
             ) : (
@@ -335,7 +329,22 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                         : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color: daysUntil <= 7 ? "#B71C1C" : "#78909C", fontWeight:700 }}>あと{daysUntil}日</span>
                       }
                     </div>
-                    <div style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#546E7A", marginBottom:5, background:"#E0F7FA", borderRadius:4, padding:"2px 6px", display:"inline-block" }}>{sp.lodging} | {sp.seminarDate}</div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                      <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#546E7A", background:"#E0F7FA", borderRadius:4, padding:"2px 6px" }}>{sp.lodging} | {sp.seminarDate}</span>
+                      {(() => {
+                        const cs = chapterSettings?.[sp.chapterId] || {};
+                        const bookingUrl = cs.hotelBookingUrl || cs.hotelMapUrl;
+                        const hotelName  = cs.hotelName || "ホテル予約サイト";
+                        if (!bookingUrl) return null;
+                        return (
+                          <a href={bookingUrl} target="_blank" rel="noopener noreferrer"
+                            style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#E0F7FA", border:"1.5px solid #00ACC1", borderRadius:7, padding:"3px 10px", textDecoration:"none", color:"#006064", fontWeight:700, fontSize:"clamp(12px,1.6vw,14px)", whiteSpace:"nowrap" }}>
+                            🏨 {hotelName}
+                            <span style={{ color:"#00838F", fontWeight:600 }}>予約サイト →</span>
+                          </a>
+                        );
+                      })()}
+                    </div>
                     <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
                       {HOTEL_ITEMS.map(it => {
                         const on = !!checks[it.id];

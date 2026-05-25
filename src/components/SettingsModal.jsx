@@ -20,6 +20,7 @@ const DEFAULTS = ch => ({
   hotelStation:    '',
   hotelParking:    '',
   hotelMapUrl:     '',
+  hotelBookingUrl: '',
   contactPerson:   ch.staff     || '',
   contactTel:      '',
   chapterEmail:    '',
@@ -158,6 +159,9 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           </Row>
           <Row label="ホテル地図URL">
             <Inp value={form.hotelMapUrl} onChange={v => set('hotelMapUrl', v)} placeholder="https://maps.app.goo.gl/..." />
+          </Row>
+          <Row label="ホテル予約サイトURL">
+            <Inp value={form.hotelBookingUrl} onChange={v => set('hotelBookingUrl', v)} placeholder="https://www.toyoko-inn.com/..." />
           </Row>
 
           <SectionTitle>👤 担当者</SectionTitle>
