@@ -30,6 +30,65 @@ export const isSameDay = (a, b) =>
   a.getMonth()    === b.getMonth()    &&
   a.getDate()     === b.getDate();
 
+// ── Supabase Storage パス生成（form.html と統一） ──────────────────
+// ひらがな／カタカナ → ローマ字（Supabase Storage キーはASCIIのみ対応のため）
+const KANA_ROMAJI = {
+  'きゃ':'kya','きゅ':'kyu','きょ':'kyo','しゃ':'sha','しゅ':'shu','しょ':'sho',
+  'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+  'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','みゃ':'mya','みゅ':'myu','みょ':'myo',
+  'りゃ':'rya','りゅ':'ryu','りょ':'ryo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+  'じゃ':'ja','じゅ':'ju','じょ':'jo','びゃ':'bya','びゅ':'byu','びょ':'byo',
+  'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo','ぢゃ':'ja','ぢゅ':'ju','ぢょ':'jo',
+  'あ':'a','い':'i','う':'u','え':'e','お':'o',
+  'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+  'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+  'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+  'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+  'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+  'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+  'や':'ya','ゆ':'yu','よ':'yo',
+  'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+  'わ':'wa','を':'o','ん':'n',
+  'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+  'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+  'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
+  'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+  'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+  'ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o',
+};
+export function kanaToRomaji(str) {
+  if (!str) return '';
+  let s = String(str).replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60))
+                     .replace(/[\s　ー・]/g, '');
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const two = s.substr(i, 2);
+    if (KANA_ROMAJI[two]) { out += KANA_ROMAJI[two]; i++; continue; }
+    if (s[i] === 'っ') { const n = KANA_ROMAJI[s.substr(i+1,2)] || KANA_ROMAJI[s[i+1]] || ''; out += n[0] || ''; continue; }
+    out += KANA_ROMAJI[s[i]] ?? '';
+  }
+  return out.toLowerCase();
+}
+
+/**
+ * 講師ファイルの保存先パスを生成（form.html と完全に統一）
+ * 例: `niizashiki/20260709/kotakitoshirou/photo.jpg`
+ * @param {string} chapterId - 単会ID（'niizashiki' 等）
+ * @param {string} seminarDate - 講演日（YYYY-MM-DD）
+ * @param {string} speakerKana - 講師のふりがな（ローマ字変換に使用）
+ * @param {string} speakerName - 講師名（ふりがな無い場合のフォールバック）
+ * @param {'photo'|'doc1'|'doc2'} typeKey - ファイル種別
+ * @param {string} ext - 拡張子（'jpg' 等、ドット無し）
+ */
+export function buildSpeakerStoragePath(chapterId, seminarDate, speakerKana, speakerName, typeKey, ext) {
+  const d  = seminarDate ? seminarDate.replace(/-/g, '') : String(Date.now());
+  const nm = kanaToRomaji(speakerKana)
+    || (speakerName || '').replace(/[^\x21-\x7E]/g, '').replace(/\s/g, '').toLowerCase()
+    || String(Date.now());
+  const ch = (chapterId || 'unknown').replace(/[^\x21-\x7E]/g, '');
+  return `${ch}/${d}/${nm}/${typeKey}.${ext}`;
+}
+
 export function extractStaffNotes(notes) {
   if (!notes) return '';
   return String(notes)
