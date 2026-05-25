@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractMaterialLinks } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, buildSpeakerStoragePath } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 import { db } from '../lib/supabase';
 
@@ -75,14 +75,16 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     try {
       const ext = file.name.split('.').pop().toLowerCase();
       const safeName = toAsciiPath(form.speakerName);
-      const path = `speakers/${Date.now()}_${safeName}.${ext}`;
+      // form.html と統一: `単会ID/YYYYMMDD/講師名(ローマ字)/photo.ext`
+      const path = buildSpeakerStoragePath(form.chapterId, form.seminarDate, form.speakerKana, form.speakerName, 'photo', ext);
       const { error } = await db.storage.from('speaker-files').upload(path, file, {
         upsert: true,
         contentType: file.type,
       });
       if (error) throw error;
       const { data: { publicUrl } } = db.storage.from('speaker-files').getPublicUrl(path);
-      set('materialUrl', publicUrl);
+      // キャッシュバスター付きでURLを保存（同じパスでも画像差し替え時に反映されるため）
+      set('materialUrl', `${publicUrl}?t=${Date.now()}`);
       if (!form.materialName) set('materialName', `${safeName}_顔写真.${ext}`);
     } catch (err) {
       setUploadErr(`アップロード失敗: ${err.message}`);
@@ -107,15 +109,17 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     setUploadErr('');
     try {
       const ext = file.name.split('.').pop().toLowerCase();
-      const safeName = toAsciiPath(form.speakerName);
-      const path = `speakers/${Date.now()}_${safeName}_doc${docNum}.${ext}`;
+      // form.html と統一: `単会ID/YYYYMMDD/講師名(ローマ字)/doc{N}.ext`
+      const typeKey = `doc${docNum}`;
+      const path = buildSpeakerStoragePath(form.chapterId, form.seminarDate, form.speakerKana, form.speakerName, typeKey, ext);
       const { error } = await db.storage.from('speaker-files').upload(path, file, {
         upsert: true, contentType: file.type,
       });
       if (error) throw error;
       const { data: { publicUrl } } = db.storage.from('speaker-files').getPublicUrl(path);
       const label = `資料0${docNum}`;
-      set('notes', upsertDocInNotes(form.notes, label, publicUrl));
+      // キャッシュバスター付きでnotesへ保存
+      set('notes', upsertDocInNotes(form.notes, label, `${publicUrl}?t=${Date.now()}`));
     } catch (err) {
       setUploadErr(`資料アップロード失敗: ${err.message}`);
     } finally {
