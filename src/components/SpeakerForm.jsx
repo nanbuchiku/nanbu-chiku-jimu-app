@@ -41,6 +41,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
   const [docUploading1, setDocUploading1] = useState(false);
   const [docUploading2, setDocUploading2] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
+  const [showDetail, setShowDetail] = useState(false);
   const fileInputRef  = useRef(null);
   const docInput1Ref  = useRef(null);
   const docInput2Ref  = useRef(null);
@@ -129,6 +130,44 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
   };
 
   const currentDocs = useMemo(() => extractMaterialLinks(form.notes || ''), [form.notes]);
+
+  const detailFromNotes = useMemo(() => {
+    const notes = String(form.notes || '').replace(/\\n/g, '\n');
+    const result = {};
+    const summaryMatch = notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
+    if (summaryMatch) result.summary = summaryMatch[1].trim();
+    const tagLine = /【([^】]+)】([^\n【]*)/g;
+    let m;
+    while ((m = tagLine.exec(notes)) !== null) {
+      if (m[1] !== '内容要約') result[m[1]] = m[2].trim();
+    }
+    result.prepareArr = result['単会で準備']
+      ? result['単会で準備'].split('・').map(s => s.trim()).filter(Boolean)
+      : [];
+    return result;
+  }, [form.notes]);
+
+  const setDetailField = (tag, value) => {
+    setErr("");
+    setForm(f => {
+      const n = String(f.notes || '').replace(/\\n/g, '\n');
+      let newNotes;
+      if (tag === '内容要約') {
+        const cleared = n.replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '').replace(/\n{3,}/g, '\n\n').trim();
+        newNotes = value ? (cleared ? cleared + '\n\n' : '') + `【内容要約】\n${value}` : cleared;
+      } else if (Array.isArray(value)) {
+        const tagVal = value.filter(Boolean).join('・');
+        const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleared = n.replace(new RegExp(`【${escaped}】[^\n]*`), '').replace(/\n{3,}/g, '\n\n').trim();
+        newNotes = tagVal ? (cleared ? cleared + '\n' : '') + `【${tag}】${tagVal}` : cleared;
+      } else {
+        const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleared = n.replace(new RegExp(`【${escaped}】[^\n]*`), '').replace(/\n{3,}/g, '\n\n').trim();
+        newNotes = value ? (cleared ? cleared + '\n' : '') + `【${tag}】${value}` : cleared;
+      }
+      return { ...f, notes: newNotes };
+    });
+  };
 
   const ch = getChapter(form.chapterId);
   const st = getSeminarType(form.seminarType || "ms");
@@ -326,6 +365,153 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
               </div>
             </div>
           </div>
+          {/* 詳細入力（FAX返信用）折りたたみセクション */}
+          <div style={{ gridColumn:"1/-1" }}>
+            <button
+              type="button"
+              disabled={saving}
+              style={{ width:"100%", background: showDetail ? "#1A3A6B" : "#ECEFF1", color: showDetail ? "#fff" : "#546E7A", border:"none", borderRadius:8, padding:"10px 16px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor: saving ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between", opacity: saving ? .6 : 1 }}
+              onClick={() => setShowDetail(v => !v)}
+            >
+              <span>📋 詳細入力（FAX返信用）</span>
+              <span>{showDetail ? "▲ 閉じる" : "▼ 開く"}</span>
+            </button>
+
+            {showDetail && (
+              <div style={{ border:"1px solid #90CAF9", borderRadius:8, padding:14, marginTop:8, background:"#F8FBFF", display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+
+                {/* ③ 内容要約 */}
+                <div style={{ gridColumn:"1/-1" }}>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>③ 内容要約（300字以内）</div>
+                  <textarea
+                    disabled={saving}
+                    maxLength={300}
+                    style={{ ...INP, width:"100%", minHeight:80, resize:"vertical", opacity: saving ? .6 : 1 }}
+                    placeholder="講話内容の要約をご記入ください（300字以内）"
+                    value={detailFromNotes.summary || ""}
+                    onChange={e => setDetailField('内容要約', e.target.value)}
+                  />
+                  <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:(detailFromNotes.summary||"").length >= 300 ? "#E53935" : "#90A4AE", textAlign:"right" }}>
+                    {(detailFromNotes.summary||"").length} / 300文字
+                  </div>
+                </div>
+
+                {/* ④ 交通手段 */}
+                <div style={{ gridColumn:"1/-1" }}>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>④ 交通手段</div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {["お車","電車","その他"].map(v => {
+                      const sel = detailFromNotes['交通手段'] === v;
+                      return (
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                          <input type="radio" name="detail-transport" value={v} checked={sel} onChange={() => setDetailField('交通手段', v)} style={{ accentColor:"#1A3A6B" }} disabled={saving} />
+                          {v}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ④ 単会で準備 */}
+                <div style={{ gridColumn:"1/-1" }}>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>④ 単会で準備（複数選択可）</div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {["プロジェクタ","パソコン","ホワイトボード","その他","無し"].map(v => {
+                      const checked = detailFromNotes.prepareArr.includes(v);
+                      return (
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: checked ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${checked ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: checked ? 700 : 400 }}>
+                          <input type="checkbox" checked={checked} disabled={saving} onChange={() => {
+                            const cur = detailFromNotes.prepareArr;
+                            const next = checked ? cur.filter(x => x !== v) : [...cur, v];
+                            setDetailField('単会で準備', next);
+                          }} style={{ accentColor:"#1A3A6B" }} />
+                          {v}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ⑤ 前泊=要のときのみ表示 */}
+                {form.lodging && form.lodging !== "不要" && form.lodging !== "なし" && (
+                  <>
+                    <div>
+                      <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>⑤ 禁煙ルーム</div>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                        {["禁煙","喫煙","どちらでも"].map(v => {
+                          const sel = detailFromNotes['禁煙ルーム'] === v;
+                          return (
+                            <label key={v} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"6px 12px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                              <input type="radio" name="detail-room" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('禁煙ルーム', v)} style={{ accentColor:"#1A3A6B" }} />
+                              {v}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>⑤ お迎え</div>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                        {["要","不要"].map(v => {
+                          const sel = detailFromNotes['お迎え'] === v;
+                          return (
+                            <label key={v} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"6px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                              <input type="radio" name="detail-pickup" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('お迎え', v)} style={{ accentColor:"#1A3A6B" }} />
+                              {v}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* ⑤ 領収証宛名 */}
+                <div style={{ gridColumn:"1/-1" }}>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>⑤ 領収証宛名</div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {["個人宛","会社宛"].map(v => {
+                      const sel = detailFromNotes['領収証宛名'] === v;
+                      return (
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 18px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                          <input type="radio" name="detail-receipt" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('領収証宛名', v)} style={{ accentColor:"#1A3A6B" }} />
+                          {v}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ⑤ 領収証郵便番号 + 住所 */}
+                <div>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>⑤ 領収証郵便番号</div>
+                  <input disabled={saving} type="text" maxLength={8} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="333-0801" value={detailFromNotes['領収証郵便番号'] || ""} onChange={e => setDetailField('領収証郵便番号', e.target.value)} />
+                </div>
+                <div>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>⑤ 領収証住所</div>
+                  <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="埼玉県○○市○○1-2-3" value={detailFromNotes['領収証住所'] || ""} onChange={e => setDetailField('領収証住所', e.target.value)} />
+                </div>
+
+                {/* ⑥ 顔写真の使用範囲 */}
+                <div style={{ gridColumn:"1/-1" }}>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>⑥ 顔写真の使用範囲</div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {["全媒体承諾","公式HPのみ","Facebookのみ","要相談"].map(v => {
+                      const sel = detailFromNotes['顔写真の使用範囲'] === v;
+                      return (
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                          <input type="radio" name="detail-photouse" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('顔写真の使用範囲', v)} style={{ accentColor:"#1A3A6B" }} />
+                          {v}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
             <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:54, resize:"vertical", opacity: saving ? .6 : 1 }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
