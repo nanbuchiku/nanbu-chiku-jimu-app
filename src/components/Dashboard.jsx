@@ -333,7 +333,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#546E7A", background:"#E0F7FA", borderRadius:4, padding:"2px 6px" }}>{sp.lodging} | {sp.seminarDate}</span>
                       {(() => {
                         const cs = chapterSettings?.[sp.chapterId] || {};
-                        const bookingUrl = cs.hotelBookingUrl || cs.hotelMapUrl;
+                        const bookingUrl = cs.hotelBookingUrl;
                         const hotelName  = cs.hotelName || "ホテル予約サイト";
                         if (!bookingUrl) return null;
                         return (
