@@ -87,7 +87,7 @@ export default function App() {
   useEffect(() => {
     const onHash = () => {
       const hash = window.location.hash.slice(1);
-      if (["dashboard","calendar","speakers","document","sptasks","flyer","tasks","ranking"].includes(hash)) setTabRaw(hash);
+      if (["dashboard","calendar","speakers","document","sptasks","flyer","tasks","ranking"].includes(hash)) setTab(hash);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -606,7 +606,7 @@ ${ch.name}単会事務局`;
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [confirm, showForm, showHelp, settingsOpen, lineModal, emailModal, formUrlModal, tab]);
+  }, [confirm, showForm, showHelp, settingsOpen, lineModal, emailModal, formUrlModal, tab, loadData]);
 
   // ── Derived layout values ───────────────────────────────
   const isMobile = windowWidth < 768;
