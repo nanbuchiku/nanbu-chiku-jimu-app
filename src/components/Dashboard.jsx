@@ -54,7 +54,6 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
   const materialPending = useMemo(() => {
     const cutoff = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 14);
     const cutoffStr = toDateStr(cutoff);
-    const todayStr = toDateStr(today);
     return speakers.filter(sp =>
       sp.status !== "cancelled" &&
       sp.seminarDate &&
@@ -62,7 +61,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
       sp.seminarDate <= cutoffStr &&
       !sp.materialUrl
     ).sort((a, b) => a.seminarDate.localeCompare(b.seminarDate));
-  }, [speakers, today]);
+  }, [speakers, today, todayStr]);
 
   const hotelNeeded = useMemo(() => {
     const todayStr = toDateStr(today);
@@ -146,7 +145,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
     { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
     { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A", action: () => setTab("tasks") },
     ...(overdueCount > 0 ? [{ label:"期限超過",    val: overdueCount,                 sub:"件 ⚠",  color:"#B71C1C", action: () => setTab("tasks") }] : []),
-  ], [thisWeek, speakers, tasks, overdueCount, setTab, onGoSpeakers]);
+  ], [speakers, tasks, overdueCount, setTab, onGoSpeakers]);
 
   return (
     <div>
