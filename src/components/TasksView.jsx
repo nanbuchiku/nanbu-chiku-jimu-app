@@ -1015,7 +1015,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                             <td style={TD}><select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>{CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
                             <td style={{ ...TD, maxWidth:200 }}><input autoFocus style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }} /></td>
                             <td style={TD}><input type="date" style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} /></td>
-                            <td style={TD} />
+                            <td style={{ ...TD, minWidth:130 }}><input type="url" style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="関連URL（任意）" value={editForm.url || ""} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} /></td>
                             <td style={TD}><select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.priority} onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))}><option value="high">🔴 高</option><option value="medium">🟡 中</option><option value="low">🟢 低</option></select></td>
                             <td style={TD}><div style={{ display:"flex", gap:3 }}><button style={{ ...BSM, background:"#1A3A6B", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button><button style={{ ...BSM, color:"#546E7A" }} onClick={() => setEditingId(null)}>取消</button></div></td>
                           </tr>
@@ -1077,7 +1077,9 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                       <td style={TD}>
                         <input type="date" style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} />
                       </td>
-                      <td style={TD} />
+                      <td style={{ ...TD, minWidth:130 }}>
+                        <input type="url" style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="関連URL（任意）" value={editForm.url || ""} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} />
+                      </td>
                       <td style={TD}>
                         <select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.priority} onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))}>
                           <option value="high">🔴 高</option>
@@ -1104,7 +1106,8 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                     <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
                     <td style={TD}><span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
                     <td style={TD}>
-                      <div style={{ display:"flex", gap:3 }}>
+                      <div style={{ display:"flex", gap:3, alignItems:"center" }}>
+                        {t.url && <a href={t.url} target="_blank" rel="noopener noreferrer" style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", textDecoration:"none" }} title={t.url}>🔗</a>}
                         {!t.done && <button style={{ ...BSM, color:"#1565C0" }} title="タスクを編集" aria-label={`${t.title}を編集`} onClick={() => startEdit(t)}>編集</button>}
                         {!t.done && <button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} title="タスクを削除" aria-label={`${t.title}を削除`} onClick={() => onDelete(t.id)}>×</button>}
                       </div>
