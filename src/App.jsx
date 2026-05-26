@@ -172,7 +172,7 @@ export default function App() {
       if (tkErr) throw tkErr;
       if (spData) { const mapped = spData.map(fromDB); setSpeakers(mapped); }
       if (tkData) {
-        // DBにurlが保存されない間は、localStorageキャッシュからURLを復元する
+        // DBのurlを優先、空ならlocalStorageキャッシュをフォールバック（スキーマキャッシュ再発時の保険）
         const cached = (() => { try { return JSON.parse(localStorage.getItem('cachedTasks')) || []; } catch { return []; } })();
         const urlMap = Object.fromEntries(cached.map(t => [t.id, t.url || '']));
         const mapped = tkData.map(taskFromDB).map(t => ({ ...t, url: t.url || urlMap[t.id] || '' }));
@@ -251,7 +251,7 @@ export default function App() {
           setTasks(prev => prev.some(x => x.id === t.id) ? prev : [...prev, t].sort((a,b) => (a.dueDate||"").localeCompare(b.dueDate||"")));
         } else if (payload.eventType === 'UPDATE') {
           const t = taskFromDB(payload.new);
-          // DBにurlが保存されていない場合はローカルのurlを保持する
+          // DB側urlを優先、空ならローカルurlをフォールバック（万一スキーマキャッシュが再発した場合の保険）
           setTasks(prev => prev.map(x => x.id === t.id ? { ...t, url: t.url || x.url } : x));
         } else if (payload.eventType === 'DELETE') {
           setTasks(prev => prev.filter(x => x.id !== payload.old.id));
