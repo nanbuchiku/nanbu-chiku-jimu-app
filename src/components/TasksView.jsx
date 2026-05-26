@@ -218,7 +218,7 @@ function GmailInbox() {
         const subject = getH(headers, 'Subject');
         const snippet = msg.snippet || '';
         // 「締切」ラベルは明示的なキーワードがある場合のみ（返信・回答・お願いは除外）
-        const hasDeadline  = /締切|〆切|期限|締め切り|提出|迄|まで/.test(subject + snippet);
+        const hasDeadline  = /締切|〆切|期限|締め切り|提出|迄|まで|返信|回答/.test(subject + snippet);
         const hasImportant = /重要|緊急|至急/.test(subject);
         const hasAttachment = !!(msg.payload?.mimeType?.startsWith('multipart/'));
         // 締め切り日：「迄」「まで」が明示されている日付のみ（開催日・参加日は除外）
