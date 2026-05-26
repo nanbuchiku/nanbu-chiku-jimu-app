@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
-import { db, fromDB, toDB, taskFromDB, taskToDB, emailFromDB } from './lib/supabase';
+import { db, fromDB, toDB, taskFromDB, taskToDB, emailFromDB, safeInsertTask, safeInsertTasks, safeUpdateTask } from './lib/supabase';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr } from './utils';
 import { OV, MOD, MH, BC, BG, BP } from './styles';
 import { initFontScale, applyFontScale, SCALE_OPTIONS, getCurrentScale } from './lib/fontScale';
@@ -392,7 +392,7 @@ ${ch.name}単会事務局`;
     if (!t) return;
     const updated = { ...t, done: !t.done, completedAt: !t.done ? new Date().toISOString() : null };
     setTasks(prev => prev.map(x => x.id === id ? updated : x));
-    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+    const { error } = await safeUpdateTask(id, updated);
     if (error) {
       setTasks(prev => prev.map(x => x.id === id ? t : x));
       showToast("⚠ 更新に失敗しました");
@@ -408,7 +408,7 @@ ${ch.name}単会事務局`;
       showToast("タスクを削除しました", {
         actionLabel: "取り消し",
         action: async () => {
-          const { error: re } = await db.from('tasks').insert(taskToDB(task));
+          const { error: re } = await safeInsertTask(task);
           if (!re) { setTasks(prev => [...prev, task]); showToast("削除を取り消しました ✓"); }
         }
       });
@@ -420,7 +420,7 @@ ${ch.name}単会事務局`;
     if (!t) return;
     const updated = { ...t, ...patch };
     setTasks(prev => prev.map(x => x.id === id ? updated : x));
-    const { error } = await db.from('tasks').update(taskToDB(updated)).eq('id', id);
+    const { error } = await safeUpdateTask(id, updated);
     if (error) {
       setTasks(prev => prev.map(x => x.id === id ? t : x));
       showToast("⚠ 更新に失敗しました");
@@ -440,7 +440,7 @@ ${ch.name}単会事務局`;
       showToast(`完了済み ${doneTasks.length}件を削除しました`, {
         actionLabel: "取り消し",
         action: async () => {
-          const { error: re } = await db.from('tasks').insert(doneTasks.map(taskToDB));
+          const { error: re } = await safeInsertTasks(doneTasks);
           if (!re) { setTasks(prev => [...prev, ...doneTasks]); showToast("削除を取り消しました ✓"); }
         }
       });
@@ -451,7 +451,7 @@ ${ch.name}単会事務局`;
     if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
     if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
     const t = { ...newTask, id: `t${Date.now()}`, done: false };
-    const { error } = await db.from('tasks').insert(taskToDB(t));
+    const { error } = await safeInsertTask(t);
     if (error) { showToast("⚠ 追加に失敗しました: " + error.message); return; }
     setTasks(prev => prev.some(x => x.id === t.id) ? prev : [...prev, t].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || '')));
     setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium", url:"" });
@@ -461,7 +461,7 @@ ${ch.name}単会事務局`;
   // メールからのタスク追加用（DB挿入 + ローカルstate即反映）
   const onAddTaskDirect = useCallback(async ({ chapterId, title, dueDate, priority, url }) => {
     const t = { id: `t${Date.now()}`, chapterId, title, dueDate, priority, url: url || '', done: false };
-    const { error } = await db.from('tasks').insert(taskToDB(t));
+    const { error } = await safeInsertTask(t);
     if (error) throw error;
     setTasks(prev => {
       if (prev.some(x => x.id === t.id)) return prev;
@@ -473,7 +473,7 @@ ${ch.name}単会事務局`;
     if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
     if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
     const batch = CHAPTERS.map((ch, i) => ({ ...newTask, id: `t${Date.now()}${i}`, chapterId: ch.id, done: false }));
-    const { error } = await db.from('tasks').insert(batch.map(taskToDB));
+    const { error } = await safeInsertTasks(batch);
     if (error) { showToast("⚠ 追加に失敗しました: " + error.message); return; }
     setTasks(prev => {
       const newIds = new Set(batch.map(t => t.id));
@@ -602,8 +602,13 @@ ${ch.name}単会事務局`;
         if (error) throw error;
       }
       if (data.tasks.length > 0) {
-        const { error } = await db.from('tasks').upsert(data.tasks.map(taskToDB), { onConflict: 'id' });
-        if (error) throw error;
+        // スキーマキャッシュ問題に備えて、urlカラムエラーが出たらurl抜きでリトライ
+        const dbObjs = data.tasks.map(taskToDB);
+        let res = await db.from('tasks').upsert(dbObjs, { onConflict: 'id' });
+        if (res.error && res.error.message?.includes("'url'") && res.error.message?.includes("schema cache")) {
+          res = await db.from('tasks').upsert(dbObjs.map(({ url: _u, ...rest }) => rest), { onConflict: 'id' });
+        }
+        if (res.error) throw res.error;
       }
       // DBから最新データを取り直す（state不整合を防ぐ）
       await loadData(true);
