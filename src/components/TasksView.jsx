@@ -98,8 +98,12 @@ function extractEmailSummary(subject, body) {
   if (dates.length) bullets.push(`📅 いつ: ${dates.join('・')}`);
 
   // 📍 どこで（会場・場所）
-  const venueMatch = text.match(/(?:会場|場所|開催場所|開催地)[：:　\s]*([^\n。、（(]{3,30})/);
-  if (venueMatch) bullets.push(`📍 どこで: ${venueMatch[1].trim()}`);
+  // ① 「会場：○○」等の明示パターン
+  const venueLabel = text.match(/(?:会場|場所|開催場所|開催地|開催会場)[：:　\s]*([^\n。、（(]{3,30})/);
+  // ② 施設名が直接書かれているパターン（○○会館、○○ホール等）
+  const venueName  = text.match(/([^\n　]{2,20}?(?:会館|ホール|センター|会議室|ビル|ホテル|公民館|研修室|倫理会館|コミュニティ)[^\n。、]{0,10})/);
+  const venueMatch = venueLabel || venueName;
+  if (venueMatch) bullets.push(`📍 どこで: ${(venueLabel ? venueLabel[1] : venueName[1]).trim()}`);
 
   // 👥 誰を対象に（対象者・宛先推測）
   const targetMatch = text.match(/(?:対象者?|参加対象|ご参加対象|対象単会)[：:　\s]*([^\n。、]{3,30})/);
