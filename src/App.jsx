@@ -443,9 +443,9 @@ ${ch.name}単会事務局`;
     if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
     if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
     const t = { ...newTask, id: `t${Date.now()}`, done: false };
-    const { data: inserted, error } = await db.from('tasks').insert(taskToDB(t)).select().single();
-    if (error) { showToast("⚠ 追加に失敗しました"); return; }
-    setTasks(prev => [...prev, inserted ? taskFromDB(inserted) : t]);
+    const { error } = await db.from('tasks').insert(taskToDB(t));
+    if (error) { showToast("⚠ 追加に失敗しました: " + error.message); return; }
+    setTasks(prev => prev.some(x => x.id === t.id) ? prev : [...prev, t].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || '')));
     setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium", url:"" });
     showToast("タスクを追加しました ✓");
   }, [newTask, showToast]);
@@ -453,11 +453,11 @@ ${ch.name}単会事務局`;
   // メールからのタスク追加用（DB挿入 + ローカルstate即反映）
   const onAddTaskDirect = useCallback(async ({ chapterId, title, dueDate, priority, url }) => {
     const t = { id: `t${Date.now()}`, chapterId, title, dueDate, priority, url: url || '', done: false };
-    const { data: inserted, error } = await db.from('tasks').insert(taskToDB(t)).select().single();
+    const { error } = await db.from('tasks').insert(taskToDB(t));
     if (error) throw error;
     setTasks(prev => {
       if (prev.some(x => x.id === t.id)) return prev;
-      return [...prev, inserted ? taskFromDB(inserted) : t].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+      return [...prev, t].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
     });
   }, []);
 
@@ -465,10 +465,13 @@ ${ch.name}単会事務局`;
     if (!newTask.title) { showToast("⚠ タスク内容を入力してください"); return; }
     if (!newTask.dueDate) { showToast("⚠ 期限を入力してください"); return; }
     const batch = CHAPTERS.map((ch, i) => ({ ...newTask, id: `t${Date.now()}${i}`, chapterId: ch.id, done: false }));
-    const { data: inserted, error } = await db.from('tasks').insert(batch.map(taskToDB)).select();
-    if (error) { showToast("⚠ 追加に失敗しました"); return; }
-    const newTasks = inserted ? inserted.map(taskFromDB) : batch;
-    setTasks(prev => [...prev, ...newTasks]);
+    const { error } = await db.from('tasks').insert(batch.map(taskToDB));
+    if (error) { showToast("⚠ 追加に失敗しました: " + error.message); return; }
+    setTasks(prev => {
+      const newIds = new Set(batch.map(t => t.id));
+      const filtered = prev.filter(t => !newIds.has(t.id));
+      return [...filtered, ...batch].sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+    });
     setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium", url:"" });
     showToast(`全5単会にタスクを追加しました ✓`);
   }, [newTask, showToast]);
