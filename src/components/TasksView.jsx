@@ -93,10 +93,26 @@ function extractEmailSummary(subject, body) {
   const cleanSubject = subject.replace(/【[^】]*】/g, '').replace(/Re:|Fw:/gi, '').trim();
   if (cleanSubject) bullets.push(`📌 何を: ${cleanSubject}`);
 
-  // 📅 いつ（日時パターン）
-  const dateRe = /(?:令和|R)\s*\d+\s*年\s*\d+\s*月\s*\d+\s*日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?|\d+月\d+日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?/g;
-  const dates = [...new Set((text.match(dateRe) || []).map(d => d.trim()))].slice(0, 3);
-  if (dates.length) bullets.push(`📅 いつ: ${dates.join('・')}`);
+  // 📅 いつ（開催日） ─ 締切日と区別して抽出
+  // まず締切に使われている日付を除外リストに収集
+  const deadlineDateSet = new Set();
+  // 件名の「5/21締切」「5/21迄」形式
+  const subjSlashDL = subject.match(/(\d{1,2})\/(\d{1,2})(?:締切|迄|まで)/);
+  if (subjSlashDL) deadlineDateSet.add(`${subjSlashDL[1]}月${subjSlashDL[2]}日`);
+  // 件名・本文の「5月21日まで/迄/締切」形式
+  const dlBodyRe = /(\d{1,2}月\d{1,2}日)[^\n]{0,15}?(?:まで|迄|締切|期限|ご回答|ご連絡|返信)/g;
+  let dlm;
+  while ((dlm = dlBodyRe.exec(subject + '\n' + text)) !== null) {
+    deadlineDateSet.add(dlm[1]);
+  }
+  // 全日付を抽出してから締切日を除いたものを「いつ」に使う
+  const dateRe = /(?:令和|R)\s*\d+\s*年\s*\d+\s*月\s*\d+\s*日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?|\d{1,2}月\d{1,2}日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?/g;
+  const allDates = [...new Set((text.match(dateRe) || []).map(d => d.trim()))];
+  const eventDates = allDates.filter(d => {
+    const base = d.match(/\d{1,2}月\d{1,2}日/)?.[0];
+    return base && !deadlineDateSet.has(base);
+  });
+  if (eventDates.length) bullets.push(`📅 いつ: ${eventDates.slice(0, 2).join('・')}`);
 
   // 📍 どこで（会場・場所）
   // ① 「会場：○○」等の明示パターン
