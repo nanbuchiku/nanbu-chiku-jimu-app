@@ -446,7 +446,7 @@ ${ch.name}単会事務局`;
     const { data: inserted, error } = await db.from('tasks').insert(taskToDB(t)).select().single();
     if (error) { showToast("⚠ 追加に失敗しました"); return; }
     setTasks(prev => [...prev, inserted ? taskFromDB(inserted) : t]);
-    setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
+    setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium", url:"" });
     showToast("タスクを追加しました ✓");
   }, [newTask, showToast]);
 
@@ -469,7 +469,7 @@ ${ch.name}単会事務局`;
     if (error) { showToast("⚠ 追加に失敗しました"); return; }
     const newTasks = inserted ? inserted.map(taskFromDB) : batch;
     setTasks(prev => [...prev, ...newTasks]);
-    setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium" });
+    setNewTask({ title:"", chapterId:"kawaguchi", dueDate:"", priority:"medium", url:"" });
     showToast(`全5単会にタスクを追加しました ✓`);
   }, [newTask, showToast]);
 
