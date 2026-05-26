@@ -217,12 +217,13 @@ function GmailInbox() {
         const headers = msg.payload?.headers || [];
         const subject = getH(headers, 'Subject');
         const snippet = msg.snippet || '';
-        const hasDeadline  = /締切|〆切|期限|締め切り|提出|返信|回答|お願い/.test(subject + snippet);
+        // 「締切」ラベルは明示的なキーワードがある場合のみ（返信・回答・お願いは除外）
+        const hasDeadline  = /締切|〆切|期限|締め切り|提出|迄|まで/.test(subject + snippet);
         const hasImportant = /重要|緊急|至急/.test(subject);
         const hasAttachment = !!(msg.payload?.mimeType?.startsWith('multipart/'));
-        // 件名から締め切り日を抽出（例: 6/17迄、6月17日）
-        const dmatch = subject.match(/(\d{1,2})[\/月](\d{1,2})[日]?(?:迄|まで)?/);
-        const deadlineDate = (hasDeadline && dmatch) ? `${dmatch[1]}/${dmatch[2]}迄` : null;
+        // 締め切り日：「迄」「まで」が明示されている日付のみ（開催日・参加日は除外）
+        const dmatch = subject.match(/(\d{1,2})[\/月](\d{1,2})[日]?(?:迄|まで)/);
+        const deadlineDate = dmatch ? `${dmatch[1]}/${dmatch[2]}迄` : null;
         return {
           id:          msg.id,
           subject:     subject || '（件名なし）',
