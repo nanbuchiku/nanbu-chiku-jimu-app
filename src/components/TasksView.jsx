@@ -9,7 +9,7 @@ const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ lab
 // ─── Gmail OAuth2 定数 ───────────────────────────────────────────
 const GMAIL_CLIENT_ID = '181247594167-n0fb727pkc3v0hsch52vmedoed4jt43r.apps.googleusercontent.com';
 const GMAIL_REDIRECT_URI = 'https://nanbuchiku.github.io/nanbu-chiku-jimu-app/';
-const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.modify';
 
 const COMMITTEES = [
   '広報委員','キャリア委員','イメージ向上委員',
@@ -149,6 +149,7 @@ function GmailInbox({ today, showToast }) {
   const [copied,     setCopied]     = useState('');
   const [taskForms,  setTaskForms]  = useState({});   // id → { open, title, dueDate, priority, chapterId }
   const [taskAdding, setTaskAdding] = useState('');
+  const [deletingId, setDeletingId] = useState('');
 
   // ① OAuthリダイレクト後にURLハッシュからトークンを取得
   useEffect(() => {
@@ -306,6 +307,41 @@ function GmailInbox({ today, showToast }) {
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (e) { alert('ファイルを開けませんでした: ' + e.message); }
+  };
+
+  // ── 対応済み（Gmailゴミ箱移動 + DB削除） ───────────────────────
+  const handleDone = async (e, em) => {
+    e.stopPropagation();
+    if (!window.confirm(`「${em.subject.slice(0, 30)}…」を対応済みにしてGmailのゴミ箱へ移動しますか？`)) return;
+    setDeletingId(em.id);
+    try {
+      // 1. Gmail ゴミ箱へ移動
+      const gmailRes = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${em.id}/trash`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (gmailRes.status === 401) { logout(); return; }
+      if (gmailRes.status === 403) {
+        setError('権限不足です。一度ログアウトして再ログインしてください（削除には再認証が必要です）');
+        return;
+      }
+      if (!gmailRes.ok) throw new Error(`Gmail API エラー: ${gmailRes.status}`);
+
+      // 2. Supabase の emails テーブルに同じ件名があれば削除
+      const { data: dbRows } = await db.from('emails').select('id').eq('subject', em.subject);
+      if (dbRows?.length > 0) {
+        await db.from('emails').delete().eq('subject', em.subject);
+      }
+
+      // 3. ローカルのメール一覧から削除
+      setEmails(prev => prev.filter(m => m.id !== em.id));
+      if (selectedId === em.id) setSelectedId(null);
+      showToast?.('✅ 対応済み！Gmailのゴミ箱へ移動しました');
+    } catch (err) {
+      setError('削除に失敗しました: ' + err.message);
+    } finally {
+      setDeletingId('');
+    }
   };
 
   // ── メールからタスク追加 ──────────────────────────────────────
@@ -545,9 +581,22 @@ function GmailInbox({ today, showToast }) {
                             )}
                           </div>
                         </div>
-                        <span style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#90A4AE", flexShrink:0, alignSelf:"center" }}>
-                          {isOpen ? '▲' : '▼'}
-                        </span>
+                        <div style={{ display:"flex", gap:5, flexShrink:0, alignSelf:"center" }}>
+                          <button
+                            onClick={e => handleDone(e, em)}
+                            disabled={deletingId === em.id}
+                            title="対応済みにしてGmailのゴミ箱へ移動"
+                            style={{ fontSize:"clamp(11px,1.3vw,11px)", padding:"3px 7px",
+                              borderRadius:5, border:"1px solid #A5D6A7", background:"#E8F5E9",
+                              color:"#2E7D32", cursor:"pointer", fontWeight:700,
+                              opacity: deletingId === em.id ? .5 : 1,
+                              whiteSpace:"nowrap" }}>
+                            {deletingId === em.id ? '…' : '✅ 対応済み'}
+                          </button>
+                          <span style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#90A4AE", alignSelf:"center" }}>
+                            {isOpen ? '▲' : '▼'}
+                          </span>
+                        </div>
                       </div>
 
                       {/* 展開：本文 + 添付 */}
