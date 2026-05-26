@@ -40,9 +40,7 @@ export const taskToDB = o => ({
   id: o.id, chapter_id: o.chapterId, district_id: DISTRICT_ID,
   title: o.title, due_date: o.dueDate, done: o.done,
   priority: o.priority, completed_at: o.completedAt,
-  // url は PostgREST スキーマキャッシュ問題のため INSERT/UPDATE から除外
-  // 復活させるには Supabase Dashboard → Settings → API → Reload Schema を実行してから
-  // url: o.url || null,
+  url: o.url || null,
 });
 
 export const emailFromDB = r => ({
