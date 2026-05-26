@@ -112,6 +112,7 @@ export default function App() {
   const [toast,          setToast]         = useState(null);
   const [isSaving,       setIsSaving]      = useState(false);
   const [confirm,        setConfirm]       = useState(null);
+  const [restoreModal,   setRestoreModal]  = useState(null); // バックアップ復元プレビュー用
   const [showHelp,       setShowHelp]      = useState(false);
   const [isOnline,       setIsOnline]      = useState(() => navigator.onLine);
   const [refreshing,     setRefreshing]    = useState(false);
@@ -499,16 +500,56 @@ ${ch.name}単会事務局`;
   }, []);
 
   const exportBackup = useCallback(() => {
-    const data = { exportedAt: new Date().toISOString(), speakers: speakersRef.current, tasks: tasksRef.current };
+    const sp = speakersRef.current || [];
+    const tk = tasksRef.current || [];
+    const data = {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      counts: { speakers: sp.length, tasks: tk.length },
+      speakers: sp,
+      tasks: tk,
+    };
     const json = JSON.stringify(data, null, 2);
+    // ファイル名: nanbu_backup_2026-05-26_17-30_講師35件_タスク12件.json
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const ts = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
+    const filename = `nanbu_backup_${ts}_講師${sp.length}件_タスク${tk.length}件.json`;
     const a = Object.assign(document.createElement("a"), {
       href: URL.createObjectURL(new Blob([json], { type: "application/json" })),
-      download: `backup_${new Date().toISOString().slice(0,10)}.json`,
+      download: filename,
     });
     a.click();
     URL.revokeObjectURL(a.href);
-    showToast("バックアップをエクスポートしました 📤");
+    // バックアップ日時を記録（リマインダー用）
+    try { localStorage.setItem('lastBackupAt', new Date().toISOString()); } catch {}
+    showToast(`バックアップを保存しました 📤 ${filename}`);
   }, [showToast]);
+
+  // 週次バックアップリマインダー（初回ロード完了後）
+  useEffect(() => {
+    if (loading) return;
+    try {
+      const last = localStorage.getItem('lastBackupAt');
+      const dismissed = localStorage.getItem('backupReminderDismissedAt');
+      const now = Date.now();
+      const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+      // 直近24時間以内に既に通知して閉じられていれば再通知しない
+      if (dismissed && now - new Date(dismissed).getTime() < 24 * 60 * 60 * 1000) return;
+      const lastTime = last ? new Date(last).getTime() : 0;
+      if (now - lastTime >= SEVEN_DAYS) {
+        const days = last ? Math.floor((now - lastTime) / (24 * 60 * 60 * 1000)) : null;
+        const msg = last
+          ? `📤 最後のバックアップから${days}日経過しています。今すぐ取りますか？`
+          : '📤 バックアップ未取得です。週1回の取得をお勧めします。';
+        showToast(msg, {
+          actionLabel: '今すぐ取る',
+          action: () => exportBackup(),
+        });
+        localStorage.setItem('backupReminderDismissedAt', new Date().toISOString());
+      }
+    } catch {}
+  }, [loading, showToast, exportBackup]);
 
   const importBackup = useCallback(async (file) => {
     if (!file) return;
@@ -516,28 +557,61 @@ ${ch.name}単会事務局`;
       const text = await file.text();
       const data = JSON.parse(text);
       if (!Array.isArray(data.speakers) || !Array.isArray(data.tasks)) throw new Error("無効なバックアップファイルです");
-      const spCount = data.speakers.length, tkCount = data.tasks.length;
-      showConfirm(`講師 ${spCount}件・タスク ${tkCount}件をインポートします。既存の同一IDのデータは上書きされます。続けますか？`, async () => {
-        try {
-          if (data.speakers.length > 0) {
-            const { error } = await db.from('speakers').upsert(data.speakers.map(toDB), { onConflict: 'id' });
-            if (error) throw error;
-            setSpeakers(data.speakers);
-          }
-          if (data.tasks.length > 0) {
-            const { error } = await db.from('tasks').upsert(data.tasks.map(taskToDB), { onConflict: 'id' });
-            if (error) throw error;
-            setTasks(data.tasks);
-          }
-          showToast(`インポートしました ✓ 講師${spCount}件 タスク${tkCount}件`);
-        } catch (e) {
-          showToast(`⚠ インポートに失敗しました: ${e.message}`);
-        }
-      }, "インポートする");
+
+      // 差分計算
+      const curSp = speakersRef.current || [];
+      const curTk = tasksRef.current || [];
+      const curSpIds = new Set(curSp.map(s => s.id));
+      const curTkIds = new Set(curTk.map(t => t.id));
+      const bkSpIds = new Set(data.speakers.map(s => s.id));
+      const bkTkIds = new Set(data.tasks.map(t => t.id));
+
+      const diff = {
+        speakers: {
+          add:    data.speakers.filter(s => !curSpIds.has(s.id)).length, // バックアップにあるが現在にない（マージで追加）
+          update: data.speakers.filter(s => curSpIds.has(s.id)).length,  // 両方にある（マージで上書き）
+          keep:   curSp.filter(s => !bkSpIds.has(s.id)).length,           // 現在にあってバックアップにない（マージで保持、置換で削除）
+        },
+        tasks: {
+          add:    data.tasks.filter(t => !curTkIds.has(t.id)).length,
+          update: data.tasks.filter(t => curTkIds.has(t.id)).length,
+          keep:   curTk.filter(t => !bkTkIds.has(t.id)).length,
+        },
+      };
+
+      setRestoreModal({ data, diff, filename: file.name });
     } catch (e) {
       showToast(`⚠ ファイルの解析に失敗しました: ${e.message}`);
     }
-  }, [showConfirm, showToast]);
+  }, [showToast]);
+
+  // 復元実行（mode: 'merge' | 'replace'）
+  const executeRestore = useCallback(async (mode) => {
+    if (!restoreModal) return;
+    const { data } = restoreModal;
+    setRestoreModal(null);
+    const spCount = data.speakers.length, tkCount = data.tasks.length;
+    try {
+      if (mode === 'replace') {
+        // 完全置換: 既存データを削除してから挿入
+        await db.from('tasks').delete().eq('district_id', DISTRICT_ID);
+        await db.from('speakers').delete().eq('district_id', DISTRICT_ID);
+      }
+      if (data.speakers.length > 0) {
+        const { error } = await db.from('speakers').upsert(data.speakers.map(toDB), { onConflict: 'id' });
+        if (error) throw error;
+      }
+      if (data.tasks.length > 0) {
+        const { error } = await db.from('tasks').upsert(data.tasks.map(taskToDB), { onConflict: 'id' });
+        if (error) throw error;
+      }
+      // DBから最新データを取り直す（state不整合を防ぐ）
+      await loadData(true);
+      showToast(`${mode === 'replace' ? '完全置換' : 'マージ'}しました ✓ 講師${spCount}件 タスク${tkCount}件`);
+    } catch (e) {
+      showToast(`⚠ 復元に失敗しました: ${e.message}`);
+    }
+  }, [restoreModal, showToast, loadData]);
 
   const dashboardBadge = useMemo(() => {
     const todayStr = toDateStr(today);
@@ -936,6 +1010,71 @@ ${ch.name}単会事務局`;
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={BC} onClick={() => setConfirm(null)}>キャンセル</button>
               <button style={{ ...BP, background: confirm.okLabel ? "#1A3A6B" : "#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>{confirm.okLabel || "削除する"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {restoreModal && (
+        <div style={OV} role="presentation">
+          <div role="dialog" aria-modal="true" aria-label="バックアップ復元プレビュー" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth:480, width:"92%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
+            <div style={{ fontSize:"clamp(15px,2vw,18px)", fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>📥 バックアップから復元</div>
+
+            <div style={{ background:"#F5F7FA", borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F" }}>
+              <div style={{ fontWeight:700, marginBottom:6 }}>📄 {restoreModal.filename}</div>
+              <div>作成日時: {restoreModal.data.exportedAt ? new Date(restoreModal.data.exportedAt).toLocaleString('ja-JP') : '不明'}</div>
+              <div>バックアップ内容: 講師 {restoreModal.data.speakers.length}件 / タスク {restoreModal.data.tasks.length}件</div>
+            </div>
+
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", marginBottom:8, fontWeight:700 }}>復元方法の比較:</div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"clamp(11px,1.3vw,13px)", marginBottom:16 }}>
+              <thead>
+                <tr style={{ background:"#ECEFF1" }}>
+                  <th style={{ padding:"6px 8px", textAlign:"left", border:"1px solid #CFD8DC" }}></th>
+                  <th style={{ padding:"6px 8px", textAlign:"center", border:"1px solid #CFD8DC" }}>マージ（推奨）</th>
+                  <th style={{ padding:"6px 8px", textAlign:"center", border:"1px solid #CFD8DC" }}>完全置換</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", fontWeight:700 }}>講師</td>
+                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#2E7D32" }}>
+                    +{restoreModal.diff.speakers.add} 追加 / {restoreModal.diff.speakers.update} 上書き<br/>
+                    <span style={{ color:"#546E7A" }}>現在の{restoreModal.diff.speakers.keep}件は保持</span>
+                  </td>
+                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#B71C1C" }}>
+                    全{restoreModal.diff.speakers.keep + restoreModal.diff.speakers.update}件削除<br/>
+                    →{restoreModal.data.speakers.length}件に置換
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", fontWeight:700 }}>タスク</td>
+                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#2E7D32" }}>
+                    +{restoreModal.diff.tasks.add} 追加 / {restoreModal.diff.tasks.update} 上書き<br/>
+                    <span style={{ color:"#546E7A" }}>現在の{restoreModal.diff.tasks.keep}件は保持</span>
+                  </td>
+                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#B71C1C" }}>
+                    全{restoreModal.diff.tasks.keep + restoreModal.diff.tasks.update}件削除<br/>
+                    →{restoreModal.data.tasks.length}件に置換
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"flex-end" }}>
+              <button style={BC} onClick={() => setRestoreModal(null)}>キャンセル</button>
+              <button
+                style={{ ...BP, background:"#B71C1C" }}
+                onClick={() => {
+                  setConfirm({
+                    msg: `完全置換は現在のデータを全て削除します。バックアップ後に追加した講師${restoreModal.diff.speakers.keep}件・タスク${restoreModal.diff.tasks.keep}件が消えます。本当に続けますか？`,
+                    okLabel: "完全置換する",
+                    onOk: () => executeRestore('replace'),
+                  });
+                }}
+                title="現在のデータを全削除してバックアップを完全復元"
+              >⚠ 完全置換</button>
+              <button style={{ ...BP, background:"#2E7D32" }} onClick={() => executeRestore('merge')} title="バックアップを現在のデータに追加・上書き">マージで復元</button>
             </div>
           </div>
         </div>
