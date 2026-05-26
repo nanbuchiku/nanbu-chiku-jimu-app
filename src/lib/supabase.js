@@ -33,12 +33,14 @@ export const toDB = o => ({
 export const taskFromDB = r => ({
   id: r.id, chapterId: r.chapter_id, title: r.title, dueDate: r.due_date,
   done: r.done, priority: r.priority, completedAt: r.completed_at,
+  url: r.url || '',
 });
 
 export const taskToDB = o => ({
   id: o.id, chapter_id: o.chapterId, district_id: DISTRICT_ID,
   title: o.title, due_date: o.dueDate, done: o.done,
   priority: o.priority, completed_at: o.completedAt,
+  url: o.url || null,
 });
 
 export const emailFromDB = r => ({
