@@ -245,7 +245,8 @@ export default function App() {
           setTasks(prev => prev.some(x => x.id === t.id) ? prev : [...prev, t].sort((a,b) => (a.dueDate||"").localeCompare(b.dueDate||"")));
         } else if (payload.eventType === 'UPDATE') {
           const t = taskFromDB(payload.new);
-          setTasks(prev => prev.map(x => x.id === t.id ? t : x));
+          // DBにurlが保存されていない場合はローカルのurlを保持する
+          setTasks(prev => prev.map(x => x.id === t.id ? { ...t, url: t.url || x.url } : x));
         } else if (payload.eventType === 'DELETE') {
           setTasks(prev => prev.filter(x => x.id !== payload.old.id));
         }
