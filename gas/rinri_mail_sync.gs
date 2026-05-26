@@ -83,18 +83,9 @@ function processMessage_(msg, sheet) {
     driveUrl: driveUrl,
   });
 
-  // Supabase に upsert
-  saveToSupabase_({
-    id:            id,
-    district_id:   CONFIG.DISTRICT_ID,
-    from_email:    from,
-    subject:       subject,
-    received_at:   dateStr,
-    has_deadline:  deadlineInfo.hasDeadline,
-    deadline_date: deadlineInfo.deadlineDate || null,
-    body_preview:  preview,
-    drive_url:     driveUrl || null,
-  });
+  // ※ Supabase への書き込みは廃止（アプリが Gmail API を直接参照するため不要）
+  // ストレージ節約のためコメントアウト (2026-05 対応)
+  // saveToSupabase_({ ... });
 
   return true;
 }
