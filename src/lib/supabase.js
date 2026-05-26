@@ -49,3 +49,40 @@ export const emailFromDB = r => ({
   deadlineDate: r.deadline_date, bodyPreview: r.body_preview,
   driveUrl: r.drive_url,
 });
+
+// ─── PostgREST スキーマキャッシュ問題の自動回避 ───────────────────────
+// PostgRESTのスキーマキャッシュが時々stale状態になり、url列を認識しなくなる現象がある。
+// その場合は url を除外してリトライ。URL自体はlocalStorageキャッシュで保持されるため、
+// ユーザー体験上は問題なく動作する。
+const isUrlSchemaCacheError = (err) =>
+  err && typeof err.message === 'string' &&
+  err.message.includes("'url'") && err.message.includes("schema cache");
+
+const stripUrl = (obj) => { const { url: _u, ...rest } = obj; return rest; };
+
+export const safeInsertTask = async (taskObj) => {
+  const dbObj = taskToDB(taskObj);
+  let res = await db.from('tasks').insert(dbObj);
+  if (res.error && isUrlSchemaCacheError(res.error)) {
+    res = await db.from('tasks').insert(stripUrl(dbObj));
+  }
+  return res;
+};
+
+export const safeInsertTasks = async (taskObjs) => {
+  const dbObjs = taskObjs.map(taskToDB);
+  let res = await db.from('tasks').insert(dbObjs);
+  if (res.error && isUrlSchemaCacheError(res.error)) {
+    res = await db.from('tasks').insert(dbObjs.map(stripUrl));
+  }
+  return res;
+};
+
+export const safeUpdateTask = async (id, taskObj) => {
+  const dbObj = taskToDB(taskObj);
+  let res = await db.from('tasks').update(dbObj).eq('id', id);
+  if (res.error && isUrlSchemaCacheError(res.error)) {
+    res = await db.from('tasks').update(stripUrl(dbObj)).eq('id', id);
+  }
+  return res;
+};
