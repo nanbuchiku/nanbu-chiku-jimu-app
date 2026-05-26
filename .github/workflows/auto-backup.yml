@@ -1,0 +1,84 @@
+name: Auto Backup
+
+on:
+  schedule:
+    # 毎日 JST 3:00 AM（= UTC 18:00 前日）に実行
+    - cron: '0 18 * * *'
+  # 手動実行も可能（GitHub Actions タブから "Run workflow" できる）
+  workflow_dispatch:
+
+# セキュリティ注意:
+# このリポジトリは PUBLIC のため、バックアップデータ（個人情報含む）を
+# このリポジトリ内にコミットしてはいけない。
+# Actions Artifacts は repo collaborator しかDLできないので安全。
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch backup from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
+          DISTRICT_ID: '11111111-1111-1111-1111-111111111111'
+        run: |
+          mkdir -p backups
+          # JST タイムスタンプ
+          TS=$(TZ='Asia/Tokyo' date +'%Y-%m-%d_%H-%M')
+
+          echo "Fetching speakers..."
+          SP=$(curl -s -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/speakers?district_id=eq.$DISTRICT_ID&select=*")
+
+          echo "Fetching tasks..."
+          TK=$(curl -s -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/tasks?district_id=eq.$DISTRICT_ID&select=*")
+
+          echo "Fetching chapter_settings..."
+          CS=$(curl -s -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/chapter_settings?select=chapter_id,settings")
+
+          # 件数取得
+          SP_COUNT=$(echo "$SP" | jq 'length')
+          TK_COUNT=$(echo "$TK" | jq 'length')
+
+          # JSONを組み立てて保存
+          FILENAME="backup_${TS}_講師${SP_COUNT}件_タスク${TK_COUNT}件.json"
+          jq -n \
+            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+            --argjson sp "$SP" \
+            --argjson tk "$TK" \
+            --argjson cs "$CS" \
+            --argjson sp_count "$SP_COUNT" \
+            --argjson tk_count "$TK_COUNT" \
+            '{
+              version: 2,
+              source: "github-actions-auto-backup",
+              exportedAt: $ts,
+              counts: { speakers: $sp_count, tasks: $tk_count },
+              speakers: $sp,
+              tasks: $tk,
+              chapterSettings: $cs
+            }' > "backups/$FILENAME"
+
+          # 最新を「latest.json」としても保存（復元しやすい固定名）
+          cp "backups/$FILENAME" "backups/latest.json"
+
+          echo "✅ Backup created: $FILENAME"
+          echo "Speakers: $SP_COUNT, Tasks: $TK_COUNT"
+
+          # GitHub Actions Summary（実行ページに表示）
+          echo "## 📤 バックアップ完了" >> $GITHUB_STEP_SUMMARY
+          echo "- **ファイル**: \`$FILENAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **講師**: ${SP_COUNT}件" >> $GITHUB_STEP_SUMMARY
+          echo "- **タスク**: ${TK_COUNT}件" >> $GITHUB_STEP_SUMMARY
+          echo "- **取得日時**: ${TS} (JST)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "下の \"Artifacts\" セクションから \`nanbu-backup\` をダウンロードできます。" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload as Actions Artifact (90日間保管)
+        uses: actions/upload-artifact@v4
+        with:
+          name: nanbu-backup-${{ github.run_number }}
+          path: backups/
+          retention-days: 90
