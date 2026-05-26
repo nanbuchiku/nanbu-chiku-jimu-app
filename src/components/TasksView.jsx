@@ -132,9 +132,16 @@ function extractEmailSummary(subject, body) {
   }
 
   // 🎯 何を目的として（案内・依頼文を抽出）
+  // ※ 締切・期限を含む行は除外（「ご連絡は5月8日まで」等の誤マッチ防止）
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 8 && l.length < 120);
-  const keyLine = lines.find(l => /ご案内|開催|実施|募集|確認のお願い|ご連絡|お知らせ|ご依頼|ご参加|ご回答/.test(l));
-  if (keyLine) bullets.push(`🎯 目的: ${keyLine.replace(/。$/, '').replace(/^.*?[、。]/, '').trim() || keyLine.trim()}`);
+  const isDeadlineLine = l => /まで|迄|締切|期限|期日|ご回答期限/.test(l);
+  const keyLine = lines.find(l =>
+    /ご案内|開催|実施|募集|確認のお願い|お知らせ|ご依頼|ご参加/.test(l) && !isDeadlineLine(l)
+  );
+  if (keyLine) {
+    const trimmed = keyLine.replace(/。$/, '').trim();
+    bullets.push(`🎯 目的: ${trimmed}`);
+  }
 
   // ⚡ 締め切り・回答期限
   const dlMatch = text.match(/(?:締め?切[りり]?|〆切|回答期限|期日|ご回答|ご返信)[：:は　\s]*([^\n。、]{3,25})/);
@@ -144,13 +151,19 @@ function extractEmailSummary(subject, body) {
   const urlMatch = text.match(/https?:\/\/[^\s\n）)]{10,80}/);
   if (urlMatch) bullets.push(`🔗 URL: ${urlMatch[0]}`);
 
-  return bullets.length > 1
+  // 📝 本文が短くてパターンが取れなかった場合、本文をそのまま表示
+  if (bullets.length <= 1 && text.length > 0) {
+    const shortBody = text.slice(0, 120).replace(/\n/g, ' ').trim();
+    if (shortBody) bullets.push(`📝 内容: ${shortBody}${text.length > 120 ? '…' : ''}`);
+  }
+
+  return bullets.length >= 1
     ? bullets.join('\n')
-    : '（本文が短すぎるか定型文がないため要約できませんでした）';
+    : '（要約できませんでした）';
 }
 
 // ─── GmailInbox コンポーネント ─────────────────────────────────
-function GmailInbox({ today, showToast }) {
+function GmailInbox({ today, showToast, onAddTaskDirect }) {
   const [open,       setOpen]       = useState(true);
   const [token,      setToken]      = useState(() => getStoredToken());
   const [keyword,    setKeyword]    = useState('');
@@ -213,7 +226,7 @@ function GmailInbox({ today, showToast }) {
       const qParts = [];
       if (cm) qParts.push(`subject:${cm}`);
       if (kw.trim()) qParts.push(kw.trim());
-      qParts.push('newer_than:30d');
+      qParts.push('newer_than:21d');
       const q = qParts.join(' ');
       const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${encodeURIComponent(q)}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
@@ -387,17 +400,12 @@ function GmailInbox({ today, showToast }) {
     if (!form.dueDate)        { showToast?.('⚠ 期限を入力してください'); return; }
     setTaskAdding(emailId);
     try {
-      const id = `t${Date.now()}`;
-      const { error } = await db.from('tasks').insert({
-        id,
-        district_id: DISTRICT_ID,
-        chapter_id:  form.chapterId,
-        title:       form.title.trim(),
-        due_date:    form.dueDate,
-        priority:    form.priority,
-        done:        false,
+      await onAddTaskDirect({
+        chapterId: form.chapterId,
+        title:     form.title.trim(),
+        dueDate:   form.dueDate,
+        priority:  form.priority,
       });
-      if (error) throw error;
       showToast?.('✅ タスクを追加しました');
       setTaskForms(f => ({ ...f, [emailId]: { ...f[emailId], open: false } }));
     } catch (e) {
@@ -763,7 +771,7 @@ function GmailInbox({ today, showToast }) {
   );
 }
 
-export default memo(function TasksView({ tasks, emails = [], today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, showToast }) {
+export default memo(function TasksView({ tasks, emails = [], today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, onAddTaskDirect, showToast }) {
   const [showDone,    setShowDone]    = useState(true);
   const [filterCh,   setFilterCh]    = useState("all");
   const [filterPrio, setFilterPrio]  = useState("all");
@@ -933,7 +941,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
         </div>
       )}
 
-      <GmailInbox today={today} showToast={showToast} />
+      <GmailInbox today={today} showToast={showToast} onAddTaskDirect={onAddTaskDirect} />
 
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
