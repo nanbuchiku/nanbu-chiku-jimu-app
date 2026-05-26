@@ -523,7 +523,7 @@ ${ch.name}単会事務局`;
     URL.revokeObjectURL(a.href);
     // バックアップ日時を記録（リマインダー用）
     try { localStorage.setItem('lastBackupAt', new Date().toISOString()); } catch {}
-    showToast(`バックアップを保存しました 📥 ${filename}`);
+    showToast(`バックアップを保存しました ⬇ ${filename}`);
   }, [showToast]);
 
   // 週次バックアップリマインダー（初回ロード完了後）
@@ -540,8 +540,8 @@ ${ch.name}単会事務局`;
       if (now - lastTime >= SEVEN_DAYS) {
         const days = last ? Math.floor((now - lastTime) / (24 * 60 * 60 * 1000)) : null;
         const msg = last
-          ? `📥 最後のバックアップから${days}日経過しています。今すぐ取りますか？`
-          : '📥 バックアップ未取得です。週1回の取得をお勧めします。';
+          ? `⬇ 最後のバックアップから${days}日経過しています。今すぐ取りますか？`
+          : '⬇ バックアップ未取得です。週1回の取得をお勧めします。';
         showToast(msg, {
           actionLabel: '今すぐ取る',
           action: () => exportBackup(),
@@ -797,8 +797,8 @@ ${ch.name}単会事務局`;
             </div>
             <div style={{ display:"flex", gap:4 }}>
               <button onClick={() => setShowHelp(h => !h)} title="ショートカット" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>?</button>
-              <button onClick={exportBackup} title="バックアップを自分のPCに保存" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>📥</button>
-              <label title="バックアップから復元（ファイルをアプリに読み込む）" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer", textAlign:"center" }}>📤<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
+              <button onClick={exportBackup} title="バックアップを自分のPCに保存" style={{ flex:1, background:"rgba(220,80,80,.25)", border:"1px solid rgba(255,150,150,.5)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer" }}>⬇</button>
+              <label title="バックアップから復元（ファイルをアプリに読み込む）" style={{ flex:1, background:"rgba(80,140,230,.25)", border:"1px solid rgba(150,190,255,.5)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer", textAlign:"center" }}>⬆<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
               <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.18)", border:"1px solid rgba(255,255,255,.35)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
               <button onClick={() => db.auth.signOut()} title="ログアウト" style={{ flex:1, background:"rgba(220,50,50,.25)", border:"1px solid rgba(255,100,100,.4)", borderRadius:6, color:"rgba(255,180,180,.9)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⏻</button>
             </div>
@@ -971,8 +971,8 @@ ${ch.name}単会事務局`;
             <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.1)" }}>
               <div style={{ display:"flex", gap:4 }}>
                 <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
-                <button onClick={exportBackup} title="バックアップを自分のPCに保存" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>📥</button>
-                <label title="バックアップから復元（ファイルをアプリに読み込む）" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer", textAlign:"center" }}>📤<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value=""; setMobileDrawer(false); }} /></label>
+                <button onClick={exportBackup} title="バックアップを自分のPCに保存" style={{ flex:1, background:"rgba(220,80,80,.25)", border:"1px solid rgba(255,150,150,.5)", borderRadius:6, color:"#fff", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer" }}>⬇</button>
+                <label title="バックアップから復元（ファイルをアプリに読み込む）" style={{ flex:1, background:"rgba(80,140,230,.25)", border:"1px solid rgba(150,190,255,.5)", borderRadius:6, color:"#fff", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer", textAlign:"center" }}>⬆<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value=""; setMobileDrawer(false); }} /></label>
               </div>
             </div>
           </div>
@@ -1018,7 +1018,7 @@ ${ch.name}単会事務局`;
       {restoreModal && (
         <div style={OV} role="presentation">
           <div role="dialog" aria-modal="true" aria-label="バックアップ復元プレビュー" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth:480, width:"92%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
-            <div style={{ fontSize:"clamp(15px,2vw,18px)", fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>📤 バックアップから復元</div>
+            <div style={{ fontSize:"clamp(15px,2vw,18px)", fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>⬆ バックアップから復元</div>
 
             <div style={{ background:"#F5F7FA", borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F" }}>
               <div style={{ fontWeight:700, marginBottom:6 }}>📄 {restoreModal.filename}</div>
