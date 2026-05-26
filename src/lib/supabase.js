@@ -36,11 +36,12 @@ export const taskFromDB = r => ({
   url: r.url || '',
 });
 
+// urlはPostgRESTスキーマキャッシュの問題でDB保存不可のため除外。
+// URLはlocalStorageキャッシュ（cachedTasks）経由で保持する。
 export const taskToDB = o => ({
   id: o.id, chapter_id: o.chapterId, district_id: DISTRICT_ID,
   title: o.title, due_date: o.dueDate, done: o.done,
   priority: o.priority, completed_at: o.completedAt,
-  url: o.url || null,
 });
 
 export const emailFromDB = r => ({
