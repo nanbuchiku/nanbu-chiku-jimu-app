@@ -327,10 +327,10 @@ function GmailInbox({ today, showToast }) {
       }
       if (!gmailRes.ok) throw new Error(`Gmail API エラー: ${gmailRes.status}`);
 
-      // 2. Supabase の emails テーブルに同じ件名があれば削除
-      const { data: dbRows } = await db.from('emails').select('id').eq('subject', em.subject);
+      // 2. Supabase の rinri_emails テーブルに同じ件名があれば削除
+      const { data: dbRows } = await db.from('rinri_emails').select('id').eq('subject', em.subject);
       if (dbRows?.length > 0) {
-        await db.from('emails').delete().eq('subject', em.subject);
+        await db.from('rinri_emails').delete().eq('subject', em.subject);
       }
 
       // 3. ローカルのメール一覧から削除
