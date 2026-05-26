@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { CHAPTERS } from '../constants';
+import { CHAPTERS, DISTRICT_ID } from '../constants';
 import { getChapter, parseDate } from '../utils';
+import { db } from '../lib/supabase';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
@@ -133,7 +134,7 @@ function extractEmailSummary(subject, body) {
 }
 
 // ─── GmailInbox コンポーネント ─────────────────────────────────
-function GmailInbox() {
+function GmailInbox({ today, showToast }) {
   const [open,       setOpen]       = useState(true);
   const [token,      setToken]      = useState(() => getStoredToken());
   const [keyword,    setKeyword]    = useState('');
@@ -146,6 +147,8 @@ function GmailInbox() {
   const [error,      setError]      = useState('');
   const [summaries,  setSummaries]  = useState({});   // id → 要約テキスト
   const [copied,     setCopied]     = useState('');
+  const [taskForms,  setTaskForms]  = useState({});   // id → { open, title, dueDate, priority, chapterId }
+  const [taskAdding, setTaskAdding] = useState('');
 
   // ① OAuthリダイレクト後にURLハッシュからトークンを取得
   useEffect(() => {
@@ -303,6 +306,53 @@ function GmailInbox() {
       window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (e) { alert('ファイルを開けませんでした: ' + e.message); }
+  };
+
+  // ── メールからタスク追加 ──────────────────────────────────────
+  const openTaskForm = (emailId, subject, deadlineDate) => {
+    setTaskForms(f => {
+      if (f[emailId]?.open) return { ...f, [emailId]: { ...f[emailId], open: false } };
+      // 締め切り日をYYYY-MM-DDに変換
+      let dueDate = '';
+      if (deadlineDate) {
+        const m = deadlineDate.match(/(\d{1,2})\/(\d{1,2})/);
+        if (m) {
+          const y = (today || new Date()).getFullYear();
+          dueDate = `${y}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`;
+        }
+      }
+      const title = subject.replace(/【[^】]*】/g, '').replace(/Re:|Fw:/gi, '').trim();
+      return { ...f, [emailId]: { open: true, title, dueDate, priority:'medium', chapterId: CHAPTERS[0].id } };
+    });
+  };
+
+  const updateTaskForm = (emailId, key, val) =>
+    setTaskForms(f => ({ ...f, [emailId]: { ...f[emailId], [key]: val } }));
+
+  const submitTaskForm = async (emailId) => {
+    const form = taskForms[emailId];
+    if (!form?.title?.trim()) { showToast?.('⚠ タスク内容を入力してください'); return; }
+    if (!form.dueDate)        { showToast?.('⚠ 期限を入力してください'); return; }
+    setTaskAdding(emailId);
+    try {
+      const id = `t${Date.now()}`;
+      const { error } = await db.from('tasks').insert({
+        id,
+        district_id: DISTRICT_ID,
+        chapter_id:  form.chapterId,
+        title:       form.title.trim(),
+        due_date:    form.dueDate,
+        priority:    form.priority,
+        done:        false,
+      });
+      if (error) throw error;
+      showToast?.('✅ タスクを追加しました');
+      setTaskForms(f => ({ ...f, [emailId]: { ...f[emailId], open: false } }));
+    } catch (e) {
+      showToast?.('⚠ タスク追加に失敗しました: ' + e.message);
+    } finally {
+      setTaskAdding('');
+    }
   };
 
   const generateSummary = (id, subject, body) => {
@@ -508,6 +558,65 @@ function GmailInbox() {
                             <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)" }}>読み込み中...</div>
                           ) : det ? (
                             <>
+                              {/* ── タスク追加エリア ── */}
+                              <div style={{ marginBottom:8 }}>
+                                <button
+                                  onClick={e => { e.stopPropagation(); openTaskForm(em.id, em.subject, em.deadlineDate); }}
+                                  style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"4px 12px",
+                                    borderRadius:5, border:"1px solid #A5D6A7", background:"#E8F5E9",
+                                    color:"#1B5E20", cursor:"pointer", fontWeight:700 }}>
+                                  {taskForms[em.id]?.open ? '✕ キャンセル' : '＋ タスク追加'}
+                                </button>
+
+                                {taskForms[em.id]?.open && (
+                                  <div onClick={e => e.stopPropagation()}
+                                    style={{ marginTop:8, padding:"10px 12px", background:"#F1F8E9",
+                                      borderRadius:7, border:"1px solid #A5D6A7", display:"flex",
+                                      flexDirection:"column", gap:6 }}>
+                                    {/* タスク内容 */}
+                                    <input
+                                      value={taskForms[em.id].title}
+                                      onChange={e => updateTaskForm(em.id, 'title', e.target.value)}
+                                      placeholder="タスク内容"
+                                      style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)", width:"100%", boxSizing:"border-box" }}
+                                    />
+                                    <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+                                      {/* 期限 */}
+                                      <input
+                                        type="date"
+                                        value={taskForms[em.id].dueDate}
+                                        onChange={e => updateTaskForm(em.id, 'dueDate', e.target.value)}
+                                        style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }}
+                                      />
+                                      {/* 単会 */}
+                                      <select
+                                        value={taskForms[em.id].chapterId}
+                                        onChange={e => updateTaskForm(em.id, 'chapterId', e.target.value)}
+                                        style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }}>
+                                        {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+                                      </select>
+                                      {/* 優先度 */}
+                                      <select
+                                        value={taskForms[em.id].priority}
+                                        onChange={e => updateTaskForm(em.id, 'priority', e.target.value)}
+                                        style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }}>
+                                        <option value="high">🔴 高</option>
+                                        <option value="medium">🟡 中</option>
+                                        <option value="low">🟢 低</option>
+                                      </select>
+                                      {/* 追加ボタン */}
+                                      <button
+                                        disabled={taskAdding === em.id}
+                                        onClick={e => { e.stopPropagation(); submitTaskForm(em.id); }}
+                                        style={{ ...BP, fontSize:"clamp(12px,1.4vw,14px)", padding:"5px 14px",
+                                          opacity: taskAdding === em.id ? .6 : 1 }}>
+                                        {taskAdding === em.id ? '追加中...' : '追加'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
                               {/* ── 要約エリア ── */}
                               <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:6, flexWrap:"wrap" }}>
                                 <button
@@ -759,7 +868,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
         </div>
       )}
 
-      <GmailInbox />
+      <GmailInbox today={today} showToast={showToast} />
 
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
