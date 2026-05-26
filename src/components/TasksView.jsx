@@ -1,57 +1,417 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS } from '../constants';
 import { getChapter, parseDate } from '../utils';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
 const PRIO = { high:{ label:"高", bg:"#FFEBEE", color:"#C62828" }, medium:{ label:"中", bg:"#FFF8E1", color:"#F57F17" }, low:{ label:"低", bg:"#E8F5E9", color:"#2E7D32" } };
 
-function EmailInbox({ emails }) {
-  const [open, setOpen] = useState(true);
-  const [selected, setSelected] = useState(null);
-  const fmt = dt => {
-    if (!dt) return '';
-    const d = new Date(dt);
-    return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+// ─── Gmail OAuth2 定数 ───────────────────────────────────────────
+const GMAIL_CLIENT_ID = '181247594167-n0fb727pkc3v0hsch52vmedoed4jt43r.apps.googleusercontent.com';
+const GMAIL_REDIRECT_URI = 'https://nanbuchiku.github.io/nanbu-chiku-jimu-app/';
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+
+const COMMITTEES = [
+  '広報委員','キャリアアップ委員','イメージ向上委員',
+  'モーニングセミナー委員','研修委員','朝礼委員',
+  '女性委員','青年委員','後継者倫理塾委員',
+];
+
+// ─── Gmail ヘルパー関数 ──────────────────────────────────────────
+function decodeBase64Url(b64) {
+  if (!b64) return '';
+  try {
+    const b64std = b64.replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(b64std), c => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  } catch { return b64; }
+}
+
+function findTextPlain(payload) {
+  if (!payload) return null;
+  if (payload.mimeType === 'text/plain' && payload.body?.data) return payload.body.data;
+  if (payload.parts) {
+    for (const part of payload.parts) {
+      const found = findTextPlain(part);
+      if (found) return found;
+    }
+  }
+  // HTML フォールバック
+  if (payload.mimeType === 'text/html' && payload.body?.data) return payload.body.data;
+  return null;
+}
+
+function findAttachments(payload, list = []) {
+  if (!payload) return list;
+  if (payload.filename && payload.filename.length > 0 && payload.body?.attachmentId) {
+    list.push({
+      filename: payload.filename,
+      mimeType: payload.mimeType || 'application/octet-stream',
+      attachmentId: payload.body.attachmentId,
+      size: payload.body.size || 0,
+    });
+  }
+  if (payload.parts) {
+    for (const part of payload.parts) findAttachments(part, list);
+  }
+  return list;
+}
+
+function parseTokenFromHash() {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash.includes('access_token')) return null;
+  const params = new URLSearchParams(hash);
+  const token = params.get('access_token');
+  const expiresIn = parseInt(params.get('expires_in') || '3600', 10);
+  if (!token) return null;
+  return { token, expiresAt: Date.now() + expiresIn * 1000 };
+}
+
+function getStoredToken() {
+  const token = sessionStorage.getItem('gmail_token');
+  const exp = sessionStorage.getItem('gmail_token_exp');
+  if (token && exp && Date.now() < parseInt(exp, 10)) return token;
+  return null;
+}
+
+// ─── GmailInbox コンポーネント ─────────────────────────────────
+function GmailInbox() {
+  const [open,       setOpen]       = useState(true);
+  const [token,      setToken]      = useState(() => getStoredToken());
+  const [keyword,    setKeyword]    = useState('');
+  const [committee,  setCommittee]  = useState('');
+  const [emails,     setEmails]     = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [details,    setDetails]    = useState({});   // id → { body, attachments }
+  const [detLoading, setDetLoading] = useState(false);
+  const [error,      setError]      = useState('');
+
+  // ① OAuthリダイレクト後にURLハッシュからトークンを取得
+  useEffect(() => {
+    const parsed = parseTokenFromHash();
+    if (parsed) {
+      sessionStorage.setItem('gmail_token',     parsed.token);
+      sessionStorage.setItem('gmail_token_exp', String(parsed.expiresAt));
+      setToken(parsed.token);
+      // URLのハッシュをクリア
+      window.history.replaceState({}, document.title,
+        window.location.pathname + window.location.search);
+    }
+  }, []);
+
+  // ② トークンがあれば自動でメール取得
+  useEffect(() => { if (token) fetchEmails(keyword, committee, token); }, [token]); // eslint-disable-line
+
+  const login = () => {
+    const p = new URLSearchParams({
+      client_id:     GMAIL_CLIENT_ID,
+      redirect_uri:  GMAIL_REDIRECT_URI,
+      response_type: 'token',
+      scope:         GMAIL_SCOPE,
+      prompt:        'select_account',
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${p}`;
   };
+
+  const logout = () => {
+    sessionStorage.removeItem('gmail_token');
+    sessionStorage.removeItem('gmail_token_exp');
+    setToken(null);
+    setEmails([]);
+    setSelectedId(null);
+    setDetails({});
+    setError('');
+  };
+
+  const fetchEmails = async (kw = keyword, cm = committee, tk = token) => {
+    if (!tk) return;
+    setLoading(true);
+    setError('');
+    try {
+      const q = [cm, kw.trim()].filter(Boolean).join(' ');
+      const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25${q ? `&q=${encodeURIComponent(q)}` : ''}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (data.error) { setError(data.error.message || 'APIエラー'); setLoading(false); return; }
+      if (!data.messages?.length) { setEmails([]); setLoading(false); return; }
+
+      // メタデータ一括取得（Subject/From/Date）
+      const metaList = await Promise.all(
+        data.messages.map(m =>
+          fetch(
+            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata` +
+            `&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`,
+            { headers: { Authorization: `Bearer ${tk}` } }
+          ).then(r => r.json())
+        )
+      );
+      const getH = (headers, name) => headers?.find(h => h.name === name)?.value || '';
+      const parsed = metaList.map(msg => {
+        const headers = msg.payload?.headers || [];
+        const subject = getH(headers, 'Subject');
+        const snippet = msg.snippet || '';
+        const hasDeadline = /締切|〆切|期限|締め切り|提出|返信|回答|お願い/.test(subject + snippet);
+        return {
+          id:          msg.id,
+          subject:     subject || '（件名なし）',
+          from:        getH(headers, 'From'),
+          date:        getH(headers, 'Date'),
+          snippet,
+          hasDeadline,
+        };
+      });
+      setEmails(parsed);
+    } catch (e) {
+      setError('通信エラー: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDetail = async (id) => {
+    if (details[id]) return;
+    setDetLoading(true);
+    try {
+      const res = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const msg = await res.json();
+      const rawBody = findTextPlain(msg.payload);
+      const body = rawBody
+        ? decodeBase64Url(rawBody)
+            .replace(/\r\n/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim()
+        : (msg.snippet || '（本文なし）');
+      const attachments = findAttachments(msg.payload);
+      setDetails(d => ({ ...d, [id]: { body, attachments } }));
+    } catch (e) {
+      setDetails(d => ({ ...d, [id]: { body: '（取得エラー）', attachments: [] } }));
+    } finally {
+      setDetLoading(false);
+    }
+  };
+
+  const downloadAttachment = async (msgId, attId, filename, mimeType) => {
+    try {
+      const res = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/attachments/${attId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (!data.data) return;
+      const bytes = Uint8Array.from(
+        atob(data.data.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)
+      );
+      const blob = new Blob([bytes], { type: mimeType });
+      const url  = URL.createObjectURL(blob);
+      Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert('ダウンロードに失敗しました: ' + e.message); }
+  };
+
+  const handleSelect = id => {
+    if (selectedId === id) { setSelectedId(null); return; }
+    setSelectedId(id);
+    fetchDetail(id);
+  };
+
+  const handleCommittee = c => {
+    const next = committee === c ? '' : c;
+    setCommittee(next);
+    fetchEmails(keyword, next);
+  };
+
+  const handleSearch = e => {
+    e.preventDefault();
+    fetchEmails(keyword, committee);
+  };
+
+  const fmtDate = str => {
+    if (!str) return '';
+    try {
+      const d = new Date(str);
+      return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    } catch { return str; }
+  };
+
   return (
     <div style={{ ...CARD, marginBottom:14 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: open ? 10 : 0 }}>
-        <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#1A3A6B" }}>📬 倫理メール受信ボックス</span>
-        {emails.length > 0 && (
-          <span style={{ background:"#1565C0", color:"#fff", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, padding:"1px 7px", borderRadius:10 }}>{emails.length}</span>
+      {/* ヘッダー */}
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: open ? 10 : 0, flexWrap:"wrap" }}>
+        <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#1A3A6B" }}>
+          📬 倫理メール受信ボックス
+        </span>
+        {token && emails.length > 0 && (
+          <span style={{ background:"#1565C0", color:"#fff", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, padding:"1px 7px", borderRadius:10 }}>
+            {emails.length}
+          </span>
         )}
-        <button style={{ marginLeft:"auto", background:"#ECEFF1", border:"none", borderRadius:6, padding:"4px 10px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setOpen(v => !v)}>
-          {open ? "▲ 閉じる" : "▼ 開く"}
-        </button>
+        <div style={{ marginLeft:"auto", display:"flex", gap:6, alignItems:"center" }}>
+          {token
+            ? <button onClick={logout}
+                style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"4px 10px",
+                  fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#546E7A" }}>
+                ログアウト
+              </button>
+            : <button onClick={login}
+                style={{ background:"#1565C0", color:"#fff", border:"none", borderRadius:6, padding:"5px 12px",
+                  fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:700 }}>
+                🔑 Gmailでログイン
+              </button>
+          }
+          <button onClick={() => setOpen(v => !v)}
+            style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"4px 10px",
+              fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}>
+            {open ? "▲ 閉じる" : "▼ 開く"}
+          </button>
+        </div>
       </div>
+
       {open && (
-        emails.length === 0 ? (
-          <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)", padding:"14px 0", textAlign:"center" }}>メールなし（GAS連携後に表示されます）</div>
+        !token ? (
+          <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)", padding:"18px 0", textAlign:"center" }}>
+            「Gmailでログイン」ボタンを押して認証してください
+          </div>
         ) : (
           <div>
-            {emails.map(em => (
-              <div key={em.id}>
-                <div onClick={() => setSelected(selected === em.id ? null : em.id)}
-                  style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"9px 10px", borderRadius:7, cursor:"pointer", marginBottom:3, background: selected === em.id ? "#E3F2FD" : "#F8FAFB", border:"1px solid " + (em.hasDeadline ? "#FFCDD2" : "#E0E0E0") }}>
-                  <div style={{ flexShrink:0, marginTop:1 }}>
-                    {em.hasDeadline ? <span style={{ background:"#FFEBEE", color:"#C62828", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, padding:"2px 5px", borderRadius:4 }}>締切あり</span>
-                      : <span style={{ background:"#F5F5F5", color:"#757575", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, padding:"2px 5px", borderRadius:4 }}>参考</span>}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#1A237E", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{em.subject || '（件名なし）'}</div>
-                    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginTop:2, display:"flex", gap:8 }}>
-                      <span>{fmt(em.receivedAt)}</span>
-                      <span>{em.fromEmail}</span>
-                      {em.hasDeadline && em.deadlineDate && <span style={{ color:"#C62828", fontWeight:700 }}>締切: {em.deadlineDate}</span>}
-                    </div>
-                  </div>
-                  {em.driveUrl && <a href={em.driveUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ flexShrink:0, fontSize:"clamp(12px,1.4vw,14px)", color:"#1565C0", textDecoration:"none", padding:"2px 7px", border:"1px solid #90CAF9", borderRadius:4, whiteSpace:"nowrap" }}>Drive ↗</a>}
-                </div>
-                {selected === em.id && em.bodyPreview && (
-                  <div style={{ margin:"0 4px 6px", padding:"10px 12px", background:"#FAFAFA", borderRadius:6, border:"1px solid #E0E0E0", fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", lineHeight:1.7, whiteSpace:"pre-wrap", maxHeight:160, overflowY:"auto" }}>{em.bodyPreview}</div>
-                )}
+            {/* 委員会フィルター */}
+            <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:8 }}>
+              {COMMITTEES.map(c => (
+                <button key={c} onClick={() => handleCommittee(c)}
+                  style={{ padding:"3px 9px", fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700,
+                    borderRadius:14, border:"none", cursor:"pointer", transition:"background .15s",
+                    background: committee === c ? "#1A3A6B" : "#ECEFF1",
+                    color:      committee === c ? "#fff"    : "#546E7A" }}>
+                  {c}
+                </button>
+              ))}
+              {committee && (
+                <button onClick={() => { setCommittee(''); fetchEmails(keyword, ''); }}
+                  style={{ padding:"3px 9px", fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700,
+                    borderRadius:14, border:"1px solid #CFD8DC", cursor:"pointer",
+                    background:"#fff", color:"#B71C1C" }}>
+                  ✕ 解除
+                </button>
+              )}
+            </div>
+
+            {/* キーワード検索 */}
+            <form onSubmit={handleSearch} style={{ display:"flex", gap:6, marginBottom:10 }}>
+              <input
+                value={keyword}
+                onChange={e => setKeyword(e.target.value)}
+                placeholder="キーワード検索（例: 締切、資料、回答）"
+                style={{ ...INP, flex:1, fontSize:"clamp(12px,1.4vw,14px)" }}
+              />
+              <button type="submit" style={{ ...BP, padding:"6px 14px", fontSize:"clamp(12px,1.4vw,14px)" }}>
+                🔍 検索
+              </button>
+              {(keyword || committee) && (
+                <button type="button"
+                  onClick={() => { setKeyword(''); setCommittee(''); fetchEmails('', ''); }}
+                  style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 12px",
+                    fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#546E7A", fontWeight:600 }}>
+                  クリア
+                </button>
+              )}
+            </form>
+
+            {error && (
+              <div style={{ color:"#C62828", fontSize:"clamp(12px,1.4vw,14px)", marginBottom:8, padding:"6px 10px", background:"#FFEBEE", borderRadius:6 }}>
+                ⚠ {error}
               </div>
-            ))}
+            )}
+
+            {loading ? (
+              <div style={{ color:"#78909C", fontSize:"clamp(12px,1.4vw,14px)", padding:"14px 0", textAlign:"center" }}>
+                📨 メール取得中...
+              </div>
+            ) : emails.length === 0 ? (
+              <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)", padding:"14px 0", textAlign:"center" }}>
+                メールが見つかりません
+              </div>
+            ) : (
+              <div>
+                {emails.map(em => {
+                  const det = details[em.id];
+                  const isOpen = selectedId === em.id;
+                  return (
+                    <div key={em.id} style={{ marginBottom:3 }}>
+                      {/* メール行 */}
+                      <div onClick={() => handleSelect(em.id)}
+                        style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"9px 10px",
+                          borderRadius:7, cursor:"pointer",
+                          background: isOpen ? "#E3F2FD" : "#F8FAFB",
+                          border:"1px solid " + (em.hasDeadline ? "#FFCDD2" : "#E0E0E0") }}>
+                        <div style={{ flexShrink:0, marginTop:1 }}>
+                          {em.hasDeadline
+                            ? <span style={{ background:"#FFEBEE", color:"#C62828", fontSize:"clamp(11px,1.3vw,12px)",
+                                fontWeight:700, padding:"2px 5px", borderRadius:4 }}>締切</span>
+                            : <span style={{ background:"#F5F5F5", color:"#9E9E9E", fontSize:"clamp(11px,1.3vw,12px)",
+                                fontWeight:600, padding:"2px 5px", borderRadius:4 }}>参考</span>
+                          }
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#1A237E",
+                            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                            {em.subject}
+                          </div>
+                          <div style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#78909C", marginTop:2,
+                            display:"flex", gap:8, flexWrap:"wrap" }}>
+                            <span>{fmtDate(em.date)}</span>
+                            <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:200 }}>
+                              {em.from}
+                            </span>
+                          </div>
+                        </div>
+                        <span style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#90A4AE", flexShrink:0, alignSelf:"center" }}>
+                          {isOpen ? '▲' : '▼'}
+                        </span>
+                      </div>
+
+                      {/* 展開：本文 + 添付 */}
+                      {isOpen && (
+                        <div style={{ margin:"0 4px 6px", padding:"10px 12px", background:"#FAFAFA",
+                          borderRadius:"0 0 6px 6px", border:"1px solid #E0E0E0", borderTop:"none" }}>
+                          {detLoading && !det ? (
+                            <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)" }}>読み込み中...</div>
+                          ) : det ? (
+                            <>
+                              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", lineHeight:1.7,
+                                whiteSpace:"pre-wrap", maxHeight:260, overflowY:"auto", marginBottom: det.attachments.length > 0 ? 8 : 0 }}>
+                                {det.body}
+                              </div>
+                              {det.attachments.length > 0 && (
+                                <div style={{ borderTop:"1px solid #E0E0E0", paddingTop:6 }}>
+                                  <div style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#546E7A", marginBottom:4 }}>
+                                    📎 添付ファイル
+                                  </div>
+                                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                                    {det.attachments.map((att, i) => (
+                                      <button key={i}
+                                        onClick={() => downloadAttachment(em.id, att.attachmentId, att.filename, att.mimeType)}
+                                        style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"3px 10px",
+                                          borderRadius:5, border:"1px solid #90CAF9", background:"#E3F2FD",
+                                          color:"#1565C0", cursor:"pointer", fontWeight:600 }}>
+                                        ⬇ {att.filename}
+                                        {att.size > 0 ? ` (${(att.size/1024).toFixed(0)}KB)` : ''}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )
       )}
@@ -229,7 +589,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
         </div>
       )}
 
-      <EmailInbox emails={emails} />
+      <GmailInbox />
 
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
