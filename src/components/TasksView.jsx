@@ -11,7 +11,7 @@ const GMAIL_REDIRECT_URI = 'https://nanbuchiku.github.io/nanbu-chiku-jimu-app/';
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
 
 const COMMITTEES = [
-  '広報委員','キャリアアップ委員','イメージ向上委員',
+  '広報委員','キャリア委員','イメージ向上委員',
   'モーニングセミナー委員','研修委員','朝礼委員',
   '女性委員','青年委員','後継者倫理塾委員',
 ];
@@ -73,6 +73,61 @@ function getStoredToken() {
   return null;
 }
 
+// ─── メール要約（パターン抽出） ─────────────────────────────────
+function extractEmailSummary(subject, body) {
+  // 挨拶・署名ブロックを除去
+  let text = body || '';
+  text = text.replace(/^[^\n]*(?:皆様|事務局|いつも|お世話)[^\n]*\n?/gm, '');
+  text = text.replace(/お世話になっております。?\n?/g, '');
+  text = text.replace(/平素より.*?申し上げます。?\n?/g, '');
+  text = text.replace(/(?:よろしくお願い|何卒|宜しく)[^\n]*(?:いたします|ます)。?[\s\S]*$/m, '');
+  text = text.replace(/以上[^\n]*\n[\s\S]*$/m, '');
+  text = text.replace(/[＝=\-─]{4,}[\s\S]*$/m, '');
+  text = text.replace(/^\s*↓+\s*$/gm, '');
+  text = text.replace(/\n{2,}/g, '\n').trim();
+
+  const bullets = [];
+
+  // 📌 何を（件名を整形）
+  const cleanSubject = subject.replace(/【[^】]*】/g, '').replace(/Re:|Fw:/gi, '').trim();
+  if (cleanSubject) bullets.push(`📌 何を: ${cleanSubject}`);
+
+  // 📅 いつ（日時パターン）
+  const dateRe = /(?:令和|R)\s*\d+\s*年\s*\d+\s*月\s*\d+\s*日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?|\d+月\d+日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?/g;
+  const dates = [...new Set((text.match(dateRe) || []).map(d => d.trim()))].slice(0, 3);
+  if (dates.length) bullets.push(`📅 いつ: ${dates.join('・')}`);
+
+  // 📍 どこで（会場・場所）
+  const venueMatch = text.match(/(?:会場|場所|開催場所|開催地)[：:　\s]*([^\n。、（(]{3,30})/);
+  if (venueMatch) bullets.push(`📍 どこで: ${venueMatch[1].trim()}`);
+
+  // 👥 誰を対象に（対象者・宛先推測）
+  const targetMatch = text.match(/(?:対象者?|参加対象|ご参加対象|対象単会)[：:　\s]*([^\n。、]{3,30})/);
+  if (targetMatch) {
+    bullets.push(`👥 対象: ${targetMatch[1].trim()}`);
+  } else {
+    const toMatch = text.match(/^([^\n]{2,25}?(?:の皆様|事務局長|会長|委員長|担当者))/m);
+    if (toMatch) bullets.push(`👥 対象: ${toMatch[1].replace(/様$/, '').trim()}`);
+  }
+
+  // 🎯 何を目的として（案内・依頼文を抽出）
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 8 && l.length < 120);
+  const keyLine = lines.find(l => /ご案内|開催|実施|募集|確認のお願い|ご連絡|お知らせ|ご依頼|ご参加|ご回答/.test(l));
+  if (keyLine) bullets.push(`🎯 目的: ${keyLine.replace(/。$/, '').replace(/^.*?[、。]/, '').trim() || keyLine.trim()}`);
+
+  // ⚡ 締め切り・回答期限
+  const dlMatch = text.match(/(?:締め?切[りり]?|〆切|回答期限|期日|ご回答|ご返信)[：:は　\s]*([^\n。、]{3,25})/);
+  if (dlMatch) bullets.push(`⚡ 締切: ${dlMatch[1].trim()}`);
+
+  // 🔗 フォーム・URL
+  const urlMatch = text.match(/https?:\/\/[^\s\n）)]{10,80}/);
+  if (urlMatch) bullets.push(`🔗 URL: ${urlMatch[0]}`);
+
+  return bullets.length > 1
+    ? bullets.join('\n')
+    : '（本文が短すぎるか定型文がないため要約できませんでした）';
+}
+
 // ─── GmailInbox コンポーネント ─────────────────────────────────
 function GmailInbox() {
   const [open,       setOpen]       = useState(true);
@@ -85,6 +140,8 @@ function GmailInbox() {
   const [details,    setDetails]    = useState({});   // id → { body, attachments }
   const [detLoading, setDetLoading] = useState(false);
   const [error,      setError]      = useState('');
+  const [summaries,  setSummaries]  = useState({});   // id → 要約テキスト
+  const [copied,     setCopied]     = useState('');
 
   // ① OAuthリダイレクト後にURLハッシュからトークンを取得
   useEffect(() => {
@@ -128,8 +185,13 @@ function GmailInbox() {
     setLoading(true);
     setError('');
     try {
-      const q = [cm, kw.trim()].filter(Boolean).join(' ');
-      const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25${q ? `&q=${encodeURIComponent(q)}` : ''}`;
+      // 件名で委員名絞り込み・過去30日分のみ
+      const qParts = [];
+      if (cm) qParts.push(`subject:${cm}`);
+      if (kw.trim()) qParts.push(kw.trim());
+      qParts.push('newer_than:30d');
+      const q = qParts.join(' ');
+      const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${encodeURIComponent(q)}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
       if (res.status === 401) { logout(); return; }
       const data = await res.json();
@@ -151,7 +213,12 @@ function GmailInbox() {
         const headers = msg.payload?.headers || [];
         const subject = getH(headers, 'Subject');
         const snippet = msg.snippet || '';
-        const hasDeadline = /締切|〆切|期限|締め切り|提出|返信|回答|お願い/.test(subject + snippet);
+        const hasDeadline  = /締切|〆切|期限|締め切り|提出|返信|回答|お願い/.test(subject + snippet);
+        const hasImportant = /重要|緊急|至急/.test(subject);
+        const hasAttachment = !!(msg.payload?.mimeType?.startsWith('multipart/'));
+        // 件名から締め切り日を抽出（例: 6/17迄、6月17日）
+        const dmatch = subject.match(/(\d{1,2})[\/月](\d{1,2})[日]?(?:迄|まで)?/);
+        const deadlineDate = (hasDeadline && dmatch) ? `${dmatch[1]}/${dmatch[2]}迄` : null;
         return {
           id:          msg.id,
           subject:     subject || '（件名なし）',
@@ -159,6 +226,9 @@ function GmailInbox() {
           date:        getH(headers, 'Date'),
           snippet,
           hasDeadline,
+          hasImportant,
+          hasAttachment,
+          deadlineDate,
         };
       });
       setEmails(parsed);
@@ -182,7 +252,7 @@ function GmailInbox() {
       const body = rawBody
         ? decodeBase64Url(rawBody)
             .replace(/\r\n/g, '\n')
-            .replace(/\n{3,}/g, '\n\n')
+            .replace(/\n{2,}/g, '\n')   // 複数の空行をまとめる（行間なし）
             .trim()
         : (msg.snippet || '（本文なし）');
       const attachments = findAttachments(msg.payload);
@@ -210,6 +280,48 @@ function GmailInbox() {
       Object.assign(document.createElement('a'), { href: url, download: filename }).click();
       URL.revokeObjectURL(url);
     } catch (e) { alert('ダウンロードに失敗しました: ' + e.message); }
+  };
+
+  const openAttachment = async (msgId, attId, filename, mimeType) => {
+    try {
+      const res = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}/attachments/${attId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (!data.data) return;
+      const bytes = Uint8Array.from(
+        atob(data.data.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)
+      );
+      const blob = new Blob([bytes], { type: mimeType });
+      const url  = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (e) { alert('ファイルを開けませんでした: ' + e.message); }
+  };
+
+  const generateSummary = (id, subject, body) => {
+    if (summaries[id]) {
+      setSummaries(s => { const n = { ...s }; delete n[id]; return n; });
+      return;
+    }
+    setSummaries(s => ({ ...s, [id]: extractEmailSummary(subject, body) }));
+  };
+
+  const copyToLine = async (id, subject, summaryText) => {
+    const msg = `【倫理法人会 メール要約】\n${summaryText}\n\n（件名）${subject}`;
+    try {
+      await navigator.clipboard.writeText(msg);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = msg;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopied(id);
+    setTimeout(() => setCopied(''), 2000);
   };
 
   const handleSelect = id => {
@@ -345,26 +457,37 @@ function GmailInbox() {
                         style={{ display:"flex", alignItems:"flex-start", gap:8, padding:"9px 10px",
                           borderRadius:7, cursor:"pointer",
                           background: isOpen ? "#E3F2FD" : "#F8FAFB",
-                          border:"1px solid " + (em.hasDeadline ? "#FFCDD2" : "#E0E0E0") }}>
-                        <div style={{ flexShrink:0, marginTop:1 }}>
-                          {em.hasDeadline
-                            ? <span style={{ background:"#FFEBEE", color:"#C62828", fontSize:"clamp(11px,1.3vw,12px)",
-                                fontWeight:700, padding:"2px 5px", borderRadius:4 }}>締切</span>
-                            : <span style={{ background:"#F5F5F5", color:"#9E9E9E", fontSize:"clamp(11px,1.3vw,12px)",
-                                fontWeight:600, padding:"2px 5px", borderRadius:4 }}>参考</span>
-                          }
-                        </div>
+                          border:"1px solid " + (em.hasDeadline || em.hasImportant ? "#FFCDD2" : "#E0E0E0") }}>
                         <div style={{ flex:1, minWidth:0 }}>
+                          {/* 件名行：締め切り・重要を赤字で先頭に表示 */}
                           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#1A237E",
-                            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                            {em.subject}
+                            display:"flex", alignItems:"center", overflow:"hidden" }}>
+                            {em.hasDeadline && (
+                              <span style={{ color:"#C62828", fontWeight:700, marginRight:4, flexShrink:0,
+                                fontSize:"clamp(11px,1.3vw,12px)" }}>締め切り</span>
+                            )}
+                            {em.hasImportant && (
+                              <span style={{ color:"#C62828", fontWeight:700, marginRight:4, flexShrink:0,
+                                fontSize:"clamp(11px,1.3vw,12px)" }}>重要</span>
+                            )}
+                            <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                              {em.subject}
+                            </span>
                           </div>
-                          <div style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#78909C", marginTop:2,
-                            display:"flex", gap:8, flexWrap:"wrap" }}>
-                            <span>{fmtDate(em.date)}</span>
-                            <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:200 }}>
+                          {/* メタ行：締め切り日（赤）・差出人・添付あり（青） */}
+                          <div style={{ fontSize:"clamp(11px,1.3vw,12px)", marginTop:2,
+                            display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+                            {em.deadlineDate
+                              ? <span style={{ color:"#C62828", fontWeight:700 }}>📅 {em.deadlineDate}</span>
+                              : <span style={{ color:"#78909C" }}>{fmtDate(em.date)}</span>
+                            }
+                            <span style={{ color:"#78909C", overflow:"hidden", textOverflow:"ellipsis",
+                              whiteSpace:"nowrap", maxWidth:180 }}>
                               {em.from}
                             </span>
+                            {em.hasAttachment && (
+                              <span style={{ color:"#1565C0", fontWeight:600 }}>📎 添付あり</span>
+                            )}
                           </div>
                         </div>
                         <span style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#90A4AE", flexShrink:0, alignSelf:"center" }}>
@@ -380,10 +503,44 @@ function GmailInbox() {
                             <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)" }}>読み込み中...</div>
                           ) : det ? (
                             <>
-                              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", lineHeight:1.7,
+                              {/* ── 要約エリア ── */}
+                              <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:6, flexWrap:"wrap" }}>
+                                <button
+                                  onClick={e => { e.stopPropagation(); generateSummary(em.id, em.subject, det.body); }}
+                                  style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"4px 12px",
+                                    borderRadius:5, border:"1px solid #CE93D8", background:"#F3E5F5",
+                                    color:"#6A1B9A", cursor:"pointer", fontWeight:700 }}>
+                                  {summaries[em.id] ? '✨ 要約を閉じる' : '✨ 要約を作成'}
+                                </button>
+                                {summaries[em.id] && (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); copyToLine(em.id, em.subject, summaries[em.id]); }}
+                                    style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"4px 12px",
+                                      borderRadius:5, fontWeight:700, cursor:"pointer",
+                                      border: copied === em.id ? "1px solid #4CAF50" : "1px solid #69F0AE",
+                                      background: copied === em.id ? "#E8F5E9" : "#F1F8E9",
+                                      color: copied === em.id ? "#1B5E20" : "#2E7D32" }}>
+                                    {copied === em.id ? '✅ コピー完了！' : '📋 LINEへコピー'}
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* 要約カード */}
+                              {summaries[em.id] && (
+                                <div style={{ background:"#EDE7F6", borderRadius:6, padding:"8px 12px",
+                                  fontSize:"clamp(12px,1.4vw,14px)", color:"#311B92", lineHeight:1.7,
+                                  whiteSpace:"pre-wrap", border:"1px solid #CE93D8", marginBottom:8 }}>
+                                  {summaries[em.id]}
+                                </div>
+                              )}
+
+                              {/* 本文：行間を詰める */}
+                              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", lineHeight:1.35,
                                 whiteSpace:"pre-wrap", maxHeight:260, overflowY:"auto", marginBottom: det.attachments.length > 0 ? 8 : 0 }}>
                                 {det.body}
                               </div>
+
+                              {/* 添付ファイル */}
                               {det.attachments.length > 0 && (
                                 <div style={{ borderTop:"1px solid #E0E0E0", paddingTop:6 }}>
                                   <div style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#546E7A", marginBottom:4 }}>
@@ -391,14 +548,22 @@ function GmailInbox() {
                                   </div>
                                   <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                                     {det.attachments.map((att, i) => (
-                                      <button key={i}
-                                        onClick={() => downloadAttachment(em.id, att.attachmentId, att.filename, att.mimeType)}
-                                        style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"3px 10px",
-                                          borderRadius:5, border:"1px solid #90CAF9", background:"#E3F2FD",
-                                          color:"#1565C0", cursor:"pointer", fontWeight:600 }}>
-                                        ⬇ {att.filename}
-                                        {att.size > 0 ? ` (${(att.size/1024).toFixed(0)}KB)` : ''}
-                                      </button>
+                                      <div key={i} style={{ display:"flex", gap:4, alignItems:"center" }}>
+                                        <button
+                                          onClick={e => { e.stopPropagation(); openAttachment(em.id, att.attachmentId, att.filename, att.mimeType); }}
+                                          style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"3px 10px",
+                                            borderRadius:5, border:"1px solid #A5D6A7", background:"#E8F5E9",
+                                            color:"#2E7D32", cursor:"pointer", fontWeight:600 }}>
+                                          📂 開く
+                                        </button>
+                                        <button
+                                          onClick={e => { e.stopPropagation(); downloadAttachment(em.id, att.attachmentId, att.filename, att.mimeType); }}
+                                          style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"3px 10px",
+                                            borderRadius:5, border:"1px solid #90CAF9", background:"#E3F2FD",
+                                            color:"#1565C0", cursor:"pointer", fontWeight:600 }}>
+                                          ⬇ {att.filename}{att.size > 0 ? ` (${(att.size/1024).toFixed(0)}KB)` : ''}
+                                        </button>
+                                      </div>
                                     ))}
                                   </div>
                                 </div>
