@@ -171,7 +171,13 @@ export default function App() {
       if (spErr) throw spErr;
       if (tkErr) throw tkErr;
       if (spData) { const mapped = spData.map(fromDB); setSpeakers(mapped); }
-      if (tkData) { const mapped = tkData.map(taskFromDB); setTasks(mapped); }
+      if (tkData) {
+        // DBにurlが保存されない間は、localStorageキャッシュからURLを復元する
+        const cached = (() => { try { return JSON.parse(localStorage.getItem('cachedTasks')) || []; } catch { return []; } })();
+        const urlMap = Object.fromEntries(cached.map(t => [t.id, t.url || '']));
+        const mapped = tkData.map(taskFromDB).map(t => ({ ...t, url: t.url || urlMap[t.id] || '' }));
+        setTasks(mapped);
+      }
       if (emData) setEmails(emData.map(emailFromDB));
       setLastUpdated(new Date());
       if (silent) showToast("データを更新しました ✓");
