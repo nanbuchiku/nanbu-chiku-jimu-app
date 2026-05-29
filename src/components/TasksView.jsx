@@ -76,90 +76,115 @@ function getStoredToken() {
 
 // ─── メール要約（パターン抽出） ─────────────────────────────────
 function extractEmailSummary(subject, body) {
-  // 挨拶・署名ブロックを除去
-  let text = body || '';
-  text = text.replace(/^[^\n]*(?:皆様|事務局|いつも|お世話)[^\n]*\n?/gm, '');
-  text = text.replace(/お世話になっております。?\n?/g, '');
-  text = text.replace(/平素より.*?申し上げます。?\n?/g, '');
-  text = text.replace(/(?:よろしくお願い|何卒|宜しく)[^\n]*(?:いたします|ます)。?[\s\S]*$/m, '');
-  text = text.replace(/以上[^\n]*\n[\s\S]*$/m, '');
-  text = text.replace(/[＝=\-─]{4,}[\s\S]*$/m, '');
-  text = text.replace(/^\s*↓+\s*$/gm, '');
-  text = text.replace(/\n{2,}/g, '\n').trim();
-
+  const raw = (body || '').slice(0, 8000); // 長すぎる本文は安全のため制限
   const bullets = [];
+
+  // ── ① ラベル付き項目を「元の本文」から直接抽出（挨拶・署名削除の影響を受けない）──
+  // 全角/半角コロン・スペース区切りに対応。同じラベルが複数行あれば結合（例: 場所が会場名＋住所の2行）
+  const grabLabeled = (labels) => {
+    const results = [];
+    const labelAlt = labels.join('|');
+    const re = new RegExp(`(?:^|\\n)[ \\t　]*(?:${labelAlt})[ \\t　]*[：:][ \\t　]*([^\\n]{1,50})`, 'g');
+    let m;
+    while ((m = re.exec(raw)) !== null) {
+      const v = m[1].trim().replace(/[。、]$/, '');
+      if (v && !results.includes(v)) results.push(v);
+    }
+    return results;
+  };
 
   // 📌 何を（件名を整形）
   const cleanSubject = subject.replace(/【[^】]*】/g, '').replace(/Re:|Fw:/gi, '').trim();
   if (cleanSubject) bullets.push(`📌 何を: ${cleanSubject}`);
 
-  // 📅 いつ（開催日） ─ 締切日と区別して抽出
-  // まず締切に使われている日付を除外リストに収集
+  // 締切に使われている日付を収集（「いつ」と区別するため）
   const deadlineDateSet = new Set();
-  // 件名の「5/21締切」「5/21迄」形式
   const subjSlashDL = subject.match(/(\d{1,2})\/(\d{1,2})(?:締切|迄|まで)/);
   if (subjSlashDL) deadlineDateSet.add(`${subjSlashDL[1]}月${subjSlashDL[2]}日`);
-  // 件名・本文の「5月21日まで/迄/締切」形式
   const dlBodyRe = /(\d{1,2}月\d{1,2}日)[^\n]{0,15}?(?:まで|迄|締切|期限|ご回答|ご連絡|返信)/g;
   let dlm;
-  while ((dlm = dlBodyRe.exec(subject + '\n' + text)) !== null) {
-    deadlineDateSet.add(dlm[1]);
-  }
-  // 全日付を抽出してから締切日を除いたものを「いつ」に使う
-  const dateRe = /(?:令和|R)\s*\d+\s*年\s*\d+\s*月\s*\d+\s*日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?|\d{1,2}月\d{1,2}日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?/g;
-  const allDates = [...new Set((text.match(dateRe) || []).map(d => d.trim()))];
-  const eventDates = allDates.filter(d => {
+  while ((dlm = dlBodyRe.exec(subject + '\n' + raw)) !== null) deadlineDateSet.add(dlm[1]);
+
+  // 📅 いつ（日時ラベル優先 → なければ日付パターン）
+  const dtLabeled = grabLabeled(['日時', '開催日時', '開催日', '日程', '期日']);
+  // 締切日と被るものは除外
+  const dtFiltered = dtLabeled.filter(d => {
     const base = d.match(/\d{1,2}月\d{1,2}日/)?.[0];
-    return base && !deadlineDateSet.has(base);
+    return !base || !deadlineDateSet.has(base);
   });
-  if (eventDates.length) bullets.push(`📅 いつ: ${eventDates.slice(0, 2).join('・')}`);
-
-  // 📍 どこで（会場・場所）
-  // ① 「会場：○○」等の明示パターン
-  const venueLabel = text.match(/(?:会場|場所|開催場所|開催地|開催会場)[：:　\s]*([^\n。、（(]{3,30})/);
-  // ② 施設名が直接書かれているパターン（○○会館、○○ホール等）
-  const venueName  = text.match(/([^\n　]{2,20}?(?:会館|ホール|センター|会議室|ビル|ホテル|公民館|研修室|倫理会館|コミュニティ)[^\n。、]{0,10})/);
-  const venueMatch = venueLabel || venueName;
-  if (venueMatch) bullets.push(`📍 どこで: ${(venueLabel ? venueLabel[1] : venueName[1]).trim()}`);
-
-  // 👥 誰を対象に（対象者・宛先推測）
-  const targetMatch = text.match(/(?:対象者?|参加対象|ご参加対象|対象単会)[：:　\s]*([^\n。、]{3,30})/);
-  if (targetMatch) {
-    bullets.push(`👥 対象: ${targetMatch[1].trim()}`);
+  if (dtFiltered.length) {
+    bullets.push(`📅 いつ: ${dtFiltered.slice(0, 2).join('・')}`);
   } else {
-    const toMatch = text.match(/^([^\n]{2,25}?(?:の皆様|事務局長|会長|委員長|担当者))/m);
+    const dateRe = /(?:令和|R)\s*\d+\s*年\s*\d+\s*月\s*\d+\s*日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?|\d{1,2}月\d{1,2}日(?:\s*[\(（][月火水木金土日][\)）])?(?:\s*\d+[:：]\d+(?:\s*[〜～~]\s*\d+[:：]\d+)?)?/g;
+    const allDates = [...new Set((raw.match(dateRe) || []).map(d => d.trim()))];
+    const eventDates = allDates.filter(d => {
+      const base = d.match(/\d{1,2}月\d{1,2}日/)?.[0];
+      return base && !deadlineDateSet.has(base);
+    });
+    if (eventDates.length) bullets.push(`📅 いつ: ${eventDates.slice(0, 2).join('・')}`);
+  }
+
+  // 📍 どこで（場所・会場ラベル優先 → なければ施設名パターン）
+  const placeLabeled = grabLabeled(['場所', '会場', '開催場所', '開催会場', '開催地', '住所']);
+  if (placeLabeled.length) {
+    bullets.push(`📍 どこで: ${placeLabeled.slice(0, 2).join(' / ')}`);
+  } else {
+    const venueName = raw.match(/([^\n　]{2,20}?(?:会館|ホール|センター|会議室|ビル|ホテル|公民館|研修室|倫理会館|コミュニティ)[^\n。、]{0,10})/);
+    if (venueName) bullets.push(`📍 どこで: ${venueName[1].trim()}`);
+  }
+
+  // 💰 会費・参加費
+  const feeLabeled = grabLabeled(['会費', '参加費', '費用', '参加費用', '受講料', '料金']);
+  if (feeLabeled.length) bullets.push(`💰 会費: ${feeLabeled[0]}`);
+
+  // ☎ 連絡先（電話）
+  const telLabeled = grabLabeled(['電話', 'TEL', 'Tel', '連絡先', 'お問合せ', 'お問い合わせ']);
+  if (telLabeled.length) bullets.push(`☎ 連絡先: ${telLabeled[0]}`);
+
+  // 👥 対象者
+  const targetLabeled = grabLabeled(['対象', '対象者', '参加対象', 'ご参加対象', '対象単会']);
+  if (targetLabeled.length) {
+    bullets.push(`👥 対象: ${targetLabeled[0]}`);
+  } else {
+    const toMatch = raw.match(/^([^\n]{2,25}?(?:の皆様|事務局長|会長|委員長|担当者))/m);
     if (toMatch) bullets.push(`👥 対象: ${toMatch[1].replace(/様$/, '').trim()}`);
   }
 
-  // 🎯 何を目的として（案内・依頼文を抽出）
-  // ※ 締切・期限を含む行は除外（「ご連絡は5月8日まで」等の誤マッチ防止）
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 8 && l.length < 120);
-  const isDeadlineLine = l => /まで|迄|締切|期限|期日|ご回答期限/.test(l);
-  const keyLine = lines.find(l =>
-    /ご案内|開催|実施|募集|確認のお願い|お知らせ|ご依頼|ご参加/.test(l) && !isDeadlineLine(l)
-  );
-  if (keyLine) {
-    const trimmed = keyLine.replace(/。$/, '').trim();
-    bullets.push(`🎯 目的: ${trimmed}`);
-  }
-
   // ⚡ 締め切り・回答期限
-  const dlMatch = text.match(/(?:締め?切[りり]?|〆切|回答期限|期日|ご回答|ご返信)[：:は　\s]*([^\n。、]{3,25})/);
-  if (dlMatch) bullets.push(`⚡ 締切: ${dlMatch[1].trim()}`);
+  const dlLabeled = grabLabeled(['締切', '締め切り', '〆切', '申込締切', '回答期限', '提出期限', '申込期限']);
+  if (dlLabeled.length) {
+    bullets.push(`⚡ 締切: ${dlLabeled[0]}`);
+  } else {
+    const dlMatch = raw.match(/(?:締め?切[りり]?|〆切|回答期限|期日|ご回答|ご返信)[：:は　\s]*([^\n。、]{3,25})/);
+    if (dlMatch) bullets.push(`⚡ 締切: ${dlMatch[1].trim()}`);
+  }
 
   // 🔗 フォーム・URL
-  const urlMatch = text.match(/https?:\/\/[^\s\n）)]{10,80}/);
+  const urlMatch = raw.match(/https?:\/\/[^\s\n）)]{10,120}/);
   if (urlMatch) bullets.push(`🔗 URL: ${urlMatch[0]}`);
 
-  // 📝 本文が短くてパターンが取れなかった場合、本文をそのまま表示
-  if (bullets.length <= 1 && text.length > 0) {
-    const shortBody = text.slice(0, 120).replace(/\n/g, ' ').trim();
-    if (shortBody) bullets.push(`📝 内容: ${shortBody}${text.length > 120 ? '…' : ''}`);
+  // 🎯 目的（案内文の主要行）─ 挨拶・締切行を除いた最初の要点
+  if (bullets.length < 4) {
+    let text = raw;
+    text = text.replace(/^[^\n]*(?:皆様|事務局|いつも|お世話)[^\n]*\n?/gm, '');
+    text = text.replace(/お世話になっております。?\n?/g, '');
+    text = text.replace(/平素より.*?申し上げます。?\n?/g, '');
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 8 && l.length < 120);
+    const isDeadlineLine = l => /まで|迄|締切|期限|期日|ご回答期限/.test(l);
+    const keyLine = lines.find(l =>
+      /ご案内|開催|実施|募集|確認のお願い|お知らせ|ご依頼|ご参加|お申込み|入力/.test(l) && !isDeadlineLine(l)
+    );
+    if (keyLine) bullets.push(`🎯 目的: ${keyLine.replace(/。$/, '').trim()}`);
   }
 
-  return bullets.length >= 1
-    ? bullets.join('\n')
-    : '（要約できませんでした）';
+  // 📝 ほとんど取れなかった場合のフォールバック
+  if (bullets.length <= 1) {
+    let text = (body || '').replace(/^[^\n]*(?:皆様|事務局|いつも|お世話)[^\n]*\n?/gm, '').replace(/\n{2,}/g, '\n').trim();
+    const shortBody = text.slice(0, 150).replace(/\n/g, ' ').trim();
+    if (shortBody) bullets.push(`📝 内容: ${shortBody}${text.length > 150 ? '…' : ''}`);
+  }
+
+  return bullets.length >= 1 ? bullets.join('\n') : '（要約できませんでした）';
 }
 
 // ─── GmailInbox コンポーネント ─────────────────────────────────
