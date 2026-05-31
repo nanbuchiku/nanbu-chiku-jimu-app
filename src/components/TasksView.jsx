@@ -75,12 +75,22 @@ function getStoredToken() {
 }
 
 // ─── メール本文から「意味のあるURL」を抽出（署名・団体サイトのトップは除外）───
+// 調整さん・各種入力フォーム等の「入力用URL」を優先的に拾う。
 function pickRelatedUrl(body) {
   const raw = (body || '').slice(0, 8000);
   const URL_EXCLUDE = [
     'rinri-saitama.org',   // 県連の一般サイト（署名に毎回入る）
     'rinri.or.jp',         // 倫理研究所サイト
     'www.rinri',
+  ];
+  // 入力/回答/予定調整に使われる代表的なサービス（優先的に採用）
+  const FORM_HINTS = [
+    'chouseisan.com',        // 調整さん
+    'forms.gle', 'docs.google.com/forms', 'forms.google',  // Googleフォーム
+    'forms.office.com', 'forms.microsoft.com', 'sharepoint.com',  // Microsoftフォーム/共有
+    'questant.jp', 'surveymonkey', 'formrun.io', 'form.run',
+    'creator.zoho', 'kutu.jp', 'select-type.com', 'forms.', '/forms/',
+    'airrsv.net', 'tayori.com', 'shutto', 'logoform.jp',
   ];
   const cands = (raw.match(/https?:\/\/[^\s\n　）)＞>「」]{10,300}/g) || [])
     .map(u => u.replace(/[.,。、）)＞>]+$/, ''))   // 末尾の記号を除去
@@ -91,7 +101,23 @@ function pickRelatedUrl(body) {
       if (isExcludedHost && path.replace(/\/$/, '').length < 2) return false;
       return true;
     });
-  return cands[0] || '';
+  if (!cands.length) return '';
+  // ① フォーム系URLを最優先
+  const formUrl = cands.find(u => { const l = u.toLowerCase(); return FORM_HINTS.some(h => l.includes(h)); });
+  if (formUrl) return formUrl;
+  // ② 「入力」「回答」「フォーム」「URL」等のラベル行にあるURLを次点で優先
+  const labeledLine = raw.split('\n').find(line =>
+    /(入力|回答|申込|申し込み|登録|フォーム|アンケート|調整|提出)/.test(line) && /https?:\/\//.test(line)
+  );
+  if (labeledLine) {
+    const m = labeledLine.match(/https?:\/\/[^\s　）)＞>「」]{10,300}/);
+    if (m) {
+      const u = m[0].replace(/[.,。、）)＞>]+$/, '');
+      if (cands.includes(u)) return u;
+    }
+  }
+  // ③ それ以外は最初の非除外URL
+  return cands[0];
 }
 
 // ─── メール要約（パターン抽出） ─────────────────────────────────
