@@ -131,6 +131,47 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
 
   const currentDocs = useMemo(() => extractMaterialLinks(form.notes || ''), [form.notes]);
 
+  // Supabase Storage の公開URLからファイルを削除（パスが取れない/既に無い場合は無視）
+  const deleteStorageFile = async (url) => {
+    if (!url) return;
+    const m = url.match(/\/speaker-files\/([^?]+)/);
+    if (!m) return;
+    try { await db.storage.from('speaker-files').remove([decodeURIComponent(m[1])]); } catch {}
+  };
+
+  // 顔写真を削除（ストレージ＋フォーム）
+  const handlePhotoDelete = async () => {
+    if (!form.materialUrl) return;
+    if (!window.confirm('アップロード済みの顔写真を削除します。よろしいですか？')) return;
+    setUploading(true);
+    setUploadErr('');
+    await deleteStorageFile(form.materialUrl);
+    setForm(f => ({ ...f, materialUrl: '', materialName: '' }));
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // 講話資料（資料01/02）を削除（ストレージ＋notes内の【資料0N】行）
+  const handleDocDelete = async (docNum) => {
+    const label = `資料0${docNum}`;
+    const doc = currentDocs.find(d => d.label === label);
+    if (!doc) return;
+    if (!window.confirm(`アップロード済みの${label}を削除します。よろしいですか？`)) return;
+    const setLoading = docNum === 1 ? setDocUploading1 : setDocUploading2;
+    setLoading(true);
+    setUploadErr('');
+    await deleteStorageFile(doc.url);
+    setForm(f => {
+      const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const n = String(f.notes || '')
+        .replace(new RegExp(`【${escaped}】\\s*https?://\\S+\\n?`), '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      return { ...f, notes: n };
+    });
+    setLoading(false);
+  };
+
   const detailFromNotes = useMemo(() => {
     const notes = String(form.notes || '').replace(/\\n/g, '\n');
     const result = {};
@@ -322,6 +363,13 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 {uploading ? "⏳ 送信中…" : "📤 アップロード"}
                 <input ref={fileInputRef} type="file" accept="image/*,.pdf" style={{ display:"none" }} onChange={handleFileUpload} disabled={uploading || saving} />
               </label>
+              {form.materialUrl && (
+                <button type="button" disabled={uploading || saving} onClick={handlePhotoDelete}
+                  title="アップロード済みの写真・資料を削除"
+                  style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#fff", color:"#B71C1C", border:"1px solid #EF9A9A", borderRadius:6, padding:"8px 12px", cursor:(uploading||saving)?"not-allowed":"pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", flexShrink:0, opacity:(uploading||saving)?.6:1 }}>
+                  🗑 削除
+                </button>
+              )}
             </div>
             {form.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(form.materialUrl?.split('?')[0] || '') && (
               <img src={form.materialUrl} alt="プレビュー"
@@ -347,6 +395,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                   <div style={{ marginTop:5, display:"flex", alignItems:"center", gap:6, fontSize:"clamp(12px,1.4vw,14px)" }}>
                     <span style={{ color:"#2E7D32", fontWeight:700 }}>✅ 資料①アップロード済</span>
                     <a href={currentDocs.find(d => d.label === '資料01').url} target="_blank" rel="noopener noreferrer" style={{ color:"#1565C0", textDecoration:"underline" }}>確認</a>
+                    <button type="button" disabled={docUploading1 || saving} onClick={() => handleDocDelete(1)} style={{ background:"none", border:"none", color:"#B71C1C", textDecoration:"underline", cursor:(docUploading1||saving)?"not-allowed":"pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", padding:0 }}>🗑 削除</button>
                   </div>
                 )}
               </div>
@@ -360,6 +409,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                   <div style={{ marginTop:5, display:"flex", alignItems:"center", gap:6, fontSize:"clamp(12px,1.4vw,14px)" }}>
                     <span style={{ color:"#2E7D32", fontWeight:700 }}>✅ 資料②アップロード済</span>
                     <a href={currentDocs.find(d => d.label === '資料02').url} target="_blank" rel="noopener noreferrer" style={{ color:"#1565C0", textDecoration:"underline" }}>確認</a>
+                    <button type="button" disabled={docUploading2 || saving} onClick={() => handleDocDelete(2)} style={{ background:"none", border:"none", color:"#B71C1C", textDecoration:"underline", cursor:(docUploading2||saving)?"not-allowed":"pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", padding:0 }}>🗑 削除</button>
                   </div>
                 )}
               </div>
