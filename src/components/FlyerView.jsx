@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
 
-export default memo(function FlyerView({ speakers, today, showToast }) {
+export default memo(function FlyerView({ speakers, today, showToast, updateSpeaker }) {
   const months = useMemo(() => Array.from({ length: 9 }, (_, i) => {
     const d = new Date(today.getFullYear(), today.getMonth() - 3 + i, 1);
     const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
@@ -504,6 +504,12 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                   const statusColor = ready ? "#2E7D32" : partial ? "#FF8F00" : "#B71C1C";
                   const statusBg    = ready ? "#E8F5E9"  : partial ? "#FFF8E1" : "#FFEBEE";
                   const statusLabel = ready ? "✓ 完成"   : partial ? "▲ 不足あり" : "✗ 未登録";
+                  // ── チラシ関連項目の更新バッジ ──
+                  const ck = sp.speakerChecks || {};
+                  const conf = ck._flyerConfirmedAt || '';
+                  const showFlyerUpd = ck._flyerUpdatedAt && (!conf || ck._flyerUpdatedAt > conf);
+                  const showPhotoUpd = ck._photoUpdatedAt && (!conf || ck._photoUpdatedAt > conf);
+                  const fmtMd = iso => { const d = new Date(iso); return `${d.getMonth()+1}/${d.getDate()}`; };
                   return (
                     <tr key={sp.id} className="hover-row" style={{ borderTop: idx === 0 ? undefined : "1px dashed #F0F4F8" }}>
                       {idx === 0 ? (
@@ -538,6 +544,27 @@ export default memo(function FlyerView({ speakers, today, showToast }) {
                             {!sp.speakerKana && <div>• ふりがな未入力</div>}
                             {!sp.topic && <div>• テーマ未入力</div>}
                             {!sp.materialUrl && <div>• 顔写真未設定</div>}
+                          </div>
+                        )}
+                        {(showFlyerUpd || showPhotoUpd) && (
+                          <div style={{ marginTop:5, display:"flex", flexWrap:"wrap", gap:4, alignItems:"center" }}>
+                            {showFlyerUpd && (
+                              <span title="チラシに関わる項目が更新されました" style={{ fontSize:FS_SM, fontWeight:700, color:"#fff", background:"#E8862A", padding:"2px 7px", borderRadius:10, whiteSpace:"nowrap" }}>
+                                🔄 更新 {fmtMd(ck._flyerUpdatedAt)}
+                              </span>
+                            )}
+                            {showPhotoUpd && (
+                              <span title="顔写真が差し替えられました" style={{ fontSize:FS_SM, fontWeight:700, color:"#fff", background:"#7B5EA7", padding:"2px 7px", borderRadius:10, whiteSpace:"nowrap" }}>
+                                📷 写真差替 {fmtMd(ck._photoUpdatedAt)}
+                              </span>
+                            )}
+                            {updateSpeaker && (
+                              <button title="チラシへの反映を確認したらバッジを消します"
+                                onClick={() => updateSpeaker(sp.id, { speakerChecks: { ...ck, _flyerConfirmedAt: new Date().toISOString() } })}
+                                style={{ fontSize:FS_SM, fontWeight:700, color:"#546E7A", background:"#fff", border:"1px solid #CFD8DC", borderRadius:10, padding:"2px 8px", cursor:"pointer", whiteSpace:"nowrap" }}>
+                                ✓ 確認済み
+                              </button>
+                            )}
                           </div>
                         )}
                       </td>

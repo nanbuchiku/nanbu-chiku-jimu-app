@@ -287,7 +287,18 @@ export default function App() {
   const updateSpeaker = useCallback(async (id, patch) => {
     const sp = speakersRef.current.find(s => s.id === id);
     if (!sp) return false;
-    const updated = { ...sp, ...patch };
+    let updated = { ...sp, ...patch };
+    // ── チラシに関わる項目が変わったら更新日時を記録（speaker_checksに相乗り）──
+    const FLYER_FIELDS = ['speakerName','speakerKana','speakerUnit','role','company','companyRole','topic','seminarDate','materialUrl'];
+    const norm = v => (v == null ? '' : String(v));
+    const flyerChanged = FLYER_FIELDS.some(f => f in patch && norm(patch[f]) !== norm(sp[f]));
+    const photoChanged = ('materialUrl' in patch) && norm(patch.materialUrl) !== norm(sp.materialUrl);
+    if (flyerChanged) {
+      const nowIso = new Date().toISOString();
+      const checks = { ...(updated.speakerChecks || {}), _flyerUpdatedAt: nowIso };
+      if (photoChanged) checks._photoUpdatedAt = nowIso;
+      updated = { ...updated, speakerChecks: checks };
+    }
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
     const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
     if (error) {
@@ -872,7 +883,7 @@ ${ch.name}単会事務局`;
             {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} />}
             {tab === "tasks"     && <TasksView tasks={tasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} showToast={showToast} />}
             {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
-            {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} />}
+            {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} updateSpeaker={updateSpeaker} />}
             {tab === "ranking"   && <RankingView tasks={tasks} speakers={speakers} today={today} />}
           </ErrorBoundary>
         </main>
