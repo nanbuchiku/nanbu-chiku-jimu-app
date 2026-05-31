@@ -1,7 +1,7 @@
-import { CHAPTERS, SEMINAR_TYPES } from './constants';
+import { CHAPTERS, ALL_CHAPTER, SEMINAR_TYPES } from './constants';
 
 const FALLBACK_CHAPTER = { id:"", name:"不明", short:"?", color:"#90A4AE", accent:"#B0BEC5", light:"#FAFAFA", day:-1, dayName:"不明", venue:"", time:"" };
-export const getChapter = id => CHAPTERS.find(c => c.id === id) || FALLBACK_CHAPTER;
+export const getChapter = id => (id === ALL_CHAPTER.id ? ALL_CHAPTER : CHAPTERS.find(c => c.id === id)) || FALLBACK_CHAPTER;
 export const getSeminarType = id => SEMINAR_TYPES.find(t => t.id === id) || SEMINAR_TYPES[0];
 export const realToday = () => new Date();
 export const toDateStr = d => {
