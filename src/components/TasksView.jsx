@@ -102,6 +102,13 @@ function pickRelatedUrl(body) {
       return true;
     });
   if (!cands.length) return '';
+  // ⓪ 「南部地区」とセットで現れるURLを最優先（各単会向けに専用URLが並ぶメール対策）
+  const stripTail = u => u.replace(/[.,。、）)＞>]+$/, '');
+  const ndMatch = raw.match(/南部地区[\s\S]{0,250}?(https?:\/\/[^\s　）)＞>「」]{10,300})/);
+  if (ndMatch) {
+    const u = stripTail(ndMatch[1]);
+    if (u) return u;
+  }
   // ① フォーム系URLを最優先
   const formUrl = cands.find(u => { const l = u.toLowerCase(); return FORM_HINTS.some(h => l.includes(h)); });
   if (formUrl) return formUrl;
