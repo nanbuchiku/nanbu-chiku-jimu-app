@@ -77,7 +77,12 @@ function getStoredToken() {
 // ─── メール本文から「意味のあるURL」を抽出（署名・団体サイトのトップは除外）───
 // 調整さん・各種入力フォーム等の「入力用URL」を優先的に拾う。
 function pickRelatedUrl(body) {
-  const raw = (body || '').slice(0, 8000);
+  let raw = (body || '').slice(0, 12000);
+  // ★ <...> で囲まれたURLは長いと途中で改行されることがある。
+  //   角括弧内の空白・改行を除去してURLを復元する（途中で切れたリンク対策）。
+  raw = raw.replace(/<\s*(https?:\/\/[\s\S]*?)>/g, (m, u) => '<' + u.replace(/\s+/g, '') + '>');
+  const stripTail = u => u.replace(/[.,。、）)＞>]+$/, '');
+  const URL_TOKEN = 'https?:\\/\\/[^\\s\\n　）)＞>「」]{10,400}';
   const URL_EXCLUDE = [
     'rinri-saitama.org',   // 県連の一般サイト（署名に毎回入る）
     'rinri.or.jp',         // 倫理研究所サイト
@@ -92,8 +97,8 @@ function pickRelatedUrl(body) {
     'creator.zoho', 'kutu.jp', 'select-type.com', 'forms.', '/forms/',
     'airrsv.net', 'tayori.com', 'shutto', 'logoform.jp',
   ];
-  const cands = (raw.match(/https?:\/\/[^\s\n　）)＞>「」]{10,300}/g) || [])
-    .map(u => u.replace(/[.,。、）)＞>]+$/, ''))   // 末尾の記号を除去
+  const cands = (raw.match(new RegExp(URL_TOKEN, 'g')) || [])
+    .map(stripTail)
     .filter(u => {
       const host = (u.replace(/^https?:\/\//, '').split(/[/?#]/)[0] || '').toLowerCase();
       const path = u.replace(/^https?:\/\/[^/]+/, '');
@@ -102,24 +107,26 @@ function pickRelatedUrl(body) {
       return true;
     });
   if (!cands.length) return '';
-  // ⓪ 「南部地区」とセットで現れるURLを最優先（各単会向けに専用URLが並ぶメール対策）
-  const stripTail = u => u.replace(/[.,。、）)＞>]+$/, '');
-  const ndMatch = raw.match(/南部地区[\s\S]{0,250}?(https?:\/\/[^\s　）)＞>「」]{10,300})/);
-  if (ndMatch) {
-    const u = stripTail(ndMatch[1]);
+  // ⓪ 「南部地区」とセットで現れるURLを最優先
+  //   地区ごとにURLが並ぶメール（南部地区/中部地区/西部地区…）で南部地区のものだけ拾う。
+  //   まず【南部地区…】の見出し直後を探し、無ければ素の「南部地区」の直後を探す。
+  let nd = raw.match(new RegExp('【\\s*南部地区[^】]*】[\\s\\S]{0,120}?(' + URL_TOKEN + ')'));
+  if (!nd) nd = raw.match(new RegExp('南部地区[\\s\\S]{0,120}?(' + URL_TOKEN + ')'));
+  if (nd) {
+    const u = stripTail(nd[1]);
     if (u) return u;
   }
   // ① フォーム系URLを最優先
   const formUrl = cands.find(u => { const l = u.toLowerCase(); return FORM_HINTS.some(h => l.includes(h)); });
   if (formUrl) return formUrl;
-  // ② 「入力」「回答」「フォーム」「URL」等のラベル行にあるURLを次点で優先
+  // ② 「入力」「回答」「フォーム」「調整」等のラベル行にあるURLを次点で優先
   const labeledLine = raw.split('\n').find(line =>
     /(入力|回答|申込|申し込み|登録|フォーム|アンケート|調整|提出)/.test(line) && /https?:\/\//.test(line)
   );
   if (labeledLine) {
-    const m = labeledLine.match(/https?:\/\/[^\s　）)＞>「」]{10,300}/);
+    const m = labeledLine.match(new RegExp(URL_TOKEN));
     if (m) {
-      const u = m[0].replace(/[.,。、）)＞>]+$/, '');
+      const u = stripTail(m[0]);
       if (cands.includes(u)) return u;
     }
   }
