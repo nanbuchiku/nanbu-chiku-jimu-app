@@ -11,6 +11,13 @@ export const CHAPTERS = [
     time:"AM6:30〜7:30", venue:"元郷四丁目町会会館", address:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）", venueTel:"―", mapUrl:"https://share.google/nIYPjDL6MsMpt1ek8", staff:"" },
 ];
 
+// タスク用の特別チャプター（全単会に共通するタスク。CHAPTERSには含めない）
+export const ALL_CHAPTER = {
+  id:"all_chapters", name:"全単会", short:"全単会",
+  color:"#37474F", light:"#ECEFF1", accent:"#B0BEC5",
+  day:-1, dayName:"", time:"", venue:"", address:"", venueTel:"", mapUrl:"", staff:"",
+};
+
 export const JIMU = { email:"rinri.nanbu@gmail.com", cc:"nizashikirinri@gmail.com", tel:"" };
 
 export const STATUS = {

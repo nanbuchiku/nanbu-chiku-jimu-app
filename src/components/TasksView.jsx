@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { CHAPTERS, DISTRICT_ID } from '../constants';
+import { CHAPTERS, ALL_CHAPTER, DISTRICT_ID } from '../constants';
 import { getChapter, parseDate } from '../utils';
 import { db } from '../lib/supabase';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
@@ -691,6 +691,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
                                         value={taskForms[em.id].chapterId}
                                         onChange={e => updateTaskForm(em.id, 'chapterId', e.target.value)}
                                         style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }}>
+                                        <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>
                                         {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
                                       </select>
                                       {/* 優先度 */}
@@ -974,6 +975,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
           <input aria-label="タスク内容" style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} onKeyDown={e => e.key === "Enter" && onAdd()} />
           <input aria-label="関連URL" type="url" style={{ ...INP, flex:2, minWidth:140 }} placeholder="関連URL（フォーム・Drive等）任意" value={newTask.url || ""} onChange={e => setNewTask({ ...newTask, url: e.target.value })} />
           <select aria-label="担当単会" style={SEL} value={newTask.chapterId} onChange={e => setNewTask({ ...newTask, chapterId: e.target.value })}>
+            <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>
             {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
           </select>
           <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
@@ -1037,7 +1039,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                         return (
                           <tr key={t.id} style={{ background:"#E3F2FD" }}>
                             <td style={TD}><input type="checkbox" checked={t.done} disabled style={{ cursor:"not-allowed", opacity:.4 }} /></td>
-                            <td style={TD}><select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>{CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
+                            <td style={TD}><select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}><option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>{CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
                             <td style={{ ...TD, maxWidth:200 }}><input autoFocus style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }} /></td>
                             <td style={TD}><input type="date" style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} /></td>
                             <td style={{ ...TD, minWidth:130 }}><input type="url" style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="関連URL（任意）" value={editForm.url || ""} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} /></td>
@@ -1093,6 +1095,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                       <td style={TD}><input type="checkbox" checked={t.done} disabled style={{ cursor:"not-allowed", opacity:.4 }} /></td>
                       <td style={TD}>
                         <select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>
+                          <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>
                           {CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </td>
