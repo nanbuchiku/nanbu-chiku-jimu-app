@@ -204,6 +204,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
   const [taskForms,  setTaskForms]  = useState({});   // id → { open, title, dueDate, priority, chapterId }
   const [taskAdding, setTaskAdding] = useState('');
   const [deletingId, setDeletingId] = useState('');
+  const [period,     setPeriod]     = useState(28);   // 抽出期間（日数）
 
   // ① OAuthリダイレクト後にURLハッシュからトークンを取得
   useEffect(() => {
@@ -242,16 +243,16 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
     setError('');
   };
 
-  const fetchEmails = async (kw = keyword, cm = committee, tk = token) => {
+  const fetchEmails = async (kw = keyword, cm = committee, tk = token, days = period) => {
     if (!tk) return;
     setLoading(true);
     setError('');
     try {
-      // 件名で委員名絞り込み・過去4週間分のみ
+      // 件名で委員名絞り込み・指定期間分のみ
       const qParts = [];
       if (cm) qParts.push(`subject:${cm}`);
       if (kw.trim()) qParts.push(kw.trim());
-      qParts.push('newer_than:28d');
+      qParts.push(`newer_than:${days}d`);
       const q = qParts.join(' ');
       const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${encodeURIComponent(q)}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
@@ -548,6 +549,22 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
                   ✕ 解除
                 </button>
               )}
+            </div>
+
+            {/* 抽出期間 */}
+            <div style={{ display:"flex", gap:6, marginBottom:10, alignItems:"center", flexWrap:"wrap" }}>
+              <span style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#546E7A" }}>📅 期間</span>
+              {[["1週間",7],["2週間",14],["4週間",28],["3ヶ月",90]].map(([label, days]) => (
+                <button key={days} type="button"
+                  onClick={() => { setPeriod(days); fetchEmails(keyword, committee, token, days); }}
+                  style={{ padding:"3px 11px", fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700,
+                    borderRadius:14, cursor:"pointer",
+                    border:`1px solid ${period===days ? "#1A3A6B" : "#CFD8DC"}`,
+                    background: period===days ? "#1A3A6B" : "#fff",
+                    color: period===days ? "#fff" : "#546E7A" }}>
+                  {label}
+                </button>
+              ))}
             </div>
 
             {/* キーワード検索 */}
