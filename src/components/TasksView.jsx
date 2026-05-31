@@ -159,9 +159,24 @@ function extractEmailSummary(subject, body) {
     if (dlMatch) bullets.push(`⚡ 締切: ${dlMatch[1].trim()}`);
   }
 
-  // 🔗 フォーム・URL
-  const urlMatch = raw.match(/https?:\/\/[^\s\n）)]{10,120}/);
-  if (urlMatch) bullets.push(`🔗 URL: ${urlMatch[0]}`);
+  // 🔗 フォーム・URL（署名・フッターの団体サイト等は除外し、意味のあるURLのみ）
+  const URL_EXCLUDE = [
+    'rinri-saitama.org',   // 県連の一般サイト（署名に毎回入る）
+    'rinri.or.jp',         // 倫理研究所サイト
+    'www.rinri',
+  ];
+  const urlCandidates = (raw.match(/https?:\/\/[^\s\n　）)＞>「」]{10,200}/g) || [])
+    .map(u => u.replace(/[.,。、）)＞>]+$/, ''))   // 末尾の記号を除去
+    .filter(u => {
+      const host = (u.replace(/^https?:\/\//, '').split(/[/?#]/)[0] || '').toLowerCase();
+      const path = u.replace(/^https?:\/\/[^/]+/, '');
+      // 除外ドメインは、トップページ（パスがほぼ無い）のときだけ除外。
+      // 具体的なページ（フォーム等の長いパス）なら残す。
+      const isExcludedHost = URL_EXCLUDE.some(d => host.includes(d));
+      if (isExcludedHost && path.replace(/\/$/, '').length < 2) return false;
+      return true;
+    });
+  if (urlCandidates.length) bullets.push(`🔗 URL: ${urlCandidates[0]}`);
 
   // 🎯 目的（案内文の主要行）─ 挨拶・締切行を除いた最初の要点
   if (bullets.length < 4) {
