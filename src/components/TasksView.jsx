@@ -74,6 +74,26 @@ function getStoredToken() {
   return null;
 }
 
+// ─── メール本文から「意味のあるURL」を抽出（署名・団体サイトのトップは除外）───
+function pickRelatedUrl(body) {
+  const raw = (body || '').slice(0, 8000);
+  const URL_EXCLUDE = [
+    'rinri-saitama.org',   // 県連の一般サイト（署名に毎回入る）
+    'rinri.or.jp',         // 倫理研究所サイト
+    'www.rinri',
+  ];
+  const cands = (raw.match(/https?:\/\/[^\s\n　）)＞>「」]{10,300}/g) || [])
+    .map(u => u.replace(/[.,。、）)＞>]+$/, ''))   // 末尾の記号を除去
+    .filter(u => {
+      const host = (u.replace(/^https?:\/\//, '').split(/[/?#]/)[0] || '').toLowerCase();
+      const path = u.replace(/^https?:\/\/[^/]+/, '');
+      const isExcludedHost = URL_EXCLUDE.some(d => host.includes(d));
+      if (isExcludedHost && path.replace(/\/$/, '').length < 2) return false;
+      return true;
+    });
+  return cands[0] || '';
+}
+
 // ─── メール要約（パターン抽出） ─────────────────────────────────
 function extractEmailSummary(subject, body) {
   const raw = (body || '').slice(0, 8000); // 長すぎる本文は安全のため制限
@@ -160,23 +180,8 @@ function extractEmailSummary(subject, body) {
   }
 
   // 🔗 フォーム・URL（署名・フッターの団体サイト等は除外し、意味のあるURLのみ）
-  const URL_EXCLUDE = [
-    'rinri-saitama.org',   // 県連の一般サイト（署名に毎回入る）
-    'rinri.or.jp',         // 倫理研究所サイト
-    'www.rinri',
-  ];
-  const urlCandidates = (raw.match(/https?:\/\/[^\s\n　）)＞>「」]{10,200}/g) || [])
-    .map(u => u.replace(/[.,。、）)＞>]+$/, ''))   // 末尾の記号を除去
-    .filter(u => {
-      const host = (u.replace(/^https?:\/\//, '').split(/[/?#]/)[0] || '').toLowerCase();
-      const path = u.replace(/^https?:\/\/[^/]+/, '');
-      // 除外ドメインは、トップページ（パスがほぼ無い）のときだけ除外。
-      // 具体的なページ（フォーム等の長いパス）なら残す。
-      const isExcludedHost = URL_EXCLUDE.some(d => host.includes(d));
-      if (isExcludedHost && path.replace(/\/$/, '').length < 2) return false;
-      return true;
-    });
-  if (urlCandidates.length) bullets.push(`🔗 URL: ${urlCandidates[0]}`);
+  const relatedUrl = pickRelatedUrl(raw);
+  if (relatedUrl) bullets.push(`🔗 URL: ${relatedUrl}`);
 
   // 🎯 目的（案内文の主要行）─ 挨拶・締切行を除いた最初の要点
   if (bullets.length < 4) {
@@ -415,7 +420,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
   };
 
   // ── メールからタスク追加 ──────────────────────────────────────
-  const openTaskForm = (emailId, subject, deadlineDate) => {
+  const openTaskForm = (emailId, subject, deadlineDate, body) => {
     setTaskForms(f => {
       if (f[emailId]?.open) return { ...f, [emailId]: { ...f[emailId], open: false } };
       // 締め切り日をYYYY-MM-DDに変換
@@ -428,7 +433,8 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
         }
       }
       const title = subject.replace(/【[^】]*】/g, '').replace(/Re:|Fw:/gi, '').trim();
-      return { ...f, [emailId]: { open: true, title, dueDate, priority:'medium', chapterId: ALL_CHAPTER.id } };
+      const url = pickRelatedUrl(body);   // 本文から関連URLを自動抽出
+      return { ...f, [emailId]: { open: true, title, dueDate, priority:'medium', chapterId: ALL_CHAPTER.id, url } };
     });
   };
 
@@ -447,6 +453,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
           title:      form.title.trim(),
           dueDate:    form.dueDate,
           priority:   form.priority,
+          url:        form.url || '',
           chapterIds: CHAPTERS.map(c => c.id),
         });
         showToast?.('✅ 各単会にタスクを追加しました');
@@ -456,6 +463,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
           title:     form.title.trim(),
           dueDate:   form.dueDate,
           priority:  form.priority,
+          url:       form.url || '',
         });
         showToast?.('✅ タスクを追加しました');
       }
@@ -702,7 +710,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                               {/* ── タスク追加エリア ── */}
                               <div style={{ marginBottom:8 }}>
                                 <button
-                                  onClick={e => { e.stopPropagation(); openTaskForm(em.id, em.subject, em.deadlineDate); }}
+                                  onClick={e => { e.stopPropagation(); openTaskForm(em.id, em.subject, em.deadlineDate, det.body); }}
                                   style={{ fontSize:"clamp(11px,1.3vw,12px)", padding:"4px 12px",
                                     borderRadius:5, border:"1px solid #A5D6A7", background:"#E8F5E9",
                                     color:"#1B5E20", cursor:"pointer", fontWeight:700 }}>
@@ -719,6 +727,14 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                                       value={taskForms[em.id].title}
                                       onChange={e => updateTaskForm(em.id, 'title', e.target.value)}
                                       placeholder="タスク内容"
+                                      style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)", width:"100%", boxSizing:"border-box" }}
+                                    />
+                                    {/* 関連URL（本文から自動入力・編集可） */}
+                                    <input
+                                      type="url"
+                                      value={taskForms[em.id].url || ''}
+                                      onChange={e => updateTaskForm(em.id, 'url', e.target.value)}
+                                      placeholder="関連URL（本文から自動入力）"
                                       style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)", width:"100%", boxSizing:"border-box" }}
                                     />
                                     <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
