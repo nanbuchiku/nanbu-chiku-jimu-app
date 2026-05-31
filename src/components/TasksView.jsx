@@ -247,11 +247,11 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
     setLoading(true);
     setError('');
     try {
-      // 件名で委員名絞り込み・過去30日分のみ
+      // 件名で委員名絞り込み・過去4週間分のみ
       const qParts = [];
       if (cm) qParts.push(`subject:${cm}`);
       if (kw.trim()) qParts.push(kw.trim());
-      qParts.push('newer_than:21d');
+      qParts.push('newer_than:28d');
       const q = qParts.join(' ');
       const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${encodeURIComponent(q)}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
