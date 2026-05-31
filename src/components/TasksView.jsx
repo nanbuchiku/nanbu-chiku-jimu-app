@@ -203,7 +203,7 @@ function extractEmailSummary(subject, body) {
 }
 
 // ─── GmailInbox コンポーネント ─────────────────────────────────
-function GmailInbox({ today, showToast, onAddTaskDirect }) {
+function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect }) {
   const [open,       setOpen]       = useState(true);
   const [token,      setToken]      = useState(() => getStoredToken());
   const [keyword,    setKeyword]    = useState('');
@@ -428,7 +428,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
         }
       }
       const title = subject.replace(/【[^】]*】/g, '').replace(/Re:|Fw:/gi, '').trim();
-      return { ...f, [emailId]: { open: true, title, dueDate, priority:'medium', chapterId: CHAPTERS[0].id } };
+      return { ...f, [emailId]: { open: true, title, dueDate, priority:'medium', chapterId: ALL_CHAPTER.id } };
     });
   };
 
@@ -441,13 +441,24 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
     if (!form.dueDate)        { showToast?.('⚠ 期限を入力してください'); return; }
     setTaskAdding(emailId);
     try {
-      await onAddTaskDirect({
-        chapterId: form.chapterId,
-        title:     form.title.trim(),
-        dueDate:   form.dueDate,
-        priority:  form.priority,
-      });
-      showToast?.('✅ タスクを追加しました');
+      if (form.chapterId === ALL_CHAPTER.id && onAddTaskBatchDirect) {
+        // 「全単会」選択時は各単会ごとに個別タスクを追加
+        await onAddTaskBatchDirect({
+          title:      form.title.trim(),
+          dueDate:    form.dueDate,
+          priority:   form.priority,
+          chapterIds: CHAPTERS.map(c => c.id),
+        });
+        showToast?.('✅ 各単会にタスクを追加しました');
+      } else {
+        await onAddTaskDirect({
+          chapterId: form.chapterId,
+          title:     form.title.trim(),
+          dueDate:   form.dueDate,
+          priority:  form.priority,
+        });
+        showToast?.('✅ タスクを追加しました');
+      }
       setTaskForms(f => ({ ...f, [emailId]: { ...f[emailId], open: false } }));
     } catch (e) {
       showToast?.('⚠ タスク追加に失敗しました: ' + e.message);
@@ -723,7 +734,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
                                         value={taskForms[em.id].chapterId}
                                         onChange={e => updateTaskForm(em.id, 'chapterId', e.target.value)}
                                         style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }}>
-                                        <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>
+                                        <option value={ALL_CHAPTER.id}>全単会（各単会に個別追加）</option>
                                         {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
                                       </select>
                                       {/* 優先度 */}
@@ -829,7 +840,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect }) {
   );
 }
 
-export default memo(function TasksView({ tasks, emails = [], today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, onAddTaskDirect, showToast }) {
+export default memo(function TasksView({ tasks, emails = [], today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, onAddTaskDirect, onAddTaskBatchDirect, showToast }) {
   const [showDone,    setShowDone]    = useState(true);
   const [filterCh,   setFilterCh]    = useState("all");
   const [filterPrio, setFilterPrio]  = useState("all");
@@ -999,7 +1010,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
         </div>
       )}
 
-      <GmailInbox today={today} showToast={showToast} onAddTaskDirect={onAddTaskDirect} />
+      <GmailInbox today={today} showToast={showToast} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} />
 
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
