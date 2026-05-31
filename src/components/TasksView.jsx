@@ -1004,7 +1004,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
-          <input aria-label="タスク内容" style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} onKeyDown={e => e.key === "Enter" && onAdd()} />
+          <input aria-label="タスク内容" style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
           <input aria-label="関連URL" type="url" style={{ ...INP, flex:2, minWidth:140 }} placeholder="関連URL（フォーム・Drive等）任意" value={newTask.url || ""} onChange={e => setNewTask({ ...newTask, url: e.target.value })} />
           <select aria-label="担当単会" style={SEL} value={newTask.chapterId} onChange={e => setNewTask({ ...newTask, chapterId: e.target.value })}>
             <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>
