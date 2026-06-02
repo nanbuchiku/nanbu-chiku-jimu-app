@@ -556,7 +556,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         return (
           <div style={OV} onClick={close} role="presentation">
             <div role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}
-              style={{ background:"#fff", borderRadius:10, width:"100%", maxWidth:560, maxHeight:"90vh", display:"flex", flexDirection:"column", padding:18 }}>
+              style={{ background:"#fff", borderRadius:10, width:"100%", maxWidth:680, maxHeight:"90vh", display:"flex", flexDirection:"column", padding:18 }}>
               <div style={{ ...MH, marginBottom:12 }}>
                 <span style={{ background: ch.color, color:"#fff", padding:"3px 10px", borderRadius:12, fontSize:"clamp(14px,2vw,18px)" }}>{ch.name}</span>
                 <span>{y}年{m}月の講師一覧</span>
@@ -573,14 +573,14 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                   return (
                     <div key={dateStr} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 9px", borderBottom:"1px solid #F5F5F5", background: sp ? "#FAFAFA" : "#FFEBEE", borderRadius:4, marginBottom:3, cursor: sp ? "pointer" : "default" }}
                       onClick={() => { if (sp) { close(); onView(sp); } }}>
-                      <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: sp ? "#37474F" : "#B71C1C", minWidth:62 }}>
+                      <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: sp ? "#37474F" : "#B71C1C", minWidth:62, whiteSpace:"nowrap", flexShrink:0 }}>
                         {m}/{dt.getDate()}（{ch.dayName.replace("曜日","")}）
                       </div>
                       {sp ? (
                         <>
-                          <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, flex:1 }}>{sp.speakerName || <span style={{ color:"#E65100" }}>名前未入力</span>}</span>
-                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:10 }}>「{sp.topic}」</span>}
-                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                          <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>{sp.speakerName || <span style={{ color:"#E65100" }}>名前未入力</span>}</span>
+                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:10, flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         </>
                       ) : (
                         <>
@@ -610,10 +610,10 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                           <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#37474F", minWidth:62 }}>
                             {sp.seminarDate.slice(5).replace("-","/")}
                           </div>
-                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#fff", background: stype.color, padding:"2px 7px", borderRadius:10 }}>{stype.short}</span>
-                          <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, flex:1 }}>{sp.speakerName}</span>
-                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A" }}>「{sp.topic}」</span>}
-                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#fff", background: stype.color, padding:"2px 7px", borderRadius:10, whiteSpace:"nowrap", flexShrink:0 }}>{stype.short}</span>
+                          <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>{sp.speakerName}</span>
+                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         </div>
                       );
                     })}
