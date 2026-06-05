@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, buildSpeakerStoragePath } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, buildSpeakerStoragePath, extractStaffNotes } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 import { db } from '../lib/supabase';
 
@@ -25,6 +25,21 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     return base;
   });
   const [err, setErr] = useState("");
+  // 備考（確認書⑦に反映される自由記述）。内容要約や資料等のタグは保持したまま編集する
+  const [staffNotes, setStaffNotes] = useState(() => extractStaffNotes(form.notes));
+  const onChangeStaffNotes = (val) => {
+    setErr("");
+    setStaffNotes(val);
+    setForm(f => {
+      const n = String(f.notes || '').replace(/\\n/g, '\n');
+      const tagged = [];
+      const summaryMatch = n.match(/【内容要約】\n[\s\S]*?(?=\n【|$)/);
+      if (summaryMatch) tagged.push(summaryMatch[0].trim());
+      (n.match(/【[^】]+】[^\n]*/g) || []).forEach(t => { if (!t.startsWith('【内容要約】')) tagged.push(t); });
+      const newNotes = [val.trim(), tagged.join('\n')].filter(Boolean).join('\n\n');
+      return { ...f, notes: newNotes };
+    });
+  };
   const [hasDraft] = useState(() => {
     if (!isNew || initial) return false;
     try { return !!localStorage.getItem(DRAFT_KEY); } catch { return false; }
@@ -563,8 +578,8 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           </div>
 
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>備考</div>
-            <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:54, resize:"vertical", opacity: saving ? .6 : 1 }} value={form.notes || ""} onChange={e => set("notes", e.target.value)} />
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>備考・特記事項 <span style={{ color:"#1565C0", fontWeight:700 }}>（確認書の⑦に反映されます）</span></div>
+            <textarea disabled={saving} style={{ ...INP, width:"100%", minHeight:54, resize:"vertical", opacity: saving ? .6 : 1 }} placeholder="ここに書いた内容が講師依頼確認書の「備考・特記事項」欄に表示されます" value={staffNotes} onChange={e => onChangeStaffNotes(e.target.value)} />
           </div>
 
           <div style={{ gridColumn:"1/-1", borderTop:"2px dashed #E0E0E0", paddingTop:12, marginTop:4 }}>
