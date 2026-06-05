@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100dvh', background: '#F0F2F5',
+      minHeight: '100dvh', background: '#F4F5F7',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 16,
     }}>
@@ -32,14 +32,14 @@ export default function LoginPage() {
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 64, height: 64, borderRadius: '50%',
-            background: 'linear-gradient(135deg,#1A3A6B,#2E6DA4)',
+            background: 'linear-gradient(135deg,#061B44,#2E6DA4)',
             fontSize: 28, color: '#fff', fontWeight: 800, marginBottom: 14,
             boxShadow: '0 4px 12px rgba(26,58,107,.3)',
           }}>倫</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#1A3A6B', letterSpacing: '0.05em' }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#061B44', letterSpacing: '0.05em' }}>
             南部地区事務局
           </div>
-          <div style={{ fontSize: 13, color: '#90A4AE', marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: '#98A2B3', marginTop: 4 }}>
             5単会タスク管理システム
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function LoginPage() {
         {/* フォーム */}
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: '#546E7A', display: 'block', marginBottom: 5 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#667085', display: 'block', marginBottom: 5 }}>
               メールアドレス
             </label>
             <input
@@ -55,17 +55,17 @@ export default function LoginPage() {
               required autoComplete="email" placeholder="admin@example.com"
               style={{
                 width: '100%', boxSizing: 'border-box',
-                border: '1.5px solid #CFD8DC', borderRadius: 8,
+                border: '1.5px solid #D9E1EE', borderRadius: 8,
                 padding: '10px 12px', fontSize: 14, outline: 'none',
                 transition: 'border-color .15s',
               }}
-              onFocus={e => e.target.style.borderColor = '#1A3A6B'}
-              onBlur={e => e.target.style.borderColor = '#CFD8DC'}
+              onFocus={e => e.target.style.borderColor = '#061B44'}
+              onBlur={e => e.target.style.borderColor = '#D9E1EE'}
             />
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: '#546E7A', display: 'block', marginBottom: 5 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#667085', display: 'block', marginBottom: 5 }}>
               パスワード
             </label>
             <input
@@ -73,12 +73,12 @@ export default function LoginPage() {
               required autoComplete="current-password" placeholder="••••••••"
               style={{
                 width: '100%', boxSizing: 'border-box',
-                border: '1.5px solid #CFD8DC', borderRadius: 8,
+                border: '1.5px solid #D9E1EE', borderRadius: 8,
                 padding: '10px 12px', fontSize: 14, outline: 'none',
                 transition: 'border-color .15s',
               }}
-              onFocus={e => e.target.style.borderColor = '#1A3A6B'}
-              onBlur={e => e.target.style.borderColor = '#CFD8DC'}
+              onFocus={e => e.target.style.borderColor = '#061B44'}
+              onBlur={e => e.target.style.borderColor = '#D9E1EE'}
             />
           </div>
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
           )}
 
           <button type="submit" disabled={loading} style={{
-            width: '100%', background: loading ? '#90A4AE' : '#1A3A6B',
+            width: '100%', background: loading ? '#98A2B3' : '#061B44',
             color: '#fff', border: 'none', borderRadius: 8,
             padding: '12px 0', fontSize: 15, fontWeight: 700,
             cursor: loading ? 'not-allowed' : 'pointer',

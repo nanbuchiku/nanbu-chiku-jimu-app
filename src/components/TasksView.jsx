@@ -568,7 +568,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
     <div style={{ ...CARD, marginBottom:14 }}>
       {/* ヘッダー */}
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: open ? 10 : 0, flexWrap:"wrap" }}>
-        <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#1A3A6B" }}>
+        <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#061B44" }}>
           📬 倫理メール受信ボックス
         </span>
         {token && emails.length > 0 && (
@@ -579,8 +579,8 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
         <div style={{ marginLeft:"auto", display:"flex", gap:6, alignItems:"center" }}>
           {token
             ? <button onClick={logout}
-                style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"4px 10px",
-                  fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#546E7A" }}>
+                style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"4px 10px",
+                  fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#667085" }}>
                 ログアウト
               </button>
             : <button onClick={login}
@@ -590,7 +590,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
               </button>
           }
           <button onClick={() => setOpen(v => !v)}
-            style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"4px 10px",
+            style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"4px 10px",
               fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}>
             {open ? "▲ 閉じる" : "▼ 開く"}
           </button>
@@ -599,7 +599,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
 
       {open && (
         !token ? (
-          <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)", padding:"18px 0", textAlign:"center" }}>
+          <div style={{ color:"#98A2B3", fontSize:"clamp(12px,1.4vw,14px)", padding:"18px 0", textAlign:"center" }}>
             「Gmailでログイン」ボタンを押して認証してください
           </div>
         ) : (
@@ -610,15 +610,15 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                 <button key={c} onClick={() => handleCommittee(c)}
                   style={{ padding:"3px 9px", fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700,
                     borderRadius:14, border:"none", cursor:"pointer", transition:"background .15s",
-                    background: committee === c ? "#1A3A6B" : "#ECEFF1",
-                    color:      committee === c ? "#fff"    : "#546E7A" }}>
+                    background: committee === c ? "#061B44" : "#F1F5F9",
+                    color:      committee === c ? "#fff"    : "#667085" }}>
                   {c}
                 </button>
               ))}
               {committee && (
                 <button onClick={() => { setCommittee(''); fetchEmails(keyword, ''); }}
                   style={{ padding:"3px 9px", fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700,
-                    borderRadius:14, border:"1px solid #CFD8DC", cursor:"pointer",
+                    borderRadius:14, border:"1px solid #D9E1EE", cursor:"pointer",
                     background:"#fff", color:"#B71C1C" }}>
                   ✕ 解除
                 </button>
@@ -627,15 +627,15 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
 
             {/* 抽出期間 */}
             <div style={{ display:"flex", gap:6, marginBottom:10, alignItems:"center", flexWrap:"wrap" }}>
-              <span style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#546E7A" }}>📅 期間</span>
+              <span style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#667085" }}>📅 期間</span>
               {[["1週間",7],["2週間",14],["4週間",28],["3ヶ月",90]].map(([label, days]) => (
                 <button key={days} type="button"
                   onClick={() => { setPeriod(days); fetchEmails(keyword, committee, token, days); }}
                   style={{ padding:"3px 11px", fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700,
                     borderRadius:14, cursor:"pointer",
-                    border:`1px solid ${period===days ? "#1A3A6B" : "#CFD8DC"}`,
-                    background: period===days ? "#1A3A6B" : "#fff",
-                    color: period===days ? "#fff" : "#546E7A" }}>
+                    border:`1px solid ${period===days ? "#061B44" : "#D9E1EE"}`,
+                    background: period===days ? "#061B44" : "#fff",
+                    color: period===days ? "#fff" : "#667085" }}>
                   {label}
                 </button>
               ))}
@@ -655,8 +655,8 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
               {(keyword || committee) && (
                 <button type="button"
                   onClick={() => { setKeyword(''); setCommittee(''); fetchEmails('', ''); }}
-                  style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"6px 12px",
-                    fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#546E7A", fontWeight:600 }}>
+                  style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"6px 12px",
+                    fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#667085", fontWeight:600 }}>
                   クリア
                 </button>
               )}
@@ -673,7 +673,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                 📨 メール取得中...
               </div>
             ) : emails.length === 0 ? (
-              <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)", padding:"14px 0", textAlign:"center" }}>
+              <div style={{ color:"#98A2B3", fontSize:"clamp(12px,1.4vw,14px)", padding:"14px 0", textAlign:"center" }}>
                 メールが見つかりません
               </div>
             ) : (
@@ -733,7 +733,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                               whiteSpace:"nowrap" }}>
                             {deletingId === em.id ? '…' : '✅ 対応済み'}
                           </button>
-                          <span style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#90A4AE", alignSelf:"center" }}>
+                          <span style={{ fontSize:"clamp(11px,1.3vw,12px)", color:"#98A2B3", alignSelf:"center" }}>
                             {isOpen ? '▲' : '▼'}
                           </span>
                         </div>
@@ -744,7 +744,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                         <div style={{ margin:"0 4px 6px", padding:"10px 12px", background:"#FAFAFA",
                           borderRadius:"0 0 6px 6px", border:"1px solid #E0E0E0", borderTop:"none" }}>
                           {detLoading && !det ? (
-                            <div style={{ color:"#90A4AE", fontSize:"clamp(12px,1.4vw,14px)" }}>読み込み中...</div>
+                            <div style={{ color:"#98A2B3", fontSize:"clamp(12px,1.4vw,14px)" }}>読み込み中...</div>
                           ) : det ? (
                             <>
                               {/* ── タスク追加エリア ── */}
@@ -855,7 +855,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                               {/* 添付ファイル */}
                               {det.attachments.length > 0 && (
                                 <div style={{ borderTop:"1px solid #E0E0E0", paddingTop:6 }}>
-                                  <div style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#546E7A", marginBottom:4 }}>
+                                  <div style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#667085", marginBottom:4 }}>
                                     📎 添付ファイル
                                   </div>
                                   <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
@@ -1008,7 +1008,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
-        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#061B44", display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
           タスク管理
           {overdueCount > 0 && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, background:"#FFEBEE", color:"#B71C1C", padding:"2px 8px", borderRadius:10 }}>⚠ 超過 {overdueCount}件</span>}
           {undoneCount > 0 && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:"#BF360C" }}>未完了 {undoneCount}件</span>}
@@ -1026,19 +1026,19 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
             <option value="low">🟢 低</option>
           </select>
           {hasFilter && (
-            <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#546E7A" }} onClick={() => { setFilterCh("all"); setFilterPrio("all"); }}>
+            <button style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#667085" }} onClick={() => { setFilterCh("all"); setFilterPrio("all"); }}>
               リセット
             </button>
           )}
-          <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setShowDone(v => !v)}>
+          <button style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }} onClick={() => setShowDone(v => !v)}>
             {showDone ? "完了済みを隠す" : "完了済みも表示"}
           </button>
           {doneCount > 0 && (
-            <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#B71C1C" }} onClick={onDeleteDone}>
+            <button style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#B71C1C" }} onClick={onDeleteDone}>
               🗑 完了済みを削除
             </button>
           )}
-          <button style={{ background: groupByDate ? "#1A3A6B" : "#ECEFF1", color: groupByDate ? "#fff" : "#546E7A", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600 }} onClick={() => setGroupByDate(v => !v)}>
+          <button style={{ background: groupByDate ? "#061B44" : "#F1F5F9", color: groupByDate ? "#fff" : "#667085", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600 }} onClick={() => setGroupByDate(v => !v)}>
             {groupByDate ? "▦ グループ表示" : "≡ 一覧表示"}
           </button>
           <button style={{ background:"#2E7D32", color:"#fff", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:700 }} onClick={exportCSV}>📥 CSV</button>
@@ -1052,14 +1052,14 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
             <div key={ch.id} onClick={() => setFilterCh(ch.id)} style={{ background: filterCh === ch.id ? ch.light : "#fff", border:`2px solid ${filterCh === ch.id ? ch.color : ch.accent}`, borderRadius:8, padding:"6px 12px", cursor:"pointer", transition:"all .15s", minWidth:110 }}>
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color, marginBottom:2 }}>{ch.name}</div>
               <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:800, color: overdue > 0 ? "#B71C1C" : "#37474F", lineHeight:1 }}>{total}<span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, marginLeft:2 }}>件</span></div>
-              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", marginTop:2, display:"flex", gap:6 }}>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", marginTop:2, display:"flex", gap:6 }}>
                 {overdue > 0 && <span style={{ color:"#B71C1C", fontWeight:700 }}>超過{overdue}</span>}
                 {thisWeek > 0 && <span style={{ color:"#E65100", fontWeight:600 }}>今週{thisWeek}</span>}
               </div>
             </div>
           ))}
           {filterCh !== "all" && (
-            <div onClick={() => setFilterCh("all")} style={{ background:"#F5F5F5", border:"2px solid #ECEFF1", borderRadius:8, padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:600 }}>
+            <div onClick={() => setFilterCh("all")} style={{ background:"#F5F5F5", border:"2px solid #F1F5F9", borderRadius:8, padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:600 }}>
               全て表示
             </div>
           )}
@@ -1069,7 +1069,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
       <GmailInbox today={today} showToast={showToast} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} />
 
       <div style={{ ...CARD, marginBottom:12 }}>
-        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:7 }}>＋ タスク追加</div>
+        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#667085", marginBottom:7 }}>＋ タスク追加</div>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap", alignItems:"center" }}>
           <input aria-label="タスク内容" style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
           <input aria-label="関連URL" type="url" style={{ ...INP, flex:2, minWidth:140 }} placeholder="関連URL（フォーム・Drive等）任意" value={newTask.url || ""} onChange={e => setNewTask({ ...newTask, url: e.target.value })} />
@@ -1083,7 +1083,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
               {[["今日",0],["明日",1],["1週",7],["2週",14]].map(([label, days]) => {
                 const d = new Date(today); d.setDate(d.getDate() + days);
                 const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                return <button key={label} type="button" onClick={() => setNewTask(t => ({ ...t, dueDate: ds }))} style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"1px 5px", borderRadius:8, border:`1px solid ${newTask.dueDate===ds?"#1A3A6B":"#CFD8DC"}`, background: newTask.dueDate===ds?"#1A3A6B":"#fff", color: newTask.dueDate===ds?"#fff":"#546E7A", cursor:"pointer", fontWeight:700 }}>{label}</button>;
+                return <button key={label} type="button" onClick={() => setNewTask(t => ({ ...t, dueDate: ds }))} style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"1px 5px", borderRadius:8, border:`1px solid ${newTask.dueDate===ds?"#061B44":"#D9E1EE"}`, background: newTask.dueDate===ds?"#061B44":"#fff", color: newTask.dueDate===ds?"#fff":"#667085", cursor:"pointer", fontWeight:700 }}>{label}</button>;
               })}
             </div>
           </div>
@@ -1094,7 +1094,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
           </select>
           <button style={BP} onClick={onAdd}>追加</button>
           {onAddBatch && (
-            <button style={{ background:"#546E7A", color:"#fff", border:"none", borderRadius:6, padding:"7px 12px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }} title="全5単会に同じタスクを追加" onClick={onAddBatch}>
+            <button style={{ background:"#667085", color:"#fff", border:"none", borderRadius:6, padding:"7px 12px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }} title="全5単会に同じタスクを追加" onClick={onAddBatch}>
               ＋全単会
             </button>
           )}
@@ -1122,7 +1122,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                   { label:"⚠ 期限超過", color:"#B71C1C", bg:"#FFEBEE", filter: t => t.dueDate < todayStr },
                   { label:"📅 今日・明日", color:"#E65100", bg:"#FFF8E1", filter: t => t.dueDate >= todayStr && t.dueDate <= tomStr },
                   { label:"📌 今週中", color:"#FF8F00", bg:"#FFFDE7", filter: t => t.dueDate > tomStr && t.dueDate <= wkStr },
-                  { label:"🗓 来週以降", color:"#546E7A", bg:"#F5F5F5", filter: t => t.dueDate > wkStr },
+                  { label:"🗓 来週以降", color:"#667085", bg:"#F5F5F5", filter: t => t.dueDate > wkStr },
                 ];
                 const undoneRows = groups.flatMap(({ label, color, bg, filter }) => {
                   const gTasks = undoneTasks.filter(filter);
@@ -1143,7 +1143,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                             <td style={TD}><input type="date" style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} /></td>
                             <td style={{ ...TD, minWidth:130 }}><input type="url" style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="関連URL（任意）" value={editForm.url || ""} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} /></td>
                             <td style={TD}><select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.priority} onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))}><option value="high">🔴 高</option><option value="medium">🟡 中</option><option value="low">🟢 低</option></select></td>
-                            <td style={TD}><div style={{ display:"flex", gap:3 }}><button style={{ ...BSM, background:"#1A3A6B", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button><button style={{ ...BSM, color:"#546E7A" }} onClick={() => setEditingId(null)}>取消</button></div></td>
+                            <td style={TD}><div style={{ display:"flex", gap:3 }}><button style={{ ...BSM, background:"#061B44", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button><button style={{ ...BSM, color:"#667085" }} onClick={() => setEditingId(null)}>取消</button></div></td>
                           </tr>
                         );
                       }
@@ -1162,7 +1162,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                   ];
                 });
                 const doneRows = doneTasks.length === 0 ? [] : [
-                  <tr key="hdr-done"><td colSpan={7} style={{ padding:"5px 10px", background:"#F5F5F5", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C", borderTop:"2px solid #CFD8DC" }}>✓ 完了済み　{doneTasks.length}件</td></tr>,
+                  <tr key="hdr-done"><td colSpan={7} style={{ padding:"5px 10px", background:"#F5F5F5", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C", borderTop:"2px solid #D9E1EE" }}>✓ 完了済み　{doneTasks.length}件</td></tr>,
                   ...doneTasks.map(t => {
                     const ch = getChapter(t.chapterId);
                     const p = PRIO[t.priority] || PRIO.medium;
@@ -1170,9 +1170,9 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                       <tr key={t.id} className="hover-row" style={{ background:"#FAFAFA", opacity:.55 }}>
                         <td style={TD}><input type="checkbox" aria-label={`${t.title}を未完了に戻す`} checked={true} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
                         <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
-                        <td style={{ ...TD, fontWeight:400, textDecoration:"line-through", color:"#90A4AE", maxWidth:200 }}>{t.title}</td>
-                        <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE" }}>{t.dueDate}</td>
-                        <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE" }}>✓完了</span></td>
+                        <td style={{ ...TD, fontWeight:400, textDecoration:"line-through", color:"#98A2B3", maxWidth:200 }}>{t.title}</td>
+                        <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3" }}>{t.dueDate}</td>
+                        <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3" }}>✓完了</span></td>
                         <td style={TD}><span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700, opacity:.5 }}>{p.label}</span></td>
                         <td style={TD}><button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></td>
                       </tr>
@@ -1216,8 +1216,8 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                       </td>
                       <td style={TD}>
                         <div style={{ display:"flex", gap:3 }}>
-                          <button style={{ ...BSM, background:"#1A3A6B", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button>
-                          <button style={{ ...BSM, color:"#546E7A" }} onClick={() => setEditingId(null)}>取消</button>
+                          <button style={{ ...BSM, background:"#061B44", color:"#fff" }} onClick={() => saveEdit(t.id)}>保存</button>
+                          <button style={{ ...BSM, color:"#667085" }} onClick={() => setEditingId(null)}>取消</button>
                         </div>
                       </td>
                     </tr>
@@ -1230,7 +1230,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                     <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
                     <td style={{ ...TD, fontWeight: t.done ? 400 : 600, textDecoration: t.done ? "line-through" : "none", maxWidth:200 }}>{t.title}</td>
                     <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{t.dueDate}</td>
-                    <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color: t.done ? "#90A4AE" : dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
+                    <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color: t.done ? "#98A2B3" : dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
                     <td style={TD}><span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
                     <td style={TD}>
                       <div style={{ display:"flex", gap:3, alignItems:"center" }}>
@@ -1243,7 +1243,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                 );
               })}
               {visible.length === 0 && (
-                <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#90A4AE", padding:22 }}>
+                <tr><td colSpan={7} style={{ ...TD, textAlign:"center", color:"#98A2B3", padding:22 }}>
                   {hasFilter ? "条件に一致するタスクがありません" : showDone ? "タスクなし" : "未完了タスクなし ✓"}
                 </td></tr>
               )}

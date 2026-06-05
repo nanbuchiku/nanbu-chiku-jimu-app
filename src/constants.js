@@ -1,20 +1,20 @@
 export const CHAPTERS = [
-  { id:"todawarabi",    name:"とだわらび", short:"とだわらび",  day:2, dayName:"火曜日", color:"#1B5E20", light:"#E8F5E9", accent:"#A5D6A7",
+  { id:"todawarabi",    name:"とだわらび", short:"とだわらび",  day:2, dayName:"火曜日", color:"#17803B", light:"#E8FFF0", accent:"#9BE7B0",
     time:"AM6:00〜7:00", venue:"戸田市商工会館", address:"戸田市上戸田１−２１−２３", venueTel:"０４８−４４１−２６１７", mapUrl:"https://share.google/LBrDQ6899ccNm89hv", staff:"" },
-  { id:"kawaguchi_east",name:"川口東",     short:"川口東",  day:3, dayName:"水曜日", color:"#1A3A6B", light:"#E3F2FD", accent:"#90CAF9",
+  { id:"kawaguchi_east",name:"川口東",     short:"川口東",  day:3, dayName:"水曜日", color:"#174A9C", light:"#EAF3FF", accent:"#8EC5FF",
     time:"AM6:00〜7:00", venue:"川口緑化センター　樹里安", address:"川口安行領家８４４−２", venueTel:"―", mapUrl:"https://share.google/7QSKHBQCh0the5Cb7", staff:"" },
-  { id:"niizashiki",    name:"新座・志木", short:"新座志木",day:4, dayName:"木曜日", color:"#6D4C9F", light:"#EDE7F6", accent:"#B39DDB",
+  { id:"niizashiki",    name:"新座・志木", short:"新座志木",day:4, dayName:"木曜日", color:"#7A4DFF", light:"#FBF8FF", accent:"#C8B6FF",
     time:"AM6:00〜7:00", venue:"CKスクエア新座　６F", address:"新座市野火止５−２−１０（駐車場：４F無料）", venueTel:"―", mapUrl:"https://share.google/rSXTQ2jqiGDttsCyE", staff:"小林靖会長" },
-  { id:"asaka",         name:"朝霞",       short:"朝霞",    day:5, dayName:"金曜日", color:"#BF360C", light:"#FFF3E0", accent:"#FFCC80",
+  { id:"asaka",         name:"朝霞",       short:"朝霞",    day:5, dayName:"金曜日", color:"#F97316", light:"#FFF4E5", accent:"#FFB86B",
     time:"AM6:30〜7:30", venue:"浜崎会館　２Fホール（氷川神社境内）", address:"朝霞市浜崎３丁目９番地", venueTel:"―", mapUrl:"https://maps.app.goo.gl/phdDu7hZSuUbmErN6", staff:"" },
-  { id:"kawaguchi",     name:"川口",       short:"川口",    day:6, dayName:"土曜日", color:"#B71C1C", light:"#FFEBEE", accent:"#EF9A9A",
+  { id:"kawaguchi",     name:"川口",       short:"川口",    day:6, dayName:"土曜日", color:"#DC2626", light:"#FEF2F2", accent:"#FECACA",
     time:"AM6:30〜7:30", venue:"元郷四丁目町会会館", address:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）", venueTel:"―", mapUrl:"https://share.google/nIYPjDL6MsMpt1ek8", staff:"" },
 ];
 
 // タスク用の特別チャプター（全単会に共通するタスク。CHAPTERSには含めない）
 export const ALL_CHAPTER = {
   id:"all_chapters", name:"全単会", short:"全単会",
-  color:"#37474F", light:"#ECEFF1", accent:"#B0BEC5",
+  color:"#061B44", light:"#EAF0FF", accent:"#B3C2FF",
   day:-1, dayName:"", time:"", venue:"", address:"", venueTel:"", mapUrl:"", staff:"",
 };
 
@@ -23,12 +23,12 @@ export const JIMU = { email:"rinri.nanbu@gmail.com", cc:"nizashikirinri@gmail.co
 export const STATUS = {
   pending:   { label:"依頼中",     color:"#FF8F00", bg:"#FFF8E1" },
   confirmed: { label:"確定",       color:"#2E7D32", bg:"#E8F5E9" },
-  completed: { label:"終了",       color:"#546E7A", bg:"#ECEFF1" },
+  completed: { label:"終了",       color:"#667085", bg:"#F1F5F9" },
   cancelled: { label:"キャンセル", color:"#B71C1C", bg:"#FFEBEE" },
 };
 
 export const SEMINAR_TYPES = [
-  { id:"ms",      label:"モーニングセミナー", short:"MS",   color:"#1A3A6B", venueFixed:true,  hasLodging:true  },
+  { id:"ms",      label:"モーニングセミナー", short:"MS",   color:"#061B44", venueFixed:true,  hasLodging:true  },
   { id:"kiso",    label:"倫理経営基礎講座",   short:"基礎", color:"#2E7D32", venueFixed:false, hasLodging:true  },
   { id:"tsudoi",  label:"経営者の集い",       short:"集い", color:"#4E342E", venueFixed:false, hasLodging:true  },
   { id:"evening", label:"イブニングセミナー", short:"イブ", color:"#37474F", venueFixed:false, hasLodging:"optional" },

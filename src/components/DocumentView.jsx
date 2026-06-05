@@ -26,7 +26,7 @@ async function downloadPdf(elementId, filename) {
 }
 
 function DocSection({ title, color, children }) {
-  const c = color || "#1A3A6B";
+  const c = color || "#061B44";
   return (
     <div style={{ marginBottom:14 }}>
       <div style={{ fontSize:"11pt", fontWeight:700, color:c, marginBottom:4, letterSpacing:"0.05em" }}>{title}</div>
@@ -38,7 +38,7 @@ function DocSection({ title, color, children }) {
 }
 
 function DocRow({ label, value, color }) {
-  const c = color || "#1A3A6B";
+  const c = color || "#061B44";
   return (
     <tr>
       <th style={{ width:120, padding:"6px 10px", background:"#F5F6FA", border:"1px solid #D0D7E2", fontSize:"10.5pt", fontWeight:700, color:c, textAlign:"left", verticalAlign:"middle", whiteSpace:"nowrap" }}>{label}</th>
@@ -119,7 +119,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
   return (
     <div>
       <div className="no-print" style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B" }}>講師依頼確認書</div>
+        <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#061B44" }}>講師依頼確認書</div>
         <select style={{ ...SEL, minWidth:260 }} value={sel} onChange={e => { setSel(e.target.value); setDocSpeaker(speakers.find(x => x.id === e.target.value) || null); }}>
           <option value="">── 講師を選択 ──</option>
           {sortedSpeakers.map(sp => {
@@ -129,7 +129,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         </select>
         {recentSpeakers.length > 0 && (
           <div style={{ display:"flex", gap:5, alignItems:"center", flexWrap:"wrap", marginLeft:4 }}>
-            <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", fontWeight:600, whiteSpace:"nowrap" }}>最近：</span>
+            <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", fontWeight:600, whiteSpace:"nowrap" }}>最近：</span>
             {recentSpeakers.filter(r => r.id !== sel).slice(0,4).map(r => {
               const rc = getChapter(r.chapterId);
               return (
@@ -171,11 +171,11 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               }}
             >📎 PDF保存＋講師へメール</button>
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
-              {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
-              <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}
+              {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
+              <button style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}
                 disabled={sortedSpeakers.findIndex(x => x.id === sel) <= 0}
                 onClick={() => { const i = sortedSpeakers.findIndex(x => x.id === sel); if (i > 0) { const prev = sortedSpeakers[i-1]; setSel(prev.id); setDocSpeaker(prev); } }}>‹ 前</button>
-              <button style={{ background:"#ECEFF1", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}
+              <button style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}
                 disabled={sortedSpeakers.findIndex(x => x.id === sel) >= sortedSpeakers.length - 1}
                 onClick={() => { const i = sortedSpeakers.findIndex(x => x.id === sel); if (i < sortedSpeakers.length - 1) { const next = sortedSpeakers[i+1]; setSel(next.id); setDocSpeaker(next); } }}>次 ›</button>
             </div>
@@ -204,7 +204,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
 
         const mkHeader = (sheetSt, dateStr) => (
           <div style={{ textAlign:"center", marginBottom:20 }}>
-            <div style={{ fontSize:"10.5pt", color:"#546E7A", marginBottom:6, letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
+            <div style={{ fontSize:"10.5pt", color:"#667085", marginBottom:6, letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
             <div style={{ display:"inline-block", fontSize:"12pt", fontWeight:700, color:sheetSt.color,
               border:`2px solid ${sheetSt.color}`, padding:"4px 24px", marginBottom:8, letterSpacing:"0.15em" }}>
               {sheetSt.label}
@@ -363,7 +363,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               <tr>
                 <th style={{ width:120, padding:"6px 10px", background:"#F5F6FA", border:"1px solid #D0D7E2", fontSize:"10.5pt", fontWeight:700, color:c, textAlign:"left", verticalAlign:"middle" }}>顔写真プレビュー</th>
                 <td style={{ padding:"6px 10px", border:"1px solid #D0D7E2", background:"#fff" }}>
-                  <img src={sp.materialUrl} alt={sp.speakerName} style={{ height:80, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC" }} onError={e => { const tr = e.target.closest('tr'); if (tr) tr.style.display="none"; }} />
+                  <img src={sp.materialUrl} alt={sp.speakerName} style={{ height:80, objectFit:"cover", borderRadius:4, border:"1px solid #D9E1EE" }} onError={e => { const tr = e.target.closest('tr'); if (tr) tr.style.display="none"; }} />
                 </td>
               </tr>
             )}
@@ -387,7 +387,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         );
 
         const mkRemarks = (c, n) => (
-          <DocSection title={`${n} 備考・特記事項`} color="#546E7A">
+          <DocSection title={`${n} 備考・特記事項`} color="#667085">
             <tr>
               <td colSpan={2} style={{ padding:"8px 10px", border:"1px solid #D0D7E2",
                 fontSize:"10.5pt", color:"#263238", background:"#fff", minHeight:52, height:52,
@@ -400,14 +400,14 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
 
         const mkFooter = (c) => (
           <div style={{ marginTop:16, paddingTop:10, borderTop:`2px solid ${c}`,
-            fontSize:"10.5pt", color:"#546E7A", display:"flex", flexDirection:"column", gap:4 }}>
+            fontSize:"10.5pt", color:"#667085", display:"flex", flexDirection:"column", gap:4 }}>
             <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
               <div>
                 <span style={{ fontWeight:700 }}>【単会担当者】　{contactPerson || "　　　　　　"}</span>
                 {contactTel   && <span>　TEL：{contactTel}</span>}
                 {chapterEmail && <span>　Mail：<span style={{ color:"#1565C0" }}>{chapterEmail}</span></span>}
               </div>
-              <div style={{ color:"#90A4AE" }}>確認日　　年　　月　　日</div>
+              <div style={{ color:"#98A2B3" }}>確認日　　年　　月　　日</div>
             </div>
             <div>
               <span style={{ fontWeight:700 }}>【合同事務局】　倫理法人会　南部地区合同事務局</span>
@@ -529,8 +529,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           </div>
         );
       })() : (
-        <div style={{ textAlign:"center", padding:38, color:"#90A4AE", fontSize:"clamp(13px,1.8vw,16px)",
-          background:"#fff", borderRadius:8, border:"2px dashed #CFD8DC" }}>
+        <div style={{ textAlign:"center", padding:38, color:"#98A2B3", fontSize:"clamp(13px,1.8vw,16px)",
+          background:"#fff", borderRadius:8, border:"2px dashed #D9E1EE" }}>
           ← 上のセレクトボックスから講師を選択してください
         </div>
       )}

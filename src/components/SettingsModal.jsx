@@ -28,7 +28,7 @@ const DEFAULTS = ch => ({
 
 function SectionTitle({ children }) {
   return (
-    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:'#546E7A', background:'#ECEFF1',
+    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:'#667085', background:'#F1F5F9',
       padding:'5px 10px', borderRadius:4, margin:'12px 0 6px' }}>
       {children}
     </div>
@@ -38,7 +38,7 @@ function SectionTitle({ children }) {
 function Row({ label, children }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-      <div style={{ width:140, fontSize:"clamp(12px,1.4vw,14px)", color:'#546E7A', flexShrink:0, textAlign:'right', lineHeight:1.3 }}>
+      <div style={{ width:140, fontSize:"clamp(12px,1.4vw,14px)", color:'#667085', flexShrink:0, textAlign:'right', lineHeight:1.3 }}>
         {label}
       </div>
       <div style={{ flex:1 }}>{children}</div>
@@ -82,8 +82,8 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
             <button key={ch.id} onClick={() => setActiveId(ch.id)}
               style={{ padding:'5px 13px', fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, borderRadius:20, border:'none',
                 cursor:'pointer', transition:'background .15s',
-                background: activeId === ch.id ? ch.color : '#ECEFF1',
-                color:      activeId === ch.id ? '#fff'   : '#546E7A' }}>
+                background: activeId === ch.id ? ch.color : '#F1F5F9',
+                color:      activeId === ch.id ? '#fff'   : '#667085' }}>
               {ch.short || ch.name}
             </button>
           ))}
@@ -178,7 +178,7 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           <div style={{ height:8 }} />
         </div>
 
-        <div style={{ display:'flex', gap:8, marginTop:14, paddingTop:10, borderTop:'1px solid #ECEFF1' }}>
+        <div style={{ display:'flex', gap:8, marginTop:14, paddingTop:10, borderTop:'1px solid #F1F5F9' }}>
           <button style={{ ...BP, flex:1, opacity: saving ? .6 : 1 }} disabled={saving}
             onClick={() => onSave(activeId, form)}>
             {saving ? '保存中...' : '💾 この単会の設定を保存'}

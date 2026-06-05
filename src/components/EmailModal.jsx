@@ -152,12 +152,12 @@ ${sig}`,
         <div style={MH}>📧 メール送信</div>
 
         <div style={{ background: sp.email ? "#E3F2FD" : "#FFEBEE", borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
-          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>送信先</div>
+          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085" }}>送信先</div>
           {sp.email
             ? <div style={{ fontWeight:700, fontSize:"clamp(13px,1.8vw,16px)", color:"#1565C0" }}>{sp.email}</div>
             : <div style={{ fontWeight:700, fontSize:"clamp(13px,1.8vw,16px)", color:"#B71C1C" }}>⚠ メールアドレスが未登録です</div>
           }
-          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A", marginTop:2 }}>{sp.speakerName}　{formatDate(sp.seminarDate)}</div>
+          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginTop:2 }}>{sp.speakerName}　{formatDate(sp.seminarDate)}</div>
         </div>
 
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>メールの種類</div>

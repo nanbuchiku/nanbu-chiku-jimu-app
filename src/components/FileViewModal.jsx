@@ -85,9 +85,9 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
         {/* Header */}
         <div style={{ ...MH, marginBottom:10, position:'relative', paddingRight:36 }}>
           📎 <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayName}</span>
-          {speaker?.speakerName && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:'#90A4AE', whiteSpace:'nowrap' }}>{speaker.speakerName}</span>}
+          {speaker?.speakerName && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:'#98A2B3', whiteSpace:'nowrap' }}>{speaker.speakerName}</span>}
           <button onClick={onClose} aria-label="閉じる"
-            style={{ position:'absolute', top:-4, right:-4, width:32, height:32, borderRadius:'50%', border:'none', background:'#ECEFF1', color:'#37474F', fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
+            style={{ position:'absolute', top:-4, right:-4, width:32, height:32, borderRadius:'50%', border:'none', background:'#F1F5F9', color:'#37474F', fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}>
             ×
           </button>
         </div>
@@ -101,9 +101,9 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
             <iframe src={url} title={displayName}
               style={{ width:'100%', height:440, border:'none', borderRadius:8 }} />
           ) : (
-            <div style={{ textAlign:'center', color:'#90A4AE', padding:48 }}>
+            <div style={{ textAlign:'center', color:'#98A2B3', padding:48 }}>
               <div style={{ fontSize:"clamp(20px,3vw,28px)", lineHeight:1 }}>📄</div>
-              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", marginTop:14, color:'#CFD8DC' }}>{displayName}</div>
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", marginTop:14, color:'#D9E1EE' }}>{displayName}</div>
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", marginTop:6 }}>このファイル形式はプレビューできません</div>
             </div>
           )}

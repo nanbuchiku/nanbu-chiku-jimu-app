@@ -39,14 +39,14 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
   html, body { font-family: 'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo',sans-serif; font-size: 10pt; line-height: 1.5; color: #263238; background: #fff; }
 
   /* ヘッダー（form.htmlの header と同じ青グラデ） */
-  .head { background: linear-gradient(135deg,#0D1B3E 0%,#1A3A6B 100%); color:#fff; padding: 5mm 6mm; text-align:center; border-radius: 3mm; margin-bottom: 3mm; }
+  .head { background: linear-gradient(135deg,#061B44 0%,#061B44 100%); color:#fff; padding: 5mm 6mm; text-align:center; border-radius: 3mm; margin-bottom: 3mm; }
   .head .org { font-size: 8.5pt; letter-spacing: .15em; opacity: .9; margin-bottom: 1mm; }
   .head h1 { font-size: 16pt; font-weight: 800; letter-spacing: .05em; margin: 0; }
   .head .sub { font-size: 8.5pt; opacity: .85; margin-top: 1.2mm; }
 
   /* セミナー種別バッジ */
   .stype-wrap { text-align:center; margin: 0 0 3mm 0; }
-  .stype-badge { display: inline-block; background:#1A3A6B; color:#fff; font-weight:800; font-size:10pt; padding: 1.2mm 6mm; border-radius: 2mm; letter-spacing: .1em; }
+  .stype-badge { display: inline-block; background:#061B44; color:#fff; font-weight:800; font-size:10pt; padding: 1.2mm 6mm; border-radius: 2mm; letter-spacing: .1em; }
 
   /* 依頼内容バナー（form.htmlの event-banner と同じ） */
   .event-banner { background: linear-gradient(135deg,#EDE7F6,#E8EAF6); border: 1.5px solid #7E57C2; border-radius: 3mm; padding: 3mm 4mm; margin-bottom: 3mm; page-break-inside: avoid; }
@@ -57,7 +57,7 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
 
   /* セクションカード（form.htmlの section-card と同じ） */
   .section { background:#fff; border: 1px solid #D0D7E2; border-radius: 3mm; overflow: hidden; margin-bottom: 3mm; page-break-inside: avoid; }
-  .section-header { background:#1A3A6B; color:#fff; padding: 2mm 4mm; font-size: 10pt; font-weight: 800; letter-spacing: .04em; }
+  .section-header { background:#061B44; color:#fff; padding: 2mm 4mm; font-size: 10pt; font-weight: 800; letter-spacing: .04em; }
   .section-body { padding: 3mm 4mm; }
 
   /* フィールド */
@@ -65,8 +65,8 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
   .field:last-child { margin-bottom: 0; }
   .field-label { width: 34mm; flex-shrink: 0; font-size: 9pt; font-weight: 700; color:#37474F; padding-top: 1.5mm; line-height: 1.3; word-break: keep-all; }
   .field-label .req { color:#E53935; margin-left: 2px; }
-  .field-label .hint { display: block; font-size: 7.5pt; color:#90A4AE; font-weight: 400; margin-top: 0.3mm; line-height: 1.3; }
-  .field-input { flex: 1; min-height: 7mm; background:#FAFAFA; border: 1px solid #CFD8DC; border-radius: 1.5mm; padding: 1.5mm 2mm; font-size: 10pt; color:#263238; box-sizing: border-box; }
+  .field-label .hint { display: block; font-size: 7.5pt; color:#98A2B3; font-weight: 400; margin-top: 0.3mm; line-height: 1.3; }
+  .field-input { flex: 1; min-height: 7mm; background:#FAFAFA; border: 1px solid #D9E1EE; border-radius: 1.5mm; padding: 1.5mm 2mm; font-size: 10pt; color:#263238; box-sizing: border-box; }
   .field-input.printed { background: #fff; border-color:#fff; padding-left: 0; font-weight: 600; }
   .field-input.tall { min-height: 14mm; }
   .field-input.xtall { min-height: 32mm; }
@@ -78,7 +78,7 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
   /* チェックボックス（form.html の radio-item と同じ風） */
   .cbrow { display: flex; flex-wrap: wrap; gap: 1.5mm; }
   .cb { display: inline-flex; align-items: center; gap: 1.5mm; background:#F5F7FA; border: 1px solid #D0D7E2; border-radius: 1.5mm; padding: 1.2mm 3mm; font-size: 9.5pt; white-space: nowrap; }
-  .cb-box { display: inline-block; width: 3.5mm; height: 3.5mm; border: 1.3px solid #1A3A6B; background:#fff; border-radius: 0.5mm; flex-shrink: 0; }
+  .cb-box { display: inline-block; width: 3.5mm; height: 3.5mm; border: 1.3px solid #061B44; background:#fff; border-radius: 0.5mm; flex-shrink: 0; }
 
   /* 注意書き */
   .photo-warn { background:#FFEBEE; border-left: 3px solid #E53935; color:#B71C1C; padding: 1.8mm 3mm; font-size: 9pt; font-weight: 700; margin-bottom: 3mm; border-radius: 1.5mm; page-break-inside: avoid; }
@@ -87,11 +87,11 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
   .footer { background:#FFF8E1; border: 1.5px solid #FFC107; border-radius: 3mm; padding: 3mm 4mm; text-align:center; margin-top: 3mm; page-break-inside: avoid; }
   .footer .title { font-weight: 800; font-size: 10pt; color:#B71C1C; margin-bottom: 1.5mm; }
   .footer .body { font-size: 9.5pt; font-weight: 700; color:#263238; }
-  .footer .mail { font-size: 10.5pt; font-weight: 800; color:#1A3A6B; margin-top: 1mm; }
-  .footer .note { font-size: 8.5pt; color:#546E7A; margin-top: 2mm; line-height: 1.6; font-weight: 400; }
+  .footer .mail { font-size: 10.5pt; font-weight: 800; color:#061B44; margin-top: 1mm; }
+  .footer .note { font-size: 8.5pt; color:#667085; margin-top: 2mm; line-height: 1.6; font-weight: 400; }
 
   /* つづきページの小見出し */
-  .head-mini { background: linear-gradient(135deg,#0D1B3E 0%,#1A3A6B 100%); color:#fff; padding: 2mm 4mm; border-radius: 2mm; margin-bottom: 3mm; display:flex; justify-content:space-between; align-items:center; }
+  .head-mini { background: linear-gradient(135deg,#061B44 0%,#061B44 100%); color:#fff; padding: 2mm 4mm; border-radius: 2mm; margin-bottom: 3mm; display:flex; justify-content:space-between; align-items:center; }
   .head-mini .ttl { font-size: 11pt; font-weight: 800; letter-spacing: .05em; }
   .head-mini .sub { font-size: 8.5pt; opacity: .9; }
 
@@ -107,7 +107,7 @@ export function printFaxForm({ chapter, seminarDate, seminarType, chapterEmail, 
 
   /* 操作ボタン（印刷時非表示） */
   .noprint { text-align:center; margin: 6mm 0 10mm 0; }
-  .noprint button { background:#1A3A6B; color:#fff; border:none; border-radius:6px; padding: 9px 28px; font-size: 12pt; font-weight: 700; cursor: pointer; }
+  .noprint button { background:#061B44; color:#fff; border:none; border-radius:6px; padding: 9px 28px; font-size: 12pt; font-weight: 700; cursor: pointer; }
 </style></head><body>
 
 <!-- ===== PAGE 1 ===== -->

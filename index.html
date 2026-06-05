@@ -16,14 +16,16 @@
     <link rel="manifest" href="/rinri-nanbu/manifest.json" />
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background: #F0F2F5; color: #263238; overscroll-behavior: none; }
+      body { font-family: 'Hiragino Kaku Gothic ProN','Meiryo',sans-serif; background: #F4F5F7; color: #101828; overscroll-behavior: none; }
       button, a, label, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
       .hover-row:hover td { background: #F8FAFC !important; transition: background .1s; }
+      .person-panel { transition: background .15s, border-color .15s; }
+      .person-panel:hover { background: #E4ECFF !important; border-color: #B3C2FF !important; }
       button { transition: opacity .15s, box-shadow .15s; }
       button:hover:not(:disabled) { opacity: .88; }
       button:active:not(:disabled) { opacity: .75; }
       select, input, textarea { outline: none; font-family: inherit; }
-      select:focus, input:focus, textarea:focus { border-color: #1A3A6B !important; box-shadow: 0 0 0 2px rgba(26,58,107,.1); }
+      select:focus, input:focus, textarea:focus { border-color: #2563EB !important; box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
       button:focus-visible { outline: 2px solid #64B5F6; outline-offset: 2px; }
       html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
       ::-webkit-scrollbar { width: 6px; height: 6px; }

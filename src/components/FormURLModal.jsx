@@ -159,7 +159,7 @@ Mail：rinri.nanbu@gmail.com
                 <span>📠 メール・URLが使えない場合</span>
               </div>
               <button
-                style={{ width:"100%", background:"#fff", color:"#1A3A6B", border:"2px solid #1A3A6B", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }}
+                style={{ width:"100%", background:"#fff", color:"#061B44", border:"2px solid #061B44", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }}
                 onClick={printForm}>
                 🖨 FAX用紙を印刷（{SEMINAR_TYPES.find(t => t.id === (isNew ? form.seminarType : sp.seminarType))?.label || ''}用）
               </button>
