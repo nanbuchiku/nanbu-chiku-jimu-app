@@ -83,6 +83,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
     // 列定義（幅・キー）
     ws.columns = [
       { header:'単会名',         key:'chapter',    width:14 },
+      { header:'セミナー種別',   key:'stype',      width:18 },
       { header:'曜日',           key:'day',        width:8  },
       { header:'開催日',         key:'date',       width:13 },
       { header:'講師名',         key:'name',       width:18 },
@@ -116,7 +117,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
     // データ行追加
     flyerData.forEach(({ ch, sps }) => {
       if (sps.length === 0) {
-        const r = ws.addRow({ chapter: ch.name, day: ch.dayName, date:'未登録', name:'', kana:'', unit:'', role:'', company:'', companyRole:'', topic:'', photo:'' });
+        const r = ws.addRow({ chapter: ch.name, stype:'', day: ch.dayName, date:'未登録', name:'', kana:'', unit:'', role:'', company:'', companyRole:'', topic:'', photo:'' });
         r.eachCell({ includeEmpty:true }, cell => {
           cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb: chBg[ch.id] || 'FFFAFAFA' } };
         });
@@ -127,6 +128,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
           const photoUrl = sp.materialUrl ? `${sp.materialUrl}?download=${encodeURIComponent(dlName)}` : '';
           const r = ws.addRow({
             chapter: ch.name,
+            stype:   getSeminarType(sp.seminarType).label,
             day:     ch.dayName,
             date:    sp.seminarDate || '',
             name:    sp.speakerName || '',
@@ -162,8 +164,8 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         }
         cell.alignment = {
           vertical: 'middle',
-          horizontal: (colNumber === 1 || colNumber === 2 || colNumber === 3) ? 'center' : 'left',
-          wrapText: (colNumber === 10), // テーマ列のみ折返し
+          horizontal: (colNumber >= 1 && colNumber <= 4) ? 'center' : 'left', // 単会名・種別・曜日・開催日
+          wrapText: (colNumber === 11), // テーマ列のみ折返し
         };
         cell.border = {
           top:    { style:'thin', color:{ argb:'FFCFD8DC' } },
