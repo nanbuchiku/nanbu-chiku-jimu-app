@@ -4,11 +4,11 @@ import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate 
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
-  "依頼": "#1A3A6B",
+  "依頼": "#061B44",
   "宿泊": "#37474F",
   "資料": "#2E7D32",
   "当日": "#BF360C",
-  "講話後": "#546E7A",
+  "講話後": "#667085",
 };
 
 export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail, onEdit }) {
@@ -95,8 +95,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
         <div>
-          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B" }}>☑ 講師タスク管理 <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:"#90A4AE" }}>{visible.length}件</span></div>
-          {filtered.length > 0 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginTop:2 }}>全{filtered.length}名　タスク完了率 <span style={{ fontWeight:700, color: globalStats.pct === 100 ? "#2E7D32" : "#1A3A6B" }}>{globalStats.pct}%</span>（{globalStats.doneTasks}/{globalStats.totalTasks}件）　完全完了 {globalStats.completeSpeakers}名</div>}
+          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#061B44" }}>☑ 講師タスク管理 <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:"#98A2B3" }}>{visible.length}件</span></div>
+          {filtered.length > 0 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginTop:2 }}>全{filtered.length}名　タスク完了率 <span style={{ fontWeight:700, color: globalStats.pct === 100 ? "#2E7D32" : "#061B44" }}>{globalStats.pct}%</span>（{globalStats.doneTasks}/{globalStats.totalTasks}件）　完全完了 {globalStats.completeSpeakers}名</div>}
         </div>
         <input style={{ ...INP, width:140, fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="🔍 名前・会社検索" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
         <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
@@ -135,11 +135,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
           });
 
           return (
-            <div key={sp.id} style={{ ...CARD, borderTop:`4px solid ${ch?.color || "#1A3A6B"}`, opacity: allDone ? 0.7 : 1 }}>
+            <div key={sp.id} style={{ ...CARD, borderTop:`4px solid ${ch?.color || "#061B44"}`, opacity: allDone ? 0.7 : 1 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
                 <div>
                   <span style={PILL(ch)}>{ch?.name}</span>
-                  <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", marginLeft:6 }}>{sp.seminarDate}</span>
+                  <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", marginLeft:6 }}>{sp.seminarDate}</span>
                   {(() => {
                     const d = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
                     if (d === null) return null;
@@ -149,7 +149,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                   })()}
                   {allDone && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#E8F5E9", color:"#2E7D32", fontWeight:700, padding:"2px 7px", borderRadius:10, marginLeft:6 }}>✓ 完了</span>}
                 </div>
-                <button aria-label={isExpanded ? "折りたたむ" : "すべてのタスクを表示"} style={{ background:"none", border:"none", cursor:"pointer", fontSize:"clamp(16px,2.4vw,20px)", color:"#90A4AE" }} onClick={() => { if (expandAll) { setExpandAll(false); setExpandedId(null); } else setExpandedId(isExpanded ? null : sp.id); }}>
+                <button aria-label={isExpanded ? "折りたたむ" : "すべてのタスクを表示"} style={{ background:"none", border:"none", cursor:"pointer", fontSize:"clamp(16px,2.4vw,20px)", color:"#98A2B3" }} onClick={() => { if (expandAll) { setExpandAll(false); setExpandedId(null); } else setExpandedId(isExpanded ? null : sp.id); }}>
                   {isExpanded ? "▲" : "▼"}
                 </button>
               </div>
@@ -162,23 +162,23 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                   <button title="メール送信" style={{ background:"none", border:"1px solid #90CAF9", borderRadius:4, padding:"2px 6px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#1565C0" }} onClick={() => onEmail(sp)}>📧</button>
                 )}
                 {onEdit && (
-                  <button title="講師情報を編集" style={{ background:"none", border:"1px solid #B0BEC5", borderRadius:4, padding:"2px 6px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#546E7A" }} onClick={() => onEdit(sp)}>✏ 編集</button>
+                  <button title="講師情報を編集" style={{ background:"none", border:"1px solid #B0BEC5", borderRadius:4, padding:"2px 6px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#667085" }} onClick={() => onEdit(sp)}>✏ 編集</button>
                 )}
               </div>
-              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A", marginBottom:8, display:"flex", gap:6, flexWrap:"wrap" }}>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginBottom:8, display:"flex", gap:6, flexWrap:"wrap" }}>
                 {sp.speakerUnit && <span style={{ background:"#E8EAF6", color:"#3949AB", padding:"1px 7px", borderRadius:10, fontWeight:600 }}>{sp.speakerUnit}</span>}
                 {sp.role && <span style={{ background:"#F3E5F5", color:"#7B1FA2", padding:"1px 7px", borderRadius:10 }}>{sp.role}</span>}
-                {sp.company && <span style={{ background:"#ECEFF1", color:"#546E7A", padding:"1px 7px", borderRadius:10 }}>{sp.company}</span>}
+                {sp.company && <span style={{ background:"#F1F5F9", color:"#667085", padding:"1px 7px", borderRadius:10 }}>{sp.company}</span>}
                 {sp.companyRole && <span style={{ background:"#FFF3E0", color:"#E65100", padding:"1px 7px", borderRadius:10 }}>{sp.companyRole}</span>}
               </div>
 
               <div style={{ marginBottom:10 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3 }}>
                   <span>{prog.done} / {prog.total} 完了</span>
-                  <span style={{ fontWeight:700, color: allDone ? "#2E7D32" : "#1A3A6B" }}>{prog.pct}%</span>
+                  <span style={{ fontWeight:700, color: allDone ? "#2E7D32" : "#061B44" }}>{prog.pct}%</span>
                 </div>
                 <div style={{ background:"#E0E0E0", borderRadius:4, height:6 }}>
-                  <div style={{ width:`${prog.pct}%`, background: allDone ? "#2E7D32" : "#1A3A6B", borderRadius:4, height:6, transition:"width .3s" }} />
+                  <div style={{ width:`${prog.pct}%`, background: allDone ? "#2E7D32" : "#061B44", borderRadius:4, height:6, transition:"width .3s" }} />
                 </div>
               </div>
 
@@ -186,7 +186,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                 const visibleTasks = isExpanded ? catTasks : catTasks.filter(t => !checks[t.id]);
                 if (visibleTasks.length === 0) return null;
                 const catAllDone = catTasks.every(t => checks[t.id]);
-                const catColor = TASK_CATEGORY_COLOR[cat] || "#546E7A";
+                const catColor = TASK_CATEGORY_COLOR[cat] || "#667085";
                 return (
                   <div key={cat} style={{ marginBottom:8 }}>
                     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
@@ -214,7 +214,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               })}
 
               {!isExpanded && prog.done > 0 && (
-                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", textAlign:"center", marginTop:4 }}>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", textAlign:"center", marginTop:4 }}>
                   ✓ 完了済み {prog.done}件を非表示 <span style={{ cursor:"pointer", color:"#1565C0" }} onClick={() => setExpandedId(sp.id)}>すべて見る</span>
                 </div>
               )}
@@ -237,9 +237,9 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               )}
               {(sp.postNotes || sp.drinksAlcohol || sp.shioriArticle) && (
                 <div style={{ marginTop:6, padding:"8px 10px", background:"#F8F9FA", borderRadius:6, borderLeft:"3px solid #78909C" }}>
-                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:4 }}>📝 講話後メモ</div>
-                  {sp.drinksAlcohol && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>お酒：{sp.drinksAlcohol}</div>}
-                  {sp.shioriArticle && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>栞：{sp.shioriArticle}</div>}
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#667085", marginBottom:4 }}>📝 講話後メモ</div>
+                  {sp.drinksAlcohol && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085" }}>お酒：{sp.drinksAlcohol}</div>}
+                  {sp.shioriArticle && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085" }}>栞：{sp.shioriArticle}</div>}
                   {sp.postNotes && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#263238", marginTop:4, whiteSpace:"pre-wrap" }}>{sp.postNotes}</div>}
                 </div>
               )}
@@ -249,7 +249,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       </div>
 
       {visible.length === 0 && (
-        <div style={{ ...CARD, textAlign:"center", color:"#90A4AE", padding:40 }}>
+        <div style={{ ...CARD, textAlign:"center", color:"#98A2B3", padding:40 }}>
           {filtered.length === 0 ? "講師データがありません" : "該当する講師タスクがありません"}
         </div>
       )}

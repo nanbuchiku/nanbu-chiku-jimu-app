@@ -312,7 +312,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
               })()}
               {k === "seminarDate" && !form.seminarDate && suggestDates.length > 0 && (
                 <div style={{ marginTop:5, display:"flex", gap:4, flexWrap:"wrap", alignItems:"center" }}>
-                  <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", fontWeight:600 }}>次回：</span>
+                  <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", fontWeight:600 }}>次回：</span>
                   {suggestDates.map(d => (
                     <button key={d} type="button" style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#E3F2FD", border:"1px solid #90CAF9", borderRadius:10, padding:"2px 8px", color:"#1565C0", cursor:"pointer", fontWeight:700 }} onClick={() => set("seminarDate", d)}>{d}</button>
                   ))}
@@ -340,10 +340,10 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>
               開催場所
-              {st.venueFixed && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", marginLeft:6 }}>※ 単会マスターから自動取得</span>}
+              {st.venueFixed && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", marginLeft:6 }}>※ 単会マスターから自動取得</span>}
             </div>
             {st.venueFixed ? (
-              <div style={{ ...INP, background:"#F5F5F5", color:"#90A4AE", cursor:"not-allowed", display:"flex", alignItems:"center" }}>
+              <div style={{ ...INP, background:"#F5F5F5", color:"#98A2B3", cursor:"not-allowed", display:"flex", alignItems:"center" }}>
                 {ch.venue}
               </div>
             ) : (
@@ -359,7 +359,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             <div style={{ display:"flex", gap:6, alignItems:"center" }}>
               <input disabled={saving || uploading} type="url" style={{ ...INP, flex:1, opacity:(saving||uploading) ? .6 : 1 }}
                 placeholder="https://... またはアップロードボタンを使用" value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
-              <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: uploading ? "#90A4AE" : "#1565C0", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: uploading ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", flexShrink:0, userSelect:"none" }}>
+              <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: uploading ? "#98A2B3" : "#1565C0", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: uploading ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", flexShrink:0, userSelect:"none" }}>
                 {uploading ? "⏳ 送信中…" : "📤 アップロード"}
                 <input ref={fileInputRef} type="file" accept="image/*,.pdf" style={{ display:"none" }} onChange={handleFileUpload} disabled={uploading || saving} />
               </label>
@@ -387,7 +387,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               {/* 資料1 */}
               <div style={{ flex:"1 1 200px" }}>
-                <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: docUploading1 ? "#90A4AE" : "#E65100", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: docUploading1 ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", userSelect:"none" }}>
+                <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: docUploading1 ? "#98A2B3" : "#E65100", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: docUploading1 ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", userSelect:"none" }}>
                   {docUploading1 ? "⏳ 送信中…" : "📄 資料①をアップロード"}
                   <input ref={docInput1Ref} type="file" accept="image/*,.pdf" style={{ display:"none" }} onChange={e => handleDocUpload(e, 1, setDocUploading1, docInput1Ref)} disabled={docUploading1 || saving} />
                 </label>
@@ -401,7 +401,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
               </div>
               {/* 資料2 */}
               <div style={{ flex:"1 1 200px" }}>
-                <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: docUploading2 ? "#90A4AE" : "#4E342E", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: docUploading2 ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", userSelect:"none" }}>
+                <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: docUploading2 ? "#98A2B3" : "#4E342E", color:"#fff", borderRadius:6, padding:"8px 14px", cursor: docUploading2 ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", userSelect:"none" }}>
                   {docUploading2 ? "⏳ 送信中…" : "📄 資料②をアップロード"}
                   <input ref={docInput2Ref} type="file" accept="image/*,.pdf" style={{ display:"none" }} onChange={e => handleDocUpload(e, 2, setDocUploading2, docInput2Ref)} disabled={docUploading2 || saving} />
                 </label>
@@ -420,7 +420,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             <button
               type="button"
               disabled={saving}
-              style={{ width:"100%", background: showDetail ? "#1A3A6B" : "#ECEFF1", color: showDetail ? "#fff" : "#546E7A", border:"none", borderRadius:8, padding:"10px 16px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor: saving ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between", opacity: saving ? .6 : 1 }}
+              style={{ width:"100%", background: showDetail ? "#061B44" : "#F1F5F9", color: showDetail ? "#fff" : "#667085", border:"none", borderRadius:8, padding:"10px 16px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor: saving ? "not-allowed" : "pointer", display:"flex", alignItems:"center", justifyContent:"space-between", opacity: saving ? .6 : 1 }}
               onClick={() => setShowDetail(v => !v)}
             >
               <span>📋 詳細入力（FAX返信用）</span>
@@ -441,7 +441,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                     value={detailFromNotes.summary || ""}
                     onChange={e => setDetailField('内容要約', e.target.value)}
                   />
-                  <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:(detailFromNotes.summary||"").length >= 300 ? "#E53935" : "#90A4AE", textAlign:"right" }}>
+                  <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:(detailFromNotes.summary||"").length >= 300 ? "#E53935" : "#98A2B3", textAlign:"right" }}>
                     {(detailFromNotes.summary||"").length} / 300文字
                   </div>
                 </div>
@@ -453,8 +453,8 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                     {["お車","電車","その他"].map(v => {
                       const sel = detailFromNotes['交通手段'] === v;
                       return (
-                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
-                          <input type="radio" name="detail-transport" value={v} checked={sel} onChange={() => setDetailField('交通手段', v)} style={{ accentColor:"#1A3A6B" }} disabled={saving} />
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#061B44" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                          <input type="radio" name="detail-transport" value={v} checked={sel} onChange={() => setDetailField('交通手段', v)} style={{ accentColor:"#061B44" }} disabled={saving} />
                           {v}
                         </label>
                       );
@@ -469,12 +469,12 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                     {["プロジェクタ","パソコン","ホワイトボード","その他","無し"].map(v => {
                       const checked = detailFromNotes.prepareArr.includes(v);
                       return (
-                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: checked ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${checked ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: checked ? 700 : 400 }}>
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: checked ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${checked ? "#061B44" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: checked ? 700 : 400 }}>
                           <input type="checkbox" checked={checked} disabled={saving} onChange={() => {
                             const cur = detailFromNotes.prepareArr;
                             const next = checked ? cur.filter(x => x !== v) : [...cur, v];
                             setDetailField('単会で準備', next);
-                          }} style={{ accentColor:"#1A3A6B" }} />
+                          }} style={{ accentColor:"#061B44" }} />
                           {v}
                         </label>
                       );
@@ -491,8 +491,8 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                         {["禁煙","喫煙","どちらでも"].map(v => {
                           const sel = detailFromNotes['禁煙ルーム'] === v;
                           return (
-                            <label key={v} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"6px 12px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
-                              <input type="radio" name="detail-room" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('禁煙ルーム', v)} style={{ accentColor:"#1A3A6B" }} />
+                            <label key={v} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#061B44" : "#D0D7E2"}`, borderRadius:7, padding:"6px 12px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                              <input type="radio" name="detail-room" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('禁煙ルーム', v)} style={{ accentColor:"#061B44" }} />
                               {v}
                             </label>
                           );
@@ -505,8 +505,8 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                         {["要","不要"].map(v => {
                           const sel = detailFromNotes['お迎え'] === v;
                           return (
-                            <label key={v} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"6px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
-                              <input type="radio" name="detail-pickup" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('お迎え', v)} style={{ accentColor:"#1A3A6B" }} />
+                            <label key={v} style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#061B44" : "#D0D7E2"}`, borderRadius:7, padding:"6px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                              <input type="radio" name="detail-pickup" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('お迎え', v)} style={{ accentColor:"#061B44" }} />
                               {v}
                             </label>
                           );
@@ -523,8 +523,8 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                     {["個人宛","会社宛"].map(v => {
                       const sel = detailFromNotes['領収証宛名'] === v;
                       return (
-                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 18px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
-                          <input type="radio" name="detail-receipt" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('領収証宛名', v)} style={{ accentColor:"#1A3A6B" }} />
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#061B44" : "#D0D7E2"}`, borderRadius:7, padding:"7px 18px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                          <input type="radio" name="detail-receipt" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('領収証宛名', v)} style={{ accentColor:"#061B44" }} />
                           {v}
                         </label>
                       );
@@ -549,8 +549,8 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                     {["全媒体承諾","公式HPのみ","Facebookのみ","要相談"].map(v => {
                       const sel = detailFromNotes['顔写真の使用範囲'] === v;
                       return (
-                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#1A3A6B" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
-                          <input type="radio" name="detail-photouse" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('顔写真の使用範囲', v)} style={{ accentColor:"#1A3A6B" }} />
+                        <label key={v} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", background: sel ? "#E8EDF7" : "#F5F7FA", border:`1.5px solid ${sel ? "#061B44" : "#D0D7E2"}`, borderRadius:7, padding:"7px 14px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: sel ? 700 : 400 }}>
+                          <input type="radio" name="detail-photouse" value={v} checked={sel} disabled={saving} onChange={() => setDetailField('顔写真の使用範囲', v)} style={{ accentColor:"#061B44" }} />
                           {v}
                         </label>
                       );
@@ -568,7 +568,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
           </div>
 
           <div style={{ gridColumn:"1/-1", borderTop:"2px dashed #E0E0E0", paddingTop:12, marginTop:4 }}>
-            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#546E7A", marginBottom:8 }}>📝 講話後メモ（終了後に記入）</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#667085", marginBottom:8 }}>📝 講話後メモ（終了後に記入）</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div>
                 <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>お酒を飲むか</div>
@@ -627,7 +627,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 </div>
               );
             })}
-            {pastTalks.length > 3 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE" }}>…他{pastTalks.length - 3}件</div>}
+            {pastTalks.length > 3 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3" }}>…他{pastTalks.length - 3}件</div>}
           </div>
         )}
         {duplicate && (
@@ -638,7 +638,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
         {hasDraft && isNew && !initial && (
           <div style={{ marginTop:8, padding:"6px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#E65100", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <span>📝 前回の入力内容を復元しました</span>
-            <button style={{ background:"none", border:"none", fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", cursor:"pointer", textDecoration:"underline" }} onClick={() => { clearDraft(); setForm({ ...BLANK, chapterId: form.chapterId, requestDate: form.requestDate }); }}>クリア</button>
+            <button style={{ background:"none", border:"none", fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", cursor:"pointer", textDecoration:"underline" }} onClick={() => { clearDraft(); setForm({ ...BLANK, chapterId: form.chapterId, requestDate: form.requestDate }); }}>クリア</button>
           </div>
         )}
         {isPastDate && (

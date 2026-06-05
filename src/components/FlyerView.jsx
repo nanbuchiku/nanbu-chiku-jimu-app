@@ -393,20 +393,20 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
-        <div style={{ fontSize:FS_MD, fontWeight:700, color:"#1A3A6B" }}>📋 チラシ流し込みデータ管理</div>
+        <div style={{ fontSize:FS_MD, fontWeight:700, color:"#061B44" }}>📋 チラシ流し込みデータ管理</div>
         <select style={{ ...SEL, fontWeight:700 }} value={selMonth} onChange={e => setSelMonth(e.target.value)}>
           {months.map(m => <option key={m.value} value={m.value}>{m.isPast ? "📁 " : ""}{m.label}　{m.readyCount === 5 ? "✓完成" : `${m.readyCount}件`}</option>)}
         </select>
         <div style={{ marginLeft:"auto", display:"flex", gap:8, flexWrap:"wrap" }}>
           <button style={BP} onClick={() => { navigator.clipboard?.writeText(buildLineText).catch(() => {}); showToast("LINEテキストをコピーしました！グループに貼り付けてください 📱"); }}>📱 LINE</button>
           <button style={{ ...BP, background:"#1B5E20" }} onClick={() => setShowEmailModal(true)}>📧 印刷会社へメール</button>
-          <button style={{ ...BP, background: downloading ? "#90A4AE" : "#6A1B9A", cursor: downloading ? "not-allowed" : "pointer" }} onClick={downloadExcelZip} disabled={downloading}>
+          <button style={{ ...BP, background: downloading ? "#98A2B3" : "#6A1B9A", cursor: downloading ? "not-allowed" : "pointer" }} onClick={downloadExcelZip} disabled={downloading}>
             {downloading ? '⏳ 作成中...' : '📊 ZIP（メール用）'}
           </button>
-          <button style={{ ...BP, background: downloadingFull ? "#90A4AE" : "#1565C0", cursor: downloadingFull ? "not-allowed" : "pointer" }} onClick={downloadFullZip} disabled={downloadingFull}>
+          <button style={{ ...BP, background: downloadingFull ? "#98A2B3" : "#1565C0", cursor: downloadingFull ? "not-allowed" : "pointer" }} onClick={downloadFullZip} disabled={downloadingFull}>
             {downloadingFull ? '⏳ 取得中...' : '📦 ZIP（写真込み）'}
           </button>
-          <button style={{ ...BP, background: savingDrive ? "#90A4AE" : "#1B5E20", cursor: savingDrive ? "not-allowed" : "pointer" }} onClick={saveToDrive} disabled={savingDrive}>
+          <button style={{ ...BP, background: savingDrive ? "#98A2B3" : "#1B5E20", cursor: savingDrive ? "not-allowed" : "pointer" }} onClick={saveToDrive} disabled={savingDrive}>
             {savingDrive ? '⏳ 保存中...' : '☁ Googleドライブに保存'}
           </button>
         </div>
@@ -416,7 +416,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
       <div style={{ ...CARD, marginBottom:12, borderLeft:`5px solid ${deadlineColor}`, padding:"10px 16px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
           <div>
-            <div style={{ fontSize:FS_SM, color:"#546E7A" }}>データ送付締め切り</div>
+            <div style={{ fontSize:FS_SM, color:"#667085" }}>データ送付締め切り</div>
             <div style={{ fontSize:FS_MD, fontWeight:800, color: deadlineColor }}>
               {year}年{month}月10日
               <span style={{ fontSize:FS_SM, marginLeft:10 }}>
@@ -436,8 +436,8 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
       {/* 単会別 データ完成度 */}
       <div style={{ ...CARD, padding:"10px 14px", marginBottom:8 }}>
         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-          <div style={{ fontSize:FS_SM, fontWeight:700, color:"#546E7A" }}>単会別 データ完成度</div>
-          <div style={{ fontSize:FS_SM, color:"#90A4AE" }}>— 「予定」欄に講話者の人数を入力してください</div>
+          <div style={{ fontSize:FS_SM, fontWeight:700, color:"#667085" }}>単会別 データ完成度</div>
+          <div style={{ fontSize:FS_SM, color:"#98A2B3" }}>— 「予定」欄に講話者の人数を入力してください</div>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:8 }}>
           {completeness.map(({ ch, pct, missing, ready, expected, registered }) => {
@@ -453,17 +453,17 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                 </div>
                 {/* 予定人数 ステッパー */}
                 <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:5 }}>
-                  <span style={{ fontSize:FS_SM, color:"#546E7A" }}>予定</span>
+                  <span style={{ fontSize:FS_SM, color:"#667085" }}>予定</span>
                   <button
                     onClick={() => setExpected(key, (expectedCounts[key] || Math.max(registered, 1)) - 1)}
-                    style={{ width:26, height:26, borderRadius:5, border:"1px solid #B0BEC5", background:"#ECEFF1", fontSize:FS_SM, lineHeight:1, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#546E7A" }}>−</button>
-                  <span style={{ minWidth:22, textAlign:"center", fontSize:FS_SM, fontWeight:800, color:"#1A3A6B" }}>
+                    style={{ width:26, height:26, borderRadius:5, border:"1px solid #B0BEC5", background:"#F1F5F9", fontSize:FS_SM, lineHeight:1, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#667085" }}>−</button>
+                  <span style={{ minWidth:22, textAlign:"center", fontSize:FS_SM, fontWeight:800, color:"#061B44" }}>
                     {expectedCounts[key] || Math.max(registered, 1)}
                   </span>
                   <button
                     onClick={() => setExpected(key, (expectedCounts[key] || Math.max(registered, 1)) + 1)}
-                    style={{ width:26, height:26, borderRadius:5, border:"1px solid #B0BEC5", background:"#ECEFF1", fontSize:FS_SM, lineHeight:1, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#546E7A" }}>＋</button>
-                  <span style={{ fontSize:FS_SM, color:"#546E7A" }}>名中 {ready}名完成</span>
+                    style={{ width:26, height:26, borderRadius:5, border:"1px solid #B0BEC5", background:"#F1F5F9", fontSize:FS_SM, lineHeight:1, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, color:"#667085" }}>＋</button>
+                  <span style={{ fontSize:FS_SM, color:"#667085" }}>名中 {ready}名完成</span>
                 </div>
                 <div style={{ background:"#E0E0E0", borderRadius:3, height:6, overflow:"hidden" }}>
                   <div style={{ height:6, borderRadius:3, width:`${pct}%`, background: pct === 100 ? "#2E7D32" : pct === 0 ? "#B71C1C" : "#FF8F00", transition:"width .4s" }} />
@@ -491,7 +491,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                 if (sps.length === 0) {
                   return (
                     <tr key={ch.id} className="hover-row">
-                      <td style={TD}><span style={PILL(ch)}>{ch.name}</span><div style={{ fontSize:FS_SM, color:"#90A4AE", marginTop:2 }}>{ch.dayName}</div></td>
+                      <td style={TD}><span style={PILL(ch)}>{ch.name}</span><div style={{ fontSize:FS_SM, color:"#98A2B3", marginTop:2 }}>{ch.dayName}</div></td>
                       <td style={TD}>{none}</td>
                       <td style={TD}><span style={{ color:"#B71C1C", fontWeight:700 }}>未登録</span></td>
                       {Array(9).fill(0).map((_, i) => <td key={i} style={TD}>{none}</td>)}
@@ -515,13 +515,13 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                       {idx === 0 ? (
                         <td style={{ ...TD, verticalAlign:"top" }} rowSpan={sps.length}>
                           <span style={PILL(ch)}>{ch.name}</span>
-                          <div style={{ fontSize:FS_SM, color:"#90A4AE", marginTop:2 }}>{ch.dayName}</div>
+                          <div style={{ fontSize:FS_SM, color:"#98A2B3", marginTop:2 }}>{ch.dayName}</div>
                           {sps.length > 1 && <div style={{ marginTop:4, fontSize:FS_SM, color:ch.color, fontWeight:700 }}>{sps.length}名</div>}
                         </td>
                       ) : null}
                       <td style={{ ...TD, fontSize:FS_SM, whiteSpace:"nowrap" }}>{sp.seminarDate || none}</td>
                       <td style={{ ...TD, fontWeight:700, fontSize:FS_SM, whiteSpace:"nowrap" }}>{sp.speakerName || none}</td>
-                      <td style={{ ...TD, fontSize:FS_SM, color:"#546E7A" }}>{sp.speakerKana || none}</td>
+                      <td style={{ ...TD, fontSize:FS_SM, color:"#667085" }}>{sp.speakerKana || none}</td>
                       <td style={{ ...TD, fontSize:FS_SM }}>{sp.speakerUnit || none}</td>
                       <td style={{ ...TD, fontSize:FS_SM }}>{sp.role || none}</td>
                       <td style={{ ...TD, fontSize:FS_SM }}>{sp.company || none}</td>
@@ -531,7 +531,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                         {sp.materialUrl ? (
                           <a href={sp.materialUrl} target="_blank" rel="noreferrer" style={{ fontSize:FS_SM, color:"#1565C0", display:"flex", alignItems:"center", gap:6, textDecoration:"none", whiteSpace:"nowrap" }}>
                             {(/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/')) ? (
-                              <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:40, height:40, objectFit:"cover", borderRadius:4, border:"1px solid #CFD8DC", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
+                              <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName} style={{ width:40, height:40, objectFit:"cover", borderRadius:4, border:"1px solid #D9E1EE", flexShrink:0 }} onError={e => { e.target.style.display="none"; }} />
                             ) : null}
                             <span>📁 開く</span>
                           </a>
@@ -561,7 +561,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                             {updateSpeaker && (
                               <button title="チラシへの反映を確認したらバッジを消します"
                                 onClick={() => updateSpeaker(sp.id, { speakerChecks: { ...ck, _flyerConfirmedAt: new Date().toISOString() } })}
-                                style={{ fontSize:FS_SM, fontWeight:700, color:"#546E7A", background:"#fff", border:"1px solid #CFD8DC", borderRadius:10, padding:"2px 8px", cursor:"pointer", whiteSpace:"nowrap" }}>
+                                style={{ fontSize:FS_SM, fontWeight:700, color:"#667085", background:"#fff", border:"1px solid #D9E1EE", borderRadius:10, padding:"2px 8px", cursor:"pointer", whiteSpace:"nowrap" }}>
                                 ✓ 確認済み
                               </button>
                             )}
@@ -599,7 +599,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
               {/* ヒントバッジ */}
               <div onClick={() => setShowScrollHint(false)} style={{
                 position:"absolute", right:6, top:"50%", transform:"translateY(-50%)",
-                background:"#1A3A6B", color:"#fff", borderRadius:20,
+                background:"#061B44", color:"#fff", borderRadius:20,
                 padding:"5px 11px", fontSize:11, fontWeight:700,
                 whiteSpace:"nowrap", cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,.28)",
                 display:"flex", alignItems:"center", gap:4,

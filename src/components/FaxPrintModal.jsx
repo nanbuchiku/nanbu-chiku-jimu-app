@@ -27,16 +27,16 @@ export default memo(function FaxPrintModal({ defaultChapterId, onClose, showToas
     onClose();
   }, [chapter, seminarDate, seminarType, showToast, onClose]);
 
-  const LB   = { display:"block", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#1A3A6B", marginBottom:4 };
-  const INP2 = { width:"100%", border:"1.5px solid #90A4AE", borderRadius:6, padding:"8px 10px", fontSize:"clamp(13px,1.6vw,15px)", background:"#fff" };
+  const LB   = { display:"block", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#061B44", marginBottom:4 };
+  const INP2 = { width:"100%", border:"1.5px solid #98A2B3", borderRadius:6, padding:"8px 10px", fontSize:"clamp(13px,1.6vw,15px)", background:"#fff" };
 
   return (
     <div style={OV} onClick={onClose} role="presentation">
       <div role="dialog" aria-modal="true" aria-label="FAX汎用フォーマット印刷" style={{ ...MOD, maxWidth:520 }} onClick={e => e.stopPropagation()}>
         <div style={MH}>🖨 FAX汎用フォーマット印刷</div>
 
-        <div style={{ background:"linear-gradient(135deg,#E3F2FD,#E8EAF6)", border:"2px solid #1A3A6B", borderRadius:12, padding:"18px 20px", marginTop:12 }}>
-          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, color:"#1A3A6B", marginBottom:14 }}>
+        <div style={{ background:"linear-gradient(135deg,#E3F2FD,#E8EAF6)", border:"2px solid #061B44", borderRadius:12, padding:"18px 20px", marginTop:12 }}>
+          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, color:"#061B44", marginBottom:14 }}>
             印刷内容の選択
           </div>
 
@@ -70,16 +70,16 @@ export default memo(function FaxPrintModal({ defaultChapterId, onClose, showToas
           </div>
 
           <div style={{ marginTop:14, padding:"10px 12px", background:"#fff", borderRadius:6, border:"1px solid #B0BEC5", fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.7 }}>
-            <div style={{ fontWeight:700, color:"#1A3A6B", marginBottom:4 }}>📄 印刷プレビュー</div>
+            <div style={{ fontWeight:700, color:"#061B44", marginBottom:4 }}>📄 印刷プレビュー</div>
             <div><strong>{chapter?.name}単会</strong>　／　<strong>{typeLabel}</strong></div>
-            <div style={{ color:"#546E7A" }}>会場：{chapter?.venue || '（未設定）'}</div>
-            <div style={{ color:"#546E7A" }}>時間：{chapter?.time  || '（未設定）'}</div>
-            <div style={{ color:"#546E7A" }}>日付：{seminarDate ? formatDate(seminarDate) : '（手書き欄）'}</div>
+            <div style={{ color:"#667085" }}>会場：{chapter?.venue || '（未設定）'}</div>
+            <div style={{ color:"#667085" }}>時間：{chapter?.time  || '（未設定）'}</div>
+            <div style={{ color:"#667085" }}>日付：{seminarDate ? formatDate(seminarDate) : '（手書き欄）'}</div>
           </div>
 
           <button
             onClick={handlePrint}
-            style={{ marginTop:16, width:"100%", background:"#1A3A6B", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(14px,1.8vw,16px)", fontWeight:700, cursor:"pointer" }}>
+            style={{ marginTop:16, width:"100%", background:"#061B44", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(14px,1.8vw,16px)", fontWeight:700, cursor:"pointer" }}>
             🖨 印刷ダイアログを開く
           </button>
 

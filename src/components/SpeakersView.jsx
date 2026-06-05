@@ -152,7 +152,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
   const sortBtn = (col, label) => (
     <button onClick={() => toggleSort(col)}
-      style={{ background:"none", border:"none", cursor:"pointer", color: sortCol === col ? "#1A3A6B" : "#78909C", fontWeight: sortCol === col ? 700 : 500, fontSize:"var(--fs-sm)", padding:"4px 6px", display:"flex", alignItems:"center", gap:3 }}>
+      style={{ background:"none", border:"none", cursor:"pointer", color: sortCol === col ? "#061B44" : "#78909C", fontWeight: sortCol === col ? 700 : 500, fontSize:"var(--fs-sm)", padding:"4px 6px", display:"flex", alignItems:"center", gap:3 }}>
       {label}
       <span style={{ fontSize:"var(--fs-xs)", opacity: sortCol === col ? 1 : 0.4 }}>{sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
     </button>
@@ -162,9 +162,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     <div>
       {/* ── Toolbar ─────────────────────────────── */}
       <div className="no-print" style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, flexWrap:"wrap" }}>
-        <div style={{ fontSize:"clamp(20px,4.5vw,34px)", fontWeight:700, color:"#1A3A6B" }}>
+        <div style={{ fontSize:"clamp(20px,4.5vw,34px)", fontWeight:700, color:"#061B44" }}>
           講師管理
-          <span style={{ fontSize:"clamp(13px,2.6vw,24px)", fontWeight:400, color:"#90A4AE", marginLeft:10 }}>{filtered.length}/{speakers.length}件</span>
+          <span style={{ fontSize:"clamp(13px,2.6vw,24px)", fontWeight:400, color:"#98A2B3", marginLeft:10 }}>{filtered.length}/{speakers.length}件</span>
         </div>
         <div style={{ display:"flex", gap:8, marginLeft:"auto", flexWrap:"wrap", alignItems:"center", minWidth:0 }}>
           <input style={{ ...INP, flex:"1 1 200px", minWidth:0, maxWidth:340 }} placeholder="🔍 名前・ふりがな・会社・テーマ" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
@@ -178,12 +178,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           </select>
           <button style={{ ...BP, background:"#2E7D32" }} onClick={exportCSV}>📥 CSV</button>
           {pastConfirmedCount > 0 && (
-            <button style={{ ...BP, background:"#546E7A" }} onClick={bulkComplete} title={`過去の確定済み${pastConfirmedCount}件を一括終了`}>
+            <button style={{ ...BP, background:"#667085" }} onClick={bulkComplete} title={`過去の確定済み${pastConfirmedCount}件を一括終了`}>
               ✓ 過去{pastConfirmedCount}件を終了
             </button>
           )}
           <button style={{ ...BC }} onClick={() => window.print()} title="印刷">🖨 印刷</button>
-          <button style={{ ...BC, background:"#E8EAF6", color:"#1A3A6B", fontWeight:700 }} onClick={() => setShowFaxModal(true)} title="FAX用 講師依頼確認書を印刷">📠 FAX</button>
+          <button style={{ ...BC, background:"#E8EAF6", color:"#061B44", fontWeight:700 }} onClick={() => setShowFaxModal(true)} title="FAX用 講師依頼確認書を印刷">📠 FAX</button>
           <button style={{ ...BP }} onClick={onAdd}>＋ 新規登録</button>
         </div>
       </div>
@@ -200,13 +200,13 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       <div className="no-print" style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
         <span style={{ fontSize:"var(--fs-sm)", color:"#78909C", fontWeight:600 }}>期間：</span>
         <select value={dateRange} onChange={e => setDateRangePersist(e.target.value)}
-          style={{ ...SEL, borderRadius:14, border:`1px solid ${dateRange !== "all" ? "#1A3A6B" : "#CFD8DC"}`, background: dateRange !== "all" ? "#1A3A6B" : "#fff", color: dateRange !== "all" ? "#fff" : "#546E7A", fontWeight: dateRange !== "all" ? 700 : 400 }}>
+          style={{ ...SEL, borderRadius:14, border:`1px solid ${dateRange !== "all" ? "#061B44" : "#D9E1EE"}`, background: dateRange !== "all" ? "#061B44" : "#fff", color: dateRange !== "all" ? "#fff" : "#667085", fontWeight: dateRange !== "all" ? 700 : 400 }}>
           {DATE_RANGES.map(r => (
-            <option key={r.value} value={r.value} style={{ background:"#fff", color:"#546E7A" }}>{r.label}</option>
+            <option key={r.value} value={r.value} style={{ background:"#fff", color:"#667085" }}>{r.label}</option>
           ))}
         </select>
         <button onClick={() => setShowActionOnly(v => !v)}
-          style={{ fontSize:"var(--fs-sm)", padding:"5px 12px", borderRadius:14, border:`1px solid ${showActionOnly ? "#B71C1C" : "#CFD8DC"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#546E7A", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, marginLeft:6 }}>
+          style={{ fontSize:"var(--fs-sm)", padding:"5px 12px", borderRadius:14, border:`1px solid ${showActionOnly ? "#B71C1C" : "#D9E1EE"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#667085", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, marginLeft:6 }}>
           ⚡ 要対応のみ
         </button>
         <div style={{ display:"flex", gap:4, marginLeft:10, alignItems:"center" }}>
@@ -238,15 +238,15 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           const isPhoto = sp.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split("?")[0] || "");
 
           return (
-            <div key={sp.id} style={{ background: isToday ? "#FFF5F5" : "#fff", borderRadius:12, border:`2px solid ${st.color}`, borderLeft:`8px solid ${st.color}`, boxShadow: isToday ? `0 0 0 2px #EF9A9A, 0 1px 5px rgba(0,0,0,.06)` : isUrgent ? `0 0 0 2px #FFE082, 0 1px 5px rgba(0,0,0,.06)` : "0 1px 5px rgba(0,0,0,.06)", padding:"clamp(10px,2vw,16px)", opacity: isPast ? 0.68 : 1 }}>
+            <div key={sp.id} style={{ background:"#fff", borderRadius:14, border:`1px solid #E2E8F0`, borderLeft:`8px solid ${st.color}`, boxShadow: isToday ? `0 0 0 2px #EF9A9A, 0 8px 24px rgba(15,35,71,.06)` : isUrgent ? `0 0 0 2px #FFE066, 0 8px 24px rgba(15,35,71,.06)` : "0 8px 24px rgba(15,35,71,.06)", padding:"clamp(10px,2vw,16px)", opacity: isPast ? 0.68 : 1 }}>
 
               <div style={{ display:"flex", gap:"clamp(10px,2vw,18px)", alignItems:"center", flexWrap:"wrap" }}>
 
                 {/* 1. 日付ブロック */}
                 <div style={{ flexShrink:0, width:"clamp(84px,11vw,116px)", textAlign:"center" }}>
-                  <div style={{ fontSize:"clamp(10px,1.4vw,13px)", color:"#90A4AE" }}>{sp.seminarDate || "日付未定"}</div>
+                  <div style={{ fontSize:"clamp(10px,1.4vw,13px)", color:"#98A2B3" }}>{sp.seminarDate || "日付未定"}</div>
                   {sp.seminarDate && <div style={{ fontSize:"clamp(20px,3.4vw,30px)", fontWeight:800, color:"#263238", lineHeight:1.15 }}>{sp.seminarDate.slice(5)}</div>}
-                  <div style={{ fontSize:"clamp(11px,1.6vw,15px)", color:"#546E7A", marginBottom:6 }}>{ch.dayName}</div>
+                  <div style={{ fontSize:"clamp(11px,1.6vw,15px)", color:"#667085", marginBottom:6 }}>{ch.dayName}</div>
                   <span style={{ display:"inline-block", fontSize:"clamp(11px,1.6vw,15px)", fontWeight:700, color:"#fff", background:ch.color, padding:"3px 10px", borderRadius:12 }}>{ch.name}</span>
                   <div style={{ marginTop:4 }}>
                     <span style={{ display:"inline-block", fontSize:"clamp(10px,1.4vw,13px)", fontWeight:700, color:"#fff", background:st.color, padding:"2px 8px", borderRadius:10 }}>{st.label}</span>
@@ -256,41 +256,44 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   )}
                 </div>
 
-                {/* 2. 丸型写真 */}
-                <div style={{ flexShrink:0 }}>
-                  {isPhoto ? (
-                    <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName}
-                      style={{ width:"clamp(56px,8vw,80px)", height:"clamp(56px,8vw,80px)", objectFit:"cover", borderRadius:"50%", border:`3px solid ${st.color}`, cursor:"pointer", display:"block" }}
-                      onClick={() => setFileModal({ url:sp.materialUrl, name:sp.materialName, speaker:sp })}
-                      onError={e => { e.currentTarget.style.display="none"; }} />
-                  ) : (
-                    <div style={{ width:"clamp(56px,8vw,80px)", height:"clamp(56px,8vw,80px)", background:ch.light, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(24px,4vw,36px)", color:ch.color, border:`3px solid ${ch.accent}` }}>♟</div>
-                  )}
-                </div>
-
-                {/* 3. 名前・所属 */}
-                <div style={{ flex:"2 1 200px", minWidth:0 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:3 }}>
-                    <span style={{ fontSize:"clamp(18px,3vw,26px)", fontWeight:700, color:"#1A2B3C", lineHeight:1.2 }}>{sp.speakerName || "（名前未入力）"}</span>
-                    {speakerAppearance[sp.id] === 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E8F5E9", color:"#2E7D32", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>初回</span>}
-                    {speakerAppearance[sp.id] > 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E3F2FD", color:"#1565C0", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>}
+                {/* 2+3. 人物情報エリア（顔写真・名前・よみがな・所属・勤務先） */}
+                <div className="person-panel" style={{ display:"flex", alignItems:"center", gap:"clamp(8px,1.5vw,14px)", flex:"3 1 280px", minWidth:0, background:"#EAF0FF", border:"1px solid transparent", borderRadius:16, padding:"clamp(8px,1.6vw,12px)" }}>
+                  {/* 丸型写真 */}
+                  <div style={{ flexShrink:0 }}>
+                    {isPhoto ? (
+                      <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName}
+                        style={{ width:"clamp(56px,8vw,80px)", height:"clamp(56px,8vw,80px)", objectFit:"cover", borderRadius:"50%", border:`3px solid #2563EB`, cursor:"pointer", display:"block" }}
+                        onClick={() => setFileModal({ url:sp.materialUrl, name:sp.materialName, speaker:sp })}
+                        onError={e => { e.currentTarget.style.display="none"; }} />
+                    ) : (
+                      <div style={{ width:"clamp(56px,8vw,80px)", height:"clamp(56px,8vw,80px)", background:"#DDEAFF", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(24px,4vw,36px)", color:"#2563EB", border:`3px solid #B3C2FF` }}>♟</div>
+                    )}
                   </div>
-                  {sp.speakerKana && <div style={{ fontSize:"clamp(12px,1.7vw,16px)", color:"#90A4AE", marginBottom:3 }}>{sp.speakerKana}</div>}
-                  {(sp.speakerUnit || sp.role) && (
-                    <div style={{ fontSize:"clamp(13px,1.9vw,18px)", color:"#37474F" }}>
-                      {sp.speakerUnit}{sp.role && <span style={{ color:"#7B1FA2", marginLeft:6 }}>{sp.role}</span>}
+
+                  {/* 名前・所属 */}
+                  <div style={{ flex:"1 1 auto", minWidth:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:3 }}>
+                      <span style={{ fontSize:"clamp(18px,3vw,26px)", fontWeight:700, color:"#061B44", lineHeight:1.2 }}>{sp.speakerName || "（名前未入力）"}</span>
+                      {speakerAppearance[sp.id] === 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E8FFF8", color:"#16813A", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>初回</span>}
+                      {speakerAppearance[sp.id] > 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E4ECFF", color:"#174A9C", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>}
                     </div>
-                  )}
-                  {(sp.company || sp.companyRole) && (
-                    <div style={{ fontSize:"clamp(13px,1.9vw,18px)", color:"#78909C" }}>
-                      {sp.company}{sp.companyRole && <span style={{ marginLeft:6 }}>{sp.companyRole}</span>}
-                    </div>
-                  )}
+                    {sp.speakerKana && <div style={{ fontSize:"clamp(12px,1.7vw,16px)", color:"#667085", marginBottom:3 }}>{sp.speakerKana}</div>}
+                    {(sp.speakerUnit || sp.role) && (
+                      <div style={{ fontSize:"clamp(13px,1.9vw,18px)", color:"#101828" }}>
+                        {sp.speakerUnit}{sp.role && <span style={{ color:"#7A4DFF", marginLeft:6 }}>{sp.role}</span>}
+                      </div>
+                    )}
+                    {(sp.company || sp.companyRole) && (
+                      <div style={{ fontSize:"clamp(13px,1.9vw,18px)", color:"#667085" }}>
+                        {sp.company}{sp.companyRole && <span style={{ marginLeft:6 }}>{sp.companyRole}</span>}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* 4. テーマ */}
                 <div style={{ flex:"1 1 150px", minWidth:0 }}>
-                  <div style={{ fontSize:"clamp(11px,1.5vw,14px)", color:"#90A4AE", fontWeight:600, marginBottom:2 }}>テーマ</div>
+                  <div style={{ fontSize:"clamp(11px,1.5vw,14px)", color:"#98A2B3", fontWeight:600, marginBottom:2 }}>テーマ</div>
                   <div style={{ fontSize:"clamp(14px,2vw,20px)", color:"#263238", fontWeight:700 }}>{sp.topic ? `「${sp.topic}」` : <span style={{ color:"#B0BEC5", fontWeight:400 }}>未定</span>}</div>
                 </div>
 
@@ -299,13 +302,13 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   {isSavingThis ? (
                     <span style={{ fontSize:"clamp(16px,2.5vw,24px)", color:"#78909C", animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>
                   ) : (
-                    <select style={{ ...SEL, fontSize:"clamp(12px,1.8vw,16px)", color:STATUS[sp.status]?.color ?? "#90A4AE", fontWeight:700, padding:"5px 8px", textAlign:"center" }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
+                    <select style={{ ...SEL, fontSize:"clamp(12px,1.8vw,16px)", color:STATUS[sp.status]?.color ?? "#98A2B3", fontWeight:700, padding:"5px 8px", textAlign:"center" }} value={sp.status} onChange={e => handleStatusChange(sp.id, e.target.value)}>
                       {Object.entries(STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
                   )}
                   {isPast && sp.status === "confirmed" && (
                     <button onClick={() => handleStatusChange(sp.id, "completed")}
-                      style={{ fontSize:"clamp(10px,1.5vw,14px)", fontWeight:700, background:"#ECEFF1", color:"#546E7A", border:"1px solid #CFD8DC", borderRadius:6, padding:"3px 10px", cursor:"pointer" }}>
+                      style={{ fontSize:"clamp(10px,1.5vw,14px)", fontWeight:700, background:"#F1F5F9", color:"#667085", border:"1px solid #D9E1EE", borderRadius:6, padding:"3px 10px", cursor:"pointer" }}>
                       → 終了
                     </button>
                   )}
@@ -345,12 +348,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                     </button>
                   )}
                   <button onClick={() => setExpandedId(expandedId === sp.id ? null : sp.id)}
-                    style={{ fontSize:"clamp(12px,1.7vw,15px)", background:"#F5F5F5", color:"#546E7A", border:"1px solid #E0E0E0", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontWeight:700, lineHeight:1, whiteSpace:"nowrap" }}
+                    style={{ fontSize:"clamp(12px,1.7vw,15px)", background:"#F5F5F5", color:"#667085", border:"1px solid #E0E0E0", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontWeight:700, lineHeight:1, whiteSpace:"nowrap" }}
                     title="その他の操作" aria-label="その他の操作">その他 {expandedId === sp.id ? "▲" : "▼"}</button>
                 </div>
 
                 {/* 7. 編集 / 削除 */}
-                <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:10, borderLeft:"1px solid #ECEFF1", paddingLeft:"clamp(8px,1.5vw,14px)" }}>
+                <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:10, borderLeft:"1px solid #F1F5F9", paddingLeft:"clamp(8px,1.5vw,14px)" }}>
                   <button onClick={() => onEdit(sp)} title="編集" aria-label={`${sp.speakerName}を編集`}
                     style={{ background:"none", border:"none", cursor:"pointer", color:"#1565C0", fontSize:"clamp(11px,1.6vw,14px)", fontWeight:700, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
                     <span style={{ fontSize:"var(--fs-md)" }}>✏</span>編集
@@ -371,10 +374,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       style={{ fontSize:"var(--fs-xs)", color:"#2E7D32", background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="転記済 → 戻す">✓📅 転記済</button>
                   ) : (
                     <button onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:true}); if(ok)showToast("転記済にしました 📅"); }}
-                      style={{ fontSize:"var(--fs-xs)", background:"#F3F4F6", color:"#546E7A", border:"1px solid #D1D5DB", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="カレンダー転記済にする">📅 カレンダー</button>
+                      style={{ fontSize:"var(--fs-xs)", background:"#F3F4F6", color:"#667085", border:"1px solid #D1D5DB", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="カレンダー転記済にする">📅 カレンダー</button>
                   )}
                   <button onClick={() => { const t = extractStaffNotes(sp.notes || ""); notesRef.current = t; setNotesText(t); setNotesModal(sp); }}
-                    style={{ fontSize:"var(--fs-xs)", background: staffMemo ? "#F3E5F5" : "#ECEFF1", color: staffMemo ? "#7B1FA2" : "#90A4AE", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }}
+                    style={{ fontSize:"var(--fs-xs)", background: staffMemo ? "#F3E5F5" : "#F1F5F9", color: staffMemo ? "#7B1FA2" : "#98A2B3", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }}
                     title={staffMemo ? `メモ: ${staffMemo.slice(0,60)}` : "メモを追加"}>{staffMemo ? "📝 メモ有" : "📝 メモ"}</button>
                   {sp.postNotes && (
                     <button onClick={() => onEdit(sp)} style={{ fontSize:"var(--fs-xs)", color:"#2E7D32", background:"#E8F5E9", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title={`講話後メモ: ${sp.postNotes}`}>✓ 後記</button>
@@ -394,7 +397,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
         {filtered.length === 0 && (
           <div style={{ textAlign:"center", padding:"40px 20px", background:"#fff", borderRadius:12, border:"1px solid #E8ECF0" }}>
-            <div style={{ color:"#90A4AE", fontSize:"clamp(16px,2.8vw,26px)", marginBottom:14 }}>
+            <div style={{ color:"#98A2B3", fontSize:"clamp(16px,2.8vw,26px)", marginBottom:14 }}>
               {search || filterCh !== "all" || filterSt !== "all" || dateRange !== "all" ? "条件に一致する講師がいません" : "講師データがありません"}
             </div>
             {(searchInput || filterCh !== "all" || filterSt !== "all" || dateRange !== "all") && (
@@ -409,7 +412,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
       {/* ── Status/chapter summary ─────────────────────────────── */}
       <div className="no-print" style={{ marginTop:14, display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
-        <span style={{ fontSize:"clamp(13px,2.2vw,20px)", color:"#90A4AE", fontWeight:600 }}>ステータス：</span>
+        <span style={{ fontSize:"clamp(13px,2.2vw,20px)", color:"#98A2B3", fontWeight:600 }}>ステータス：</span>
         {Object.entries(STATUS).map(([k, v]) => {
           const count = speakers.filter(sp => sp.status === k).length;
           if (count === 0) return null;
@@ -417,7 +420,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         })}
       </div>
       <div className="no-print" style={{ marginTop:8, display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
-        <span style={{ fontSize:"clamp(13px,2.2vw,20px)", color:"#90A4AE", fontWeight:600 }}>単会別：</span>
+        <span style={{ fontSize:"clamp(13px,2.2vw,20px)", color:"#98A2B3", fontWeight:600 }}>単会別：</span>
         {CHAPTERS.map(ch => {
           const count = speakers.filter(sp => sp.chapterId === ch.id && sp.status !== "cancelled").length;
           if (count === 0) return null;
@@ -427,9 +430,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
       {/* ── Print-only table ─────────────────────────────── */}
       <div className="sp-print-only">
-        <div style={{ marginBottom:10, borderBottom:"2px solid #1A3A6B", paddingBottom:8 }}>
-          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#1A3A6B" }}>倫理法人会 南部地区 講師一覧</div>
-          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A", marginTop:3 }}>
+        <div style={{ marginBottom:10, borderBottom:"2px solid #061B44", paddingBottom:8 }}>
+          <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#061B44" }}>倫理法人会 南部地区 講師一覧</div>
+          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginTop:3 }}>
             出力日: {new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric' })}
             {filterCh !== "all" && `　単会: ${CHAPTERS.find(c=>c.id===filterCh)?.name}`}
             {filterSt !== "all" && `　ステータス: ${STATUS[filterSt]?.label}`}
@@ -439,9 +442,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         </div>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"clamp(12px,1.4vw,14px)" }}>
           <thead>
-            <tr style={{ background:"#ECEFF1" }}>
+            <tr style={{ background:"#F1F5F9" }}>
               {["開催日","単会","講師名","所属法人会・役職／勤務先","テーマ","ステータス","資料","前泊","メモ"].map(h => (
-                <th key={h} style={{ padding:"5px 7px", textAlign:"left", borderBottom:"2px solid #90A4AE", fontWeight:700, color:"#37474F" }}>{h}</th>
+                <th key={h} style={{ padding:"5px 7px", textAlign:"left", borderBottom:"2px solid #98A2B3", fontWeight:700, color:"#37474F" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -450,24 +453,24 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               const ch = getChapter(sp.chapterId);
               return (
                 <tr key={sp.id} style={{ background: i % 2 === 0 ? "#fff" : "#FAFAFA" }}>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", whiteSpace:"nowrap" }}>{sp.seminarDate}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontWeight:700, color: ch.color }}>{ch.name}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontWeight:600 }}>{sp.speakerName}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", fontSize:"clamp(12px,1.4vw,14px)" }}>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9", whiteSpace:"nowrap" }}>{sp.seminarDate}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9", fontWeight:700, color: ch.color }}>{ch.name}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9", fontWeight:600 }}>{sp.speakerName}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9", fontSize:"clamp(12px,1.4vw,14px)" }}>
                     {[sp.speakerUnit, sp.role].filter(Boolean).join("　")}
                     {(sp.company || sp.companyRole) && <div style={{ color:"#78909C" }}>{[sp.company, sp.companyRole].filter(Boolean).join("　")}</div>}
                   </td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.topic ? `「${sp.topic}」` : ""}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{STATUS[sp.status]?.label || sp.status}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{[sp.materialUrl && "写真", extractMaterialLinks(sp.notes).length && "資料"].filter(Boolean).join("・") || "未受領"}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1" }}>{sp.lodging || "不要"}</td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #ECEFF1", maxWidth:120, fontSize:"clamp(12px,1.4vw,14px)" }}>{extractStaffNotes(sp.notes)}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{sp.topic ? `「${sp.topic}」` : ""}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{STATUS[sp.status]?.label || sp.status}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{[sp.materialUrl && "写真", extractMaterialLinks(sp.notes).length && "資料"].filter(Boolean).join("・") || "未受領"}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{sp.lodging || "不要"}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9", maxWidth:120, fontSize:"clamp(12px,1.4vw,14px)" }}>{extractStaffNotes(sp.notes)}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div style={{ marginTop:10, fontSize:"clamp(12px,1.4vw,14px)", color:"#90A4AE", textAlign:"right" }}>倫理法人会 南部地区合同事務局</div>
+        <div style={{ marginTop:10, fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", textAlign:"right" }}>倫理法人会 南部地区合同事務局</div>
       </div>
 
       {/* ── Notes modal ─────────────────────────────── */}
@@ -489,11 +492,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               rows={5}
               value={notesText}
               onChange={e => { setNotesText(e.target.value); notesRef.current = e.target.value; }}
-              style={{ width:"100%", border:"1px solid #CFD8DC", borderRadius:6, padding:"8px", fontSize:"var(--fs-sm)", fontFamily:"inherit", resize:"vertical", marginTop:8, boxSizing:"border-box" }}
+              style={{ width:"100%", border:"1px solid #D9E1EE", borderRadius:6, padding:"8px", fontSize:"var(--fs-sm)", fontFamily:"inherit", resize:"vertical", marginTop:8, boxSizing:"border-box" }}
               placeholder="自由メモ（内部のみ表示）"
             />
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:6, marginBottom:10 }}>
-              <span style={{ fontSize:"clamp(13px,2.2vw,20px)", color:"#90A4AE" }}>{notesText.length}文字　Ctrl+Enterで保存</span>
+              <span style={{ fontSize:"clamp(13px,2.2vw,20px)", color:"#98A2B3" }}>{notesText.length}文字　Ctrl+Enterで保存</span>
             </div>
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={{ ...BC }} onClick={() => setNotesModal(null)}>キャンセル</button>

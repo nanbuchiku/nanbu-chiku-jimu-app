@@ -748,7 +748,7 @@ ${ch.name}単会事務局`;
 
   const sidebarBtn = (t, isActive, secondary) => (
     <button key={t.id} onClick={() => setTab(t.id)}
-      style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding: secondary ? "10px 14px" : "12px 14px", borderRadius:8, border:"none", background: isActive ? "rgba(255,255,255,.18)" : "transparent", color: isActive ? "#fff" : secondary ? "rgba(255,255,255,.52)" : "rgba(255,255,255,.72)", cursor:"pointer", fontWeight: isActive ? 700 : secondary ? 400 : 500, textAlign:"left", fontSize: secondary ? 18 : 20, marginBottom:2, transition:"background .15s" }}>
+      style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding: secondary ? "10px 14px" : "12px 14px", borderRadius:8, border:"none", background: isActive ? "rgba(255,255,255,.16)" : "transparent", boxShadow: isActive ? "inset 4px 0 0 #FFE066" : "none", color: isActive ? "#fff" : secondary ? "rgba(255,255,255,.52)" : "rgba(255,255,255,.72)", cursor:"pointer", fontWeight: isActive ? 700 : secondary ? 400 : 500, textAlign:"left", fontSize: secondary ? 18 : 20, marginBottom:2, transition:"background .15s" }}>
       <span style={{ fontSize: secondary ? 22 : 26, width:30, textAlign:"center", flexShrink:0 }}>{t.icon}</span>
       <span style={{ flex:1 }}>{t.label}</span>
       {!!t.badge && t.badge > 0 && <span style={{ background:"#EF5350", color:"#fff", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, padding:"2px 8px", borderRadius:10 }}>{t.badge}</span>}
@@ -756,27 +756,27 @@ ${ch.name}単会事務局`;
   );
 
   if (loading) return (
-    <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
-      <div aria-hidden="true" style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #1A3A6B", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
-      <div style={{ color:"#1A3A6B", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:600 }}>データを読み込み中...</div>
+    <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F4F5F7", flexDirection:"column", gap:16 }}>
+      <div aria-hidden="true" style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #061B44", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
+      <div style={{ color:"#061B44", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:600 }}>データを読み込み中...</div>
     </div>
   );
 
   if (loadError) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F0F2F5", flexDirection:"column", gap:16 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F4F5F7", flexDirection:"column", gap:16 }}>
       <div style={{ fontSize:"clamp(20px,3vw,28px)" }}>⚠️</div>
       <div style={{ color:"#B71C1C", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700 }}>データの読み込みに失敗しました</div>
       <div style={{ color:"#78909C", fontSize:"clamp(12px,1.4vw,14px)" }}>{loadError}</div>
-      <button style={{ background:"#1A3A6B", color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", fontWeight:600 }} onClick={() => window.location.reload()}>再読み込み</button>
+      <button style={{ background:"#061B44", color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", fontWeight:600 }} onClick={() => window.location.reload()}>再読み込み</button>
     </div>
   );
 
   return (
-    <div style={{ display:"flex", minHeight:"100%", background:"#F0F2F5" }}>
+    <div style={{ display:"flex", minHeight:"100%", background:"#F4F5F7" }}>
 
       {/* ── Desktop Sidebar ──────────────────────────── */}
       {!isMobile && (
-        <aside className="no-print" style={{ width:260, background:"linear-gradient(180deg,#0D1B3E 0%,#122B56 55%,#1A3A6B 100%)", display:"flex", flexDirection:"column", height:"100%", flexShrink:0, overflowY:"auto" }}>
+        <aside className="no-print" style={{ width:260, background:"linear-gradient(180deg,#061B44 0%,#082B66 100%)", display:"flex", flexDirection:"column", height:"100%", flexShrink:0, overflowY:"auto" }}>
           <div style={{ padding:"18px 16px 12px", borderBottom:"1px solid rgba(255,255,255,.1)" }}>
             <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"rgba(255,255,255,.55)", letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
             <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:700, color:"#fff", marginTop:4, lineHeight:1.4 }}>南部地区5単会<br/>タスク管理</div>
@@ -841,7 +841,7 @@ ${ch.name}単会事務局`;
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0 }}>
 
         {isMobile && (
-          <header className="no-print" style={{ background:"linear-gradient(135deg,#0D1B3E,#1A3A6B)", color:"#fff", padding:"12px 16px 10px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(0,0,0,.2)" }}>
+          <header className="no-print" style={{ background:"linear-gradient(135deg,#061B44,#082B66)", color:"#fff", padding:"12px 16px 10px", position:"sticky", top:0, zIndex:100, boxShadow:"0 2px 8px rgba(6,27,68,.25)" }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:"clamp(12px,1.4vw,14px)", opacity:.55, letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
@@ -884,7 +884,7 @@ ${ch.name}単会事務局`;
         {["document","sptasks","tasks","calendar"].includes(tab) && (
           <div className="no-print" style={{ padding:"8px 20px 0" }}>
             <button onClick={() => setTab(["document","sptasks"].includes(tab) ? "speakers" : "dashboard")}
-              style={{ background:"none", border:"none", color:"#1A3A6B", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, display:"inline-flex", alignItems:"center", gap:4, padding:"4px 0" }}>
+              style={{ background:"none", border:"none", color:"#061B44", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, display:"inline-flex", alignItems:"center", gap:4, padding:"4px 0" }}>
               ← {["document","sptasks"].includes(tab) ? "講師管理" : "ダッシュボード"}へ戻る
             </button>
           </div>
@@ -904,15 +904,15 @@ ${ch.name}単会事務局`;
         </main>
 
         {isMobile && (
-          <nav className="no-print" style={{ position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #ECEFF1", display:"flex", zIndex:100, boxShadow:"0 -2px 10px rgba(0,0,0,.08)", paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
+          <nav className="no-print" style={{ position:"fixed", bottom:0, left:0, right:0, background:"#fff", borderTop:"1px solid #F1F5F9", display:"flex", zIndex:100, boxShadow:"0 -2px 10px rgba(0,0,0,.08)", paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
             {mobileTabIds.map(id => {
               const t = TABS.find(x => x.id === id);
               if (!t) return null;
               const isActive = activeNavId === id;
               return (
                 <button key={id} onClick={() => setTab(id)}
-                  style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: isActive ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: isActive ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3, position:"relative" }}>
-                  {isActive && <span style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:36, height:3, borderRadius:2, background:"#1A3A6B" }} />}
+                  style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: isActive ? "#061B44" : "#98A2B3", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: isActive ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3, position:"relative" }}>
+                  {isActive && <span style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%)", width:36, height:3, borderRadius:2, background:"#061B44" }} />}
                   <span style={{ fontSize:"clamp(20px,3vw,28px)", lineHeight:1 }}>{mobileIcon[id] || t.icon}</span>
                   <span>{mobileLabel[id] || t.label}</span>
                   {!!t.badge && t.badge > 0 && (
@@ -922,7 +922,7 @@ ${ch.name}単会事務局`;
               );
             })}
             <button onClick={() => setSettingsOpen(true)}
-              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: settingsOpen ? "#1A3A6B" : "#90A4AE", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: settingsOpen ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
+              style={{ flex:1, padding:"10px 4px 12px", border:"none", background:"transparent", color: settingsOpen ? "#061B44" : "#98A2B3", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight: settingsOpen ? 700 : 400, display:"flex", flexDirection:"column", alignItems:"center", gap:3 }}>
               <span style={{ fontSize:"clamp(20px,3vw,28px)", lineHeight:1 }}>⚙</span>
               <span>設定</span>
             </button>
@@ -934,7 +934,7 @@ ${ch.name}単会事務局`;
       {isMobile && mobileDrawer && (
         <>
           <div onClick={() => setMobileDrawer(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.45)", zIndex:200 }} />
-          <div style={{ position:"fixed", top:0, right:0, bottom:0, width:280, background:"linear-gradient(180deg,#0D1B3E 0%,#1A3A6B 100%)", zIndex:201, display:"flex", flexDirection:"column", boxShadow:"-4px 0 24px rgba(0,0,0,.3)", paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
+          <div style={{ position:"fixed", top:0, right:0, bottom:0, width:280, background:"linear-gradient(180deg,#061B44 0%,#082B66 100%)", zIndex:201, display:"flex", flexDirection:"column", boxShadow:"-4px 0 24px rgba(6,27,68,.35)", paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
             <div style={{ padding:"18px 16px 14px", borderBottom:"1px solid rgba(255,255,255,.1)", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
               <div>
                 <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"rgba(255,255,255,.5)", letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
@@ -1036,11 +1036,11 @@ ${ch.name}単会事務局`;
       {confirm && (
         <div style={OV} role="presentation">
           <div role="alertdialog" aria-modal="true" aria-label="確認" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth:360, width:"100%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
-            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>⚠ 確認</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#061B44", marginBottom:14 }}>⚠ 確認</div>
             <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#37474F", marginBottom:20 }}>{confirm.msg}</div>
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={BC} onClick={() => setConfirm(null)}>キャンセル</button>
-              <button style={{ ...BP, background: confirm.okLabel ? "#1A3A6B" : "#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>{confirm.okLabel || "削除する"}</button>
+              <button style={{ ...BP, background: confirm.okLabel ? "#061B44" : "#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>{confirm.okLabel || "削除する"}</button>
             </div>
           </div>
         </div>
@@ -1049,7 +1049,7 @@ ${ch.name}単会事務局`;
       {restoreModal && (
         <div style={OV} role="presentation">
           <div role="dialog" aria-modal="true" aria-label="バックアップ復元プレビュー" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth:480, width:"92%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
-            <div style={{ fontSize:"clamp(15px,2vw,18px)", fontWeight:700, color:"#1A3A6B", marginBottom:14 }}>⬆ バックアップから復元</div>
+            <div style={{ fontSize:"clamp(15px,2vw,18px)", fontWeight:700, color:"#061B44", marginBottom:14 }}>⬆ バックアップから復元</div>
 
             <div style={{ background:"#F5F7FA", borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F" }}>
               <div style={{ fontWeight:700, marginBottom:6 }}>📄 {restoreModal.filename}</div>
@@ -1060,31 +1060,31 @@ ${ch.name}単会事務局`;
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", marginBottom:8, fontWeight:700 }}>復元方法の比較:</div>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:"clamp(11px,1.3vw,13px)", marginBottom:16 }}>
               <thead>
-                <tr style={{ background:"#ECEFF1" }}>
-                  <th style={{ padding:"6px 8px", textAlign:"left", border:"1px solid #CFD8DC" }}></th>
-                  <th style={{ padding:"6px 8px", textAlign:"center", border:"1px solid #CFD8DC" }}>マージ（推奨）</th>
-                  <th style={{ padding:"6px 8px", textAlign:"center", border:"1px solid #CFD8DC" }}>完全置換</th>
+                <tr style={{ background:"#F1F5F9" }}>
+                  <th style={{ padding:"6px 8px", textAlign:"left", border:"1px solid #D9E1EE" }}></th>
+                  <th style={{ padding:"6px 8px", textAlign:"center", border:"1px solid #D9E1EE" }}>マージ（推奨）</th>
+                  <th style={{ padding:"6px 8px", textAlign:"center", border:"1px solid #D9E1EE" }}>完全置換</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", fontWeight:700 }}>講師</td>
-                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#2E7D32" }}>
+                  <td style={{ padding:"6px 8px", border:"1px solid #D9E1EE", fontWeight:700 }}>講師</td>
+                  <td style={{ padding:"6px 8px", border:"1px solid #D9E1EE", textAlign:"center", color:"#2E7D32" }}>
                     +{restoreModal.diff.speakers.add} 追加 / {restoreModal.diff.speakers.update} 上書き<br/>
-                    <span style={{ color:"#546E7A" }}>現在の{restoreModal.diff.speakers.keep}件は保持</span>
+                    <span style={{ color:"#667085" }}>現在の{restoreModal.diff.speakers.keep}件は保持</span>
                   </td>
-                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#B71C1C" }}>
+                  <td style={{ padding:"6px 8px", border:"1px solid #D9E1EE", textAlign:"center", color:"#B71C1C" }}>
                     全{restoreModal.diff.speakers.keep + restoreModal.diff.speakers.update}件削除<br/>
                     →{restoreModal.data.speakers.length}件に置換
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", fontWeight:700 }}>タスク</td>
-                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#2E7D32" }}>
+                  <td style={{ padding:"6px 8px", border:"1px solid #D9E1EE", fontWeight:700 }}>タスク</td>
+                  <td style={{ padding:"6px 8px", border:"1px solid #D9E1EE", textAlign:"center", color:"#2E7D32" }}>
                     +{restoreModal.diff.tasks.add} 追加 / {restoreModal.diff.tasks.update} 上書き<br/>
-                    <span style={{ color:"#546E7A" }}>現在の{restoreModal.diff.tasks.keep}件は保持</span>
+                    <span style={{ color:"#667085" }}>現在の{restoreModal.diff.tasks.keep}件は保持</span>
                   </td>
-                  <td style={{ padding:"6px 8px", border:"1px solid #CFD8DC", textAlign:"center", color:"#B71C1C" }}>
+                  <td style={{ padding:"6px 8px", border:"1px solid #D9E1EE", textAlign:"center", color:"#B71C1C" }}>
                     全{restoreModal.diff.tasks.keep + restoreModal.diff.tasks.update}件削除<br/>
                     →{restoreModal.data.tasks.length}件に置換
                   </td>
@@ -1131,8 +1131,8 @@ ${ch.name}単会事務局`;
                   ["4", "完了ランキングへ"],
                 ].map(([key, desc]) => (
                   <tr key={key} style={{ borderBottom:"1px solid #F5F5F5" }}>
-                    <td style={{ padding:"8px 12px", width:200 }}><kbd style={{ background:"#ECEFF1", border:"1px solid #CFD8DC", borderRadius:4, padding:"2px 8px", fontSize:"clamp(12px,1.4vw,14px)", fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
-                    <td style={{ padding:"8px 12px", fontSize:"clamp(12px,1.4vw,14px)", color:"#546E7A" }}>{desc}</td>
+                    <td style={{ padding:"8px 12px", width:200 }}><kbd style={{ background:"#F1F5F9", border:"1px solid #D9E1EE", borderRadius:4, padding:"2px 8px", fontSize:"clamp(12px,1.4vw,14px)", fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
+                    <td style={{ padding:"8px 12px", fontSize:"clamp(12px,1.4vw,14px)", color:"#667085" }}>{desc}</td>
                   </tr>
                 ))}
               </tbody>

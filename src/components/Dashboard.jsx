@@ -143,21 +143,21 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
   const stats = useMemo(() => [
     { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
     { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
-    { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#546E7A", action: () => setTab("tasks") },
+    { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#667085", action: () => setTab("tasks") },
     ...(overdueCount > 0 ? [{ label:"期限超過",    val: overdueCount,                 sub:"件 ⚠",  color:"#B71C1C", action: () => setTab("tasks") }] : []),
   ], [speakers, tasks, overdueCount, setTab, onGoSpeakers]);
 
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:13, flexWrap:"wrap" }}>
-        <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:700, color:"#1A3A6B" }}>ダッシュボード</div>
+        <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:700, color:"#061B44" }}>ダッシュボード</div>
         <div style={{ display:"flex", gap:6, marginLeft:"auto" }}>
           {onOpenSettings && (
             <button onClick={onOpenSettings} style={{ fontSize:"clamp(12px,1.6vw,14px)", background:"#E8EAF6", color:"#3949AB", border:"1px solid #C5CAE9", borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
               ⚙ 設定
             </button>
           )}
-          <button onClick={toggleMemo} style={{ fontSize:"clamp(12px,1.6vw,14px)", background: memoOpen ? "#FFF9C4" : "#ECEFF1", color: memoOpen ? "#F57F17" : "#546E7A", border:`1px solid ${memoOpen ? "#FFE082" : "#CFD8DC"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
+          <button onClick={toggleMemo} style={{ fontSize:"clamp(12px,1.6vw,14px)", background: memoOpen ? "#FFF9C4" : "#F1F5F9", color: memoOpen ? "#F57F17" : "#667085", border:`1px solid ${memoOpen ? "#FFE082" : "#D9E1EE"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
             📝 事務局メモ {memoOpen ? "▲" : "▼"} {memoText && !memoOpen ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
           </button>
         </div>
@@ -175,7 +175,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           />
           {memoText && (
             <div style={{ textAlign:"right", marginTop:4 }}>
-              <button onClick={() => saveMemo('')} style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#90A4AE", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}>クリア</button>
+              <button onClick={() => saveMemo('')} style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#98A2B3", background:"none", border:"none", cursor:"pointer", textDecoration:"underline" }}>クリア</button>
             </div>
           )}
         </div>
@@ -299,7 +299,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#00838F", transition:"transform .15s", transform: hotelOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
             🏨 ホテル予約管理
             {hotelNeeded.length > 0 && (
-              <span style={{ fontWeight:400, color:"#546E7A", marginLeft:2 }}>{hotelNeeded.length}件</span>
+              <span style={{ fontWeight:400, color:"#667085", marginLeft:2 }}>{hotelNeeded.length}件</span>
             )}
           </div>
           {hotelNeeded.length > 0 && (() => {
@@ -312,7 +312,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         {hotelOpen && (
           <>
             {hotelNeeded.length === 0 ? (
-              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#90A4AE", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#98A2B3", textAlign:"center", padding:"8px 0" }}>宿泊が必要な講師はいません</div>
             ) : (
               hotelNeeded.map((sp, idx) => {
                 const ch = getChapter(sp.chapterId);
@@ -330,7 +330,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       }
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:5 }}>
-                      <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#546E7A", background:"#E0F7FA", borderRadius:4, padding:"2px 6px" }}>{sp.lodging} | {sp.seminarDate}</span>
+                      <span style={{ fontSize:"clamp(12px,1.6vw,14px)", color:"#667085", background:"#E0F7FA", borderRadius:4, padding:"2px 6px" }}>{sp.lodging} | {sp.seminarDate}</span>
                       {(() => {
                         const cs = chapterSettings?.[sp.chapterId] || {};
                         const bookingUrl = cs.hotelBookingUrl;
@@ -358,7 +358,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                               }}
                               style={{ cursor:"pointer", width:22, height:22, flexShrink:0, accentColor:"#2E7D32" }} />
                             <span>{it.icon}</span>
-                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#90A4AE" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#98A2B3" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
                           </label>
                         );
                       })}
@@ -375,7 +375,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         <div>
           <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>
             今週のモーニングセミナー
-            {weekDates.length >= 6 && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#90A4AE", marginLeft:6 }}>{weekDates[1].getMonth()+1}/{weekDates[1].getDate()} 〜 {weekDates[5].getMonth()+1}/{weekDates[5].getDate()}</span>}
+            {weekDates.length >= 6 && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#98A2B3", marginLeft:6 }}>{weekDates[1].getMonth()+1}/{weekDates[1].getDate()} 〜 {weekDates[5].getMonth()+1}/{weekDates[5].getDate()}</span>}
           </div>
           <div style={CARD}>
             {CHAPTERS.map(ch => {
@@ -389,8 +389,8 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                     <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap", flex:1 }}>
                       {isToday && <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#B71C1C", color:"#fff", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>今日！</span>}
                       <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:600 }}>{sp.speakerName}</span>
-                      <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
-                      <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                      <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#667085", background:"#F1F5F9", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
+                      <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                       <button style={BSM} onClick={() => onView(sp)}>確認書</button>
                     </div>
                   ) : (
@@ -420,22 +420,22 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                 <div key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", borderBottom:"1px solid #F5F5F5" }}>
                   <span style={PILL(ch)}>{ch.name}</span>
                   <span style={{ flex:1, fontSize:"clamp(14px,2vw,18px)" }}>{t.title}</span>
-                  <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : "#546E7A" }}>{dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span>
+                  <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : "#667085" }}>{dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span>
                 </div>
               );
             })}
-            {topTasks.length === 0 && <div style={{ color:"#90A4AE", fontSize:"clamp(14px,2vw,18px)", textAlign:"center", padding:12 }}>タスクなし ✓</div>}
+            {topTasks.length === 0 && <div style={{ color:"#98A2B3", fontSize:"clamp(14px,2vw,18px)", textAlign:"center", padding:12 }}>タスクなし ✓</div>}
             <button style={{ background:"transparent", border:"none", color:"#1565C0", fontSize:"clamp(14px,2vw,18px)", cursor:"pointer", padding:"7px 0 0", fontWeight:600, display:"block" }} onClick={() => setTab("tasks")}>全タスクを見る →</button>
           </div>
 
           {tasksByChapter.length > 0 && (
             <div style={{ marginTop:12, ...CARD, padding:"10px 13px", marginBottom:0 }}>
-              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#546E7A", marginBottom:8 }}>単会別タスク達成率</div>
+              <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#667085", marginBottom:8 }}>単会別タスク達成率</div>
               {tasksByChapter.map(({ ch, done, total, pct }) => (
                 <div key={ch.id} style={{ marginBottom:7 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", fontSize:"clamp(12px,1.6vw,14px)", marginBottom:2 }}>
                     <span style={{ color: ch.color, fontWeight:700 }}>{ch.name}</span>
-                    <span style={{ color: pct === 100 ? "#2E7D32" : "#546E7A" }}>{done}/{total}件 ({pct}%)</span>
+                    <span style={{ color: pct === 100 ? "#2E7D32" : "#667085" }}>{done}/{total}件 ({pct}%)</span>
                   </div>
                   <div style={{ background:"#E0E0E0", borderRadius:4, height:7, overflow:"hidden" }}>
                     <div style={{ width:`${pct}%`, background: pct === 100 ? "#2E7D32" : ch.color, borderRadius:4, height:7, transition:"width .4s" }} />
@@ -452,7 +452,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         <div style={{ marginBottom:12 }}>
           <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#37474F", marginBottom:7 }}>
             今後14日の開催予定
-            <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#90A4AE", marginLeft:8 }}>{upcoming14.length}件</span>
+            <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#98A2B3", marginLeft:8 }}>{upcoming14.length}件</span>
           </div>
           <div style={{ ...CARD, marginBottom:0, padding:"8px 12px" }}>
             <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
@@ -469,7 +469,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                     <div onClick={() => onView(sp)} style={{ cursor:"pointer", display:"flex", alignItems:"center", gap:6, flex:1 }}>
                       <div style={{ textAlign:"center" }}>
                         <div style={{ fontSize:"clamp(11px,1.4vw,13px)", fontWeight:700, color:"#fff", background: ch.color, padding:"1px 5px", borderRadius:8 }}>{ch.short}</div>
-                        <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: isToday ? "#B71C1C" : isUrgent ? "#E65100" : "#546E7A", marginTop:2 }}>{isToday ? "今日" : `${dl}日後`}</div>
+                        <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color: isToday ? "#B71C1C" : isUrgent ? "#E65100" : "#667085", marginTop:2 }}>{isToday ? "今日" : `${dl}日後`}</div>
                       </div>
                       <div>
                         <div style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, color:"#263238" }}>{sp.speakerName}</div>
@@ -524,7 +524,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               );
             })}
           </div>
-          <div style={{ marginTop:6, fontSize:"clamp(13px,1.8vw,16px)", color:"#90A4AE", display:"flex", gap:12, flexWrap:"wrap" }}>
+          <div style={{ marginTop:6, fontSize:"clamp(13px,1.8vw,16px)", color:"#98A2B3", display:"flex", gap:12, flexWrap:"wrap" }}>
             <span><span style={{ fontWeight:700, color:"#2E7D32" }}>✓</span> 確定</span>
             <span><span style={{ fontWeight:700, color:"#E65100" }}>▲</span> 情報不足</span>
             <span><span style={{ fontWeight:700, color:"#B71C1C" }}>＋</span> 未登録</span>
@@ -560,11 +560,11 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               <div style={{ ...MH, marginBottom:12 }}>
                 <span style={{ background: ch.color, color:"#fff", padding:"3px 10px", borderRadius:12, fontSize:"clamp(14px,2vw,18px)" }}>{ch.name}</span>
                 <span>{y}年{m}月の講師一覧</span>
-                <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#90A4AE", marginLeft:"auto" }}>{monthSpeakers.length}件</span>
+                <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, color:"#98A2B3", marginLeft:"auto" }}>{monthSpeakers.length}件</span>
               </div>
 
               <div style={{ flex:1, overflowY:"auto" }}>
-                <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#546E7A", background:"#ECEFF1", padding:"4px 10px", borderRadius:4, marginBottom:6 }}>
+                <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#667085", background:"#F1F5F9", padding:"4px 10px", borderRadius:4, marginBottom:6 }}>
                   🌅 モーニングセミナー（毎週{ch.dayName}）
                 </div>
                 {msDates.map(dateStr => {
@@ -579,8 +579,8 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       {sp ? (
                         <>
                           <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>{sp.speakerName || <span style={{ color:"#E65100" }}>名前未入力</span>}</span>
-                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", background:"#ECEFF1", padding:"2px 7px", borderRadius:10, flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
-                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#667085", background:"#F1F5F9", padding:"2px 7px", borderRadius:10, flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         </>
                       ) : (
                         <>
@@ -599,7 +599,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
 
                 {otherSpeakers.length > 0 && (
                   <>
-                    <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#546E7A", background:"#ECEFF1", padding:"4px 10px", borderRadius:4, margin:"12px 0 6px" }}>
+                    <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#667085", background:"#F1F5F9", padding:"4px 10px", borderRadius:4, margin:"12px 0 6px" }}>
                       📚 その他の講座
                     </div>
                     {otherSpeakers.map(sp => {
@@ -612,8 +612,8 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                           </div>
                           <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#fff", background: stype.color, padding:"2px 7px", borderRadius:10, whiteSpace:"nowrap", flexShrink:0 }}>{stype.short}</span>
                           <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>{sp.speakerName}</span>
-                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#546E7A", flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
-                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#90A4AE", background: STATUS[sp.status]?.bg ?? "#ECEFF1" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#667085", flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
+                          <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         </div>
                       );
                     })}
@@ -621,7 +621,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                 )}
               </div>
 
-              <div style={{ display:"flex", gap:8, marginTop:14, paddingTop:10, borderTop:"1px solid #ECEFF1" }}>
+              <div style={{ display:"flex", gap:8, marginTop:14, paddingTop:10, borderTop:"1px solid #F1F5F9" }}>
                 <button style={{ ...BP, flex:1 }} onClick={() => { close(); setTab("speakers"); }}>講師管理で詳細</button>
                 <button style={BC} onClick={close}>閉じる</button>
               </div>
