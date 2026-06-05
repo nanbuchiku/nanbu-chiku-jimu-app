@@ -347,6 +347,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       LINE
                     </button>
                   )}
+                  <button onClick={() => onDoc(sp)}
+                    style={{ fontSize:"clamp(12px,1.7vw,15px)", background:"#061B44", color:"#fff", border:"1px solid #061B44", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontWeight:700, lineHeight:1, whiteSpace:"nowrap" }}
+                    title="講師依頼確認書" aria-label="確認書">≡ 確認書</button>
                   <button onClick={() => setExpandedId(expandedId === sp.id ? null : sp.id)}
                     style={{ fontSize:"clamp(12px,1.7vw,15px)", background:"#F5F5F5", color:"#667085", border:"1px solid #E0E0E0", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontWeight:700, lineHeight:1, whiteSpace:"nowrap" }}
                     title="その他の操作" aria-label="その他の操作">その他 {expandedId === sp.id ? "▲" : "▼"}</button>
@@ -368,7 +371,6 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               {/* 補助操作（⋯で展開） */}
               {expandedId === sp.id && (
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginTop:12, paddingTop:12, borderTop:`1px solid ${isToday ? "#FFCDD2" : "#F0F4F8"}` }}>
-                  <button onClick={() => onDoc(sp)} style={{ fontSize:"var(--fs-xs)", background:"#37474F", color:"#fff", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:600 }}>≡ 確認書</button>
                   {sp.calendarAdded ? (
                     <button onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:false}); if(ok)showToast("未転記に戻しました"); }}
                       style={{ fontSize:"var(--fs-xs)", color:"#2E7D32", background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="転記済 → 戻す">✓📅 転記済</button>
