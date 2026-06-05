@@ -2,13 +2,14 @@ import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from '
 import JSZip from 'jszip';
 import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
+import { getSeminarType } from '../utils';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
 
 export default memo(function FlyerView({ speakers, today, showToast, updateSpeaker }) {
   const months = useMemo(() => Array.from({ length: 9 }, (_, i) => {
     const d = new Date(today.getFullYear(), today.getMonth() - 3 + i, 1);
     const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    const monthSpeakers = speakers.filter(s => (!s.seminarType || s.seminarType === "ms") && s.seminarDate?.startsWith(ym) && s.status !== "cancelled");
+    const monthSpeakers = speakers.filter(s => s.seminarDate?.startsWith(ym) && s.status !== "cancelled");
     const ready = monthSpeakers.filter(s => s.speakerName && s.speakerKana && s.topic && s.materialUrl).length;
     const isPast = d < new Date(today.getFullYear(), today.getMonth(), 1);
     return { value: ym, label: `${d.getFullYear()}年${d.getMonth()+1}月号`, readyCount: ready, isPast };
@@ -61,7 +62,6 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
   const flyerData = useMemo(() => CHAPTERS.map(ch => {
     const sps = speakers
       .filter(s =>
-        (!s.seminarType || s.seminarType === "ms") &&
         s.chapterId === ch.id &&
         s.seminarDate?.startsWith(selMonth) &&
         s.status !== "cancelled"
@@ -519,7 +519,12 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                           {sps.length > 1 && <div style={{ marginTop:4, fontSize:FS_SM, color:ch.color, fontWeight:700 }}>{sps.length}名</div>}
                         </td>
                       ) : null}
-                      <td style={{ ...TD, fontSize:FS_SM, whiteSpace:"nowrap" }}>{sp.seminarDate || none}</td>
+                      <td style={{ ...TD, fontSize:FS_SM, whiteSpace:"nowrap" }}>
+                        {sp.seminarDate || none}
+                        {sp.seminarType && sp.seminarType !== "ms" && (
+                          <span style={{ marginLeft:5, fontSize:FS_XS, fontWeight:700, color:"#fff", background:getSeminarType(sp.seminarType).color, padding:"1px 6px", borderRadius:8, whiteSpace:"nowrap" }}>{getSeminarType(sp.seminarType).short}</span>
+                        )}
+                      </td>
                       <td style={{ ...TD, fontWeight:700, fontSize:FS_SM, whiteSpace:"nowrap" }}>{sp.speakerName || none}</td>
                       <td style={{ ...TD, fontSize:FS_SM, color:"#667085" }}>{sp.speakerKana || none}</td>
                       <td style={{ ...TD, fontSize:FS_SM }}>{sp.speakerUnit || none}</td>
