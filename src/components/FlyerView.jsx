@@ -57,6 +57,9 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
   const [downloading,     setDownloading]     = useState(false); // Excel-only ZIP
   const [downloadingFull, setDownloadingFull] = useState(false); // 写真込みZIP
   const [savingDrive,     setSavingDrive]     = useState(false); // Google Drive
+  const [canvaOpen,       setCanvaOpen]       = useState(false); // Canva出力モーダル
+  const [canvaSel,        setCanvaSel]        = useState(() => new Set()); // 選択中の講師id
+  const [canvaBusy,       setCanvaBusy]       = useState(false);
 
   // ── flyerData（buildExcelBuffer より前に定義する必要あり） ────────
   const flyerData = useMemo(() => CHAPTERS.map(ch => {
@@ -289,6 +292,141 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
     finally { setSavingDrive(false); }
   }, [buildExcelBuffer, selMonth, showToast]);
 
+  // ── Canva流し込み（横持ち・最大4講師/行・顔写真埋め込み）─────────────
+  // 選択対象（選択中の月の講師フラット一覧）
+  const canvaSpeakers = useMemo(
+    () => flyerData.flatMap(({ ch, sps }) => sps.map(sp => ({ ...sp, _chName: ch.name }))),
+    [flyerData]
+  );
+
+  const buildCanvaBuffer = useCallback(async (sel) => {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Canva流し込み用');
+    const COMMON = ['単会名','セミナー種別','開催月','曜日共通','ページタイトル','会場','参加費','備考'];
+    const PF = ['開催日','開催日フル','曜日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真'];
+    const headers = [...COMMON];
+    for (let i = 1; i <= 4; i++) PF.forEach(f => headers.push(`講師${i}_${f}`));
+    const headerRow = ws.addRow(headers);
+    headerRow.height = 24;
+    headerRow.eachCell(cell => {
+      cell.font = { name:'Yu Gothic', size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF061B44' } };
+      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+    });
+
+    const [y, m] = selMonth.split('-').map(Number);
+    const WD = ['日','月','火','水','木','金','土'];
+    const fmtMd = ds => { const d = new Date(ds); return `${d.getMonth()+1}/${d.getDate()}`; };
+    const fmtFull = ds => { const d = new Date(ds); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; };
+    const fmtWd = ds => { const d = new Date(ds); return WD[d.getDay()] + '曜日'; };
+
+    // 単会×種別でグループ化
+    const groups = {};
+    sel.forEach(sp => {
+      const key = `${sp.chapterId}__${sp.seminarType || 'ms'}`;
+      (groups[key] = groups[key] || []).push(sp);
+    });
+
+    const photoJobs = [];
+    Object.keys(groups).forEach(key => {
+      const list = groups[key].sort((a, b) => (a.seminarDate || '').localeCompare(b.seminarDate || ''));
+      const chObj = CHAPTERS.find(c => c.id === list[0].chapterId);
+      const stype = getSeminarType(list[0].seminarType);
+      for (let i = 0; i < list.length; i += 4) {
+        const chunk = list.slice(i, i + 4);
+        const vals = [
+          chObj?.name || '', stype.label, `${y}年${m}月`, chObj?.dayName || '',
+          `${chObj?.name || ''} ${stype.label} ${y}年${m}月`,
+          chunk[0]?.venue || chObj?.venue || '', '参加無料', '',
+        ];
+        chunk.forEach(sp => {
+          const ds = sp.seminarDate;
+          vals.push(
+            ds ? fmtMd(ds) : '', ds ? fmtFull(ds) : '', ds ? fmtWd(ds) : (chObj?.dayName || ''),
+            sp.speakerName || '', sp.speakerKana || '', sp.speakerUnit || '', sp.role || '',
+            sp.company || '', sp.companyRole || '', sp.topic || '', ''
+          );
+        });
+        for (let k = chunk.length; k < 4; k++) PF.forEach(() => vals.push(''));
+        const row = ws.addRow(vals);
+        row.height = 96;
+        row.alignment = { vertical:'middle', wrapText:true };
+        chunk.forEach((sp, idx) => {
+          if (sp.materialUrl) photoJobs.push({ url: sp.materialUrl, rowNum: row.number, colIdx0: 8 + idx * 11 + 10 });
+        });
+      }
+    });
+
+    // 顔写真を取得してセルに埋め込み
+    await Promise.all(photoJobs.map(async job => {
+      try {
+        const res = await fetch(job.url);
+        const buf = await res.arrayBuffer();
+        let ext = (job.url.split('.').pop().split('?')[0] || 'jpeg').toLowerCase();
+        if (ext === 'jpg') ext = 'jpeg';
+        if (!['jpeg','png','gif'].includes(ext)) ext = 'jpeg';
+        const imgId = wb.addImage({ buffer: buf, extension: ext });
+        ws.addImage(imgId, { tl: { col: job.colIdx0 + 0.1, row: job.rowNum - 1 + 0.1 }, ext: { width: 90, height: 90 }, editAs: 'oneCell' });
+      } catch {}
+    }));
+
+    // 列幅
+    ws.columns.forEach(col => { col.width = 15; });
+    ws.getColumn(5).width = 26; // ページタイトル
+    ws.getColumn(6).width = 24; // 会場
+    for (let i = 0; i < 4; i++) {
+      ws.getColumn(8 + i * 11 + 10 + 1).width = 15; // 顔写真列
+      ws.getColumn(8 + i * 11 + 9 + 1).width = 26;  // テーマ列
+    }
+
+    // 元データシート（縦持ち）
+    const ws2 = wb.addWorksheet('元データ');
+    ws2.addRow(['単会名','セミナー種別','曜日','開催日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真URL']);
+    ws2.getRow(1).font = { bold:true };
+    sel.slice().sort((a,b)=>(a.seminarDate||'').localeCompare(b.seminarDate||'')).forEach(sp => {
+      const chObj = CHAPTERS.find(c => c.id === sp.chapterId);
+      ws2.addRow([
+        chObj?.name || '', getSeminarType(sp.seminarType).label, sp.seminarDate ? fmtWd(sp.seminarDate) : '',
+        sp.seminarDate || '', sp.speakerName || '', sp.speakerKana || '', sp.speakerUnit || '',
+        sp.role || '', sp.company || '', sp.companyRole || '', sp.topic || '', sp.materialUrl || '',
+      ]);
+    });
+    ws2.columns.forEach(c => { c.width = 16; });
+
+    // 使い方シート
+    const ws3 = wb.addWorksheet('使い方');
+    ws3.getColumn(2).width = 70;
+    [
+      ['Canva流し込み専用フォーマット',''],
+      ['目的','1枚のチラシに最大4名の講師情報を別々に差し込むため、横持ちデータに変換しています。'],
+      ['Canvaで使うタグ例','{{講師1_講師名}} / {{講師1_テーマ}} / {{講師1_開催日}}'],
+      ['講師2','{{講師2_講師名}} / {{講師2_テーマ}} / {{講師2_開催日}}'],
+      ['講師3','{{講師3_講師名}} / {{講師3_テーマ}} / {{講師3_開催日}}'],
+      ['講師4','{{講師4_講師名}} / {{講師4_テーマ}} / {{講師4_開催日}}'],
+      ['顔写真','「Canva流し込み用」シートの顔写真列にはセルに画像を埋め込んでいます。Canvaの一括作成で画像URLが必要な場合は「元データ」シートの顔写真URLをご利用ください。'],
+    ].forEach(r => ws3.addRow(r));
+
+    return await wb.xlsx.writeBuffer();
+  }, [selMonth]);
+
+  const downloadCanva = useCallback(async () => {
+    const sel = canvaSpeakers.filter(sp => canvaSel.has(sp.id));
+    if (!sel.length) { showToast('⚠ 講師を1人以上選択してください'); return; }
+    setCanvaBusy(true);
+    showToast('🎨 Canvaデータ作成中…顔写真の取得に少し時間がかかります');
+    try {
+      const buf = await buildCanvaBuffer(sel);
+      const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: `Canva流し込み_${selMonth}.xlsx` });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('✅ Canva流し込みデータ（顔写真入り）を作成しました');
+      setCanvaOpen(false);
+    } catch (e) { showToast('⚠ 失敗: ' + (e.message || '')); }
+    finally { setCanvaBusy(false); }
+  }, [canvaSpeakers, canvaSel, buildCanvaBuffer, selMonth, showToast]);
+
   const { year, month, daysLeft, deadlineColor } = useMemo(() => {
     const [y, m] = selMonth.split("-").map(Number);
     const dl = new Date(y, m - 1, 10);
@@ -411,8 +549,65 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
           <button style={{ ...BP, background: savingDrive ? "#98A2B3" : "#1B5E20", cursor: savingDrive ? "not-allowed" : "pointer" }} onClick={saveToDrive} disabled={savingDrive}>
             {savingDrive ? '⏳ 保存中...' : '☁ Googleドライブに保存'}
           </button>
+          <button style={{ ...BP, background:"#7A4DFF" }}
+            onClick={() => { setCanvaSel(new Set(canvaSpeakers.map(s => s.id))); setCanvaOpen(true); }}>
+            🎨 Canva流し込み
+          </button>
         </div>
       </div>
+
+      {/* Canva流し込み 出力モーダル */}
+      {canvaOpen && (() => {
+        const byCh = CHAPTERS.map(ch => ({ ch, list: canvaSpeakers.filter(s => s.chapterId === ch.id) })).filter(g => g.list.length);
+        const toggle = id => setCanvaSel(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+        const toggleCh = list => setCanvaSel(prev => {
+          const n = new Set(prev); const allOn = list.every(s => n.has(s.id));
+          list.forEach(s => allOn ? n.delete(s.id) : n.add(s.id)); return n;
+        });
+        return (
+          <div style={OV} onClick={() => !canvaBusy && setCanvaOpen(false)} role="presentation">
+            <div role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ ...MOD, maxWidth:560 }}>
+              <div style={{ ...MH }}>🎨 Canva流し込み出力（{selMonth.replace("-","年")}月）</div>
+              <div style={{ fontSize:FS_SM, color:"#667085", marginBottom:10 }}>
+                出力する講師を選んでください。単会名の「全選択」で単会ごと、個別チェックで講師ごとに選べます。顔写真は画像としてセルに挿入されます。
+              </div>
+              <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+                <button style={{ ...BC, fontWeight:700 }} onClick={() => setCanvaSel(new Set(canvaSpeakers.map(s => s.id)))}>全選択</button>
+                <button style={BC} onClick={() => setCanvaSel(new Set())}>全解除</button>
+                <span style={{ marginLeft:"auto", fontSize:FS_SM, fontWeight:700, color:"#7A4DFF" }}>選択中 {canvaSel.size}名</span>
+              </div>
+              <div style={{ maxHeight:"45vh", overflowY:"auto", border:"1px solid #E2E8F0", borderRadius:8 }}>
+                {byCh.map(({ ch, list }) => {
+                  const allOn = list.every(s => canvaSel.has(s.id));
+                  return (
+                    <div key={ch.id} style={{ borderBottom:"1px solid #EEF2F7" }}>
+                      <label style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 10px", background:"#F8FAFC", cursor:"pointer", fontWeight:700, color:ch.color }}>
+                        <input type="checkbox" checked={allOn} onChange={() => toggleCh(list)} />
+                        {ch.name}（{list.length}名）<span style={{ fontSize:FS_XS, color:"#98A2B3", fontWeight:400 }}>全選択</span>
+                      </label>
+                      {list.map(sp => (
+                        <label key={sp.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px 6px 26px", cursor:"pointer", fontSize:FS_SM }}>
+                          <input type="checkbox" checked={canvaSel.has(sp.id)} onChange={() => toggle(sp.id)} />
+                          <span style={{ color:"#90A4AE", whiteSpace:"nowrap" }}>{sp.seminarDate?.slice(5).replace("-","/")}</span>
+                          <span style={{ fontWeight:700 }}>{sp.speakerName || "（名前未入力）"}</span>
+                          {sp.seminarType && sp.seminarType !== "ms" && <span style={{ fontSize:FS_XS, color:"#fff", background:getSeminarType(sp.seminarType).color, padding:"1px 6px", borderRadius:8 }}>{getSeminarType(sp.seminarType).short}</span>}
+                          {!sp.materialUrl && <span style={{ fontSize:FS_XS, color:"#B0BEC5" }}>📭写真なし</span>}
+                        </label>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display:"flex", gap:8, marginTop:14 }}>
+                <button style={{ ...BP, flex:1, background: canvaBusy ? "#98A2B3" : "#7A4DFF", cursor: canvaBusy ? "not-allowed" : "pointer" }} onClick={downloadCanva} disabled={canvaBusy}>
+                  {canvaBusy ? '⏳ 作成中…' : `📥 選択した${canvaSel.size}名で出力`}
+                </button>
+                <button style={BC} onClick={() => !canvaBusy && setCanvaOpen(false)}>閉じる</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 締め切りバナー */}
       <div style={{ ...CARD, marginBottom:12, borderLeft:`5px solid ${deadlineColor}`, padding:"10px 16px" }}>
