@@ -574,10 +574,11 @@ async function lookupZip() {
   const btn = document.querySelector('.btn-zip');
   btn.disabled = true; btn.textContent = '検索中...';
   try {
-    const res = await fetch(`https://zipcoda.net/api?zipcode=${zip}`);
+    const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zip}`);
     const j   = await res.json();
-    if (j.items && j.items[0]) {
-      document.getElementById('address').value = j.items[0].address || '';
+    if (j.status === 200 && j.results && j.results[0]) {
+      const r = j.results[0];
+      document.getElementById('address').value = `${r.address1}${r.address2}${r.address3}`;
     } else {
       alert('該当する住所が見つかりませんでした');
     }
