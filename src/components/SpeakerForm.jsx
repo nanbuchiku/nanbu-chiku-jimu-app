@@ -52,6 +52,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
 
   const clearDraft = () => { try { localStorage.removeItem(DRAFT_KEY); } catch {} };
 
+  const [zipLoading, setZipLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [docUploading1, setDocUploading1] = useState(false);
   const [docUploading2, setDocUploading2] = useState(false);
@@ -223,6 +224,27 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       }
       return { ...f, notes: newNotes };
     });
+  };
+
+  // 郵便番号 → 住所 自動入力（zipcloud 無料API・キー不要）
+  const lookupAddress = async () => {
+    const zip = String(detailFromNotes['領収証郵便番号'] || '').replace(/[^0-9]/g, '');
+    if (zip.length !== 7) { setErr('郵便番号は7桁で入力してください（例: 3330801）'); return; }
+    setErr('');
+    setZipLoading(true);
+    try {
+      const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zip}`);
+      const data = await res.json();
+      if (data.status !== 200 || !data.results || !data.results.length) {
+        setErr('該当する住所が見つかりませんでした'); return;
+      }
+      const r = data.results[0];
+      setDetailField('領収証住所', `${r.address1}${r.address2}${r.address3}`);
+    } catch {
+      setErr('住所の取得に失敗しました（通信エラー）');
+    } finally {
+      setZipLoading(false);
+    }
   };
 
   const ch = getChapter(form.chapterId);
@@ -550,7 +572,14 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 {/* ⑤ 領収証郵便番号 + 住所 */}
                 <div>
                   <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>⑤ 領収証郵便番号</div>
-                  <input disabled={saving} type="text" maxLength={8} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="333-0801" value={detailFromNotes['領収証郵便番号'] || ""} onChange={e => setDetailField('領収証郵便番号', e.target.value)} />
+                  <div style={{ display:"flex", gap:6 }}>
+                    <input disabled={saving} type="text" maxLength={8} style={{ ...INP, flex:1, opacity: saving ? .6 : 1 }} placeholder="333-0801" value={detailFromNotes['領収証郵便番号'] || ""} onChange={e => setDetailField('領収証郵便番号', e.target.value)} />
+                    <button type="button" disabled={saving || zipLoading} onClick={lookupAddress}
+                      title="郵便番号から住所を自動入力"
+                      style={{ flexShrink:0, background: zipLoading ? "#90A4AE" : "#061B44", color:"#fff", border:"none", borderRadius:6, padding:"0 12px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:(saving||zipLoading)?"not-allowed":"pointer", whiteSpace:"nowrap" }}>
+                      {zipLoading ? "⏳" : "住所入力"}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>⑤ 領収証住所</div>
