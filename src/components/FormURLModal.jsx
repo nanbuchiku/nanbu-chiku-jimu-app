@@ -4,7 +4,25 @@ import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 import { printFaxForm } from '../faxPrint';
 
-export default memo(function FormURLModal({ speaker: spProp, onClose, showToast }) {
+function buildMailUrl(fromEmail, toEmail, subject, body) {
+  const addr = (fromEmail || '').toLowerCase();
+  if (addr.includes('@gmail.com') || addr.includes('@googlemail.com')) {
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+  if (addr.includes('@outlook.') || addr.includes('@hotmail.') || addr.includes('@live.') || addr.includes('@msn.')) {
+    return `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+  return `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function getMailLabel(fromEmail) {
+  const addr = (fromEmail || '').toLowerCase();
+  if (addr.includes('@gmail.com') || addr.includes('@googlemail.com')) return 'Gmail';
+  if (addr.includes('@outlook.') || addr.includes('@hotmail.') || addr.includes('@live.') || addr.includes('@msn.')) return 'Outlook';
+  return 'メールアプリ';
+}
+
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings }) {
   const isNew = !spProp;
   const [form, setForm] = useState({
     chapterId:   spProp?.chapterId   || 'kawaguchi',
@@ -19,6 +37,8 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast 
 
   const sp = isNew ? { ...form, id: '' } : spProp;
   const ch = getChapter(isNew ? form.chapterId : sp.chapterId);
+  const chSettings = chapterSettings?.[isNew ? form.chapterId : sp.chapterId] || {};
+  const chEmail = chSettings.chapterEmail || '';
 
   const formUrl = useMemo(() => {
     const BASE = 'https://nanbuchiku.github.io/nanbu-chiku-jimu-app/form.html';
@@ -67,7 +87,7 @@ Mail：rinri.nanbu@gmail.com
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); }, [mailSubject, mailBody, showToast, onClose]);
-  const openMail = useCallback(() => { window.open(`mailto:${displayEmail || ''}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`, '_blank'); onClose(); }, [displayEmail, mailSubject, mailBody, onClose]);
+  const openMail = useCallback(() => { window.open(buildMailUrl(chEmail, displayEmail || '', mailSubject, mailBody), '_blank'); onClose(); }, [chEmail, displayEmail, mailSubject, mailBody, onClose]);
 
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
@@ -149,7 +169,7 @@ Mail：rinri.nanbu@gmail.com
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={copyUrl}>📋 URLだけコピー</button>
-              <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ メールアプリで開く</button>
+              <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ {getMailLabel(chEmail)}で開く</button>
               <button style={{ background:"#fff", color:"#4527A0", border:"2px solid #7E57C2", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", gridColumn:"1/-1" }} onClick={copyMail}>📋 メール文ごとコピー（手動送信）</button>
             </div>
 
