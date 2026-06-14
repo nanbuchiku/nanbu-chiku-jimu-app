@@ -87,17 +87,18 @@ ${sig}`,
 
 いつもお世話になっております。${ch.name}単会 事務局です。
 
-${intros[pi]}${affiliation ? `\n（倫理法人会：${affiliation}）` : ""}
+${appeals[pi]}
 
 ┏━━━━━━━━━━━━━━━━━┓
 　演題「${sp.topic || '（未定）'}」
 ┗━━━━━━━━━━━━━━━━━┛
 ${summary ? `\n【講話内容】\n${summary}\n` : ''}${photoBlock}
+🎤 ${sp.speakerName} 様${sp.company ? `（${sp.company}${sp.companyRole ? `　${sp.companyRole}` : ""}）` : ""}${affiliation ? `\n（倫理法人会：${affiliation}）` : ""}
+${intros[pi]}
+
 【開催日時】${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
 【会　　場】${ch.venue}
 【住　　所】${ch.address || ch.venue}
-
-${appeals[pi]}
 
 皆様のご参加を心よりお待ちしております。
 

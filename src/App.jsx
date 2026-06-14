@@ -399,23 +399,27 @@ export default function App() {
     ];
     const idx = (patternIdx || 0) % intros.length;
 
+    const profileLines = [profileLine, affiliationLine].filter(Boolean).join("\n");
+
     const msg = `【${ch.name}単会 モーニングセミナーのご案内】
 
-🎤 ${sp.speakerName} 様
-${[profileLine, affiliationLine].filter(Boolean).join("\n")}
+いつもお世話になっております。${ch.name}単会 事務局です。
 
-${intros[idx]}
+${appeals[idx]}
 
 ┏━━━━━━━━━━━━━━━┓
 　演題「${sp.topic || '（未定）'}」
 ┗━━━━━━━━━━━━━━━┛
 ${summaryBlock}${photoLine}
 
-${appeals[idx]}
+🎤 ${sp.speakerName} 様
+${profileLines ? `${profileLines}\n` : ''}${intros[idx]}
 
 📅 ${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
 📍 ${ch.venue}
 ${ch.address}${mapLine}
+
+皆様のご参加を心よりお待ちしております。
 
 ${ch.name}単会事務局`;
     return msg;
