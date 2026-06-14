@@ -2,10 +2,10 @@ import React, { useState, useMemo, memo } from 'react';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 
-export default memo(function EmailModal({ speaker: sp, onClose, onDone, chapterSettings }) {
+export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings }) {
   const ch = getChapter(sp.chapterId);
   const chEmail = chapterSettings?.[sp.chapterId]?.chapterEmail || '';
-  const [mailType, setMailType] = useState("material");
+  const [mailType, setMailType] = useState(defaultType || "material");
   const [freeSubject, setFreeSubject] = useState("");
   const [freeBody,    setFreeBody]    = useState("");
 
@@ -107,31 +107,6 @@ ${sp.speakerName}様の貴重なお話は、参加者一同にとって大変心
 
 お忙しい中、お時間をいただきましたこと、改めて心より感謝申し上げます。
 またの機会にも、ぜひよろしくお願いいたします。
-
-${sig}`,
-    },
-    request: {
-      label: "📋 講師依頼確認",
-      subject: `【${ch.name}単会 モーニングセミナー】講師依頼のご確認`,
-      body:
-`${sp.speakerName} 様
-
-このたびは、${ch.name}単会 モーニングセミナーの講師をお引き受けいただき、誠にありがとうございます。
-
-開催日：${formatDate(sp.seminarDate)}（毎週${ch.dayName}　午前6時〜7時）
-会　場：${ch.venue}
-
-下記の内容をご確認・ご回答いただけますようお願いいたします。
-
-【ご確認いただきたい内容】
-① 顔写真のご送付（合同チラシ・当日資料に使用いたします）
-② 講話タイトルのご連絡
-③ 当日資料（レジュメ等）の有無
-   ※「あり」の場合は ${matDL} までにデータをご送付ください
-④ 前泊の有無
-   ※「あり」の場合はホテルを手配いたしますのでお知らせください
-
-ご不明な点がございましたら、お気軽にご連絡ください。
 
 ${sig}`,
     },
