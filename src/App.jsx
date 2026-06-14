@@ -13,6 +13,7 @@ import DocumentView from './components/DocumentView';
 import TasksView from './components/TasksView';
 import RankingView from './components/RankingView';
 import SpeakerTasksView from './components/SpeakerTasksView';
+import SpeakerContactView from './components/SpeakerContactView';
 import FlyerView from './components/FlyerView';
 import SpeakerForm from './components/SpeakerForm';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -714,16 +715,32 @@ ${ch.name}単会事務局`;
     return speakers.filter(sp => sp.seminarDate === todayStr && sp.status !== "cancelled");
   }, [speakers, today]);
 
+  const contactBadge = useMemo(() => {
+    let n = 0;
+    speakers.filter(s => s.status !== "cancelled").forEach(s => {
+      if (!s.seminarDate) return;
+      const diff = Math.round((new Date(s.seminarDate) - today) / 86400000);
+      let type;
+      if (diff < 0) type = "thanks";
+      else if (diff <= 1) type = "reminder";
+      else if (!(s.materialUrl || s.materialName || s.speakerChecks?.photo) && diff <= 21) type = "material";
+      else type = "promo";
+      if (!s.speakerChecks?.['contact_' + type]) n++;
+    });
+    return n;
+  }, [speakers, today]);
+
   const TABS = useMemo(() => [
     { id:"dashboard", label:"ダッシュボード", icon:"⊞", badge: dashboardBadge },
     { id:"calendar",  label:"カレンダー",     icon:"▦" },
     { id:"speakers",  label:"講師管理",       icon:"♟", badge: speakers.filter(s => s.status === "pending").length },
+    { id:"contact",   label:"講師連絡タスク", icon:"📨", badge: contactBadge },
     { id:"document",  label:"確認書作成",     icon:"≡" },
     { id:"sptasks",   label:"講師タスク",     icon:"☑", badge: sptasksBadge },
     { id:"flyer",     label:"チラシ管理",     icon:"📋" },
     { id:"tasks",     label:"タスク管理",     icon:"✓", badge: tasks.filter(t => !t.done).length },
     { id:"ranking",   label:"完了ランキング", icon:"🏆" },
-  ], [speakers, tasks, dashboardBadge, sptasksBadge]);
+  ], [speakers, tasks, dashboardBadge, sptasksBadge, contactBadge]);
 
   useEffect(() => {
     const tabLabel = TABS.find(t => t.id === tab)?.label;
@@ -776,7 +793,7 @@ ${ch.name}単会事務局`;
   // ── Derived layout values ───────────────────────────────
   const isMobile = windowWidth < 768;
   const activeNavId =
-    ["document","sptasks"].includes(tab) ? "speakers" :
+    ["document","sptasks","contact"].includes(tab) ? "speakers" :
     tab === "calendar" ? "dashboard" :
     tab;
   const primaryTabIds  = new Set(["dashboard","speakers"]);
@@ -920,11 +937,11 @@ ${ch.name}単会事務局`;
           </div>
         )}
 
-        {["document","sptasks","tasks","calendar"].includes(tab) && (
+        {["document","sptasks","contact","tasks","calendar"].includes(tab) && (
           <div className="no-print" style={{ padding:"8px 20px 0" }}>
-            <button onClick={() => setTab(["document","sptasks"].includes(tab) ? "speakers" : "dashboard")}
+            <button onClick={() => setTab(["document","sptasks","contact"].includes(tab) ? "speakers" : "dashboard")}
               style={{ background:"none", border:"none", color:"#061B44", cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, display:"inline-flex", alignItems:"center", gap:4, padding:"4px 0" }}>
-              ← {["document","sptasks"].includes(tab) ? "講師管理" : "ダッシュボード"}へ戻る
+              ← {["document","sptasks","contact"].includes(tab) ? "講師管理" : "ダッシュボード"}へ戻る
             </button>
           </div>
         )}
@@ -937,6 +954,7 @@ ${ch.name}単会事務局`;
             {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} />}
             {tab === "tasks"     && <TasksView tasks={tasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} showToast={showToast} />}
             {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
+            {tab === "contact"   && <SpeakerContactView speakers={speakers} today={today} onEmail={setEmailModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} />}
             {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} updateSpeaker={updateSpeaker} />}
             {tab === "ranking"   && <RankingView tasks={tasks} speakers={speakers} today={today} />}
           </ErrorBoundary>
