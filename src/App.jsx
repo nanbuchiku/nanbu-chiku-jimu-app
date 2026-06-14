@@ -377,11 +377,25 @@ export default function App() {
       `モーニングセミナーにて${sp.speakerName}様にご講話をいただきます。`,
       `${sp.speakerName}様をお迎えしてご講話をいただきます。`,
       `${sp.speakerName}様による講話のご案内です。`,
+      `${sp.speakerName}様をお招きし、貴重なお話を伺います。`,
+      `${sp.speakerName}様にご登壇いただきます。`,
+      `今回のモーニングセミナーは${sp.speakerName}様の講話です。`,
+      `${sp.speakerName}様から学びの時間をいただきます。`,
+      `${sp.speakerName}様のご講話をお届けします。`,
+      `${sp.speakerName}様にお越しいただきます。`,
+      `${sp.speakerName}様の特別講話のご案内です。`,
     ];
     const appeals = [
       `経営や日々の生き方にすぐ活かせる学びが詰まった講話です。ぜひご参加ください！`,
       `実践に直結するヒントが満載です。お誘い合わせの上、ぜひお越しください！`,
       `明日からの仕事と人生が変わるきっかけになるかもしれません。お見逃しなく！`,
+      `ここでしか聴けない貴重なお話です。ぜひ足をお運びください！`,
+      `朝の1時間が、あなたの一日を大きく変えます。奮ってご参加ください！`,
+      `きっと新しい気づきと出会える朝になります。皆様のお越しをお待ちしております！`,
+      `経営者として、人として、深い学びが得られる機会です。お見逃しなく！`,
+      `心に響くお話を、ぜひ一緒に聴きませんか？ご参加お待ちしております！`,
+      `仲間と共に学ぶ朝のひとときが、最高のスタートになります。ぜひどうぞ！`,
+      `聴いた方の心が動く、そんな講話になること間違いなしです。ぜひお越しください！`,
     ];
     const idx = (patternIdx || 0) % intros.length;
 
@@ -1041,7 +1055,7 @@ ${ch.name}単会事務局`;
           <div role="dialog" aria-modal="true" aria-label="LINEグループ送信プレビュー" style={{ ...MOD, maxWidth:480 }} onClick={e => e.stopPropagation()}>
             <div style={MH}><span style={{ color:"#06C755", fontSize:"clamp(20px,3vw,28px)" }}>●</span> LINEグループ送信プレビュー</div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, marginBottom:6 }}>
-              <span style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#667085" }}>パターン {(lineModal.patternIdx % 3) + 1} / 3</span>
+              <span style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#667085" }}>パターン {(lineModal.patternIdx % 10) + 1} / 10</span>
               <button style={{ background:"#F5F5F5", color:"#37474F", border:"1px solid #D0D7E2", borderRadius:6, padding:"5px 12px", fontSize:"clamp(11px,1.3vw,13px)", fontWeight:700, cursor:"pointer" }}
                 onClick={() => { const next = (lineModal.patternIdx || 0) + 1; setLineModal({ ...lineModal, patternIdx: next, msg: buildLineMsg(lineModal.speaker, next) }); }}>
                 🔄 別の文面

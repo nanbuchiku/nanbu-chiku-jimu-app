@@ -6,6 +6,7 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
   const ch = getChapter(sp.chapterId);
   const chEmail = chapterSettings?.[sp.chapterId]?.chapterEmail || '';
   const [mailType, setMailType] = useState(defaultType || "material");
+  const [promoIdx, setPromoIdx] = useState(0);
   const [freeSubject, setFreeSubject] = useState("");
   const [freeBody,    setFreeBody]    = useState("");
 
@@ -55,12 +56,38 @@ ${sig}`,
     promo: {
       label: "📣 講話の宣伝・ご案内",
       subject: `【${ch.name}単会MS】${formatDate(sp.seminarDate)} ${sp.speakerName}様 ご講話のご案内`,
-      body:
-`各位
+      body: (() => {
+        const intros = [
+          `モーニングセミナーにて、${sp.company ? `${sp.company}${sp.companyRole ? `　${sp.companyRole}` : ""}の` : ""}${sp.speakerName}様にご講話をいただきます。`,
+          `${sp.speakerName}様をお迎えしてご講話をいただきます。`,
+          `${sp.speakerName}様による講話のご案内です。`,
+          `${sp.speakerName}様をお招きし、貴重なお話を伺います。`,
+          `${sp.speakerName}様にご登壇いただきます。`,
+          `今回のモーニングセミナーは${sp.speakerName}様の講話です。`,
+          `${sp.speakerName}様から学びの時間をいただきます。`,
+          `${sp.speakerName}様のご講話をお届けします。`,
+          `${sp.speakerName}様にお越しいただきます。`,
+          `${sp.speakerName}様の特別講話のご案内です。`,
+        ];
+        const appeals = [
+          `経営や日々の生き方にすぐ活かせる学びが詰まった講話です。ぜひご参加ください。`,
+          `実践に直結するヒントが満載です。お誘い合わせの上、ぜひお越しください。`,
+          `明日からの仕事と人生が変わるきっかけになるかもしれません。お見逃しなく。`,
+          `ここでしか聴けない貴重なお話です。ぜひ足をお運びください。`,
+          `朝の1時間が、あなたの一日を大きく変えます。奮ってご参加ください。`,
+          `きっと新しい気づきと出会える朝になります。皆様のお越しをお待ちしております。`,
+          `経営者として、人として、深い学びが得られる機会です。お見逃しなく。`,
+          `心に響くお話を、ぜひ一緒に聴きませんか？ご参加お待ちしております。`,
+          `仲間と共に学ぶ朝のひとときが、最高のスタートになります。ぜひどうぞ。`,
+          `聴いた方の心が動く、そんな講話になること間違いなしです。ぜひお越しください。`,
+        ];
+        const pi = promoIdx % intros.length;
+        const affiliation = [sp.speakerUnit, sp.role].filter(Boolean).join("　");
+        return `各位
 
 いつもお世話になっております。${ch.name}単会 事務局です。
 
-このたびのモーニングセミナーにて、${sp.company ? `${sp.company}${sp.companyRole ? `　${sp.companyRole}` : ""}の` : ""}${sp.speakerName}様にご講話をいただきます。${[sp.speakerUnit, sp.role].filter(Boolean).join("　") ? `\n（倫理法人会：${[sp.speakerUnit, sp.role].filter(Boolean).join("　")}）` : ""}
+${intros[pi]}${affiliation ? `\n（倫理法人会：${affiliation}）` : ""}
 
 ┏━━━━━━━━━━━━━━━━━┓
 　演題「${sp.topic || '（未定）'}」
@@ -70,11 +97,12 @@ ${summary ? `\n【講話内容】\n${summary}\n` : ''}${photoBlock}
 【会　　場】${ch.venue}
 【住　　所】${ch.address || ch.venue}
 
-会員の皆様はもちろん、ご友人・お知り合いの経営者の方もお誘い合わせの上、ぜひご参加ください。早朝のひとときが一日の活力となります。
+${appeals[pi]}
 
 皆様のご参加を心よりお待ちしております。
 
-${sig}`,
+${sig}`;
+      })(),
     },
     reminder: {
       label: "🔔 前日リマインダー",
@@ -119,7 +147,7 @@ ${sig}`,
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, ch.name, ch.venue, ch.dayName, ch.address, ch.time, matDL, sig, summary, photoBlock]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, ch.name, ch.venue, ch.dayName, ch.address, ch.time, matDL, sig, summary, photoBlock, promoIdx]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
@@ -140,9 +168,17 @@ ${sig}`,
         </div>
 
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:4, fontWeight:600 }}>メールの種類</div>
-        <select style={{ ...INP, width:"100%", marginBottom:12, fontSize:"clamp(12px,1.4vw,14px)" }} value={mailType} onChange={e => setMailType(e.target.value)}>
-          {Object.entries(TEMPLATES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
+        <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:12 }}>
+          <select style={{ ...INP, flex:1, fontSize:"clamp(12px,1.4vw,14px)" }} value={mailType} onChange={e => setMailType(e.target.value)}>
+            {Object.entries(TEMPLATES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+          {mailType === "promo" && (
+            <button style={{ background:"#F5F5F5", color:"#37474F", border:"1px solid #D0D7E2", borderRadius:6, padding:"7px 12px", fontSize:"clamp(11px,1.3vw,13px)", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}
+              onClick={() => setPromoIdx(i => i + 1)}>
+              🔄 {(promoIdx % 10) + 1}/10
+            </button>
+          )}
+        </div>
 
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
         {isFree
