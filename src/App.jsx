@@ -354,42 +354,63 @@ export default function App() {
     }
   }, [showToast]);
 
-  const openLine = useCallback(sp => {
+  const buildLineMsg = useCallback((sp, patternIdx) => {
     const ch = getChapter(sp.chapterId);
     const mapLine = ch.mapUrl ? `\n🗺 ${ch.mapUrl}` : "";
     const affiliation = [sp.speakerUnit, sp.role].filter(Boolean).join("　");
     const company     = sp.company || "";
     const companyRole = sp.companyRole || "";
-    const careerLine  = company
-      ? `${company}${companyRole ? `にて${companyRole}として` : "にて"}ご活躍中の${sp.speakerName}様。`
-      : `${sp.speakerName}様。`;
-    const introLine = company
-      ? `${company}での実体験に裏打ちされた「${sp.topic}」のお話は、経営やリーダーシップ、そして日々の生き方に通じる学びにあふれています。`
-      : `「${sp.topic}」をテーマに、心に響く貴重なお話を伺えます。`;
-    const profileLines = [affiliation && `▶ 所属：${affiliation}`].filter(Boolean).join("\n");
+    const profileLine = company
+      ? `${company}${companyRole ? `　${companyRole}` : ""}`
+      : "";
+    const affiliationLine = affiliation ? `倫理法人会：${affiliation}` : "";
+    const summary = (() => {
+      if (!sp.notes) return '';
+      const normalized = String(sp.notes).replace(/\\n/g, '\n');
+      const m = normalized.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
+      return m ? m[1].trim() : '';
+    })();
+    const photoLine = sp.materialUrl ? `\n📷 講師写真\n${sp.materialUrl}` : '';
+    const summaryBlock = summary ? `\n💬 講話内容\n${summary}` : '';
+
+    const intros = [
+      `モーニングセミナーにて${sp.speakerName}様にご講話をいただきます。`,
+      `${sp.speakerName}様をお迎えしてご講話をいただきます。`,
+      `${sp.speakerName}様による講話のご案内です。`,
+    ];
+    const appeals = [
+      `経営や日々の生き方にすぐ活かせる学びが詰まった講話です。ぜひご参加ください！`,
+      `実践に直結するヒントが満載です。お誘い合わせの上、ぜひお越しください！`,
+      `明日からの仕事と人生が変わるきっかけになるかもしれません。お見逃しなく！`,
+    ];
+    const idx = (patternIdx || 0) % intros.length;
+
     const msg = `【${ch.name}単会 モーニングセミナーのご案内】
 
-✨ 今回の講師をご紹介します ✨
-
 🎤 ${sp.speakerName} 様
-${careerLine}
-${profileLines ? profileLines + "\n" : ""}
-━━━━━━━━━━━━━━━
-演題「${sp.topic}」
-━━━━━━━━━━━━━━━
+${[profileLine, affiliationLine].filter(Boolean).join("\n")}
 
-${introLine}
+${intros[idx]}
 
-お誘い合わせの上、ぜひご参加ください。早朝のひとときが、一日の活力になります。
+┏━━━━━━━━━━━━━━━┓
+　演題「${sp.topic || '（未定）'}」
+┗━━━━━━━━━━━━━━━┛
+${summaryBlock}${photoLine}
+
+${appeals[idx]}
 
 📅 ${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
 📍 ${ch.venue}
 ${ch.address}${mapLine}
 
-皆様のご参加を心よりお待ちしております。
 ${ch.name}単会事務局`;
-    setLineModal({ msg, speakerId: sp.id });
+    return msg;
   }, []);
+
+  const openLine = useCallback(sp => {
+    const msg = buildLineMsg(sp, 0);
+    setLineModal({ msg, speakerId: sp.id, speaker: sp, patternIdx: 0 });
+  }, [buildLineMsg]);
 
   const onViewDoc     = useCallback(sp => { setDocSpeaker(sp); setTab("document"); }, []);
   const onGoSpeakers  = useCallback((status) => { setTab("speakers"); if (status) setFilterSt(status); }, []);
@@ -1019,7 +1040,14 @@ ${ch.name}単会事務局`;
         <div style={OV} onClick={() => setLineModal(null)} role="presentation">
           <div role="dialog" aria-modal="true" aria-label="LINEグループ送信プレビュー" style={{ ...MOD, maxWidth:480 }} onClick={e => e.stopPropagation()}>
             <div style={MH}><span style={{ color:"#06C755", fontSize:"clamp(20px,3vw,28px)" }}>●</span> LINEグループ送信プレビュー</div>
-            <pre style={{ background:"#E8F5E9", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", border:"1px solid #A5D6A7", marginTop:10, maxHeight:260, overflowY:"auto" }}>{lineModal.msg}</pre>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:10, marginBottom:6 }}>
+              <span style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#667085" }}>パターン {(lineModal.patternIdx % 3) + 1} / 3</span>
+              <button style={{ background:"#F5F5F5", color:"#37474F", border:"1px solid #D0D7E2", borderRadius:6, padding:"5px 12px", fontSize:"clamp(11px,1.3vw,13px)", fontWeight:700, cursor:"pointer" }}
+                onClick={() => { const next = (lineModal.patternIdx || 0) + 1; setLineModal({ ...lineModal, patternIdx: next, msg: buildLineMsg(lineModal.speaker, next) }); }}>
+                🔄 別の文面
+              </button>
+            </div>
+            <pre style={{ background:"#E8F5E9", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", border:"1px solid #A5D6A7", maxHeight:260, overflowY:"auto" }}>{lineModal.msg}</pre>
             <div style={{ display:"flex", gap:8, marginTop:14 }}>
               <button style={BG} onClick={() => {
                 navigator.clipboard?.writeText(lineModal.msg).catch(() => {});
