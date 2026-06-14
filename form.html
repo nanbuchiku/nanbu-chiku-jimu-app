@@ -107,6 +107,14 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 .file-upload-area .upload-hint { font-size: 11px; color: #90A4AE; margin-top: 3px; }
 .file-selected { background: #E8F5E9; border-color: #43A047; }
 .file-selected .upload-text { color: #2E7D32; }
+
+.combo-box { position: relative; }
+.combo-box input { padding-right: 32px; }
+.combo-box .combo-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 10px; color: #90A4AE; }
+.combo-box .combo-list { position: absolute; left: 0; right: 0; top: 100%; background: #fff; border: 1.5px solid #CFD8DC; border-top: none; border-radius: 0 0 7px 7px; box-shadow: 0 4px 12px rgba(0,0,0,.12); z-index: 10; max-height: 200px; overflow-y: auto; display: none; }
+.combo-box .combo-list.open { display: block; }
+.combo-box .combo-list div { padding: 9px 12px; font-size: 13px; cursor: pointer; transition: background .1s; }
+.combo-box .combo-list div:hover, .combo-box .combo-list div.highlighted { background: #E8EDF7; color: #1A3A6B; font-weight: 600; }
 .upload-progress { height: 4px; background: #E0E0E0; border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
 .upload-progress-bar { height: 100%; background: #1A3A6B; border-radius: 2px; transition: width .3s; width: 0%; }
 </style>
@@ -134,6 +142,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       <div class="event-item"><span class="event-label">所属組織</span><span class="event-value" id="ev-unit">—</span></div>
       <div class="event-item"><span class="event-label">倫理法人会の役職</span><span class="event-value" id="ev-ethics">—</span></div>
       <div class="event-item"><span class="event-label">セミナー種別</span><span class="event-value" id="ev-type">—</span></div>
+      <div class="event-item" id="ev-kiso-row" style="display:none;"><span class="event-label">講座番号</span><span class="event-value" id="ev-kiso-num">—</span></div>
       <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date">—</span></div>
     </div>
     <div class="event-note">※ 記載内容に誤りがある場合は事務局までご連絡ください</div>
@@ -149,9 +158,26 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
   <!-- ===== PAGE 1: 講師プロフィール ===== -->
   <div id="page1" class="active">
-    <div class="info-box" style="margin-bottom:16px;">
+    <div class="info-box" style="margin-bottom:16px;" id="info-box-main">
       📋 このフォームはモーニングセミナー講師依頼の確認用です。<br>
       ご入力いただいた情報はチラシ・当日資料として使用いたします。
+    </div>
+
+    <div id="kiso-notice" style="display:none; background:linear-gradient(135deg,#FFF3E0,#FFE0B2); border-left:4px solid #E65100; border-radius:6px; padding:12px 14px; font-size:13px; color:#BF360C; line-height:1.7; margin-bottom:16px; font-weight:600;">
+      📘 基礎講座を選択時は、MSの確認書も同時作成されます。
+    </div>
+
+    <div class="section-card" id="kiso-section" style="display:none; margin-bottom:16px;">
+      <div class="section-header">📘 基礎講座情報</div>
+      <div class="section-body">
+        <div class="field" id="f-kiso-num">
+          <label>講座番号<span class="req">*</span></label>
+          <div style="display:flex; align-items:center; gap:8px; font-size:15px; font-weight:600;">
+            第 <input type="number" id="kisoNumber" min="1" max="30" placeholder="" style="width:70px; text-align:center; font-size:16px; font-weight:700;"> 講
+          </div>
+          <div class="error-msg">講座番号を入力してください</div>
+        </div>
+      </div>
     </div>
 
     <div class="section-card">
@@ -171,7 +197,36 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
         <div class="field" id="f-role">
           <label>企業での役職<span class="req">*</span><span class="hint">チラシに記載します</span></label>
-          <input type="text" id="role" placeholder="代表取締役">
+          <div class="combo-box">
+            <input type="text" id="role" placeholder="選択または入力" autocomplete="off">
+            <span class="combo-arrow">▼</span>
+            <div class="combo-list" id="role-list">
+              <div data-val="代表">代表</div>
+              <div data-val="代表取締役">代表取締役</div>
+              <div data-val="代表取締役社長">代表取締役社長</div>
+              <div data-val="取締役">取締役</div>
+              <div data-val="取締役会長">取締役会長</div>
+              <div data-val="会長">会長</div>
+              <div data-val="社長">社長</div>
+              <div data-val="副社長">副社長</div>
+              <div data-val="専務">専務</div>
+              <div data-val="専務取締役">専務取締役</div>
+              <div data-val="常務">常務</div>
+              <div data-val="常務取締役">常務取締役</div>
+              <div data-val="部長">部長</div>
+              <div data-val="次長">次長</div>
+              <div data-val="課長">課長</div>
+              <div data-val="係長">係長</div>
+              <div data-val="主任">主任</div>
+              <div data-val="所長">所長</div>
+              <div data-val="店長">店長</div>
+              <div data-val="院長">院長</div>
+              <div data-val="理事長">理事長</div>
+              <div data-val="監査役">監査役</div>
+              <div data-val="顧問">顧問</div>
+              <div data-val="相談役">相談役</div>
+            </div>
+          </div>
           <div class="error-msg">役職を入力してください</div>
         </div>
 
@@ -455,6 +510,16 @@ document.addEventListener('DOMContentLoaded', () => {
     set('ev-date',   urlDate ? fmt(urlDate) : '');
     document.getElementById('eventBanner').style.display = 'block';
   }
+  // 基礎講座の場合: 専用UI表示
+  if (urlType === 'kiso') {
+    document.getElementById('kiso-notice').style.display = 'block';
+    document.getElementById('kiso-section').style.display = 'block';
+    document.getElementById('ev-kiso-row').style.display = 'flex';
+    const infoBox = document.getElementById('info-box-main');
+    if (infoBox) { infoBox.innerHTML = '📋 このフォームは<strong>倫理経営基礎講座</strong>講師依頼の確認用です。<br>ご入力いただいた情報はチラシ・当日資料として使用いたします。'; }
+    const kisoInput = document.getElementById('kisoNumber');
+    if (kisoInput) { kisoInput.addEventListener('input', function() { set('ev-kiso-num', this.value ? '第' + this.value + '講' : '—'); }); }
+  }
   if (speakerId) {
     const infoBox = document.querySelector('#page1 .info-box');
     if (infoBox) infoBox.innerHTML = '⏳ 以前の回答内容を読み込み中...';
@@ -486,6 +551,11 @@ async function prefillFromDB() {
     if (urlEthics && role.startsWith(urlEthics + '・')) role = role.slice(urlEthics.length + 1);
     setVal('role',  role);
     setVal('phone', data.phone);
+    if (data.kiso_number) {
+      setVal('kisoNumber', data.kiso_number);
+      const evKiso = document.getElementById('ev-kiso-num');
+      if (evKiso) evKiso.textContent = '第' + data.kiso_number + '講';
+    }
 
     // ページ2
     setVal('topic', data.topic);
@@ -598,6 +668,7 @@ function requiredRadio(name, errId, wrapperId) {
 
 function validatePage1() {
   let ok = true;
+  if (urlType === 'kiso') { ok = required('kisoNumber','f-kiso-num') && ok; }
   ok = required('speakerKana','f-kana')   && ok;
   ok = required('company',    'f-company')&& ok;
   ok = required('role',       'f-role')   && ok;
@@ -838,6 +909,7 @@ async function submitForm() {
     print_required: radio('print') || '不要',
     seminar_type: urlType || 'ms',
     seminar_date: urlDate || null,
+    kiso_number: urlType === 'kiso' ? (val('kisoNumber') || null) : null,
   };
   if (!speakerId) {
     payload.status = 'pending';
@@ -898,6 +970,63 @@ async function submitForm() {
     alert('送信中にエラーが発生しました。時間をおいて再度お試しください。\n' + e.message);
   }
 }
+
+// コンボボックス（役職プルダウン + 手入力）
+(function() {
+  const input = document.getElementById('role');
+  const list = document.getElementById('role-list');
+  const items = list.querySelectorAll('div');
+
+  input.addEventListener('focus', function() {
+    filterList('');
+    list.classList.add('open');
+  });
+
+  input.addEventListener('input', function() {
+    filterList(this.value);
+    list.classList.add('open');
+  });
+
+  items.forEach(function(item) {
+    item.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      input.value = this.dataset.val;
+      list.classList.remove('open');
+    });
+  });
+
+  input.addEventListener('blur', function() {
+    setTimeout(function() { list.classList.remove('open'); }, 150);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    const visible = list.querySelectorAll('div:not([style*="display: none"])');
+    let idx = -1;
+    visible.forEach(function(el, i) { if (el.classList.contains('highlighted')) idx = i; });
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (idx < visible.length - 1) idx++;
+      visible.forEach(function(el) { el.classList.remove('highlighted'); });
+      if (visible[idx]) { visible[idx].classList.add('highlighted'); visible[idx].scrollIntoView({block:'nearest'}); }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (idx > 0) idx--;
+      visible.forEach(function(el) { el.classList.remove('highlighted'); });
+      if (visible[idx]) { visible[idx].classList.add('highlighted'); visible[idx].scrollIntoView({block:'nearest'}); }
+    } else if (e.key === 'Enter' && idx >= 0 && visible[idx]) {
+      e.preventDefault();
+      input.value = visible[idx].dataset.val;
+      list.classList.remove('open');
+    }
+  });
+
+  function filterList(val) {
+    items.forEach(function(item) {
+      item.style.display = item.dataset.val.indexOf(val) >= 0 ? '' : 'none';
+      item.classList.remove('highlighted');
+    });
+  }
+})();
 </script>
 </body>
 </html>
