@@ -28,6 +28,19 @@ const DATE_RANGES = [
   { value: "30",   label: "今後30日" },
 ];
 
+function getSmartMail(sp, today) {
+  if (!sp.seminarDate) return { label:"✉ メール", type:"material", bg:"#1565C0" };
+  const d = new Date(sp.seminarDate);
+  const t = new Date(today);
+  const diff = Math.round((d - t) / 86400000);
+  if (diff < 0)  return { label:"🙏 お礼", type:"thanks", bg:"#6A1B9A" };
+  if (diff <= 1) return { label:"🔔 リマインド", type:"reminder", bg:"#E65100" };
+  const hasMaterial = sp.materialUrl || sp.materialName;
+  const hasPhoto = sp.speakerChecks?.photo;
+  if (!hasMaterial && !hasPhoto && diff <= 21) return { label:"📎 資料催促", type:"material", bg:"#C62828" };
+  return { label:"📣 宣伝案内", type:"promo", bg:"#1565C0" };
+}
+
 export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -333,10 +346,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
                 {/* 6. アクション：メール / LINE */}
                 <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:6 }}>
-                  <button onClick={() => onEmail(sp)}
-                    style={{ fontSize:"var(--fs-xs)", background:"#1565C0", color:"#fff", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
-                    ✉ メール
+                  {(() => { const sm = getSmartMail(sp, today); return (
+                  <button onClick={() => onEmail({ speaker: sp, defaultType: sm.type })}
+                    style={{ fontSize:"var(--fs-xs)", background:sm.bg, color:"#fff", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}>
+                    {sm.label}
                   </button>
+                  ); })()}
                   {sp.lineNotified ? (
                     <button onClick={async () => { const ok = await updateSpeaker(sp.id,{lineNotified:false}); if(ok)showToast("LINE未送信に戻しました"); }}
                       style={{ fontSize:"var(--fs-xs)", background:"#E8F5E9", color:"#06A848", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:700, whiteSpace:"nowrap" }}
@@ -356,14 +371,14 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 </div>
 
                 {/* 7. 編集 / 削除 */}
-                <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:10, borderLeft:"1px solid #F1F5F9", paddingLeft:"clamp(8px,1.5vw,14px)" }}>
+                <div style={{ flexShrink:0, display:"flex", flexDirection:"column", gap:8, borderLeft:"1px solid #F1F5F9", paddingLeft:"clamp(8px,1.5vw,14px)" }}>
                   <button onClick={() => onEdit(sp)} title="編集" aria-label={`${sp.speakerName}を編集`}
-                    style={{ background:"none", border:"none", cursor:"pointer", color:"#1565C0", fontSize:"clamp(11px,1.6vw,14px)", fontWeight:700, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                    <span style={{ fontSize:"var(--fs-md)" }}>✏</span>編集
+                    style={{ background:"#1565C0", color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontSize:"clamp(11px,1.6vw,14px)", fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", gap:4, padding:"8px 14px", whiteSpace:"nowrap" }}>
+                    ✎ 編集
                   </button>
                   <button onClick={() => onDelete(sp.id)} title="削除" aria-label={`${sp.speakerName}を削除`}
-                    style={{ background:"none", border:"none", cursor:"pointer", color:"#B71C1C", fontSize:"clamp(11px,1.6vw,14px)", fontWeight:700, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                    <span style={{ fontSize:"var(--fs-md)" }}>🗑</span>削除
+                    style={{ background:"#FFEBEE", color:"#B71C1C", border:"1px solid #FFCDD2", borderRadius:8, cursor:"pointer", fontSize:"clamp(11px,1.6vw,14px)", fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", gap:4, padding:"8px 14px", whiteSpace:"nowrap" }}>
+                    🗑 削除
                   </button>
                 </div>
               </div>

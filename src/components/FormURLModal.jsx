@@ -61,29 +61,44 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   const displayDate  = isNew ? form.seminarDate : sp.seminarDate;
   const displayEmail = isNew ? form.email       : sp.email;
 
-  const mailSubject = useMemo(() => `【${ch?.name}単会 モーニングセミナー】講師確認フォームのご案内`, [ch]);
+  const matDL = useMemo(() => {
+    if (!displayDate) return '';
+    const [y, m, d] = displayDate.split('-').map(Number);
+    const dt = new Date(y, m - 1, d - 14);
+    return formatDate(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`);
+  }, [displayDate]);
+
+  const sig = chEmail
+    ? `━━━━━━━━━━━━━━━━━\n倫理法人会 ${ch?.name}単会 事務局\nMail：${chEmail}\n━━━━━━━━━━━━━━━━━`
+    : `━━━━━━━━━━━━━━━━━\n倫理法人会 南部地区合同事務局\nMail：rinri.nanbu@gmail.com\n━━━━━━━━━━━━━━━━━`;
+
+  const mailSubject = useMemo(() => `【${ch?.name}単会 モーニングセミナー】講師依頼のご確認`, [ch]);
   const mailBody = useMemo(() =>
 `${displayName || '　　　'} 様
 
 このたびは、${ch?.name}単会 モーニングセミナーの講師をお引き受けいただき、誠にありがとうございます。
 
-以下のURLより、講師情報のご入力と顔写真・資料のご提出をお願いいたします。
+開催日：${displayDate ? formatDate(displayDate) : '　　　年　　月　　日'}（毎週${ch?.dayName || ''}　${ch?.time || ''}）
+会　場：${ch?.venue || ''}
 
+下記の内容をご確認・ご回答いただけますようお願いいたします。
+
+【ご確認いただきたい内容】
+① 顔写真のご送付（合同チラシ・当日資料に使用いたします）
+② 講話タイトルのご連絡
+③ 当日資料（レジュメ等）の有無
+   ※「あり」の場合は ${matDL || '開催2週間前'} までにデータをご送付ください
+④ 前泊の有無
+   ※「あり」の場合はホテルを手配いたしますのでお知らせください
+
+▼ 下記フォームからまとめてご回答いただけます
 ──────────────────────
-▼ 講話依頼確認フォーム
 ${formUrl}
 ──────────────────────
 
-開催日：${displayDate ? formatDate(displayDate) : '　　　年　　月　　日'}
-会　場：${ch?.venue || ''}
-時　間：${ch?.time  || ''}
-
 ご不明な点がございましたら、お気軽にご連絡ください。
 
-━━━━━━━━━━━━━━━━━
-倫理法人会 南部地区合同事務局
-Mail：rinri.nanbu@gmail.com
-━━━━━━━━━━━━━━━━━`, [displayName, displayDate, ch, formUrl]);
+${sig}`, [displayName, displayDate, ch, formUrl, matDL, sig]);
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); }, [mailSubject, mailBody, showToast, onClose]);
