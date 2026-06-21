@@ -519,6 +519,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (infoBox) { infoBox.innerHTML = '📋 このフォームは<strong>倫理経営基礎講座</strong>講師依頼の確認用です。<br>ご入力いただいた情報はチラシ・当日資料として使用いたします。'; }
     const kisoInput = document.getElementById('kisoNumber');
     if (kisoInput) { kisoInput.addEventListener('input', function() { set('ev-kiso-num', this.value ? '第' + this.value + '講' : '—'); }); }
+    // 基礎講座は顔写真を任意に
+    const photoLabel = document.querySelector('#f-photo > label');
+    if (photoLabel) {
+      const reqSpan = photoLabel.querySelector('.req');
+      if (reqSpan) reqSpan.style.display = 'none';
+      photoLabel.insertAdjacentHTML('beforeend', '<span class="hint">（基礎講座は任意）</span>');
+    }
   }
   if (speakerId) {
     const infoBox = document.querySelector('#page1 .info-box');
@@ -702,13 +709,14 @@ function validatePage2() {
 function validatePage3() {
   let ok = true;
 
-  // 顔写真アップロード（更新時は既存写真があれば省略可）
+  // 顔写真アップロード（基礎講座は任意、それ以外は必須。更新時は既存写真があれば省略可）
   const photoFile = document.getElementById('photoFile').files[0];
   const hasExistingPhoto = speakerId && existingData?.material_url;
   const pe = document.getElementById('photo-error');
   const pf = document.getElementById('f-photo');
-  if (!photoFile && !hasExistingPhoto) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
-  else                                 { pe.style.display='none';  pf.classList.remove('has-error'); }
+  const photoRequired = urlType !== 'kiso';
+  if (photoRequired && !photoFile && !hasExistingPhoto) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
+  else                                                  { pe.style.display='none';  pf.classList.remove('has-error'); }
 
   ok = requiredRadio('receiptType','receipt-error', 'f-receipt')  && ok;
   ok = required('address','f-address') && ok;
