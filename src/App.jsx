@@ -145,6 +145,7 @@ export default function App() {
   });
   const [settingsOpen,   setSettingsOpen]  = useState(false);
   const [settingsSaving, setSettingsSaving]= useState(false);
+  const [pwModal, setPwModal] = useState(false);
   const [windowWidth,    setWindowWidth]   = useState(() => window.innerWidth);
   const [mobileDrawer,   setMobileDrawer]  = useState(false);
 
@@ -937,6 +938,7 @@ ${ch.name}単会事務局`;
               <button onClick={exportBackup} title="バックアップを自分のPCに保存" style={{ flex:1, background:"rgba(220,80,80,.25)", border:"1px solid rgba(255,150,150,.5)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer" }}>⬇</button>
               <label title="バックアップから復元（ファイルをアプリに読み込む）" style={{ flex:1, background:"rgba(80,140,230,.25)", border:"1px solid rgba(150,190,255,.5)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer", textAlign:"center" }}>⬆<input type="file" accept=".json" style={{ display:"none" }} onChange={e => { importBackup(e.target.files[0]); e.target.value = ""; }} /></label>
               <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.18)", border:"1px solid rgba(255,255,255,.35)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
+              <button onClick={() => setPwModal(true)} title="パスワード変更" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>🔑</button>
               <button onClick={() => db.auth.signOut()} title="ログアウト" style={{ flex:1, background:"rgba(220,50,50,.25)", border:"1px solid rgba(255,100,100,.4)", borderRadius:6, color:"rgba(255,180,180,.9)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⏻</button>
             </div>
           </div>
@@ -1117,6 +1119,41 @@ ${ch.name}単会事務局`;
         </>
       )}
 
+      {pwModal && (() => {
+        const PwModal = () => {
+          const [cur, setCur] = useState('');
+          const [nw, setNw] = useState('');
+          const [nw2, setNw2] = useState('');
+          const [msg, setMsg] = useState('');
+          const [saving, setSaving] = useState(false);
+          const handlePw = async () => {
+            if (nw.length < 6) { setMsg('パスワードは6文字以上にしてください'); return; }
+            if (nw !== nw2) { setMsg('新しいパスワードが一致しません'); return; }
+            setSaving(true); setMsg('');
+            const { error } = await db.auth.updateUser({ password: nw });
+            if (error) setMsg('変更に失敗しました: ' + error.message);
+            else { setMsg('✅ パスワードを変更しました'); setTimeout(() => setPwModal(false), 1200); }
+            setSaving(false);
+          };
+          const pwInp = { width:'100%', boxSizing:'border-box', border:'1.5px solid #D9E1EE', borderRadius:8, padding:'10px 12px', fontSize:14, outline:'none', marginBottom:12 };
+          return (
+            <div style={OV} onClick={() => setPwModal(false)}>
+              <div style={{ ...MOD, maxWidth:400 }} onClick={e => e.stopPropagation()}>
+                <div style={MH}>🔑 パスワード変更</div>
+                <div style={{ marginTop:12 }}>
+                  <label style={{ fontSize:13, fontWeight:600, color:'#667085', display:'block', marginBottom:4 }}>新しいパスワード</label>
+                  <input type="password" value={nw} onChange={e => setNw(e.target.value)} placeholder="6文字以上" style={pwInp} />
+                  <label style={{ fontSize:13, fontWeight:600, color:'#667085', display:'block', marginBottom:4 }}>新しいパスワード（確認）</label>
+                  <input type="password" value={nw2} onChange={e => setNw2(e.target.value)} placeholder="もう一度入力" style={pwInp} />
+                  {msg && <div style={{ fontSize:13, padding:'8px 12px', borderRadius:8, marginBottom:12, background: msg.startsWith('✅') ? '#E8FFF8' : '#FFEBEE', color: msg.startsWith('✅') ? '#16813A' : '#B71C1C', fontWeight:600 }}>{msg}</div>}
+                  <button onClick={handlePw} disabled={saving} style={{ ...BP, width:'100%', padding:'11px 0', fontSize:15 }}>{saving ? '変更中...' : 'パスワードを変更'}</button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+        return <PwModal />;
+      })()}
       {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} />}
       {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
       {emailModal && <EmailModal speaker={emailModal.speaker || emailModal} defaultType={emailModal.defaultType} onClose={onCloseEmail} onDone={onDoneEmail} chapterSettings={chapterSettings} />}
