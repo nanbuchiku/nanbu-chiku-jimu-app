@@ -13,7 +13,7 @@ export default function LoginPage() {
     setLoading(true);
     const { error } = await db.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message || JSON.stringify(error));
+      setError('メールアドレスまたはパスワードが正しくありません。');
     }
     setLoading(false);
   };
