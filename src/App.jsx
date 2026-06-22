@@ -64,7 +64,21 @@ const DEFAULT_CHAPTER_SETTINGS = {
   },
 };
 
+const ADMIN_EMAILS = ['rinri.nanbu@gmail.com'];
+
 export default function App() {
+  const [authUser, setAuthUser] = useState(undefined); // undefined=loading, null=未認証
+
+  useEffect(() => {
+    db.auth.getSession().then(({ data: { session } }) => {
+      setAuthUser(session?.user ?? null);
+    });
+    const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
+      setAuthUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const [fontScale, setFontScale] = useState(() => initFontScale());
 
   const changeFontScale = useCallback((key) => {
@@ -75,7 +89,7 @@ export default function App() {
   const [tab, setTabRaw] = useState(() => {
     try {
       const hash = window.location.hash.slice(1);
-      if (["dashboard","calendar","speakers","document","sptasks","flyer","tasks","ranking"].includes(hash)) return hash;
+      if (["dashboard","calendar","speakers","document","sptasks","contact","flyer","tasks","ranking"].includes(hash)) return hash;
       return localStorage.getItem('lastTab') || "dashboard";
     } catch { return "dashboard"; }
   });
@@ -88,7 +102,7 @@ export default function App() {
   useEffect(() => {
     const onHash = () => {
       const hash = window.location.hash.slice(1);
-      if (["dashboard","calendar","speakers","document","sptasks","flyer","tasks","ranking"].includes(hash)) setTab(hash);
+      if (["dashboard","calendar","speakers","document","sptasks","contact","flyer","tasks","ranking"].includes(hash)) setTab(hash);
     };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
@@ -133,6 +147,19 @@ export default function App() {
   const [settingsSaving, setSettingsSaving]= useState(false);
   const [windowWidth,    setWindowWidth]   = useState(() => window.innerWidth);
   const [mobileDrawer,   setMobileDrawer]  = useState(false);
+
+  // ユーザー権限判定: admin（合同事務局）or chapter（単会）
+  const userRole = useMemo(() => {
+    if (!authUser) return null;
+    const addr = (authUser.email || '').toLowerCase();
+    if (ADMIN_EMAILS.includes(addr)) return { role: 'admin', chapterId: null };
+    for (const [chId, s] of Object.entries(chapterSettings)) {
+      if (s.chapterEmail && s.chapterEmail.toLowerCase() === addr) return { role: 'chapter', chapterId: chId };
+    }
+    return { role: 'admin', chapterId: null };
+  }, [authUser, chapterSettings]);
+
+  const isAdmin = userRole?.role === 'admin';
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -228,7 +255,14 @@ export default function App() {
     }
   }, [chapterSettings, showToast]);
 
-  useEffect(() => { loadData(); loadSettings(); }, []);
+  useEffect(() => { if (authUser) { loadData(); loadSettings(); } }, [authUser]);
+
+  // 単会ユーザーはフィルターを自分の単会に固定
+  useEffect(() => {
+    if (userRole?.role === 'chapter' && userRole.chapterId) {
+      setFilterCh(userRole.chapterId);
+    }
+  }, [userRole]);
 
   useEffect(() => {
     const channel = db.channel('app-sync')
@@ -433,7 +467,10 @@ ${ch.name}単会事務局`;
 
   const onViewDoc     = useCallback(sp => { setDocSpeaker(sp); setTab("document"); }, []);
   const onGoSpeakers  = useCallback((status) => { setTab("speakers"); if (status) setFilterSt(status); }, []);
-  const onSetFilterCh = useCallback(v => { setFilterCh(v); try { localStorage.setItem('spFilterCh', v); } catch {} }, []);
+  const onSetFilterCh = useCallback(v => {
+    if (userRole?.role === 'chapter' && userRole.chapterId) return; // 単会ユーザーは変更不可
+    setFilterCh(v); try { localStorage.setItem('spFilterCh', v); } catch {}
+  }, [userRole]);
   const onSetFilterSt = useCallback(v => { setFilterSt(v); try { localStorage.setItem('spFilterSt', v); } catch {} }, []);
   const onEditSpeaker = useCallback(sp => { setEditSpeaker(sp); setShowForm(true); }, []);
   const onAddSpeaker  = useCallback(() => { setEditSpeaker(null); setShowForm(true); }, []);
@@ -811,6 +848,14 @@ ${ch.name}単会事務局`;
     </button>
   );
 
+  // 認証チェック
+  if (authUser === undefined) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", background:"#F4F5F7", flexDirection:"column", gap:16 }}>
+      <div style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #061B44", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
+    </div>
+  );
+  if (authUser === null) return <LoginPage />;
+
   if (loading) return (
     <div role="status" aria-label="読み込み中" style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", background:"#F4F5F7", flexDirection:"column", gap:16 }}>
       <div aria-hidden="true" style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #061B44", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
@@ -881,6 +926,11 @@ ${ch.name}単会事務局`;
                   }}
                 >文{opt.label}</button>
               ))}
+            </div>
+            {/* ログインユーザー表示 */}
+            <div style={{ background:"rgba(255,255,255,.1)", borderRadius:8, padding:"8px 10px", marginBottom:6, fontSize:12, color:"rgba(255,255,255,.7)", lineHeight:1.6 }}>
+              <div style={{ fontWeight:700, color:"rgba(255,255,255,.9)" }}>{isAdmin ? "🏛 合同事務局" : `📍 ${CHAPTERS.find(c => c.id === userRole?.chapterId)?.name || ""}単会`}</div>
+              <div style={{ fontSize:11, wordBreak:"break-all" }}>{authUser?.email}</div>
             </div>
             <div style={{ display:"flex", gap:4 }}>
               <button onClick={() => setShowHelp(h => !h)} title="ショートカット" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>?</button>
