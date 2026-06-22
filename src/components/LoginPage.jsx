@@ -18,7 +18,7 @@ export default function LoginPage() {
       },
     });
     if (error) {
-      setError('送信に失敗しました。メールアドレスを確認してください。');
+      setError('送信に失敗しました: ' + (error.message || JSON.stringify(error)));
     } else {
       setSent(true);
     }
