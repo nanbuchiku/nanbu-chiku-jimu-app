@@ -427,7 +427,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
     finally { setCanvaBusy(false); }
   }, [canvaSpeakers, canvaSel, buildCanvaBuffer, selMonth, showToast]);
 
-  const { year, month, daysLeft, deadlineColor } = useMemo(() => {
+  const { year, month, dlYear, dlMonth, daysLeft, deadlineColor } = useMemo(() => {
     const [y, m] = selMonth.split("-").map(Number);
     const dl = new Date(y, m - 2, 10); // 前月10日
     const days = Math.ceil((dl - today) / 86400000);
