@@ -429,9 +429,11 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
 
   const { year, month, daysLeft, deadlineColor } = useMemo(() => {
     const [y, m] = selMonth.split("-").map(Number);
-    const dl = new Date(y, m - 1, 10);
+    const dl = new Date(y, m - 2, 10); // 前月10日
     const days = Math.ceil((dl - today) / 86400000);
-    return { year: y, month: m, deadline: dl, daysLeft: days, deadlineColor: days < 0 ? "#B71C1C" : days <= 3 ? "#E65100" : days <= 7 ? "#FF8F00" : "#2E7D32" };
+    const dlMonth = dl.getMonth() + 1;
+    const dlYear = dl.getFullYear();
+    return { year: y, month: m, dlYear, dlMonth, daysLeft: days, deadlineColor: days < 0 ? "#B71C1C" : days <= 3 ? "#E65100" : days <= 7 ? "#FF8F00" : "#2E7D32" };
   }, [selMonth, today]);
 
   // 完成度（予定人数基準）
@@ -457,7 +459,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
   const buildLineText = useMemo(() => {
     const lines = [
       `【${selMonth.replace("-","年")}月号　チラシ流し込みデータ】`,
-      `締め切り：${year}年${month}月10日`,
+      `チラシデータ事務局宛て締め切り：${dlYear}年${dlMonth}月10日`,
       ``,
     ];
     flyerData.forEach(({ ch, sps }) => {
@@ -613,9 +615,9 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
       <div style={{ ...CARD, marginBottom:12, borderLeft:`5px solid ${deadlineColor}`, padding:"10px 16px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
           <div>
-            <div style={{ fontSize:FS_SM, color:"#667085" }}>データ送付締め切り</div>
+            <div style={{ fontSize:FS_SM, color:"#667085" }}>チラシデータ事務局宛て締め切り</div>
             <div style={{ fontSize:FS_MD, fontWeight:800, color: deadlineColor }}>
-              {year}年{month}月10日
+              {dlYear}年{dlMonth}月10日
               <span style={{ fontSize:FS_SM, marginLeft:10 }}>
                 {daysLeft < 0 ? `⚠ ${Math.abs(daysLeft)}日超過` : daysLeft === 0 ? "⚠ 本日締め切り！" : `残り ${daysLeft}日`}
               </span>
