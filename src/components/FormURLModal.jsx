@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS, SEMINAR_TYPES } from '../constants';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
@@ -22,18 +22,46 @@ function getMailLabel(fromEmail) {
   return 'メールアプリ';
 }
 
+const DRAFT_KEY = 'formurl_draft_v1';
+const EMPTY_FORM = {
+  chapterId: 'kawaguchi', speakerName: '', speakerUnit: '',
+  seminarDate: '', seminarType: 'ms', role: '', email: '',
+};
+function loadDraft() {
+  try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY)); return d && typeof d === 'object' ? d : null; }
+  catch { return null; }
+}
+
 export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings }) {
   const isNew = !spProp;
+  const draft = isNew ? loadDraft() : null;
   const [form, setForm] = useState({
-    chapterId:   spProp?.chapterId   || 'kawaguchi',
-    speakerName: spProp?.speakerName || '',
-    speakerUnit: spProp?.speakerUnit || '',
-    seminarDate: spProp?.seminarDate || '',
-    seminarType: spProp?.seminarType || 'ms',
-    role:        spProp?.role        || '',
-    email:       spProp?.email       || '',
+    chapterId:   draft?.chapterId   ?? spProp?.chapterId   ?? 'kawaguchi',
+    speakerName: draft?.speakerName ?? spProp?.speakerName ?? '',
+    speakerUnit: draft?.speakerUnit ?? spProp?.speakerUnit ?? '',
+    seminarDate: draft?.seminarDate ?? spProp?.seminarDate ?? '',
+    seminarType: draft?.seminarType ?? spProp?.seminarType ?? 'ms',
+    role:        draft?.role        ?? spProp?.role        ?? '',
+    email:       draft?.email       ?? spProp?.email       ?? '',
   });
+  const [restored, setRestored] = useState(!!draft);
   const [generated, setGenerated] = useState(!isNew);
+
+  // 入力途中の内容を自動下書き保存（新規作成時のみ）。誤って閉じても再度開けば復元される。
+  useEffect(() => {
+    if (!isNew) return;
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch {}
+  }, [isNew, form]);
+
+  const hasInput = isNew && (form.speakerName || form.speakerUnit || form.seminarDate || form.role || form.email);
+  const clearDraft = useCallback(() => { try { localStorage.removeItem(DRAFT_KEY); } catch {} }, []);
+  const resetInput = useCallback(() => {
+    clearDraft(); setForm({ ...EMPTY_FORM }); setGenerated(false); setRestored(false);
+  }, [clearDraft]);
+  const requestClose = useCallback(() => {
+    if (hasInput && !window.confirm('入力内容が消えます。閉じてよろしいですか？\n（「キャンセル」で入力に戻れます。入力は自動保存され、次に開くと復元されます）')) return;
+    onClose();
+  }, [hasInput, onClose]);
 
   const sp = isNew ? { ...form, id: '' } : spProp;
   const ch = getChapter(isNew ? form.chapterId : sp.chapterId);
@@ -119,8 +147,8 @@ ${sig}`;
   }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine]);
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
-  const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); onClose(); }, [mailSubject, mailBody, showToast, onClose]);
-  const openMail = useCallback(() => { window.open(buildMailUrl(chEmail, displayEmail || '', mailSubject, mailBody), '_blank'); onClose(); }, [chEmail, displayEmail, mailSubject, mailBody, onClose]);
+  const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, clearDraft, onClose]);
+  const openMail = useCallback(() => { window.open(buildMailUrl(chEmail, displayEmail || '', mailSubject, mailBody), '_blank'); clearDraft(); onClose(); }, [chEmail, displayEmail, mailSubject, mailBody, clearDraft, onClose]);
 
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
@@ -137,9 +165,16 @@ ${sig}`;
   const INP2 = { width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:"clamp(12px,1.4vw,14px)", background:"#fff" };
 
   return (
-    <div style={OV} onClick={onClose} role="presentation">
+    <div style={OV} role="presentation">
       <div role="dialog" aria-modal="true" aria-label="講話依頼確認フォーム作成" style={{ ...MOD, maxWidth:560 }} onClick={e => e.stopPropagation()}>
         <div style={MH}>📝 講話依頼確認フォーム作成</div>
+
+        {isNew && restored && !generated && (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:8, padding:"8px 12px", marginTop:12, fontSize:"clamp(11px,1.3vw,13px)", color:"#8D6E00" }}>
+            <span>📝 前回の入力を復元しました</span>
+            <button style={{ background:"#fff", border:"1px solid #FFCA28", color:"#8D6E00", borderRadius:6, padding:"4px 10px", fontSize:"clamp(11px,1.3vw,13px)", fontWeight:700, cursor:"pointer", flexShrink:0 }} onClick={resetInput}>入力をクリア</button>
+          </div>
+        )}
 
         {isNew && !generated && (
           <div style={{ background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:12, padding:"18px 20px", marginTop:12 }}>
@@ -233,7 +268,7 @@ ${sig}`;
 
         <div style={{ display:"flex", justifyContent:"space-between", marginTop:12 }}>
           {isNew && generated && <button style={{ ...BC, background:"#EDE7F6", color:"#4527A0", border:"1px solid #B39DDB" }} onClick={() => setGenerated(false)}>← 入力に戻る</button>}
-          <button style={{ ...BC, marginLeft:"auto" }} onClick={onClose}>閉じる</button>
+          <button style={{ ...BC, marginLeft:"auto" }} onClick={requestClose}>閉じる</button>
         </div>
       </div>
     </div>

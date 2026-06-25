@@ -4,4 +4,5 @@ dist
 *.local
 .env
 .env.*
-_apply_migrate.mjs
+_*.mjs
+.claude/launch.json
