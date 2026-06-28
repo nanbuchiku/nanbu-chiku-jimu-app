@@ -308,8 +308,9 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
     setLoading(true);
     setError('');
     try {
+      // 受信トレイのみ（送信済み・アーカイブ・迷惑メール等は除外）
       // 件名で委員名絞り込み・指定期間分のみ
-      const qParts = [];
+      const qParts = ['in:inbox'];
       if (cm) qParts.push(`subject:${cm}`);
       if (kw.trim()) qParts.push(kw.trim());
       qParts.push(`newer_than:${days}d`);
