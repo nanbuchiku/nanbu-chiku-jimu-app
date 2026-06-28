@@ -438,7 +438,7 @@ const urlType    = urlParams.get('type')  || '';
 const urlEthics  = urlParams.get('ethics')|| '';
 const urlEmail   = urlParams.get('email') || '';
 
-const SEMINAR_LABELS = { ms:'モーニングセミナー', kiso:'倫理経営基礎講座', koen:'倫理経営講演会', tsudoi:'経営者の集い', evening:'イブニングセミナー', other:'その他セミナー' };
+const SEMINAR_LABELS = { ms:'モーニングセミナー', kiso:'倫理経営基礎講座', koen:'倫理経営講演会', tsudoi:'経営者の集い', evening:'イブニングセミナー', other:'自主企画' };
 
 // イベントバナーに事務局入力情報を表示
 document.addEventListener('DOMContentLoaded', () => {
@@ -882,7 +882,7 @@ function openConfirmationMail(payload, extraUrls) {
   const checks= name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(x=>x.value).join('・');
   const fmtD  = d => { if (!d) return '未定'; const dt = new Date(d + 'T00:00:00'); return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日（${"日月火水木金土"[dt.getDay()]}）`; };
 
-  const seminarLabel = SEMINAR_LABELS[payload.seminar_type] || payload.seminar_type || 'セミナー';
+  const seminarLabel = SEMINAR_LABELS[payload.seminar_type] || payload.seminar_type || '講話';
   let dateLine = fmtD(payload.seminar_date);
   if (payload.seminar_type === 'kiso' && payload.seminar_date) {
     const d2 = new Date(payload.seminar_date + 'T00:00:00');
