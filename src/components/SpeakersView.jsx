@@ -25,7 +25,12 @@ const DATE_RANGES = [
   { value: "past", label: "過去のみ" },
   { value: "7",    label: "今後7日" },
   { value: "14",   label: "今後14日" },
-  { value: "30",   label: "今後30日" },
+  { value: "m1",   label: "今後1ヶ月" },
+  { value: "m2",   label: "今後2ヶ月" },
+  { value: "m3",   label: "今後3ヶ月" },
+  { value: "m4",   label: "今後4ヶ月" },
+  { value: "m5",   label: "今後5ヶ月" },
+  { value: "m6",   label: "今後6ヶ月" },
 ];
 
 function getSmartMail(sp, today) {
@@ -107,7 +112,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     const pad = n => String(n).padStart(2, "0");
     const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
     const cutoffStr = (dateRange !== "all" && dateRange !== "past") ? (() => {
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + parseInt(dateRange, 10));
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      if (dateRange[0] === 'm') d.setMonth(d.getMonth() + parseInt(dateRange.slice(1), 10));
+      else d.setDate(d.getDate() + parseInt(dateRange, 10));
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     })() : null;
     const cutoff30 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30);
