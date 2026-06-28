@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS, SEMINAR_TYPES } from '../constants';
-import { getChapter, formatDate } from '../utils';
+import { getChapter, formatDate, getSeminarType } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 import { printFaxForm } from '../faxPrint';
 
@@ -102,6 +102,9 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
 
   const seminarType = isNew ? form.seminarType : sp.seminarType;
   const isKiso = seminarType === 'kiso';
+  const isMs = !seminarType || seminarType === 'ms';
+  // 種別ラベル（ms=モーニングセミナー / kiso=倫理経営基礎講座 / それ以外＝自主企画の自由入力名）
+  const eventLabel = isKiso ? '倫理経営基礎講座' : isMs ? 'モーニングセミナー' : getSeminarType(seminarType).label;
 
   const msDateLine = useMemo(() => {
     if (!isKiso || !displayDate) return '';
@@ -111,13 +114,10 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   }, [isKiso, displayDate]);
 
   const mailSubject = useMemo(() =>
-    isKiso
-      ? `【${ch?.name}単会 倫理経営基礎講座】講師依頼のご確認`
-      : `【${ch?.name}単会 モーニングセミナー】講師依頼のご確認`,
-  [ch, isKiso]);
+    `【${ch?.name}単会 ${eventLabel}】講師依頼のご確認`,
+  [ch, eventLabel]);
 
   const mailBody = useMemo(() => {
-    const eventLabel = isKiso ? '倫理経営基礎講座' : 'モーニングセミナー';
     const photoLine = isKiso
       ? '① 講話タイトルのご連絡'
       : '① 顔写真のご送付（合同チラシ・当日資料に使用いたします）\n② 講話タイトルのご連絡';
@@ -144,7 +144,7 @@ ${formUrl}
 ご不明な点がございましたら、お気軽にご連絡ください。
 
 ${sig}`;
-  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine]);
+  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel]);
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, clearDraft, onClose]);
@@ -204,9 +204,25 @@ ${sig}`;
               </div>
               <div>
                 <label style={LB}>セミナー種別</label>
-                <select style={INP2} value={form.seminarType} onChange={e => setForm(f => ({ ...f, seminarType: e.target.value }))}>
-                  {SEMINAR_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                </select>
+                {(() => {
+                  const KNOWN = SEMINAR_TYPES.filter(x => x.id !== "other");
+                  const isCustom = !!form.seminarType && !KNOWN.some(x => x.id === form.seminarType);
+                  return (
+                    <>
+                      <select style={INP2} value={isCustom ? "other" : (form.seminarType || "")}
+                        onChange={e => setForm(f => ({ ...f, seminarType: e.target.value }))}>
+                        {KNOWN.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                        <option value="other">自主企画（自由入力）</option>
+                      </select>
+                      {isCustom && (
+                        <input type="text" style={{ ...INP2, marginTop:5 }}
+                          placeholder="セミナー名を入力（例：新春特別講演会）"
+                          value={form.seminarType === "other" ? "" : form.seminarType}
+                          onChange={e => setForm(f => ({ ...f, seminarType: e.target.value || "other" }))} />
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>講師メールアドレス *</label>
