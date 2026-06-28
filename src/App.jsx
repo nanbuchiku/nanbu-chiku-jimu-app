@@ -77,6 +77,7 @@ const ADMIN_EMAILS = [
 const USER_CHAPTER_MAP = {
   'nekonimatatabi39@gmail.com':  'kawaguchi',      // 須藤佳子（川口）
   'nagatsuma@li-go.jp':          'kawaguchi',      // 長妻（川口）
+  'info@junmarriage.com':        'kawaguchi',      // （川口）
   '3minami373minami3@gmail.com': 'kawaguchi_east', // 松田見奈美（川口東）
   'nagatakeyoshimasa@gmail.com': 'kawaguchi_east', // 長竹嘉昌（川口東）
   'nakada45034503@gmail.com':    'kawaguchi_east', // 中田ひろし（川口東）
