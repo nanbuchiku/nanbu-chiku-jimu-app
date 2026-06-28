@@ -33,6 +33,7 @@ export const SEMINAR_TYPES = [
   { id:"tsudoi",  label:"経営者の集い",       short:"集い", color:"#4E342E", venueFixed:false, hasLodging:true  },
   { id:"evening", label:"イブニングセミナー", short:"イブ", color:"#37474F", venueFixed:false, hasLodging:"optional" },
   { id:"koen",    label:"倫理経営講演会",     short:"倫経", color:"#7B0000", venueFixed:false, hasLodging:true  },
+  { id:"other",   label:"その他",             short:"他",   color:"#78909C", venueFixed:false, hasLodging:"optional" },
 ];
 
 export const DISTRICT_ID = '11111111-1111-1111-1111-111111111111';
