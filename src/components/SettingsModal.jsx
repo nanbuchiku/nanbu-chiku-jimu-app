@@ -54,8 +54,10 @@ function Inp({ value, onChange, placeholder, type }) {
   );
 }
 
-export default function SettingsModal({ chapterSettings, onSave, onClose, saving }) {
-  const [activeId, setActiveId] = useState(CHAPTERS[0].id);
+export default function SettingsModal({ chapterSettings, onSave, onClose, saving, lockChapterId }) {
+  // 単会ユーザーは自分の単会のみ。管理者は全単会。
+  const visibleChapters = lockChapterId ? CHAPTERS.filter(c => c.id === lockChapterId) : CHAPTERS;
+  const [activeId, setActiveId] = useState(lockChapterId || CHAPTERS[0].id);
   const [form, setForm] = useState({});
 
   useEffect(() => {
@@ -76,18 +78,20 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
 
         <div style={{ ...MH, marginBottom:14 }}>⚙ 単会設定</div>
 
-        {/* Chapter tabs */}
-        <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
-          {CHAPTERS.map(ch => (
-            <button key={ch.id} onClick={() => setActiveId(ch.id)}
-              style={{ padding:'5px 13px', fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, borderRadius:20, border:'none',
-                cursor:'pointer', transition:'background .15s',
-                background: activeId === ch.id ? ch.color : '#F1F5F9',
-                color:      activeId === ch.id ? '#fff'   : '#667085' }}>
-              {ch.short || ch.name}
-            </button>
-          ))}
-        </div>
+        {/* Chapter tabs（単会ユーザーは自分の単会のみのため非表示） */}
+        {visibleChapters.length > 1 && (
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
+            {visibleChapters.map(ch => (
+              <button key={ch.id} onClick={() => setActiveId(ch.id)}
+                style={{ padding:'5px 13px', fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, borderRadius:20, border:'none',
+                  cursor:'pointer', transition:'background .15s',
+                  background: activeId === ch.id ? ch.color : '#F1F5F9',
+                  color:      activeId === ch.id ? '#fff'   : '#667085' }}>
+                {ch.short || ch.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: activeCh.color, marginBottom:10,
           padding:'5px 10px', background: activeCh.light, borderRadius:6 }}>
