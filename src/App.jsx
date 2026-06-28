@@ -68,6 +68,7 @@ const DEFAULT_CHAPTER_SETTINGS = {
 const ADMIN_EMAILS = [
   'rinri.nanbu@gmail.com',        // 合同事務局
   'g-forever.ryu@ezweb.ne.jp',    // 髙橋竜一（南部地区 地区長）
+  'hosina0447@gmail.com',         // 開発者（管理者ビュー確認用）
 ];
 
 // 個人ログイン → 所属単会の対応表（自分の単会だけが見える）
@@ -87,6 +88,12 @@ const USER_CHAPTER_MAP = {
   'ogi67tkys41@gmail.com':       'asaka',          // 荻山隆義（朝霞）
   'ogajun0317@gmail.com':        'niizashiki',     // 小笠原順子（新座志木）
   'nizashikirinri@gmail.com':    'niizashiki',     // 新座志木 事務局
+  // 開発者用 単会ビュー確認アカウント（Gmail +エイリアス。全て hosina0447@gmail.com に届く）
+  'hosina0447+kawaguchi@gmail.com':     'kawaguchi',
+  'hosina0447+kawaguchieast@gmail.com': 'kawaguchi_east',
+  'hosina0447+todawarabi@gmail.com':    'todawarabi',
+  'hosina0447+asaka@gmail.com':         'asaka',
+  'hosina0447+niizashiki@gmail.com':    'niizashiki',
 };
 
 export default function App() {
