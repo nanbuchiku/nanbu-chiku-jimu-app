@@ -248,7 +248,7 @@ function extractEmailSummary(subject, body) {
 }
 
 // ─── GmailInbox コンポーネント ─────────────────────────────────
-function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect }) {
+function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect, lockChapterId }) {
   const [open,       setOpen]       = useState(true);
   const [token,      setToken]      = useState(() => getStoredToken());
   const [keyword,    setKeyword]    = useState('');
@@ -475,7 +475,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
       }
       const title = subject.replace(/【[^】]*】/g, '').replace(/Re:|Fw:/gi, '').trim();
       const url = pickRelatedUrl(body);   // 本文から関連URLを自動抽出
-      return { ...f, [emailId]: { open: true, title, dueDate, priority:'medium', chapterId: ALL_CHAPTER.id, url } };
+      return { ...f, [emailId]: { open: true, title, dueDate, priority:'medium', chapterId: lockChapterId || ALL_CHAPTER.id, url } };
     });
   };
 
@@ -791,8 +791,8 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
                                         value={taskForms[em.id].chapterId}
                                         onChange={e => updateTaskForm(em.id, 'chapterId', e.target.value)}
                                         style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }}>
-                                        <option value={ALL_CHAPTER.id}>全単会（各単会に個別追加）</option>
-                                        {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+                                        {!lockChapterId && <option value={ALL_CHAPTER.id}>全単会（各単会に個別追加）</option>}
+                                        {(lockChapterId ? CHAPTERS.filter(c => c.id === lockChapterId) : CHAPTERS).map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
                                       </select>
                                       {/* 優先度 */}
                                       <select
@@ -897,7 +897,9 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect })
   );
 }
 
-export default memo(function TasksView({ tasks, emails = [], today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, onAddTaskDirect, onAddTaskBatchDirect, showToast }) {
+export default memo(function TasksView({ tasks, emails = [], today, newTask, setNewTask, onToggle, onDelete, onAdd, onAddBatch, onUpdate, onDeleteDone, onAddTaskDirect, onAddTaskBatchDirect, showToast, lockChapterId }) {
+  // 単会ユーザーは自分の単会のみ（全単会・他単会は選べない）
+  const chapterOptions = lockChapterId ? CHAPTERS.filter(c => c.id === lockChapterId) : CHAPTERS;
   const [showDone,    setShowDone]    = useState(true);
   const [filterCh,   setFilterCh]    = useState("all");
   const [filterPrio, setFilterPrio]  = useState("all");
@@ -998,7 +1000,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
 
   const chapterStats = useMemo(() => {
     const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-    return CHAPTERS.map(ch => {
+    return chapterOptions.map(ch => {
       const chTasks = tasks.filter(t => t.chapterId === ch.id && !t.done);
       const overdue = chTasks.filter(t => t.dueDate && t.dueDate < todayStr).length;
       const thisWeek = chTasks.filter(t => { if (!t.dueDate) return false; const dl = Math.ceil((parseDate(t.dueDate) - today) / 86400000); return dl >= 0 && dl <= 7; }).length;
@@ -1016,10 +1018,12 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
           {doneCount > 0 && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:"#78909C" }}>完了 {doneCount}件</span>}
         </div>
         <div style={{ display:"flex", gap:6, marginLeft:"auto", flexWrap:"wrap", alignItems:"center" }}>
-          <select aria-label="単会フィルター" style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
-            <option value="all">全単会</option>
-            {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
-          </select>
+          {!lockChapterId && (
+            <select aria-label="単会フィルター" style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
+              <option value="all">全単会</option>
+              {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+            </select>
+          )}
           <select aria-label="優先度フィルター" style={SEL} value={filterPrio} onChange={e => setFilterPrio(e.target.value)}>
             <option value="all">全優先度</option>
             <option value="high">🔴 高</option>
@@ -1067,7 +1071,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
         </div>
       )}
 
-      <GmailInbox today={today} showToast={showToast} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} />
+      <GmailInbox today={today} showToast={showToast} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} lockChapterId={lockChapterId} />
 
       <div style={{ ...CARD, marginBottom:12 }}>
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#667085", marginBottom:7 }}>＋ タスク追加</div>
@@ -1075,8 +1079,8 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
           <input aria-label="タスク内容" style={{ ...INP, flex:3, minWidth:160 }} placeholder="タスク内容..." value={newTask.title} onChange={e => setNewTask({ ...newTask, title: e.target.value })} />
           <input aria-label="関連URL" type="url" style={{ ...INP, flex:2, minWidth:140 }} placeholder="関連URL（フォーム・Drive等）任意" value={newTask.url || ""} onChange={e => setNewTask({ ...newTask, url: e.target.value })} />
           <select aria-label="担当単会" style={SEL} value={newTask.chapterId} onChange={e => setNewTask({ ...newTask, chapterId: e.target.value })}>
-            <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>
-            {CHAPTERS.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
+            {!lockChapterId && <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>}
+            {chapterOptions.map(ch => <option key={ch.id} value={ch.id}>{ch.name}</option>)}
           </select>
           <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
             <input aria-label="期限" type="date" style={INP} value={newTask.dueDate} onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })} />
@@ -1094,7 +1098,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
             <option value="low">🟢 低</option>
           </select>
           <button style={BP} onClick={onAdd}>追加</button>
-          {onAddBatch && (
+          {onAddBatch && !lockChapterId && (
             <button style={{ background:"#667085", color:"#fff", border:"none", borderRadius:6, padding:"7px 12px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }} title="全5単会に同じタスクを追加" onClick={onAddBatch}>
               ＋全単会
             </button>
@@ -1139,7 +1143,7 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                         return (
                           <tr key={t.id} style={{ background:"#E3F2FD" }}>
                             <td style={TD}><input type="checkbox" checked={t.done} disabled style={{ cursor:"not-allowed", opacity:.4 }} /></td>
-                            <td style={TD}><select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}><option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>{CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
+                            <td style={TD}><select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>{!lockChapterId && <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>}{chapterOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
                             <td style={{ ...TD, maxWidth:200 }}><input autoFocus style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") saveEdit(t.id); if (e.key === "Escape") setEditingId(null); }} /></td>
                             <td style={TD}><input type="date" style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.dueDate} onChange={e => setEditForm(f => ({ ...f, dueDate: e.target.value }))} /></td>
                             <td style={{ ...TD, minWidth:130 }}><input type="url" style={{ ...INP, width:"100%", fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="関連URL（任意）" value={editForm.url || ""} onChange={e => setEditForm(f => ({ ...f, url: e.target.value }))} /></td>
@@ -1195,8 +1199,8 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                       <td style={TD}><input type="checkbox" checked={t.done} disabled style={{ cursor:"not-allowed", opacity:.4 }} /></td>
                       <td style={TD}>
                         <select style={{ ...SEL, fontSize:"clamp(12px,1.4vw,14px)" }} value={editForm.chapterId} onChange={e => setEditForm(f => ({ ...f, chapterId: e.target.value }))}>
-                          <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>
-                          {CHAPTERS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          {!lockChapterId && <option value={ALL_CHAPTER.id}>{ALL_CHAPTER.name}</option>}
+                          {chapterOptions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </td>
                       <td style={{ ...TD, maxWidth:200 }}>
