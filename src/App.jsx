@@ -64,7 +64,30 @@ const DEFAULT_CHAPTER_SETTINGS = {
   },
 };
 
-const ADMIN_EMAILS = ['rinri.nanbu@gmail.com'];
+// 管理者（合同事務局・地区長）: 全単会が見える
+const ADMIN_EMAILS = [
+  'rinri.nanbu@gmail.com',        // 合同事務局
+  'g-forever.ryu@ezweb.ne.jp',    // 髙橋竜一（南部地区 地区長）
+];
+
+// 個人ログイン → 所属単会の対応表（自分の単会だけが見える）
+// 新しい利用者を追加したら、メール(小文字)と単会IDをここに追記する。
+// 単会ID: todawarabi / kawaguchi_east / niizashiki / asaka / kawaguchi
+const USER_CHAPTER_MAP = {
+  'nekonimatatabi39@gmail.com':  'kawaguchi',      // 須藤佳子（川口）
+  'nagatsuma@li-go.jp':          'kawaguchi',      // 長妻（川口）
+  '3minami373minami3@gmail.com': 'kawaguchi_east', // 松田見奈美（川口東）
+  'nagatakeyoshimasa@gmail.com': 'kawaguchi_east', // 長竹嘉昌（川口東）
+  'nakada45034503@gmail.com':    'kawaguchi_east', // 中田ひろし（川口東）
+  'y.yukiyama@gmail.com':        'kawaguchi_east', // 雪山靖（川口東）
+  'nishii@westoc.co.jp':         'todawarabi',     // 西井正憲（とだわらび）
+  'kishida.e@gmail.com':         'todawarabi',     // 岸田悦男（とだわらび）
+  'hirosisisi72@gmail.com':      'todawarabi',     // 木之下寛（とだわらび）
+  'sw0713@ezweb.ne.jp':          'todawarabi',     // 和知幸子（とだわらび）
+  'ogi67tkys41@gmail.com':       'asaka',          // 荻山隆義（朝霞）
+  'ogajun0317@gmail.com':        'niizashiki',     // 小笠原順子（新座志木）
+  'nizashikirinri@gmail.com':    'niizashiki',     // 新座志木 事務局
+};
 
 export default function App() {
   const [authUser, setAuthUser] = useState(undefined); // undefined=loading, null=未認証
@@ -154,6 +177,7 @@ export default function App() {
     if (!authUser) return null;
     const addr = (authUser.email || '').toLowerCase();
     if (ADMIN_EMAILS.includes(addr)) return { role: 'admin', chapterId: null };
+    if (USER_CHAPTER_MAP[addr]) return { role: 'chapter', chapterId: USER_CHAPTER_MAP[addr] };
     for (const [chId, s] of Object.entries(chapterSettings)) {
       if (s.chapterEmail && s.chapterEmail.toLowerCase() === addr) return { role: 'chapter', chapterId: chId };
     }
@@ -161,6 +185,15 @@ export default function App() {
   }, [authUser, chapterSettings]);
 
   const isAdmin = userRole?.role === 'admin';
+  const scopeChapter = userRole?.role === 'chapter' ? userRole.chapterId : null;
+
+  // 単会ユーザーには自分の単会のデータのみを渡す（管理者は全件）
+  const scopedSpeakers = useMemo(
+    () => scopeChapter ? speakers.filter(s => s.chapterId === scopeChapter) : speakers,
+    [speakers, scopeChapter]);
+  const scopedTasks = useMemo(
+    () => scopeChapter ? tasks.filter(t => t.chapterId === scopeChapter) : tasks,
+    [tasks, scopeChapter]);
 
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
@@ -258,10 +291,11 @@ export default function App() {
 
   useEffect(() => { if (authUser) { loadData(); loadSettings(); } }, [authUser]);
 
-  // 単会ユーザーはフィルターを自分の単会に固定
+  // 単会ユーザーはフィルターを自分の単会に固定し、新規タスクの既定単会もそろえる
   useEffect(() => {
     if (userRole?.role === 'chapter' && userRole.chapterId) {
       setFilterCh(userRole.chapterId);
+      setNewTask(t => ({ ...t, chapterId: userRole.chapterId }));
     }
   }, [userRole]);
 
@@ -474,7 +508,7 @@ ${ch.name}単会事務局`;
   }, [userRole]);
   const onSetFilterSt = useCallback(v => { setFilterSt(v); try { localStorage.setItem('spFilterSt', v); } catch {} }, []);
   const onEditSpeaker = useCallback(sp => { setEditSpeaker(sp); setShowForm(true); }, []);
-  const onAddSpeaker  = useCallback(() => { setEditSpeaker(null); setShowForm(true); }, []);
+  const onAddSpeaker  = useCallback(() => { setEditSpeaker(scopeChapter ? { chapterId: scopeChapter } : null); setShowForm(true); }, [scopeChapter]);
 
   const onToggleTask = useCallback(async id => {
     const t = tasksRef.current.find(x => x.id === id);
@@ -728,10 +762,10 @@ ${ch.name}単会事務局`;
     const cutoff7Str = toDateStr(cutoff7);
     const cutoff30 = new Date(today); cutoff30.setDate(today.getDate() + 30);
     const cutoff30Str = toDateStr(cutoff30);
-    const pending = speakers.filter(sp => sp.status === "pending" && sp.seminarDate >= todayStr && sp.requestDate && sp.requestDate <= cutoff7Str).length;
-    const missing = speakers.filter(sp => sp.status === "confirmed" && sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoff30Str && (!sp.topic || !sp.speakerKana || !sp.email)).length;
+    const pending = scopedSpeakers.filter(sp => sp.status === "pending" && sp.seminarDate >= todayStr && sp.requestDate && sp.requestDate <= cutoff7Str).length;
+    const missing = scopedSpeakers.filter(sp => sp.status === "confirmed" && sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoff30Str && (!sp.topic || !sp.speakerKana || !sp.email)).length;
     return pending + missing;
-  }, [speakers, today]);
+  }, [scopedSpeakers, today]);
 
   const sptasksBadge = useMemo(() => {
     const fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14);
@@ -739,23 +773,23 @@ ${ch.name}単会事務局`;
     const fromStr  = toDateStr(fromDate);
     const toStr    = toDateStr(toDate);
     let n = 0;
-    speakers
+    scopedSpeakers
       .filter(s => s.status !== "cancelled" && s.seminarDate && s.seminarDate >= fromStr && s.seminarDate <= toStr)
       .forEach(s => {
         const checks = s.speakerChecks || {};
         buildSpeakerTasks(s).forEach(t => { if (!checks[t.id]) n++; });
       });
     return n;
-  }, [speakers, today]);
+  }, [scopedSpeakers, today]);
 
   const todaysSpeakers = useMemo(() => {
     const todayStr = toDateStr(today);
-    return speakers.filter(sp => sp.seminarDate === todayStr && sp.status !== "cancelled");
-  }, [speakers, today]);
+    return scopedSpeakers.filter(sp => sp.seminarDate === todayStr && sp.status !== "cancelled");
+  }, [scopedSpeakers, today]);
 
   const contactBadge = useMemo(() => {
     let n = 0;
-    speakers.filter(s => s.status !== "cancelled").forEach(s => {
+    scopedSpeakers.filter(s => s.status !== "cancelled").forEach(s => {
       if (!s.seminarDate) return;
       const diff = Math.round((new Date(s.seminarDate) - today) / 86400000);
       let type;
@@ -766,19 +800,19 @@ ${ch.name}単会事務局`;
       if (!s.speakerChecks?.['contact_' + type]) n++;
     });
     return n;
-  }, [speakers, today]);
+  }, [scopedSpeakers, today]);
 
   const TABS = useMemo(() => [
     { id:"dashboard", label:"ダッシュボード", icon:"⊞", badge: dashboardBadge },
     { id:"calendar",  label:"カレンダー",     icon:"▦" },
-    { id:"speakers",  label:"講師管理",       icon:"♟", badge: speakers.filter(s => s.status === "pending").length },
+    { id:"speakers",  label:"講師管理",       icon:"♟", badge: scopedSpeakers.filter(s => s.status === "pending").length },
     { id:"contact",   label:"講師連絡タスク", icon:"📨", badge: contactBadge },
     { id:"document",  label:"確認書作成",     icon:"≡" },
     { id:"sptasks",   label:"講師タスク",     icon:"☑", badge: sptasksBadge },
     { id:"flyer",     label:"チラシ管理",     icon:"📋" },
-    { id:"tasks",     label:"タスク管理",     icon:"✓", badge: tasks.filter(t => !t.done).length },
+    { id:"tasks",     label:"タスク管理",     icon:"✓", badge: scopedTasks.filter(t => !t.done).length },
     { id:"ranking",   label:"完了ランキング", icon:"🏆" },
-  ], [speakers, tasks, dashboardBadge, sptasksBadge, contactBadge]);
+  ], [scopedSpeakers, scopedTasks, dashboardBadge, sptasksBadge, contactBadge]);
 
   useEffect(() => {
     const tabLabel = TABS.find(t => t.id === tab)?.label;
@@ -1000,15 +1034,15 @@ ${ch.name}単会事務局`;
 
         <main style={{ flex:1, padding:"16px 20px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box", paddingBottom: isMobile ? 100 : 16 }}>
           <ErrorBoundary key={tab}>
-            {tab === "dashboard" && <Dashboard speakers={speakers} tasks={tasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
-            {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
-            {tab === "speakers"  && <SpeakersView speakers={speakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} />}
+            {tab === "dashboard" && <Dashboard speakers={scopedSpeakers} tasks={scopedTasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
+            {tab === "calendar"  && <CalendarView speakers={scopedSpeakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
+            {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} />}
             {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} />}
-            {tab === "tasks"     && <TasksView tasks={tasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} showToast={showToast} />}
-            {tab === "sptasks"   && <SpeakerTasksView speakers={speakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
-            {tab === "contact"   && <SpeakerContactView speakers={speakers} today={today} onEmail={setEmailModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} />}
-            {tab === "flyer"     && <FlyerView speakers={speakers} today={today} showToast={showToast} updateSpeaker={updateSpeaker} />}
-            {tab === "ranking"   && <RankingView tasks={tasks} speakers={speakers} today={today} />}
+            {tab === "tasks"     && <TasksView tasks={scopedTasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} showToast={showToast} />}
+            {tab === "sptasks"   && <SpeakerTasksView speakers={scopedSpeakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
+            {tab === "contact"   && <SpeakerContactView speakers={scopedSpeakers} today={today} onEmail={setEmailModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} />}
+            {tab === "flyer"     && <FlyerView speakers={scopedSpeakers} today={today} showToast={showToast} updateSpeaker={updateSpeaker} />}
+            {tab === "ranking"   && <RankingView tasks={scopedTasks} speakers={scopedSpeakers} today={today} />}
           </ErrorBoundary>
         </main>
 
