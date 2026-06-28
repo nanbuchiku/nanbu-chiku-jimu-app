@@ -308,7 +308,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:14 }}>
           {[
-            { l:"種別 *",      k:"seminarType", t:"select", o: SEMINAR_TYPES.map(t => ({ v:t.id, l:t.label })) },
+            { l:"種別 *",      k:"seminarType", t:"stype" },
             { l:"単会",        k:"chapterId",   t:"select", o: CHAPTERS.map(c => ({ v:c.id, l:c.name })) },
             { l: form.seminarType === "kiso" ? "基礎講座日 *" : "開催日 *", k:"seminarDate", t:"date" },
             { l:"講師名 *",    k:"speakerName", t:"text",  p:"山田 太郎" },
@@ -328,7 +328,26 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                 <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} value={form[k] || ""} onChange={e => set(k, e.target.value)}>
                   {o.map(x => <option key={x.v} value={x.v}>{x.l}</option>)}
                 </select>
-              ) : (
+              ) : t === "stype" ? (() => {
+                const KNOWN = SEMINAR_TYPES.filter(x => x.id !== "other");
+                const isCustom = !!form.seminarType && !KNOWN.some(x => x.id === form.seminarType);
+                return (
+                  <>
+                    <select disabled={saving} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }}
+                      value={isCustom ? "other" : (form.seminarType || "")}
+                      onChange={e => set("seminarType", e.target.value)}>
+                      {KNOWN.map(x => <option key={x.id} value={x.id}>{x.label}</option>)}
+                      <option value="other">自主企画（自由入力）</option>
+                    </select>
+                    {isCustom && (
+                      <input disabled={saving} type="text" style={{ ...INP, width:"100%", marginTop:5, opacity: saving ? .6 : 1 }}
+                        placeholder="セミナー名を入力（例：新春特別講演会）"
+                        value={form.seminarType === "other" ? "" : form.seminarType}
+                        onChange={e => set("seminarType", e.target.value || "other")} />
+                    )}
+                  </>
+                );
+              })() : (
                 <input disabled={saving} autoFocus={k === "speakerName"} type={t} style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder={p} value={form[k] || ""} onChange={e => set(k, e.target.value)} />
               )}
               {k === "seminarType" && form.seminarType === "kiso" && (

@@ -2,7 +2,12 @@ import { CHAPTERS, ALL_CHAPTER, SEMINAR_TYPES } from './constants';
 
 const FALLBACK_CHAPTER = { id:"", name:"不明", short:"?", color:"#98A2B3", accent:"#B0BEC5", light:"#FAFAFA", day:-1, dayName:"不明", venue:"", time:"" };
 export const getChapter = id => (id === ALL_CHAPTER.id ? ALL_CHAPTER : CHAPTERS.find(c => c.id === id)) || FALLBACK_CHAPTER;
-export const getSeminarType = id => SEMINAR_TYPES.find(t => t.id === id) || SEMINAR_TYPES[0];
+// 既知の種別はそのまま、未知の値（自主企画の自由入力テキスト）はラベルとして合成して返す
+export const getSeminarType = id => {
+  if (!id) return SEMINAR_TYPES[0];
+  return SEMINAR_TYPES.find(t => t.id === id)
+    || { id, label: id, short: id.slice(0, 2), color: "#78909C", venueFixed: false, hasLodging: "optional" };
+};
 export const realToday = () => new Date();
 export const toDateStr = d => {
   const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : d;
