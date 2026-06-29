@@ -4,10 +4,14 @@ import { getChapter, formatDate, getSeminarType } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 import { printFaxForm } from '../faxPrint';
 
+// 送信元は常に合同事務局アドレスに固定
+const SENDER_EMAIL = 'rinri.nanbu@gmail.com';
+
 function buildMailUrl(fromEmail, toEmail, subject, body) {
   const addr = (fromEmail || '').toLowerCase();
   if (addr.includes('@gmail.com') || addr.includes('@googlemail.com')) {
-    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(toEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // authuser で差出アカウントを指定（rinri.nanbu でログインしていれば確実にそのアカウントで開く）
+    return `https://mail.google.com/mail/?authuser=${encodeURIComponent(fromEmail)}&view=cm&fs=1&to=${encodeURIComponent(toEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
   if (addr.includes('@outlook.') || addr.includes('@hotmail.') || addr.includes('@live.') || addr.includes('@msn.')) {
     return `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -96,9 +100,8 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     return formatDate(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`);
   }, [displayDate]);
 
-  const sig = chEmail
-    ? `━━━━━━━━━━━━━━━━━\n倫理法人会 ${ch?.name}単会 事務局\nMail：${chEmail}\n━━━━━━━━━━━━━━━━━`
-    : `━━━━━━━━━━━━━━━━━\n倫理法人会 南部地区合同事務局\nMail：rinri.nanbu@gmail.com\n━━━━━━━━━━━━━━━━━`;
+  // 署名は常に合同事務局に統一
+  const sig = `━━━━━━━━━━━━━━━━━\n倫理法人会 南部地区合同事務局\nMail：${SENDER_EMAIL}\n━━━━━━━━━━━━━━━━━`;
 
   const seminarType = isNew ? form.seminarType : sp.seminarType;
   const isKiso = seminarType === 'kiso';
@@ -148,7 +151,7 @@ ${sig}`;
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, clearDraft, onClose]);
-  const openMail = useCallback(() => { window.open(buildMailUrl(chEmail, displayEmail || '', mailSubject, mailBody), '_blank'); clearDraft(); onClose(); }, [chEmail, displayEmail, mailSubject, mailBody, clearDraft, onClose]);
+  const openMail = useCallback(() => { window.open(buildMailUrl(SENDER_EMAIL, displayEmail || '', mailSubject, mailBody), '_blank'); clearDraft(); onClose(); }, [displayEmail, mailSubject, mailBody, clearDraft, onClose]);
 
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
@@ -253,7 +256,7 @@ ${sig}`;
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={copyUrl}>📋 URLだけコピー</button>
-              <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ {getMailLabel(chEmail)}で開く</button>
+              <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ {getMailLabel(SENDER_EMAIL)}で開く（合同事務局）</button>
               <button style={{ background:"#fff", color:"#4527A0", border:"2px solid #7E57C2", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", gridColumn:"1/-1" }} onClick={copyMail}>📋 メール文ごとコピー（手動送信）</button>
             </div>
 
