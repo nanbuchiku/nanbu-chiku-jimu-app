@@ -201,11 +201,7 @@ ${sig}`;
                 <label style={LB}>所属法人会名</label>
                 <input type="text" style={INP2} placeholder="例：川口倫理法人会" value={form.speakerUnit} onChange={e => setForm(f => ({ ...f, speakerUnit: e.target.value }))} />
               </div>
-              <div>
-                <label style={LB}>法人会役職</label>
-                <input type="text" style={INP2} placeholder="例：幹事" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} />
-              </div>
-              <div>
+              <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>セミナー種別</label>
                 {(() => {
                   const KNOWN = SEMINAR_TYPES.filter(x => x.id !== "other");

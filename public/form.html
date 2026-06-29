@@ -132,7 +132,6 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
     <div class="event-banner-body">
       <div class="event-item"><span class="event-label">講師名</span><span class="event-value" id="ev-name">—</span></div>
       <div class="event-item"><span class="event-label">所属法人会名</span><span class="event-value" id="ev-unit">—</span></div>
-      <div class="event-item"><span class="event-label">法人会役職</span><span class="event-value" id="ev-ethics">—</span></div>
       <div class="event-item"><span class="event-label">セミナー種別</span><span class="event-value" id="ev-type">—</span></div>
       <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date" style="white-space:pre-line;">—</span></div>
     </div>
@@ -161,6 +160,15 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
           <label>ふりがな<span class="req">*</span><span class="hint">ひらがな</span></label>
           <input type="text" id="speakerKana" placeholder="やまだ たろう">
           <div class="error-msg">ふりがなを入力してください</div>
+        </div>
+
+        <div class="field" id="f-ethics">
+          <label>法人会役職<span class="req">*</span></label>
+          <div style="background:#FFF3CD;border:1.5px solid #FFC107;border-radius:8px;padding:8px 12px;margin:4px 0 6px;font-size:14px;color:#856404;font-weight:700;line-height:1.6;">
+            ⚠ <strong>講話日当日の役職</strong>をご入力ください
+          </div>
+          <input type="text" id="ethics" placeholder="例：会長・専任幹事・幹事 など">
+          <div class="error-msg">法人会役職を入力してください</div>
         </div>
 
         <div class="field" id="f-company">
@@ -447,8 +455,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const set = (id, v) => { const el=document.getElementById(id); if (el) el.textContent = v || '—'; };
     set('ev-name',   urlName ? urlName + ' 様' : '');
     set('ev-unit',   urlUnit);
-    set('ev-ethics', urlEthics);
     set('ev-type',   SEMINAR_LABELS[urlType] || urlType);
+    // 法人会役職は講師本人が入力。万一URLで渡された場合のみ初期値として補完
+    const ethEl = document.getElementById('ethics'); if (ethEl && urlEthics) ethEl.value = urlEthics;
     if (urlType === 'kiso' && urlDate) {
       const d2 = new Date(urlDate + 'T00:00:00');
       d2.setDate(d2.getDate() + 1);
@@ -628,6 +637,7 @@ function requiredRadio(name, errId, wrapperId) {
 function validatePage1() {
   let ok = true;
   ok = required('speakerKana','f-kana')       && ok;
+  ok = required('ethics',     'f-ethics')     && ok;
   ok = required('phone',      'f-phone')      && ok;
   return ok;
 }
@@ -998,7 +1008,7 @@ async function submitForm() {
     email:   urlEmail,
     company:      val('company'),
     company_role: val('companyRole'),
-    role:         urlEthics || '',
+    role:         val('ethics') || urlEthics || '',
     topic:        val('topic'),
     notes:   notesLines,
     lodging: radio('lodging'),
