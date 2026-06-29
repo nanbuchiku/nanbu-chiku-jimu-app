@@ -469,28 +469,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('eventBanner').style.display = 'block';
   }
 
-  // 顔写真の必須/任意判定：基礎講座、または基礎講座とセットのMS（同単会で前後の日に基礎講座が登録）は任意
-  (async () => {
-    let optional = (urlType === 'kiso');
-    if (!optional && urlType === 'ms' && urlDate && chapterId) {
-      try {
-        const d = new Date(urlDate + 'T00:00:00');
-        const fmtY = x => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
-        const prev = new Date(d); prev.setDate(d.getDate()-1);
-        const next = new Date(d); next.setDate(d.getDate()+1);
-        const { data } = await db.from('speakers').select('id').eq('chapter_id', chapterId).eq('seminar_type','kiso').in('seminar_date',[fmtY(prev), fmtY(next)]).limit(1);
-        if (data && data.length) optional = true;
-      } catch(e) {}
+  // 顔写真の必須/任意判定：基礎講座（＝セットMSも同一レコードで確認書が作られる）は任意。それ以外は必須。
+  if (urlType === 'kiso') {
+    window.PHOTO_OPTIONAL = true;
+    const label = document.querySelector('#f-photo label');
+    if (label) {
+      const req = label.querySelector('.req'); if (req) req.remove();
+      label.insertAdjacentHTML('beforeend', '<span class="hint" style="color:#2E7D32;font-weight:700;">任意（基礎講座・セットMSは写真不要）</span>');
     }
-    if (optional) {
-      window.PHOTO_OPTIONAL = true;
-      const label = document.querySelector('#f-photo label');
-      if (label) {
-        const req = label.querySelector('.req'); if (req) req.remove();
-        label.insertAdjacentHTML('beforeend', '<span class="hint" style="color:#2E7D32;font-weight:700;">任意（基礎講座・セットMSは写真不要）</span>');
-      }
-    }
-  })();
+  }
 
   if (speakerId) {
     const infoBox = document.querySelector('#page1 .info-box');
