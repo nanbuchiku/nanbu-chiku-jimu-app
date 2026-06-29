@@ -100,8 +100,8 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     return formatDate(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`);
   }, [displayDate]);
 
-  // 署名は常に合同事務局に統一
-  const sig = `━━━━━━━━━━━━━━━━━\n倫理法人会 南部地区合同事務局\nMail：${SENDER_EMAIL}\n━━━━━━━━━━━━━━━━━`;
+  // 送信は合同事務局から。ただし対象単会が一目で分かるよう単会名・単会メールも併記
+  const sig = `━━━━━━━━━━━━━━━━━\n倫理法人会 ${ch?.name || ''}単会\n（南部地区合同事務局が代理対応）\nMail：${SENDER_EMAIL}（合同事務局）${chEmail ? `\n　　　${chEmail}（${ch?.name}単会）` : ''}\n━━━━━━━━━━━━━━━━━`;
 
   const seminarType = isNew ? form.seminarType : sp.seminarType;
   const isKiso = seminarType === 'kiso';
