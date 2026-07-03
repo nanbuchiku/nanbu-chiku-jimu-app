@@ -92,6 +92,10 @@ const USER_CHAPTER_MAP = {
   'ogajun0317@gmail.com':        'niizashiki',     // 小笠原順子（新座志木）
   'finecorporation1@gmail.com':  'niizashiki',     // 小林靖（新座志木）
   'nizashikirinri@gmail.com':    'niizashiki',     // 新座志木 事務局
+  // 各単会 事務局アカウント
+  'toda@rinri-saitama.org':             'todawarabi',     // とだわらび 事務局
+  'kawaguchihigasi@rinri-saitama.org':  'kawaguchi_east', // 川口東 事務局
+  'kawaguchi@rinri-saitama.org':        'kawaguchi',      // 川口 事務局
   // 開発者用 単会ビュー確認アカウント（Gmail +エイリアス。全て hosina0447@gmail.com に届く）
   'hosina0447+kawaguchi@gmail.com':     'kawaguchi',
   'hosina0447+kawaguchieast@gmail.com': 'kawaguchi_east',
