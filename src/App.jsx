@@ -89,6 +89,7 @@ const USER_CHAPTER_MAP = {
   'ogi67tkys41@gmail.com':       'asaka',          // 荻山隆義（朝霞）
   'shono@space-craft.jp':        'asaka',          // 正能秀昭（朝霞）
   'far.mor.baby@gmail.com':      'asaka',          // 小澤美智子（朝霞）
+  'k.nakkar01123@gmail.com':     'asaka',          // 中山翔（朝霞）
   'ogajun0317@gmail.com':        'niizashiki',     // 小笠原順子（新座志木）
   'finecorporation1@gmail.com':  'niizashiki',     // 小林靖（新座志木）
   'nizashikirinri@gmail.com':    'niizashiki',     // 新座志木 事務局

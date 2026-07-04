@@ -686,7 +686,6 @@ function validatePage3() {
   const pf = document.getElementById('f-photo');
   if (!window.PHOTO_OPTIONAL && !photoFile && !hasExistingPhoto) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
   else { pe.style.display='none'; pf.classList.remove('has-error'); }
-  else                                 { pe.style.display='none';  pf.classList.remove('has-error'); }
 
   ok = requiredRadio('receiptType','receipt-error', 'f-receipt')  && ok;
   ok = required('address','f-address') && ok;
