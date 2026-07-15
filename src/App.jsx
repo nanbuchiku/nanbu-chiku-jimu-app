@@ -71,6 +71,11 @@ const ADMIN_EMAILS = [
   'hosina0447@gmail.com',         // 開発者（管理者ビュー確認用）
 ];
 
+// 外部業者（印刷会社など）: チラシ管理タブのみ閲覧・ダウンロード可能（編集権限なし）
+const VENDOR_EMAILS = [
+  't-tanaka@design-cocoro.com', // 印刷業者（デザインここる）
+];
+
 // 個人ログイン → 所属単会の対応表（自分の単会だけが見える）
 // 新しい利用者を追加したら、メール(小文字)と単会IDをここに追記する。
 // 単会ID: todawarabi / kawaguchi_east / niizashiki / asaka / kawaguchi
@@ -193,6 +198,7 @@ export default function App() {
   const userRole = useMemo(() => {
     if (!authUser) return null;
     const addr = (authUser.email || '').toLowerCase();
+    if (VENDOR_EMAILS.includes(addr)) return { role: 'vendor', chapterId: null };
     if (ADMIN_EMAILS.includes(addr)) return { role: 'admin', chapterId: null };
     if (USER_CHAPTER_MAP[addr]) return { role: 'chapter', chapterId: USER_CHAPTER_MAP[addr] };
     for (const [chId, s] of Object.entries(chapterSettings)) {
@@ -923,6 +929,40 @@ ${ch.name}単会事務局`;
       <button style={{ background:"#061B44", color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", fontWeight:600 }} onClick={() => window.location.reload()}>再読み込み</button>
     </div>
   );
+
+  // 外部業者（印刷会社）専用ビュー: チラシ管理タブのみ・編集権限なし
+  if (userRole?.role === 'vendor') {
+    return (
+      <div style={{ minHeight:"100%", background:"#F4F5F7" }}>
+        <header style={{ background:"linear-gradient(135deg,#061B44,#082B66)", color:"#fff", padding:"16px 20px", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+          <div>
+            <div style={{ fontSize:12, opacity:.6, letterSpacing:"0.08em" }}>倫理法人会 南部地区事務局</div>
+            <div style={{ fontSize:20, fontWeight:700 }}>📋 チラシデータ（印刷用）</div>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:12, opacity:.7, wordBreak:"break-all" }}>{authUser?.email}</span>
+            <button onClick={() => db.auth.signOut()} style={{ background:"rgba(220,50,50,.25)", border:"1px solid rgba(255,100,100,.4)", borderRadius:6, color:"#fff", padding:"6px 12px", cursor:"pointer", fontSize:13, fontWeight:600 }}>ログアウト</button>
+          </div>
+        </header>
+        <main style={{ padding:"16px 20px", maxWidth:1200, margin:"0 auto" }}>
+          <ErrorBoundary>
+            <FlyerView speakers={speakers} today={today} showToast={showToast} updateSpeaker={null} />
+          </ErrorBoundary>
+        </main>
+        {toast && (() => {
+          const isErr = toast.type === "error" || toast.msg?.startsWith("⚠");
+          const isInfo = toast.type === "info";
+          const bg = isErr ? "#B71C1C" : isInfo ? "#1565C0" : "#1B5E20";
+          return (
+            <div role="alert" aria-live="assertive" style={{ position:"fixed", bottom:20, left:"50%", transform:"translateX(-50%)", background:bg, color:"#fff", padding:"10px 18px", borderRadius:8, fontSize:14, fontWeight:600, boxShadow:"0 4px 16px rgba(0,0,0,.35)", zIndex:2000, display:"flex", alignItems:"center", gap:10, maxWidth:"90vw" }}>
+              <span>{toast.msg}</span>
+              <button onClick={() => setToast(null)} aria-label="閉じる" style={{ background:"rgba(255,255,255,.15)", border:"none", borderRadius:4, color:"#fff", padding:"3px 7px", fontSize:13, cursor:"pointer", fontWeight:700, marginLeft:2 }}>✕</button>
+            </div>
+          );
+        })()}
+      </div>
+    );
+  }
 
   return (
     <div style={{ display:"flex", minHeight:"100%", background:"#F4F5F7" }}>
