@@ -511,7 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // 更新フォーム: 既存回答を取得して事前入力
 async function prefillFromDB() {
   try {
-    const { data, error } = await db.from('speakers').select('*').eq('id', speakerId).single();
+    // テーブルへの直接SELECTはanonに許可していないため、id指定1件だけを返す専用関数(RPC)経由で取得
+    const { data, error } = await db.rpc('get_speaker_for_form', { p_id: speakerId }).single();
     if (error || !data) return;
     existingData = data;
 
@@ -1062,9 +1063,24 @@ async function submitForm() {
       payload.status = 'confirmed';
       const staffNotes = extractStaffNotes(existingData?.notes || '');
       if (staffNotes) payload.notes += '\n\n' + staffNotes;
-      const { error } = await db.from('speakers').update(payload).eq('id', speakerId);
+      // テーブルへの直接UPDATEはanonに許可していないため、id指定1件だけを書き換える専用関数(RPC)経由で更新
+      const { error } = await db.rpc('update_speaker_for_form', {
+        p_id:             speakerId,
+        p_speaker_kana:   payload.speaker_kana,
+        p_company:        payload.company,
+        p_company_role:   payload.company_role,
+        p_role:           payload.role,
+        p_phone:          payload.phone,
+        p_topic:          payload.topic,
+        p_notes:          payload.notes,
+        p_lodging:        payload.lodging,
+        p_print_required: payload.print_required,
+        p_material_url:   payload.material_url  || null,
+        p_material_name:  payload.material_name || null,
+      });
       if (error) throw new Error(error.message);
     } else {
+      // 新規依頼はRLSでanonのINSERTのみ許可（既存データを読み書きしないため直接テーブルアクセスでも安全）
       payload.id = 's' + Date.now();
       const { error } = await db.from('speakers').insert(payload);
       if (error) throw new Error(error.message);
