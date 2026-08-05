@@ -111,6 +111,39 @@ const USER_CHAPTER_MAP = {
   'hosina0447+niizashiki@gmail.com':    'niizashiki',
 };
 
+// タスク完了時に記録する「誰が」の表示名（名字）。未登録のメールはローカル部を使う。
+const USER_NAMES = {
+  'rinri.nanbu@gmail.com':        '事務局',
+  'g-forever.ryu@ezweb.ne.jp':    '髙橋',
+  'hosina0447@gmail.com':         '管理者',
+  't-tanaka@design-cocoro.com':   '田中',
+  'nekonimatatabi39@gmail.com':   '須藤',
+  'nagatsuma@li-go.jp':           '長妻',
+  '3minami373minami3@gmail.com':  '松田',
+  'nagatakeyoshimasa@gmail.com':  '長竹',
+  'nakada45034503@gmail.com':     '中田',
+  'y.yukiyama@gmail.com':         '雪山',
+  'nishii@westoc.co.jp':          '西井',
+  'kishida.e@gmail.com':          '岸田',
+  'hirosisisi72@gmail.com':       '木之下',
+  'wajta0713@gmail.com':          '和知',
+  'ogi67tkys41@gmail.com':        '荻山',
+  'shono@space-craft.jp':         '正能',
+  'far.mor.baby@gmail.com':       '小澤',
+  'k.nakkar01123@gmail.com':      '中山',
+  'nagumo@mycar-sanki.com':       '名雲',
+  'ogajun0317@gmail.com':         '小笠原',
+  'finecorporation1@gmail.com':   '小林',
+  'nizashikirinri@gmail.com':     '新座志木事務局',
+  'toda@rinri-saitama.org':             'とだわらび事務局',
+  'kawaguchihigasi@rinri-saitama.org':  '川口東事務局',
+  'kawaguchi@rinri-saitama.org':        '川口事務局',
+};
+function getActorName(email) {
+  const addr = (email || '').toLowerCase();
+  return USER_NAMES[addr] || addr.split('@')[0] || '不明';
+}
+
 export default function App() {
   const [authUser, setAuthUser] = useState(undefined); // undefined=loading, null=未認証
 
@@ -209,6 +242,11 @@ export default function App() {
 
   const isAdmin = userRole?.role === 'admin';
   const scopeChapter = userRole?.role === 'chapter' ? userRole.chapterId : null;
+  const currentUserName = useMemo(() => getActorName(authUser?.email), [authUser]);
+
+  // 講師管理カードの「☑ タスク」から講師タスク画面へ遷移した際に、対象カードを開いて表示するため
+  const [focusSpeakerId, setFocusSpeakerId] = useState(null);
+  const onOpenSpeakerTasks = useCallback(sp => { setFocusSpeakerId(sp.id); setTab('sptasks'); }, [setTab]);
 
   // 単会ユーザーには自分の単会のデータのみを渡す（管理者は全件）
   const scopedSpeakers = useMemo(
@@ -1093,10 +1131,10 @@ ${ch.name}単会事務局`;
           <ErrorBoundary key={tab}>
             {tab === "dashboard" && <Dashboard speakers={scopedSpeakers} tasks={scopedTasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} />}
             {tab === "calendar"  && <CalendarView speakers={scopedSpeakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} />}
-            {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} />}
+            {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} onTasks={onOpenSpeakerTasks} />}
             {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} />}
             {tab === "tasks"     && <TasksView tasks={scopedTasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} showToast={showToast} lockChapterId={scopeChapter} />}
-            {tab === "sptasks"   && <SpeakerTasksView speakers={scopedSpeakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} />}
+            {tab === "sptasks"   && <SpeakerTasksView speakers={scopedSpeakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} currentUserName={currentUserName} focusId={focusSpeakerId} onFocusHandled={() => setFocusSpeakerId(null)} />}
             {tab === "contact"   && <SpeakerContactView speakers={scopedSpeakers} today={today} onEmail={setEmailModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} />}
             {tab === "flyer"     && <FlyerView speakers={scopedSpeakers} today={today} showToast={showToast} updateSpeaker={updateSpeaker} />}
             {tab === "ranking"   && <RankingView tasks={scopedTasks} speakers={scopedSpeakers} today={today} />}

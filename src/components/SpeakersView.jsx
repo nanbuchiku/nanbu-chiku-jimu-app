@@ -46,7 +46,7 @@ function getSmartMail(sp, today) {
   return { label:"📣 宣伝案内", type:"promo", bg:"#1565C0" };
 }
 
-export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate }) {
+export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate, onTasks }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
@@ -372,6 +372,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   <button onClick={() => onDoc(sp)}
                     style={{ fontSize:"clamp(12px,1.7vw,15px)", background:"#061B44", color:"#fff", border:"1px solid #061B44", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontWeight:700, lineHeight:1, whiteSpace:"nowrap" }}
                     title="講師依頼確認書" aria-label="確認書">≡ 確認書</button>
+                  {onTasks && (
+                    <button onClick={() => onTasks(sp)}
+                      style={{ fontSize:"clamp(12px,1.7vw,15px)", background:"#2E7D32", color:"#fff", border:"1px solid #2E7D32", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontWeight:700, lineHeight:1, whiteSpace:"nowrap" }}
+                      title="講師タスク" aria-label="講師タスク">☑ タスク</button>
+                  )}
                   <button onClick={() => setExpandedId(expandedId === sp.id ? null : sp.id)}
                     style={{ fontSize:"clamp(12px,1.7vw,15px)", background:"#F5F5F5", color:"#667085", border:"1px solid #E0E0E0", borderRadius:8, padding:"6px 14px", cursor:"pointer", fontWeight:700, lineHeight:1, whiteSpace:"nowrap" }}
                     title="その他の操作" aria-label="その他の操作">その他 {expandedId === sp.id ? "▲" : "▼"}</button>
