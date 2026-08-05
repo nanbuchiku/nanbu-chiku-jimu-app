@@ -7,16 +7,17 @@ import { printFaxForm } from '../faxPrint';
 // 送信元は常に合同事務局アドレスに固定
 const SENDER_EMAIL = 'rinri.nanbu@gmail.com';
 
-function buildMailUrl(fromEmail, toEmail, subject, body) {
+function buildMailUrl(fromEmail, toEmail, subject, body, ccEmail) {
   const addr = (fromEmail || '').toLowerCase();
+  const cc = ccEmail ? `&cc=${encodeURIComponent(ccEmail)}` : '';
   if (addr.includes('@gmail.com') || addr.includes('@googlemail.com')) {
     // authuser で差出アカウントを指定（rinri.nanbu でログインしていれば確実にそのアカウントで開く）
-    return `https://mail.google.com/mail/?authuser=${encodeURIComponent(fromEmail)}&view=cm&fs=1&to=${encodeURIComponent(toEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    return `https://mail.google.com/mail/?authuser=${encodeURIComponent(fromEmail)}&view=cm&fs=1&to=${encodeURIComponent(toEmail)}${cc}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
   if (addr.includes('@outlook.') || addr.includes('@hotmail.') || addr.includes('@live.') || addr.includes('@msn.')) {
-    return `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toEmail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    return `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(toEmail)}${cc}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
-  return `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${toEmail}?${ccEmail ? `cc=${encodeURIComponent(ccEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 function getMailLabel(fromEmail) {
@@ -151,7 +152,7 @@ ${sig}`;
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, clearDraft, onClose]);
-  const openMail = useCallback(() => { window.open(buildMailUrl(SENDER_EMAIL, displayEmail || '', mailSubject, mailBody), '_blank'); clearDraft(); onClose(); }, [displayEmail, mailSubject, mailBody, clearDraft, onClose]);
+  const openMail = useCallback(() => { window.open(buildMailUrl(SENDER_EMAIL, displayEmail || '', mailSubject, mailBody, chEmail), '_blank'); clearDraft(); onClose(); }, [displayEmail, mailSubject, mailBody, chEmail, clearDraft, onClose]);
 
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
@@ -254,6 +255,9 @@ ${sig}`;
               <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={copyUrl}>📋 URLだけコピー</button>
               <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ {getMailLabel(SENDER_EMAIL)}で開く（合同事務局）</button>
               <button style={{ background:"#fff", color:"#4527A0", border:"2px solid #7E57C2", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", gridColumn:"1/-1" }} onClick={copyMail}>📋 メール文ごとコピー（手動送信）</button>
+            </div>
+            <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginTop:6 }}>
+              差出人：{SENDER_EMAIL}（合同事務局）{chEmail && <>　CC：{chEmail}（{ch?.name}単会）</>}
             </div>
 
             {/* FAX用紙印刷（メールが使えない場合） */}
