@@ -114,9 +114,28 @@ export function extractMaterialLinks(notes) {
   return out;
 }
 
+// タスクのチェック状態を統一的に読むためのヘルパー
+// 旧データ（true/false のみ）と新データ（{done,at,by,dest}）の両方を扱う
+export function isTaskDone(checks, id) {
+  const c = checks?.[id];
+  return c === true || (c && typeof c === 'object' && c.done === true);
+}
+export function getTaskMeta(checks, id) {
+  const c = checks?.[id];
+  return (c && typeof c === 'object') ? c : null;
+}
+export function formatDateTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function buildSpeakerTasks(sp) {
   const tasks = [];
-  const add = (id, label, category) => tasks.push({ id, label, category });
+  const add = (id, label, category, extra) => tasks.push({ id, label, category, ...extra });
+  const checks = sp.speakerChecks || {};
 
   add("req_sent",    "依頼メール送信",           "依頼");
   add("form_sent",   "確認フォームURL送付",       "依頼");
@@ -125,13 +144,23 @@ export function buildSpeakerTasks(sp) {
 
   if (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし") {
     if (sp.lodging !== "あり（当日のみ）") {
-      add("hotel_rsrv", "ホテル予約完了",          "宿泊");
-      add("hotel_conf", "ホテル確認連絡（講師へ）", "宿泊");
+      add("hotel_rsrv",   "ホテル予約完了",       "宿泊");
+      add("hotel_conf",   "ホテル情報の共有",     "宿泊");
     }
-    add("pickup_plan","お迎え手配",               "宿泊");
+    add("meetup_plan", "待ち合わせ場所の相談",   "宿泊");
+    add("pickup_plan", "お迎え手配",             "宿泊");
   }
 
-  add("material_chk","資料・写真受領確認",         "資料");
+  // 顔写真・資料は別々に届く可能性があり、かつ「単会」宛か「合同事務局」宛かが
+  // わかりにくいため、受領時に宛先を記録する専用タスクとして扱う（receipt: true）
+  add("photo_received",    "顔写真受領",         "資料", { receipt: true });
+  if (getTaskMeta(checks, "photo_received")?.dest === "office") {
+    add("photo_shared",    "顔写真を単会へ共有", "資料");
+  }
+  add("material_received", "資料受領",           "資料", { receipt: true });
+  if (getTaskMeta(checks, "material_received")?.dest === "office") {
+    add("material_shared", "資料を単会へ共有",   "資料");
+  }
   if (sp.printRequired && !sp.printRequired.startsWith("不要")) {
     add("print_done", "資料印刷完了",             "資料");
   }

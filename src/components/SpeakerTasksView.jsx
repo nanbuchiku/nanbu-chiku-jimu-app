@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate } from '../utils';
+import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
@@ -11,7 +11,9 @@ const TASK_CATEGORY_COLOR = {
   "講話後": "#667085",
 };
 
-export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail, onEdit }) {
+const RECEIPT_LABELS = { chapter: "単会宛で受領", office: "事務局宛で受領" };
+
+export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail, onEdit, currentUserName, focusId, onFocusHandled }) {
   const [filterCh,      setFilterCh]     = useState("all");
   const [filterDone,    setFilterDone]   = useState("undone");
   const [filterPast,    setFilterPast]   = useState(false);
@@ -20,10 +22,24 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const [expandAll,   setExpandAll]  = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search,      setSearch]     = useState("");
+  const cardRefs = useRef({});
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  // 講師管理カードの「☑ タスク」から遷移してきた場合、対象講師を確実に表示・展開してスクロール
+  useEffect(() => {
+    if (!focusId) return;
+    setFilterCh("all"); setFilterDone("all"); setFilterPast(false); setFilterUpcoming(false);
+    setSearchInput(""); setSearch("");
+    setExpandedId(focusId);
+    const t = setTimeout(() => {
+      cardRefs.current[focusId]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      onFocusHandled?.();
+    }, 120);
+    return () => clearTimeout(t);
+  }, [focusId, onFocusHandled]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -40,7 +56,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       base = base.filter(sp => {
         const checks = sp.speakerChecks || {};
         const tasks = buildSpeakerTasks(sp);
-        const allDone = tasks.every(t => checks[t.id]);
+        const allDone = tasks.every(t => isTaskDone(checks, t.id));
         return filterDone === "done" ? allDone : !allDone;
       });
     }
@@ -50,7 +66,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
         const isPast = sp.seminarDate && sp.seminarDate < todayStr;
         const checks = sp.speakerChecks || {};
         const tasks = buildSpeakerTasks(sp);
-        const allDone = tasks.every(t => checks[t.id]);
+        const allDone = tasks.every(t => isTaskDone(checks, t.id));
         return isPast && !allDone;
       });
     }
@@ -66,15 +82,35 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
 
   const toggleTask = useCallback(async (sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
-    checks[taskId] = !checks[taskId];
+    const wasDone = isTaskDone(checks, taskId);
+    if (wasDone) {
+      delete checks[taskId];
+    } else {
+      checks[taskId] = { done: true, at: new Date().toISOString(), by: currentUserName || '' };
+    }
     const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
-    if (ok) showToast(checks[taskId] ? "✓ 完了にしました" : "未完了に戻しました");
-  }, [updateSpeaker, showToast]);
+    if (ok) showToast(wasDone ? "未完了に戻しました" : "✓ 完了にしました");
+  }, [updateSpeaker, showToast, currentUserName]);
+
+  // 顔写真・資料の受領タスク専用：宛先（単会 or 合同事務局）を記録する
+  const setReceiptTask = useCallback(async (sp, taskId, dest) => {
+    const checks = { ...(sp.speakerChecks || {}) };
+    const sharedId = taskId === "photo_received" ? "photo_shared" : "material_shared";
+    if (!dest) {
+      delete checks[taskId];
+      delete checks[sharedId];
+    } else {
+      checks[taskId] = { done: true, at: new Date().toISOString(), by: currentUserName || '', dest };
+      if (dest === "chapter") delete checks[sharedId]; // 単会へ直接届いた場合は共有タスク自体が不要
+    }
+    const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
+    if (ok) showToast(dest ? "受領を記録しました ✓" : "未受領に戻しました");
+  }, [updateSpeaker, showToast, currentUserName]);
 
   const getProgress = sp => {
     const tasks = buildSpeakerTasks(sp);
     const checks = sp.speakerChecks || {};
-    const done = tasks.filter(t => checks[t.id]).length;
+    const done = tasks.filter(t => isTaskDone(checks, t.id)).length;
     return { done, total: tasks.length, pct: tasks.length ? Math.round(done / tasks.length * 100) : 0 };
   };
 
@@ -83,7 +119,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     filtered.forEach(sp => {
       const tasks = buildSpeakerTasks(sp);
       const checks = sp.speakerChecks || {};
-      const done = tasks.filter(t => checks[t.id]).length;
+      const done = tasks.filter(t => isTaskDone(checks, t.id)).length;
       totalTasks += tasks.length;
       doneTasks += done;
       if (done === tasks.length) completeSpeakers++;
@@ -134,8 +170,12 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
             byCategory[t.category].push(t);
           });
 
+          const isPhoto = sp.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split("?")[0] || "");
+          const isFocused = focusId === sp.id;
+
           return (
-            <div key={sp.id} style={{ ...CARD, borderTop:`4px solid ${ch?.color || "#061B44"}`, opacity: allDone ? 0.7 : 1 }}>
+            <div key={sp.id} ref={el => { cardRefs.current[sp.id] = el; }}
+              style={{ ...CARD, borderTop:`4px solid ${ch?.color || "#061B44"}`, opacity: allDone ? 0.7 : 1, boxShadow: isFocused ? `0 0 0 3px #7E57C2, 0 8px 24px rgba(15,35,71,.06)` : undefined }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
                 <div>
                   <span style={PILL(ch)}>{ch?.name}</span>
@@ -153,23 +193,34 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                   {isExpanded ? "▲" : "▼"}
                 </button>
               </div>
-              <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:2, flexWrap:"wrap" }}>
-                <div style={{ fontWeight:700, fontSize:"clamp(16px,2.4vw,20px)", lineHeight:1.3,
-                  ...(sp.speakerName && sp.speakerName.length > 6 ? { fontSize:"clamp(14px,3vw,18px)" } : {}) }}>
-                  {sp.speakerName} 様
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                {isPhoto ? (
+                  <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName}
+                    style={{ width:48, height:48, objectFit:"cover", borderRadius:"50%", border:`2px solid ${ch?.color || "#2563EB"}`, flexShrink:0 }}
+                    onError={e => { e.currentTarget.style.display="none"; }} />
+                ) : (
+                  <div style={{ width:48, height:48, background:"#EAF0FF", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, color:"#2563EB", border:"2px solid #B3C2FF", flexShrink:0 }}>♟</div>
+                )}
+                <div style={{ minWidth:0 }}>
+                  <div style={{ display:"flex", alignItems:"baseline", gap:8, flexWrap:"wrap" }}>
+                    <div style={{ fontWeight:700, fontSize:"clamp(16px,2.4vw,20px)", lineHeight:1.3,
+                      ...(sp.speakerName && sp.speakerName.length > 6 ? { fontSize:"clamp(14px,3vw,18px)" } : {}) }}>
+                      {sp.speakerName} 様
+                    </div>
+                    {onEmail && sp.email && (
+                      <button title="メール送信" style={{ background:"none", border:"1px solid #90CAF9", borderRadius:4, padding:"2px 6px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#1565C0" }} onClick={() => onEmail(sp)}>📧</button>
+                    )}
+                    {onEdit && (
+                      <button title="講師情報を編集" style={{ background:"none", border:"1px solid #B0BEC5", borderRadius:4, padding:"2px 6px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#667085" }} onClick={() => onEdit(sp)}>✏ 編集</button>
+                    )}
+                  </div>
+                  <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", display:"flex", gap:6, flexWrap:"wrap", marginTop:3 }}>
+                    {sp.speakerUnit && <span style={{ background:"#E8EAF6", color:"#3949AB", padding:"1px 7px", borderRadius:10, fontWeight:600 }}>{sp.speakerUnit}</span>}
+                    {sp.role && <span style={{ background:"#F3E5F5", color:"#7B1FA2", padding:"1px 7px", borderRadius:10 }}>{sp.role}</span>}
+                    {sp.company && <span style={{ background:"#F1F5F9", color:"#667085", padding:"1px 7px", borderRadius:10 }}>{sp.company}</span>}
+                    {sp.companyRole && <span style={{ background:"#FFF3E0", color:"#E65100", padding:"1px 7px", borderRadius:10 }}>{sp.companyRole}</span>}
+                  </div>
                 </div>
-                {onEmail && sp.email && (
-                  <button title="メール送信" style={{ background:"none", border:"1px solid #90CAF9", borderRadius:4, padding:"2px 6px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#1565C0" }} onClick={() => onEmail(sp)}>📧</button>
-                )}
-                {onEdit && (
-                  <button title="講師情報を編集" style={{ background:"none", border:"1px solid #B0BEC5", borderRadius:4, padding:"2px 6px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", color:"#667085" }} onClick={() => onEdit(sp)}>✏ 編集</button>
-                )}
-              </div>
-              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginBottom:8, display:"flex", gap:6, flexWrap:"wrap" }}>
-                {sp.speakerUnit && <span style={{ background:"#E8EAF6", color:"#3949AB", padding:"1px 7px", borderRadius:10, fontWeight:600 }}>{sp.speakerUnit}</span>}
-                {sp.role && <span style={{ background:"#F3E5F5", color:"#7B1FA2", padding:"1px 7px", borderRadius:10 }}>{sp.role}</span>}
-                {sp.company && <span style={{ background:"#F1F5F9", color:"#667085", padding:"1px 7px", borderRadius:10 }}>{sp.company}</span>}
-                {sp.companyRole && <span style={{ background:"#FFF3E0", color:"#E65100", padding:"1px 7px", borderRadius:10 }}>{sp.companyRole}</span>}
               </div>
 
               <div style={{ marginBottom:10 }}>
@@ -183,9 +234,9 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               </div>
 
               {Object.entries(byCategory).map(([cat, catTasks]) => {
-                const visibleTasks = isExpanded ? catTasks : catTasks.filter(t => !checks[t.id]);
+                const visibleTasks = isExpanded ? catTasks : catTasks.filter(t => !isTaskDone(checks, t.id));
                 if (visibleTasks.length === 0) return null;
-                const catAllDone = catTasks.every(t => checks[t.id]);
+                const catAllDone = catTasks.every(t => isTaskDone(checks, t.id));
                 const catColor = TASK_CATEGORY_COLOR[cat] || "#667085";
                 return (
                   <div key={cat} style={{ marginBottom:8 }}>
@@ -195,7 +246,13 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                         <button style={{ fontSize:"clamp(12px,1.4vw,14px)", background: catColor+"18", color: catColor, border:`1px solid ${catColor}44`, borderRadius:8, padding:"1px 6px", cursor:"pointer", fontWeight:700 }}
                           onClick={async () => {
                             const newChecks = { ...checks };
-                            catTasks.forEach(t => { newChecks[t.id] = true; });
+                            const now = new Date().toISOString();
+                            catTasks.forEach(t => {
+                              if (isTaskDone(newChecks, t.id)) return;
+                              newChecks[t.id] = t.receipt
+                                ? { done:true, at:now, by:currentUserName || '', dest:'chapter' }
+                                : { done:true, at:now, by:currentUserName || '' };
+                            });
                             const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
                             if (ok) showToast(`${cat}を完了 ✓`);
                           }}>
@@ -203,12 +260,49 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                         </button>
                       )}
                     </div>
-                    {visibleTasks.map(t => (
-                      <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: checks[t.id] ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${checks[t.id] ? "#C5E1A5" : "#EEEEEE"}` }}>
-                        <input type="checkbox" checked={!!checks[t.id]} onChange={() => toggleTask(sp, t.id)} style={{ width:15, height:15, cursor:"pointer", accentColor: TASK_CATEGORY_COLOR[cat] }} />
-                        <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: checks[t.id] ? "#78909C" : "#263238", textDecoration: checks[t.id] ? "line-through" : "none" }}>{t.label}</span>
-                      </label>
-                    ))}
+                    {visibleTasks.map(t => {
+                      const meta = getTaskMeta(checks, t.id);
+                      const done = isTaskDone(checks, t.id);
+
+                      if (t.receipt) {
+                        return (
+                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+                              <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none", fontWeight:600 }}>{t.label}</span>
+                              <div style={{ display:"flex", gap:4 }}>
+                                {["chapter","office"].map(dest => (
+                                  <button key={dest}
+                                    onClick={() => setReceiptTask(sp, t.id, meta?.dest === dest ? null : dest)}
+                                    style={{ fontSize:"clamp(11px,1.3vw,13px)", padding:"3px 8px", borderRadius:12, cursor:"pointer", fontWeight:700,
+                                      background: meta?.dest === dest ? TASK_CATEGORY_COLOR[cat] : "#fff",
+                                      color: meta?.dest === dest ? "#fff" : TASK_CATEGORY_COLOR[cat],
+                                      border:`1px solid ${TASK_CATEGORY_COLOR[cat]}66` }}>
+                                    {RECEIPT_LABELS[dest]}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            {done && meta && (
+                              <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:"#98A2B3", marginTop:3 }}>
+                                {formatDateTime(meta.at)}　{meta.by}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                          <input type="checkbox" checked={done} onChange={() => toggleTask(sp, t.id)} style={{ width:15, height:15, cursor:"pointer", accentColor: TASK_CATEGORY_COLOR[cat] }} />
+                          <div style={{ minWidth:0 }}>
+                            <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none" }}>{t.label}</span>
+                            {done && meta && (
+                              <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:"#98A2B3" }}>{formatDateTime(meta.at)}　{meta.by}</div>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 );
               })}
@@ -221,8 +315,14 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               {!allDone && (
                 <button style={{ marginTop:8, width:"100%", background:"#F1F8E9", border:"1px solid #C5E1A5", borderRadius:6, color:"#2E7D32", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", padding:"6px" }}
                   onClick={async () => {
-                    const allChecks = {};
-                    tasks.forEach(t => { allChecks[t.id] = true; });
+                    const allChecks = { ...checks };
+                    const now = new Date().toISOString();
+                    tasks.forEach(t => {
+                      if (isTaskDone(allChecks, t.id)) return;
+                      allChecks[t.id] = t.receipt
+                        ? { done:true, at:now, by:currentUserName || '', dest:'chapter' }
+                        : { done:true, at:now, by:currentUserName || '' };
+                    });
                     const ok = await updateSpeaker(sp.id, { speakerChecks: allChecks });
                     if (ok) showToast(`${sp.speakerName} 様のタスクをすべて完了にしました ✓`);
                   }}>
