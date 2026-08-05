@@ -7,6 +7,10 @@ import { printFaxForm } from '../faxPrint';
 // 送信元は常に合同事務局アドレスに固定
 const SENDER_EMAIL = 'rinri.nanbu@gmail.com';
 
+// 合同事務局アカウント自身から確実に送信するGASウェブアプリ（未設定ならこの機能は表示しない）
+const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
+const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
+
 function buildMailUrl(fromEmail, toEmail, subject, body, ccEmail) {
   const addr = (fromEmail || '').toLowerCase();
   const cc = ccEmail ? `&cc=${encodeURIComponent(ccEmail)}` : '';
@@ -51,6 +55,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   });
   const [restored, setRestored] = useState(!!draft);
   const [generated, setGenerated] = useState(!isNew);
+  const [sending, setSending] = useState(false);
 
   // 入力途中の内容を自動下書き保存（新規作成時のみ）。誤って閉じても再度開けば復元される。
   useEffect(() => {
@@ -154,6 +159,27 @@ ${sig}`;
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, clearDraft, onClose]);
   const openMail = useCallback(() => { window.open(buildMailUrl(SENDER_EMAIL, displayEmail || '', mailSubject, mailBody, chEmail), '_blank'); clearDraft(); onClose(); }, [displayEmail, mailSubject, mailBody, chEmail, clearDraft, onClose]);
 
+  // 合同事務局アカウント自身（GASウェブアプリ）から確実に送信する
+  const sendViaOffice = useCallback(async () => {
+    if (!displayEmail) { showToast('⚠ 講師のメールアドレスが未入力です'); return; }
+    setSending(true);
+    try {
+      const res = await fetch(MAIL_SEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // プリフライトを避けるため text/plain で送る
+        body: JSON.stringify({ token: MAIL_SEND_TOKEN, to: displayEmail, cc: chEmail, subject: mailSubject, body: mailBody }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      showToast('合同事務局から送信しました ✓');
+      clearDraft(); onClose();
+    } catch (e) {
+      showToast('⚠ 送信に失敗しました: ' + (e.message || ''));
+    } finally {
+      setSending(false);
+    }
+  }, [displayEmail, chEmail, mailSubject, mailBody, showToast, clearDraft, onClose]);
+
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
     printFaxForm({
@@ -251,13 +277,23 @@ ${sig}`;
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#9C27B0", fontWeight:700, marginBottom:4 }}>フォームURL</div>
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", wordBreak:"break-all", lineHeight:1.6 }}>{formUrl}</div>
             </div>
+            {MAIL_SEND_URL && (
+              <button
+                style={{ width:"100%", background: sending ? "#B39DDB" : "#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, cursor: sending ? "not-allowed" : "pointer", marginBottom:8 }}
+                onClick={sendViaOffice} disabled={sending}>
+                {sending ? '⏳ 送信中...' : `✉ 合同事務局（${SENDER_EMAIL}）から直接送信`}
+              </button>
+            )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={copyUrl}>📋 URLだけコピー</button>
-              <button style={{ background:"#4527A0", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail}>✉ {getMailLabel(SENDER_EMAIL)}で開く（合同事務局）</button>
+              <button style={{ background: MAIL_SEND_URL ? "#fff" : "#4527A0", color: MAIL_SEND_URL ? "#4527A0" : "#fff", border: MAIL_SEND_URL ? "1px solid #B39DDB" : "none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={openMail} title="ブラウザで合同事務局アカウントにログイン済みの場合のみ、そのアカウントから送信されます">
+                ✉ {getMailLabel(SENDER_EMAIL)}で開く{MAIL_SEND_URL ? "（要ログイン確認）" : "（合同事務局）"}
+              </button>
               <button style={{ background:"#fff", color:"#4527A0", border:"2px solid #7E57C2", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer", gridColumn:"1/-1" }} onClick={copyMail}>📋 メール文ごとコピー（手動送信）</button>
             </div>
             <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginTop:6 }}>
               差出人：{SENDER_EMAIL}（合同事務局）{chEmail && <>　CC：{chEmail}（{ch?.name}単会）</>}
+              {!MAIL_SEND_URL && <div style={{ color:"#B71C1C", marginTop:2 }}>⚠ 下のボタンはブラウザが合同事務局アカウントにログイン済みの場合のみ、そのアカウントから送信されます。ログインしていない場合は自分個人のアカウントから送信されてしまうのでご注意ください。</div>}
             </div>
 
             {/* FAX用紙印刷（メールが使えない場合） */}
