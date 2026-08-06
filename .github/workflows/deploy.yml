@@ -27,6 +27,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_MAIL_SEND_URL: ${{ secrets.VITE_MAIL_SEND_URL }}
+          VITE_MAIL_SEND_TOKEN: ${{ secrets.VITE_MAIL_SEND_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
