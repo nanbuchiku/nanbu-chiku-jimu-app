@@ -485,24 +485,14 @@ document.addEventListener('DOMContentLoaded', () => {
     prefillFromDB();
   }
 
-  // 単会設定からメールアドレスを取得して差し替える
+  // 単会設定からメールアドレスを取得（確認書メールのCC用のみ。
+  // 画面上の連絡先表示は合同事務局アドレスのまま変えない）
   if (chapterId) {
     (async () => {
       try {
         const { data } = await db.from('chapter_settings').select('settings').eq('chapter_id', chapterId).single();
         const email = data?.settings?.chapterEmail;
-        if (email) {
-          NANBU_MAIL = email;
-          const updateEl = (id) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            if (el.tagName === 'A') el.href = 'mailto:' + email;
-            el.textContent = email;
-          };
-          updateEl('contact-mail-upload');
-          updateEl('contact-mail-footer');
-          updateEl('contact-mail-done');
-        }
+        if (email) NANBU_MAIL = email;
       } catch {}
     })();
   }
