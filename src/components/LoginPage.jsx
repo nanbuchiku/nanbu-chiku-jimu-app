@@ -11,7 +11,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const { error } = await db.auth.signInWithPassword({ email, password });
+    // コピペ時に紛れ込む前後の空白・改行で認証失敗しないよう除去
+    const { error } = await db.auth.signInWithPassword({ email: email.trim(), password: password.trim() });
     if (error) {
       setError('メールアドレスまたはパスワードが正しくありません。');
     }
