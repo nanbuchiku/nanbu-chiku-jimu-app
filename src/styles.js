@@ -58,7 +58,11 @@ export const BG   = { background:C.line, color:"#fff", border:"none", borderRadi
 export const SEL  = { border:`1px solid #D9E1EE`, borderRadius:8, padding:"5px 8px", fontSize:FS_SM, background:"#fff", cursor:"pointer" };
 export const INP  = { border:`1px solid #D9E1EE`, borderRadius:8, padding:"6px 8px", fontSize:FS_SM, background:"#fff" };
 export const BSM  = { background:C.neutralBg, border:"none", borderRadius:8, padding:"3px 8px", fontSize:FS_XS, cursor:"pointer", fontWeight:600, color:C.textSub };
-export const TBL  = { width:"100%", borderCollapse:"collapse" };
+// width:100%だけだと列数が多い/内容が長いテーブル（チラシ管理など）で
+// 各列が無理やり圧縮され文字が縦折れする。minWidthをmax-contentにして
+// 内容が入りきらない場合はテーブル自体を広げ、親のoverflowX:autoで
+// 横スクロールさせる（内容が収まる場合は従来通りwidth:100%のまま）
+export const TBL  = { width:"100%", minWidth:"max-content", borderCollapse:"collapse" };
 export const TH   = { padding:"8px 10px", fontSize:FS_SM, fontWeight:700, textAlign:"left", color:C.textSub, background:C.surfaceSoft };
 export const TD   = { padding:"8px 10px", fontSize:FS_SM, verticalAlign:"middle", borderBottom:`1px solid ${C.borderLight}` };
 export const PILL = (ch) => ({ fontSize:FS_XS, padding:"2px 8px", borderRadius:999, fontWeight:700, background: ch.light, color: ch.color });
