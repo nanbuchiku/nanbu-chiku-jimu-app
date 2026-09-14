@@ -143,6 +143,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
   }).filter(s => s.total > 0), [tasks]);
 
   const stats = useMemo(() => [
+    { label:"カレンダー",  val:"📅", sub:"",       color:"#1565C0", action: () => setTab("calendar") },
     { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
     { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
     { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#667085", action: () => setTab("tasks") },
