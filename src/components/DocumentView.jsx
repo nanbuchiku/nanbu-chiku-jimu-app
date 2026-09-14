@@ -3,6 +3,10 @@ import { JIMU } from '../constants';
 import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr } from '../utils';
 import { BP, SEL } from '../styles';
 
+// 合同事務局アカウント自身から確実に送信するGASウェブアプリ（未設定ならPDFダウンロード＋手動添付にフォールバック）
+const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
+const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
+
 /** PDF ファイル名生成: 日付_単会名_講師名_講師依頼確認書.pdf */
 function makePdfFilename(sp) {
   const date  = (sp.seminarDate || "").replace(/-/g, "") || String(Date.now());
@@ -11,18 +15,28 @@ function makePdfFilename(sp) {
   return `${date}_${unit}_${name}_講師依頼確認書.pdf`;
 }
 
-/** html2pdf で確認書を直接ダウンロード */
+const PDF_OPTS = {
+  margin: 0,
+  image: { type: "jpeg", quality: 0.95 },
+  html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+  jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+};
+
+/** html2pdf で確認書を直接ダウンロード（従来どおり手元に保存したい場合用） */
 async function downloadPdf(elementId, filename) {
   const el = document.getElementById(elementId);
   if (!el) return;
   const { default: html2pdf } = await import('html2pdf.js');
-  await html2pdf().set({
-    margin: 0,
-    filename,
-    image: { type: "jpeg", quality: 0.95 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-  }).from(el).save();
+  await html2pdf().set({ ...PDF_OPTS, filename }).from(el).save();
+}
+
+/** html2pdf で確認書PDFをbase64化（ダウンロードはせず、メール添付用データとして取得） */
+async function generatePdfBase64(elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return null;
+  const { default: html2pdf } = await import('html2pdf.js');
+  const dataUri = await html2pdf().set(PDF_OPTS).from(el).output('datauristring');
+  return dataUri.split(',')[1] || null;
 }
 
 function DocSection({ title, color, children }) {
@@ -56,8 +70,9 @@ function Cb({ on, label }) {
   );
 }
 
-export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today, chapterSettings }) {
+export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today, chapterSettings, showToast }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
+  const [sendingDoc, setSendingDoc] = useState(false);
   useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
 
   const [recentIds, setRecentIds] = useState(() => {
@@ -155,21 +170,55 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               const isKiso = sp.seminarType === "kiso";
               await downloadPdf(isKiso ? "print-doc" : "print-doc", makePdfFilename(sp));
             }}>💾 PDFダウンロード</button>
-            <button
-              style={{ ...BP, background:"#1565C0", opacity: sp.email ? 1 : 0.5 }}
-              disabled={!sp.email}
-              title={sp.email ? `PDFダウンロード後に ${sp.email} へメール送信` : "メールアドレス未入力"}
-              onClick={async () => {
-                const ch2 = getChapter(sp.chapterId);
-                const stConfig = getSeminarType(sp.seminarType || "ms");
-                const unitName = ch2.name + "倫理法人会";
-                const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
-                const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\n講師依頼確認書をPDFにてお送りします。\nご確認のほど、よろしくお願いいたします。`;
-                const mailto = `mailto:${encodeURIComponent(sp.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                await downloadPdf("print-doc", makePdfFilename(sp));
-                setTimeout(() => { window.location.href = mailto; }, 500);
-              }}
-            >📎 PDF保存＋講師へメール</button>
+            {MAIL_SEND_URL ? (
+              <button
+                style={{ ...BP, background: sendingDoc ? "#90A4AE" : "#1565C0", opacity: sp.email ? 1 : 0.5 }}
+                disabled={!sp.email || sendingDoc}
+                title={sp.email ? `合同事務局からPDF添付で ${sp.email} へ自動送信（CC：単会）` : "メールアドレス未入力"}
+                onClick={async () => {
+                  const ch2 = getChapter(sp.chapterId);
+                  const unitName = ch2.name + "倫理法人会";
+                  const chEmail = chSettings.chapterEmail || '';
+                  const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
+                  const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
+                  setSendingDoc(true);
+                  try {
+                    const base64 = await generatePdfBase64("print-doc");
+                    if (!base64) throw new Error('PDFの作成に失敗しました');
+                    const res = await fetch(MAIL_SEND_URL, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                      body: JSON.stringify({
+                        token: MAIL_SEND_TOKEN, to: sp.email, cc: chEmail, subject, body,
+                        attachmentBase64: base64, attachmentFilename: makePdfFilename(sp), attachmentMimeType: 'application/pdf',
+                      }),
+                    });
+                    const data = await res.json().catch(() => null);
+                    if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+                    showToast?.('合同事務局からPDF添付で送信しました ✓');
+                  } catch (e) {
+                    showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
+                  } finally {
+                    setSendingDoc(false);
+                  }
+                }}
+              >{sendingDoc ? '⏳ 送信中...' : '📎 PDF添付して自動送信'}</button>
+            ) : (
+              <button
+                style={{ ...BP, background:"#1565C0", opacity: sp.email ? 1 : 0.5 }}
+                disabled={!sp.email}
+                title={sp.email ? `PDFダウンロード後に ${sp.email} へメール送信` : "メールアドレス未入力"}
+                onClick={async () => {
+                  const ch2 = getChapter(sp.chapterId);
+                  const unitName = ch2.name + "倫理法人会";
+                  const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
+                  const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
+                  const mailto = `mailto:${encodeURIComponent(sp.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  await downloadPdf("print-doc", makePdfFilename(sp));
+                  setTimeout(() => { window.location.href = mailto; }, 500);
+                }}
+              >📎 PDF保存＋講師へメール（要手動添付）</button>
+            )}
             <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:6 }}>
               {(() => { const i = sortedSpeakers.findIndex(x => x.id === sel); return i >= 0 && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3", minWidth:40, textAlign:"center" }}>{i+1}/{sortedSpeakers.length}</span>; })()}
               <button style={{ background:"#F1F5F9", border:"none", borderRadius:6, padding:"5px 11px", fontSize:"clamp(12px,1.4vw,14px)", cursor:"pointer", fontWeight:600, color:"#37474F" }}
