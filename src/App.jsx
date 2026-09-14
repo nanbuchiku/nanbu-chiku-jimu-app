@@ -872,7 +872,6 @@ ${ch.name}単会事務局`;
     { id:"sptasks",   label:"講師タスク",     icon:"☑", badge: sptasksBadge },
     { id:"flyer",     label:"チラシ管理",     icon:"📋" },
     { id:"tasks",     label:"タスク管理",     icon:"✓", badge: scopedTasks.filter(t => !t.done).length },
-    { id:"ranking",   label:"完了ランキング", icon:"🏆" },
   ], [scopedSpeakers, scopedTasks, dashboardBadge, sptasksBadge, contactBadge]);
 
   useEffect(() => {
@@ -914,7 +913,7 @@ ${ch.name}単会事務局`;
         setShowHelp(h => !h);
       }
       if (noModals && notInInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        const tabKeys = { "1":"dashboard","2":"speakers","3":"flyer","4":"ranking" };
+        const tabKeys = { "1":"dashboard","2":"speakers","3":"flyer" };
         if (tabKeys[e.key]) { e.preventDefault(); setTab(tabKeys[e.key]); }
         if (e.key === "r") { e.preventDefault(); loadData(true); }
       }
@@ -930,7 +929,7 @@ ${ch.name}単会事務局`;
     tab === "calendar" ? "dashboard" :
     tab;
   const primaryTabIds  = new Set(["dashboard","speakers"]);
-  const secondaryTabIds = new Set(["flyer","tasks","ranking"]);
+  const secondaryTabIds = new Set(["flyer","tasks"]);
   const mobileTabIds   = ["dashboard","speakers","tasks"];
   const mobileLabel    = { dashboard:"ダッシュボード", speakers:"講師", tasks:"タスク" };
   const mobileIcon     = { dashboard:"⊞", speakers:"♟", tasks:"✓" };
@@ -1408,7 +1407,6 @@ ${ch.name}単会事務局`;
                   ["1", "ダッシュボードへ"],
                   ["2", "講師管理へ"],
                   ["3", "チラシ管理へ"],
-                  ["4", "完了ランキングへ"],
                 ].map(([key, desc]) => (
                   <tr key={key} style={{ borderBottom:"1px solid #F5F5F5" }}>
                     <td style={{ padding:"8px 12px", width:200 }}><kbd style={{ background:"#F1F5F9", border:"1px solid #D9E1EE", borderRadius:4, padding:"2px 8px", fontSize:"clamp(12px,1.4vw,14px)", fontFamily:"monospace", fontWeight:700, color:"#37474F" }}>{key}</kbd></td>
