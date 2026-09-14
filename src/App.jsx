@@ -1091,9 +1091,17 @@ ${ch.name}単会事務局`;
                     {lastUpdated.toLocaleTimeString("ja-JP", { hour:"2-digit", minute:"2-digit" })}
                   </span>
                 )}
-                {refreshing && <span style={{ animation:"spin 1s linear infinite", display:"inline-block", fontSize:"clamp(16px,2.4vw,20px)", opacity:.7 }}>⟳</span>}
-                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:10, color:"#fff", width:46, height:46, fontSize:24, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>⟳</button>
-                <button onClick={() => setMobileDrawer(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:10, color:"#fff", width:46, height:46, fontSize:26, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, lineHeight:1 }} aria-label="メニュー">☰</button>
+                {refreshing && (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation:"spin 1s linear infinite", flexShrink:0, opacity:.7 }}>
+                    <path d="M21 12a9 9 0 1 1-3-6.7" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+                  </svg>
+                )}
+                <button onClick={() => loadData(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:10, color:"#fff", width:46, height:46, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, overflow:"hidden" }} aria-label="更新">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 12a9 9 0 1 1-3-6.7" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" /></svg>
+                </button>
+                <button onClick={() => setMobileDrawer(true)} style={{ background:"rgba(255,255,255,.15)", border:"1px solid rgba(255,255,255,.25)", borderRadius:10, color:"#fff", width:46, height:46, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, overflow:"hidden" }} aria-label="メニュー">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" /></svg>
+                </button>
               </div>
             </div>
           </header>
