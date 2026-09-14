@@ -1121,16 +1121,16 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                 const tomStr = ds(tom);
                 const wk = new Date(today); wk.setDate(today.getDate()+7);
                 const wkStr = ds(wk);
-                const undoneTasks = visible.filter(t => !t.done);
-                const doneTasks   = showDone ? visible.filter(t => t.done) : [];
                 const groups = [
                   { label:"⚠ 期限超過", color:"#B71C1C", bg:"#FFEBEE", filter: t => t.dueDate < todayStr },
                   { label:"📅 今日・明日", color:"#E65100", bg:"#FFF8E1", filter: t => t.dueDate >= todayStr && t.dueDate <= tomStr },
                   { label:"📌 今週中", color:"#FF8F00", bg:"#FFFDE7", filter: t => t.dueDate > tomStr && t.dueDate <= wkStr },
                   { label:"🗓 来週以降", color:"#667085", bg:"#F5F5F5", filter: t => t.dueDate > wkStr },
                 ];
-                const undoneRows = groups.flatMap(({ label, color, bg, filter }) => {
-                  const gTasks = undoneTasks.filter(filter);
+                // 完了チェックを入れても別セクションへ移動させず、ホテル予約管理と同じくその場で
+                // 取り消し線表示に切り替えるだけにする（showDoneで完了タスクの表示/非表示は制御）
+                return groups.flatMap(({ label, color, bg, filter }) => {
+                  const gTasks = visible.filter(filter);
                   if (gTasks.length === 0) return [];
                   return [
                     <tr key={`hdr-${label}`}><td colSpan={7} style={{ padding:"5px 10px", background: bg, fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color, borderTop:`2px solid ${color}33` }}>{label}　{gTasks.length}件</td></tr>,
@@ -1153,38 +1153,19 @@ export default memo(function TasksView({ tasks, emails = [], today, newTask, set
                         );
                       }
                       return (
-                        <tr key={t.id} className="hover-row" style={{ background: dl < 0 ? "#FFF5F5" : "white" }}>
-                          <td style={TD}><input type="checkbox" aria-label={`${t.title}を完了にする`} checked={t.done} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
+                        <tr key={t.id} className="hover-row" style={{ background: t.done ? "#FAFAFA" : dl < 0 ? "#FFF5F5" : "white", opacity: t.done ? .55 : 1 }}>
+                          <td style={TD}><input type="checkbox" aria-label={t.done ? `${t.title}を未完了に戻す` : `${t.title}を完了にする`} checked={t.done} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
                           <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
-                          <td style={{ ...TD, fontWeight:600, maxWidth:200 }}>{t.title}</td>
-                          <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)" }}>{t.dueDate}</td>
-                          <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color: dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
-                          <td style={TD}><span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700 }}>{p.label}</span></td>
-                          <td style={TD}><div style={{ display:"flex", gap:3, alignItems:"center" }}>{t.url && <a href={t.url} target="_blank" rel="noopener noreferrer" style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", textDecoration:"none" }} title={t.url}>🔗</a>}<button style={{ ...BSM, color:"#1565C0" }} onClick={() => startEdit(t)}>編集</button><button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></div></td>
+                          <td style={{ ...TD, fontWeight: t.done ? 400 : 600, textDecoration: t.done ? "line-through" : "none", color: t.done ? "#98A2B3" : undefined, maxWidth:200 }}>{t.title}</td>
+                          <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)", color: t.done ? "#98A2B3" : undefined }}>{t.dueDate}</td>
+                          <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color: t.done ? "#98A2B3" : dl < 0 ? "#B71C1C" : dl === 0 ? "#B71C1C" : dl <= 3 ? "#E65100" : dl <= 7 ? "#FF8F00" : "#2E7D32" }}>{t.done ? "✓完了" : dl < 0 ? `${Math.abs(dl)}日超過` : dl === 0 ? "今日！" : `${dl}日`}</span></td>
+                          <td style={TD}><span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700, opacity: t.done ? .5 : 1 }}>{p.label}</span></td>
+                          <td style={TD}><div style={{ display:"flex", gap:3, alignItems:"center" }}>{t.url && <a href={t.url} target="_blank" rel="noopener noreferrer" style={{ ...BSM, background:"#E3F2FD", color:"#1565C0", textDecoration:"none" }} title={t.url}>🔗</a>}{!t.done && <button style={{ ...BSM, color:"#1565C0" }} onClick={() => startEdit(t)}>編集</button>}<button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></div></td>
                         </tr>
                       );
                     })
                   ];
                 });
-                const doneRows = doneTasks.length === 0 ? [] : [
-                  <tr key="hdr-done"><td colSpan={7} style={{ padding:"5px 10px", background:"#F5F5F5", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C", borderTop:"2px solid #D9E1EE" }}>✓ 完了済み　{doneTasks.length}件</td></tr>,
-                  ...doneTasks.map(t => {
-                    const ch = getChapter(t.chapterId);
-                    const p = PRIO[t.priority] || PRIO.medium;
-                    return (
-                      <tr key={t.id} className="hover-row" style={{ background:"#FAFAFA", opacity:.55 }}>
-                        <td style={TD}><input type="checkbox" aria-label={`${t.title}を未完了に戻す`} checked={true} onChange={() => onToggle(t.id)} style={{ cursor:"pointer" }} /></td>
-                        <td style={TD}><span style={PILL(ch)}>{ch.name}</span></td>
-                        <td style={{ ...TD, fontWeight:400, textDecoration:"line-through", color:"#98A2B3", maxWidth:200 }}>{t.title}</td>
-                        <td style={{ ...TD, fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3" }}>{t.dueDate}</td>
-                        <td style={TD}><span style={{ fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3" }}>✓完了</span></td>
-                        <td style={TD}><span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:4, background: p.bg, color: p.color, fontWeight:700, opacity:.5 }}>{p.label}</span></td>
-                        <td style={TD}><button style={{ ...BSM, color:"#B71C1C", padding:"2px 7px" }} onClick={() => onDelete(t.id)}>×</button></td>
-                      </tr>
-                    );
-                  })
-                ];
-                return [...undoneRows, ...doneRows];
               })()}
               {!groupByDate && visible.map(t => {
                 const ch = getChapter(t.chapterId);
