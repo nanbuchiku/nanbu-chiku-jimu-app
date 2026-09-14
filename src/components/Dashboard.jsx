@@ -144,11 +144,12 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
 
   const stats = useMemo(() => [
     { label:"カレンダー",  val:"📅", sub:"",       color:"#1565C0", action: () => setTab("calendar") },
+    { label:"作業メモ",    val:"📝", sub: memoText ? "記入中" : "", color:"#F57F17", action: toggleMemo, actionLabel: memoOpen ? "クリックで閉じる →" : "クリックで開く →" },
     { label:"依頼確定済",  val: speakers.filter(x => x.status === "confirmed").length, sub:"件",    color:"#1B5E20", action: () => onGoSpeakers("confirmed") },
     { label:"確認待ち",    val: speakers.filter(x => x.status === "pending").length,   sub:"件",    color:"#BF360C", action: () => onGoSpeakers("pending") },
     { label:"未完了タスク",val: tasks.filter(t => !t.done).length,                    sub:"件",    color:"#667085", action: () => setTab("tasks") },
     ...(overdueCount > 0 ? [{ label:"期限超過",    val: overdueCount,                 sub:"件 ⚠",  color:"#B71C1C", action: () => setTab("tasks") }] : []),
-  ], [speakers, tasks, overdueCount, setTab, onGoSpeakers]);
+  ], [speakers, tasks, overdueCount, setTab, onGoSpeakers, memoText, memoOpen, toggleMemo]);
 
   return (
     <div>
@@ -160,19 +161,16 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
               ⚙ 設定
             </button>
           )}
-          <button onClick={toggleMemo} style={{ fontSize:"clamp(12px,1.6vw,14px)", background: memoOpen ? "#FFF9C4" : "#F1F5F9", color: memoOpen ? "#F57F17" : "#667085", border:`1px solid ${memoOpen ? "#FFE082" : "#D9E1EE"}`, borderRadius:8, padding:"3px 10px", cursor:"pointer", fontWeight:600 }}>
-            📝 事務局メモ {memoOpen ? "▲" : "▼"} {memoText && !memoOpen ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#FF8F00", color:"#fff", borderRadius:8, padding:"1px 5px", marginLeft:3 }}>記入中</span> : null}
-          </button>
         </div>
       </div>
       {memoOpen && (
         <div style={{ marginBottom:12, background:"#FFFDE7", border:"2px solid #FFE082", borderRadius:8, padding:"10px 13px" }}>
-          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#F57F17", marginBottom:6 }}>📝 事務局メモ（ローカル保存・自分だけ表示）</div>
+          <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#F57F17", marginBottom:6 }}>📝 作業メモ（この端末だけの一時保存・他の人には見えません）</div>
           <textarea
             autoFocus
             rows={3}
             style={{ width:"100%", border:"1px solid #FFE082", borderRadius:6, padding:"7px", fontSize:"clamp(14px,2vw,18px)", fontFamily:"inherit", resize:"vertical", background:"#FFFFF0", boxSizing:"border-box" }}
-            placeholder="電話メモ・やること・申し送り事項など..."
+            placeholder="今日やることを忘れないうちにメモ...（保存はこの端末のみ）"
             value={memoText}
             onChange={e => saveMemo(e.target.value)}
           />
@@ -191,7 +189,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,.08)"}>
             <div style={{ fontSize:"clamp(24px,3.5vw,34px)", fontWeight:800, lineHeight:1, color: it.color }}>{it.val}<span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:400, marginLeft:3 }}>{it.sub}</span></div>
             <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#78909C", marginTop:3 }}>{it.label}</div>
-            <div style={{ fontSize:"clamp(12px,1.6vw,14px)", color: it.color, marginTop:4, fontWeight:600, opacity:.7 }}>クリックで詳細 →</div>
+            <div style={{ fontSize:"clamp(12px,1.6vw,14px)", color: it.color, marginTop:4, fontWeight:600, opacity:.7 }}>{it.actionLabel || "クリックで詳細 →"}</div>
           </div>
         ))}
       </div>
