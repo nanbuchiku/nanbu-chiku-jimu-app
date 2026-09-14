@@ -1,17 +1,20 @@
 import React, { useMemo, useState, useCallback, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType, toDateStr, parseDate, formatDate } from '../utils';
+import { getChapter, getSeminarType, toDateStr, parseDate, formatDate, formatDateTime, isTaskDone, getTaskMeta } from '../utils';
 import { CARD, BSM, PILL, OV, MOD, MH, BC, BP, FS_MD, FS_SM, FS_XS } from '../styles';
 
+// id は講師タスク管理（utils.js buildSpeakerTasks）の「宿泊」カテゴリと共通のキー。
+// 同じ speakerChecks を見ているので、どちらでチェックしても連動する
 const HOTEL_ITEMS = [
-  { id:"hotel_booked",   label:"予約完了",                 icon:"🏨" },
-  { id:"hotel_sent",     label:"講師へホテル情報を送信済み", icon:"📧" },
-  { id:"hotel_pickup",   label:"お迎え場所など相談済み",     icon:"🚗" },
-  { id:"hotel_greeting", label:"会長からの挨拶連絡済み",     icon:"💬" },
-  { id:"hotel_paid",     label:"支払い完了",                 icon:"💴" },
+  { id:"hotel_rsrv",    label:"ホテル予約完了",           icon:"🏨" },
+  { id:"hotel_conf",    label:"講師へホテル情報を送信済み", icon:"📧" },
+  { id:"meetup_plan",   label:"待ち合わせ場所の相談",      icon:"📍" },
+  { id:"pickup_plan",   label:"お迎え担当手配",           icon:"🚗" },
+  { id:"hotel_greeting",label:"会長からの挨拶連絡済み",     icon:"💬" },
+  { id:"hotel_paid",    label:"支払い完了",               icon:"💴" },
 ];
 
-export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings, scopeChapter }) {
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings, scopeChapter, currentUserName }) {
   // 単会担当者は自分の単会のみ新規登録できる。事務局(scopeChapterなし)は全単会OK
   const canAddFor = chId => !!onAddForDate && (!scopeChapter || chId === scopeChapter);
   const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
@@ -304,7 +307,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
             )}
           </div>
           {hotelNeeded.length > 0 && (() => {
-            const pending = hotelNeeded.filter(sp => !HOTEL_ITEMS.every(it => (sp.speakerChecks || {})[it.id])).length;
+            const pending = hotelNeeded.filter(sp => !HOTEL_ITEMS.every(it => isTaskDone(sp.speakerChecks, it.id))).length;
             return pending > 0
               ? <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#FFCDD2", color:"#B71C1C", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>未対応 {pending}件</span>
               : <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#C8E6C9", color:"#2E7D32", padding:"1px 8px", borderRadius:10, fontWeight:700 }}>✓ 全完了</span>;
@@ -348,18 +351,27 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                     </div>
                     <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
                       {HOTEL_ITEMS.map(it => {
-                        const on = !!checks[it.id];
+                        const on = isTaskDone(checks, it.id);
+                        const meta = getTaskMeta(checks, it.id);
                         return (
                           <label key={it.id} style={{ display:"flex", alignItems:"center", gap:8, fontSize:"clamp(13px,1.8vw,16px)", cursor:"pointer", padding:"6px 8px", borderRadius:6, background: on ? "#E8F5E9" : "transparent", minHeight:40 }}>
                             <input type="checkbox" checked={on}
                               onChange={async () => {
-                                const newChecks = { ...(sp.speakerChecks || {}), [it.id]: !on };
+                                const newChecks = { ...(sp.speakerChecks || {}) };
+                                newChecks[it.id] = on
+                                  ? { done: false }
+                                  : { done: true, at: new Date().toISOString(), by: currentUserName || '' };
                                 const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
                                 if (ok && showToast) showToast(on ? `${it.label}を取り消しました` : `✓ ${it.label}`);
                               }}
                               style={{ cursor:"pointer", width:22, height:22, flexShrink:0, accentColor:"#2E7D32" }} />
                             <span>{it.icon}</span>
-                            <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#98A2B3" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                            <span style={{ display:"flex", flexDirection:"column" }}>
+                              <span style={{ textDecoration: on ? "line-through" : "none", color: on ? "#98A2B3" : "#37474F", fontWeight: on ? 400 : 600 }}>{it.label}</span>
+                              {on && meta?.at && (
+                                <span style={{ fontSize:"clamp(11px,1.4vw,13px)", color:"#98A2B3" }}>{formatDateTime(meta.at)}{meta.by ? `・${meta.by}` : ''}</span>
+                              )}
+                            </span>
                           </label>
                         );
                       })}
