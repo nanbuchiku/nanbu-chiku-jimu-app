@@ -54,6 +54,14 @@ function doPost(e) {
     var options = { name: '倫理法人会 南部地区合同事務局' };
     if (cc) options.cc = cc;
 
+    // PDF等の添付ファイル（base64エンコード済みのデータを受け取り、Blobに戻して添付する）
+    if (payload.attachmentBase64 && payload.attachmentFilename) {
+      var mimeType = payload.attachmentMimeType || 'application/pdf';
+      var bytes = Utilities.base64Decode(payload.attachmentBase64);
+      var blob  = Utilities.newBlob(bytes, mimeType, payload.attachmentFilename);
+      options.attachments = [blob];
+    }
+
     GmailApp.sendEmail(to, subject, body, options);
 
     return jsonResponse_({ ok: true });
