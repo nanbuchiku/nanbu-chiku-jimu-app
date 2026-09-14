@@ -146,9 +146,11 @@ export function buildSpeakerTasks(sp) {
     if (sp.lodging !== "あり（当日のみ）") {
       add("hotel_rsrv",   "ホテル予約完了",       "宿泊");
       add("hotel_conf",   "ホテル情報の共有",     "宿泊");
+      add("hotel_paid",   "支払い完了",           "宿泊");
     }
-    add("meetup_plan", "待ち合わせ場所の相談",   "宿泊");
-    add("pickup_plan", "お迎え手配",             "宿泊");
+    add("meetup_plan",   "待ち合わせ場所の相談",   "宿泊");
+    add("pickup_plan",   "お迎え担当手配",         "宿泊");
+    add("hotel_greeting","会長からの挨拶連絡",     "宿泊");
   }
 
   // 顔写真・資料は別々に届く可能性があり、かつ「単会」宛か「合同事務局」宛かが
