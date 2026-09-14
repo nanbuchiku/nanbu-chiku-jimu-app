@@ -106,7 +106,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
               setViewMode("week");
             };
             return (
-              <div key={dStr} onClick={jumpToWeek} style={{ background: isT ? "#EDE7F6" : "#fff", height:92, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative", cursor:"pointer", overflow:"hidden", boxSizing:"border-box" }}
+              <div key={dStr} onClick={jumpToWeek} style={{ background: isT ? "#EDE7F6" : "#fff", height:112, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative", cursor:"pointer", overflow:"hidden", boxSizing:"border-box" }}
                 title="クリックで週表示へ">
                 <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: isT ? "#7E57C2" : isSun ? "#E65100" : isSat ? "#1565C0" : "#37474F", marginBottom:3, whiteSpace:"nowrap" }}>
                   {d.getDate()}
