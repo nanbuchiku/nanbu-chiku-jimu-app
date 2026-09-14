@@ -11,7 +11,9 @@ const HOTEL_ITEMS = [
   { id:"hotel_paid",     label:"支払い完了",                 icon:"💴" },
 ];
 
-export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings }) {
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings, scopeChapter }) {
+  // 単会担当者は自分の単会のみ新規登録できる。事務局(scopeChapterなし)は全単会OK
+  const canAddFor = chId => !!onAddForDate && (!scopeChapter || chId === scopeChapter);
   const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
   const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
   const [hotelOpen, setHotelOpen] = useState(() => { try { return localStorage.getItem('dashboard_hotel_open') === '1'; } catch { return false; } });
@@ -396,7 +398,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                   ) : (
                     <div style={{ display:"flex", alignItems:"center", gap:6, flex:1 }}>
                       <span style={{ color:"#9E9E9E", fontSize:"clamp(13px,1.8vw,16px)" }}>── 講師未設定</span>
-                      {onAddForDate && (() => {
+                      {canAddFor(ch.id) && (() => {
                         const wd = weekDates.find(d => d.getDay() === ch.day);
                         return wd ? (
                           <button onClick={() => onAddForDate(toDateStr(wd), ch.id)} style={{ fontSize:"clamp(12px,1.6vw,14px)", padding:"2px 8px", borderRadius:10, border:"1px solid #90CAF9", background:"#E3F2FD", color:"#1565C0", cursor:"pointer", fontWeight:700, lineHeight:1.4 }}>＋ 登録</button>
@@ -585,7 +587,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       ) : (
                         <>
                           <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#B71C1C", fontWeight:600, flex:1 }}>未登録</span>
-                          {onAddForDate && (
+                          {canAddFor(ch.id) && (
                             <button onClick={e => { e.stopPropagation(); close(); onAddForDate(dateStr, ch.id); }}
                               style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, background:"#E3F2FD", color:"#1565C0", border:"1px solid #90CAF9", borderRadius:6, padding:"3px 10px", cursor:"pointer" }}>
                               ＋ 登録
