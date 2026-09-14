@@ -106,9 +106,9 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
               setViewMode("week");
             };
             return (
-              <div key={dStr} onClick={jumpToWeek} style={{ background: isT ? "#EDE7F6" : "#fff", minHeight:90, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative", cursor:"pointer" }}
+              <div key={dStr} onClick={jumpToWeek} style={{ background: isT ? "#EDE7F6" : "#fff", height:92, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative", cursor:"pointer", overflow:"hidden", boxSizing:"border-box" }}
                 title="クリックで週表示へ">
-                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: isT ? "#7E57C2" : isSun ? "#E65100" : isSat ? "#1565C0" : "#37474F", marginBottom:3 }}>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: isT ? "#7E57C2" : isSun ? "#E65100" : isSat ? "#1565C0" : "#37474F", marginBottom:3, whiteSpace:"nowrap" }}>
                   {d.getDate()}
                   {isT && <span style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#7E57C2", color:"#fff", borderRadius:6, padding:"1px 4px", marginLeft:4, fontWeight:700, verticalAlign:"middle" }}>今日</span>}
                 </div>
@@ -116,19 +116,19 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                   const addable = canAddFor(ch.id);
                   return (
                   <div
-                    style={{ background: sp ? ch.light : "#FAFAFA", border:`1px solid ${sp ? ch.accent : "#F1F5F9"}`, borderRadius:5, padding:"3px 5px", cursor: (sp || addable) ? "pointer" : "default", transition:"box-shadow .1s" }}
+                    style={{ background: sp ? ch.light : "#FAFAFA", border:`1px solid ${sp ? ch.accent : "#F1F5F9"}`, borderRadius:5, padding:"3px 5px", cursor: (sp || addable) ? "pointer" : "default", transition:"box-shadow .1s", overflow:"hidden" }}
                     onClick={e => { e.stopPropagation(); if (sp) onSpeaker(sp); else if (addable) onAddForDate(dStr, ch.id); }}
                     title={sp ? `${sp.speakerName}「${sp.topic}」` : (addable ? `${ch.name} — クリックして講師を登録` : `${ch.name}（他単会）`)}
                   >
-                    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color, marginBottom:1 }}>{ch.name}</div>
+                    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color, marginBottom:1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{ch.name}</div>
                     {sp ? (
                       <>
-                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#263238", lineHeight:1.3 }}>{sp.speakerName}</div>
+                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#263238", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{sp.speakerName}</div>
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>「{sp.topic}」</div>
-                        <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"1px 4px", borderRadius:8, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                        <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"1px 4px", borderRadius:8, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9", display:"inline-block", whiteSpace:"nowrap" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                       </>
                     ) : (
-                      <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#B0BEC5" }}>
+                      <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#B0BEC5", whiteSpace:"nowrap" }}>
                         未定{addable ? <span style={{ color: ch.color, marginLeft:3 }}>＋</span> : ""}
                       </div>
                     )}
