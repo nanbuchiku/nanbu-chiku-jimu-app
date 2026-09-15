@@ -53,11 +53,16 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const visible = useMemo(() => {
     let base = filtered;
     if (filterDone !== "all") {
+      const todayStr = toDateStr(today);
       base = base.filter(sp => {
         const checks = sp.speakerChecks || {};
         const tasks = buildSpeakerTasks(sp);
         const allDone = tasks.every(t => isTaskDone(checks, t.id));
-        return filterDone === "done" ? allDone : !allDone;
+        if (filterDone === "done") return allDone;
+        // 未完了のみ：開催日を過ぎたものは「超過のみ」で確認する対応漏れ枠に回し、
+        // ここでは「これから開催される・タスクが残っている講師」だけに絞る
+        const isPast = sp.seminarDate && sp.seminarDate < todayStr;
+        return !allDone && !isPast;
       });
     }
     if (filterPast) {
