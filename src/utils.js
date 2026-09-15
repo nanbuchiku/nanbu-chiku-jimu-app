@@ -143,8 +143,8 @@ export function buildSpeakerTasks(sp) {
   const add = (id, label, category, extra) => tasks.push({ id, label, category, ...extra });
   const checks = sp.speakerChecks || {};
 
-  add("req_sent",    "依頼メール送信",           "依頼");
-  add("form_sent",   "確認フォームURL送付",       "依頼");
+  // 送信手段（メール／LINE／FAX）を記録する専用タスクとして扱う（method: true）
+  add("form_sent",   "講師依頼フォーム作成・送信", "依頼", { method: true });
   add("form_recvd",  "フォーム回答受領",          "依頼");
   add("doc_sent",    "確認書送付",               "依頼");
 
@@ -162,10 +162,12 @@ export function buildSpeakerTasks(sp) {
   // 顔写真・資料は別々に届く可能性があり、かつ「単会」宛か「合同事務局」宛かが
   // わかりにくいため、受領時に宛先を記録する専用タスクとして扱う（receipt: true）
   add("photo_received",    "顔写真受領",         "資料", { receipt: true });
+  add("photo_checked",     "顔写真の内容確認",   "資料");
   if (getTaskMeta(checks, "photo_received")?.dest === "office") {
     add("photo_shared",    "顔写真を単会へ共有", "資料");
   }
   add("material_received", "資料受領",           "資料", { receipt: true });
+  add("material_checked",  "資料の内容確認",     "資料");
   if (getTaskMeta(checks, "material_received")?.dest === "office") {
     add("material_shared", "資料を単会へ共有",   "資料");
   }
