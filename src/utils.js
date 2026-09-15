@@ -193,11 +193,11 @@ export function buildSpeakerTasks(sp) {
 
   // 講師管理画面の「宣伝・ご案内」「前日リマインダー」メールをその場で開くボタン付きタスク
   // （emailType: EmailModalのdefaultTypeとして渡す）
-  add("contact_speaker", "講師への連絡（宣伝・ご案内）", "前日", { emailType: "promo" });
-  add("reminder_sent",   "前日リマインダーのメール",     "前日", { emailType: "reminder" });
-  add("receipt_issued",  "領収証発行（スマイル）",       "前日");
-  add("app_reception_ready", "倫理アプリ受付準備（ゲスト登録・会員前日まで受付など）", "前日");
-  add("venue_ready", "会場準備・当日連絡", "前日");
+  add("contact_speaker", "セミナーの宣伝",              "前日まで", { emailType: "promo" });
+  add("reminder_sent",   "前日リマインダーのメール",     "前日まで", { emailType: "reminder" });
+  add("receipt_issued",  "領収証発行（スマイル）",       "前日まで");
+  add("app_reception_ready", "倫理アプリ受付準備（ゲスト登録・会員前日まで受付など）", "前日まで");
+  add("venue_ready", "会場準備・当日連絡", "前日まで");
 
   add("receipt_confirmed", "領収証受領内容確認",         "講話後");
   add("thanks_sent",       "講師へのお礼メール",         "講話後", { emailType: "thanks" });
