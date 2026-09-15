@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate, buildMonthRanges } from '../utils';
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
 import FileViewModal from './FileViewModal';
 import FaxPrintModal from './FaxPrintModal';
@@ -33,19 +33,6 @@ const DATE_RANGES = [
   { value: "m6",   label: "今後6ヶ月" },
 ];
 
-// 月ごとの印刷・CSV保存用に、暦月で絞り込む選択肢を作る（過去12ヶ月〜先12ヶ月）
-function buildMonthRanges(today) {
-  const opts = [];
-  for (let i = -12; i <= 12; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-    const y = d.getFullYear();
-    const m = d.getMonth() + 1;
-    const label = y === today.getFullYear() ? `${m}月` : `${y}年${m}月`;
-    opts.push({ value: `cal:${y}-${String(m).padStart(2, "0")}`, label });
-  }
-  return opts;
-}
-
 function getSmartMail(sp, today) {
   if (!sp.seminarDate) return { label:"✉ メール", type:"material", bg:"#1565C0" };
   const d = new Date(sp.seminarDate);
@@ -64,7 +51,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
   const setDateRangePersist = useCallback(v => { setDateRange(v); try { localStorage.setItem('sp_dateRange', v); } catch {} }, []);
-  const monthRanges = useMemo(() => buildMonthRanges(today), [today]);
+  const monthRanges = useMemo(() => buildMonthRanges(today, "cal:"), [today]);
   const [sortCol, setSortCol] = useState(() => { try { return localStorage.getItem('sp_sortCol') || "date"; } catch { return "date"; } });
   const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('sp_sortDir') || "asc"; } catch { return "asc"; } });
   const [savingIds, setSavingIds] = useState(new Set());
