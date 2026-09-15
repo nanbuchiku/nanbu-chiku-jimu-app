@@ -22,6 +22,21 @@ export const getFiscalYearStart = (today) => {
   return `${y}-09-01`;
 };
 
+// 期間フィルタの「月で絞り込む」選択肢を作る。過去はアプリ運用開始の2026年6月から、
+// 未来は今日から12ヶ月先まで（valuePrefixは呼び出し側のvalue形式に合わせる。例: "cal:"）
+export function buildMonthRanges(today, valuePrefix = "") {
+  const opts = [];
+  const start = new Date(2026, 5, 1); // 2026年6月
+  const end = new Date(today.getFullYear(), today.getMonth() + 12, 1);
+  for (let d = new Date(start); d <= end; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const label = y === today.getFullYear() ? `${m}月` : `${y}年${m}月`;
+    opts.push({ value: `${valuePrefix}${y}-${String(m).padStart(2, "0")}`, label });
+  }
+  return opts;
+}
+
 export const formatDate = d => {
   if (!d) return "";
   const dt = typeof d === "string" ? new Date(d + "T00:00:00") : d;

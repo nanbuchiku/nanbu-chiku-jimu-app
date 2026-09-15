@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS, ALL_CHAPTER, DISTRICT_ID } from '../constants';
-import { getChapter, parseDate } from '../utils';
+import { getChapter, parseDate, buildMonthRanges } from '../utils';
 import { db } from '../lib/supabase';
 import { CARD, BP, BSM, SEL, INP, TBL, TH, TD, PILL } from '../styles';
 
@@ -265,17 +265,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect, l
   const [taskAdding, setTaskAdding] = useState('');
   const [deletingId, setDeletingId] = useState('');
   const [period,     setPeriod]     = useState("28");  // 抽出期間。日数の文字列、または暦月選択時は "cal:YYYY-MM"
-  const monthRanges = useMemo(() => {
-    const opts = [];
-    for (let i = -12; i <= 12; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth() + 1;
-      const label = y === today.getFullYear() ? `${m}月` : `${y}年${m}月`;
-      opts.push({ value: `cal:${y}-${String(m).padStart(2, "0")}`, label });
-    }
-    return opts;
-  }, [today]);
+  const monthRanges = useMemo(() => buildMonthRanges(today, "cal:"), [today]);
 
   // ① OAuthリダイレクト後にURLハッシュからトークンを取得
   useEffect(() => {

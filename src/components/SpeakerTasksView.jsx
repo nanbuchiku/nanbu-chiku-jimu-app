@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime, getFiscalYearStart } from '../utils';
+import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime, getFiscalYearStart, buildMonthRanges } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
@@ -20,17 +20,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const [filterPast,    setFilterPast]   = useState(false);
   const [filterUpcoming,setFilterUpcoming] = useState(false);
   const [filterMonth,   setFilterMonth]  = useState(""); // "" または "YYYY-MM"（暦月で絞り込む）
-  const monthRanges = useMemo(() => {
-    const opts = [];
-    for (let i = -12; i <= 12; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth() + 1;
-      const label = y === today.getFullYear() ? `${m}月` : `${y}年${m}月`;
-      opts.push({ value: `${y}-${String(m).padStart(2, "0")}`, label });
-    }
-    return opts;
-  }, [today]);
+  const monthRanges = useMemo(() => buildMonthRanges(today), [today]);
   const [expandedId,  setExpandedId] = useState(null);
   const [expandAll,   setExpandAll]  = useState(false);
   const [searchInput, setSearchInput] = useState("");
