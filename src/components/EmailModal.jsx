@@ -1,14 +1,22 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { getChapter, formatDate } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 
-export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings }) {
+// 単会自身のメールアドレスを差出人として送信するGASウェブアプリ（未設定ならこの機能は表示しない）
+// ※ from に単会メールを指定するには、事前に rinri.nanbu@gmail.com のGmail設定で
+//    そのアドレスを「他のメールアドレスを追加（Send mail as）」として確認済みにしておく必要がある
+//   （手順は gas/rinri_mail_send.gs 参照）
+const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
+const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
+
+export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast }) {
   const ch = getChapter(sp.chapterId);
   const chEmail = chapterSettings?.[sp.chapterId]?.chapterEmail || '';
   const [mailType, setMailType] = useState(defaultType || "material");
   const [promoIdx, setPromoIdx] = useState(0);
   const [freeSubject, setFreeSubject] = useState("");
   const [freeBody,    setFreeBody]    = useState("");
+  const [sending, setSending] = useState(false);
 
   const matDL = useMemo(() => {
     if (!sp.seminarDate) return '';
@@ -154,6 +162,30 @@ ${sig}`,
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
   const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
 
+  // 単会自身のメールアドレスを差出人としてGAS経由で送信する
+  const sendViaChapter = useCallback(async () => {
+    if (!sp.email) { showToast?.('⚠ 講師のメールアドレスが未入力です'); return; }
+    setSending(true);
+    try {
+      const res = await fetch(MAIL_SEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          token: MAIL_SEND_TOKEN, to: sp.email, cc: chEmail,
+          subject, body, from: chEmail, senderName: `倫理法人会 ${ch.name}単会`,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      showToast?.(`${ch.name}単会から送信しました ✓`);
+      onDone();
+    } catch (e) {
+      showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
+    } finally {
+      setSending(false);
+    }
+  }, [sp.email, chEmail, subject, body, ch.name, showToast, onDone]);
+
   return (
     <div style={OV} onClick={onClose} role="presentation">
       <div role="dialog" aria-modal="true" aria-label="メール送信" style={{ ...MOD, maxWidth:580 }} onClick={e => e.stopPropagation()}>
@@ -195,19 +227,27 @@ ${sig}`,
 
         {chEmail && (
           <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#78909C", marginTop:8 }}>
-            CC：{chEmail}（{ch.name}単会）
+            {MAIL_SEND_URL ? "差出人／CC" : "CC"}：{chEmail}（{ch.name}単会）
           </div>
         )}
 
-        <div style={{ background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"9px 12px", marginTop:10, fontSize:"clamp(11px,1.3vw,13px)", color:"#7A4A00", lineHeight:1.6 }}>
-          ⚠ 送信元アカウントの確認：メールアプリが開いたら、差出人（From）が
-          {chEmail ? <> <strong>{chEmail}（{ch.name}単会）</strong> </> : <> <strong>{ch.name}単会のメールアドレス</strong> </>}
-          になっているか必ず確認し、違う場合は送信前にアカウントを切り替えてください。（自分個人のアドレスのまま送信してしまう事故を防ぐためです）
-          {!chEmail && <div style={{ marginTop:4 }}>※ {ch.name}単会のメールアドレスが未設定です。設定画面から登録してください。</div>}
-        </div>
+        {MAIL_SEND_URL && chEmail ? (
+          <button
+            style={{ width:"100%", marginTop:10, background: sending ? "#B39DDB" : "#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, cursor: (sending || !sp.email) ? "not-allowed" : "pointer", opacity: sp.email ? 1 : .5 }}
+            onClick={sendViaChapter} disabled={sending || !sp.email}>
+            {sending ? '⏳ 送信中...' : `✉ ${ch.name}単会（${chEmail}）から直接送信`}
+          </button>
+        ) : (
+          <div style={{ background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"9px 12px", marginTop:10, fontSize:"clamp(11px,1.3vw,13px)", color:"#7A4A00", lineHeight:1.6 }}>
+            ⚠ 送信元アカウントの確認：メールアプリが開いたら、差出人（From）が
+            {chEmail ? <> <strong>{chEmail}（{ch.name}単会）</strong> </> : <> <strong>{ch.name}単会のメールアドレス</strong> </>}
+            になっているか必ず確認し、違う場合は送信前にアカウントを切り替えてください。（自分個人のアドレスのまま送信してしまう事故を防ぐためです）
+            {!chEmail && <div style={{ marginTop:4 }}>※ {ch.name}単会のメールアドレスが未設定です。設定画面から登録してください。</div>}
+          </div>
+        )}
 
         <div style={{ display:"flex", gap:8, marginTop:10 }}>
-          <button style={{ ...BP, flex:1, opacity: sp.email ? 1 : .4, cursor: sp.email ? "pointer" : "not-allowed" }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?${chEmail ? `cc=${encodeURIComponent(chEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
+          <button style={{ ...BG, flex:1, opacity: sp.email ? 1 : .4, cursor: sp.email ? "pointer" : "not-allowed" }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?${chEmail ? `cc=${encodeURIComponent(chEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く{MAIL_SEND_URL && chEmail ? "（自分のアカウント）" : ""}</button>
           <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${subject}\n\n${body}`).catch(() => {}); onDone(); }}>📋 コピーして手動送信</button>
           <button style={BC} onClick={onClose}>閉じる</button>
         </div>
