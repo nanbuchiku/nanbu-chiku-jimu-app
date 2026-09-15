@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime } from '../utils';
+import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime, getFiscalYearStart } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
@@ -120,9 +120,12 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     return { done, total: tasks.length, pct: tasks.length ? Math.round(done / tasks.length * 100) : 0 };
   };
 
+  // タスク完了率は年度（9月始まり）単位。8月以前の実績は翌年度の集計に持ち越さない
   const globalStats = useMemo(() => {
+    const fyStart = getFiscalYearStart(today);
+    const fyFiltered = filtered.filter(sp => !sp.seminarDate || sp.seminarDate >= fyStart);
     let totalTasks = 0, doneTasks = 0, completeSpeakers = 0;
-    filtered.forEach(sp => {
+    fyFiltered.forEach(sp => {
       const tasks = buildSpeakerTasks(sp);
       const checks = sp.speakerChecks || {};
       const done = tasks.filter(t => isTaskDone(checks, t.id)).length;
@@ -130,8 +133,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       doneTasks += done;
       if (done === tasks.length) completeSpeakers++;
     });
-    return { totalTasks, doneTasks, completeSpeakers, total: filtered.length, pct: totalTasks ? Math.round(doneTasks / totalTasks * 100) : 100 };
-  }, [filtered]);
+    return { totalTasks, doneTasks, completeSpeakers, total: fyFiltered.length, pct: totalTasks ? Math.round(doneTasks / totalTasks * 100) : 100 };
+  }, [filtered, today]);
 
   return (
     <div>
