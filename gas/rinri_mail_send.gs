@@ -32,6 +32,34 @@
 //   ブラウザの開発者ツールを使えば技術的には見えてしまいます
 //   （現状のSupabase publishable keyと同じ性質のリスクです）。
 //   万一漏れた場合は、MAIL_SEND_TOKEN を再発行して再デプロイしてください。
+//
+// ===================================================
+// 追加機能：各単会アドレスを「差出人」として送信する
+// ===================================================
+// 講師タスク管理（EmailModal）からのメールは、合同事務局からではなく
+// 各単会のメールアドレスを差出人として送信したい、という要望に対応するため、
+// payload.from に単会メールアドレスが指定された場合は、そのアドレスを
+// GmailApp.sendEmail の from オプションに渡して送信する。
+//
+// ただし Gmail の仕様上、from に指定できるのは「このスクリプトを
+// デプロイしたアカウント（rinri.nanbu@gmail.com）」自身が
+// Gmail設定で「他のメールアドレスを追加」（Send mail as）として
+// 事前に登録・確認済みのアドレスに限られる。未登録のアドレスを
+// 指定した場合はGoogle側でエラーになり、そのままメール送信に失敗する。
+//
+// 【単会ごとに1回だけ必要な設定手順】（rinri.nanbu@gmail.com でログインして行う）
+//   1. Gmailを開き、右上の歯車 →「すべての設定を表示」
+//   2.「アカウントとインポート」タブ →「名前」の下、
+//      「他のメールアドレスを追加」をクリック
+//   3. 単会のメールアドレス（例：nizashikirinri@gmail.com）を入力して次へ
+//      「エイリアスとして扱います」にチェックを入れて次のステップへ
+//   4. 確認コード付きのメールがその単会アドレス宛に届くので、
+//      単会側にメール本文中のリンクをクリック（またはコードを入力）してもらう
+//   5. 確認が完了すると、以後そのアドレスを from に指定して送信できるようになる
+//   ※ 5単会すべてで同様に設定すれば、各単会からの送信が可能になる
+//   ※ 未確認のアドレスを from に指定した場合は下記 catch でエラーが返り、
+//      アプリ側は自動的に合同事務局からの送信にフォールバックしない
+//      （フォールバックはアプリ側のコードで別途行っている）
 
 function doPost(e) {
   try {
@@ -46,13 +74,16 @@ function doPost(e) {
     var cc      = String(payload.cc || '').trim();
     var subject = String(payload.subject || '').trim();
     var body    = String(payload.body || '');
+    var from    = String(payload.from || '').trim();
+    var senderName = String(payload.senderName || '').trim();
 
     if (!to || !subject) {
       return jsonResponse_({ ok: false, error: 'to または subject が空です' });
     }
 
-    var options = { name: '倫理法人会 南部地区合同事務局' };
+    var options = { name: senderName || '倫理法人会 南部地区合同事務局' };
     if (cc) options.cc = cc;
+    if (from) options.from = from;
 
     // PDF等の添付ファイル（base64エンコード済みのデータを受け取り、Blobに戻して添付する）
     if (payload.attachmentBase64 && payload.attachmentFilename) {
