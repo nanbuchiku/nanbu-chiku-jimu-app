@@ -26,6 +26,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const [searchInput, setSearchInput] = useState("");
   const [search,      setSearch]     = useState("");
   const cardRefs = useRef({});
+  const [glowId, setGlowId] = useState(null);
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
     return () => clearTimeout(t);
@@ -37,11 +38,13 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     setFilterCh("all"); setFilterDone("all"); setFilterPast(false); setFilterUpcoming(false);
     setSearchInput(""); setSearch("");
     setExpandedId(focusId);
-    const t = setTimeout(() => {
+    setGlowId(focusId);
+    const scrollT = setTimeout(() => {
       cardRefs.current[focusId]?.scrollIntoView({ behavior: "smooth", block: "center" });
       onFocusHandled?.();
     }, 120);
-    return () => clearTimeout(t);
+    const glowT = setTimeout(() => setGlowId(null), 2000);
+    return () => { clearTimeout(scrollT); clearTimeout(glowT); };
   }, [focusId, onFocusHandled]);
 
   const filtered = useMemo(() => {
@@ -206,7 +209,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
           });
 
           const isPhoto = sp.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split("?")[0] || "");
-          const isFocused = focusId === sp.id;
+          const isFocused = glowId === sp.id;
 
           return (
             <div key={sp.id} ref={el => { cardRefs.current[sp.id] = el; }}
