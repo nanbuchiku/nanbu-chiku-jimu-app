@@ -53,16 +53,17 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const visible = useMemo(() => {
     let base = filtered;
     if (filterDone !== "all") {
-      const todayStr = toDateStr(today);
+      const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - 7);
+      const cutoffStr = toDateStr(cutoff);
       base = base.filter(sp => {
         const checks = sp.speakerChecks || {};
         const tasks = buildSpeakerTasks(sp);
         const allDone = tasks.every(t => isTaskDone(checks, t.id));
         if (filterDone === "done") return allDone;
-        // 未完了のみ：開催日を過ぎたものは「超過のみ」で確認する対応漏れ枠に回し、
-        // ここでは「これから開催される・タスクが残っている講師」だけに絞る
-        const isPast = sp.seminarDate && sp.seminarDate < todayStr;
-        return !allDone && !isPast;
+        // 未完了のみ：開催日から1週間経過したものは表示上「完了扱い」とみなして除外する
+        // （実データのチェック記録は変更しない。対応漏れの確認は引き続き「超過のみ」で可能）
+        const isStale = sp.seminarDate && sp.seminarDate < cutoffStr;
+        return !allDone && !isStale;
       });
     }
     if (filterPast) {
