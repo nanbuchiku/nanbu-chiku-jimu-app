@@ -25,13 +25,26 @@ const DATE_RANGES = [
   { value: "past", label: "過去のみ" },
   { value: "7",    label: "今後7日" },
   { value: "14",   label: "今後14日" },
-  { value: "m1",   label: "今後1ヶ月" },
-  { value: "m2",   label: "今後2ヶ月" },
+  { value: "m1",   label: "今後1ヶ月（30日以内）" },
+  { value: "m2",   label: "今後2ヶ月（60日以内）" },
   { value: "m3",   label: "今後3ヶ月" },
   { value: "m4",   label: "今後4ヶ月" },
   { value: "m5",   label: "今後5ヶ月" },
   { value: "m6",   label: "今後6ヶ月" },
 ];
+
+// 月ごとの印刷・CSV保存用に、暦月で絞り込む選択肢を作る（過去12ヶ月〜先12ヶ月）
+function buildMonthRanges(today) {
+  const opts = [];
+  for (let i = -12; i <= 12; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const label = y === today.getFullYear() ? `${m}月` : `${y}年${m}月`;
+    opts.push({ value: `cal:${y}-${String(m).padStart(2, "0")}`, label });
+  }
+  return opts;
+}
 
 function getSmartMail(sp, today) {
   if (!sp.seminarDate) return { label:"✉ メール", type:"material", bg:"#1565C0" };
@@ -51,6 +64,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
   const setDateRangePersist = useCallback(v => { setDateRange(v); try { localStorage.setItem('sp_dateRange', v); } catch {} }, []);
+  const monthRanges = useMemo(() => buildMonthRanges(today), [today]);
   const [sortCol, setSortCol] = useState(() => { try { return localStorage.getItem('sp_sortCol') || "date"; } catch { return "date"; } });
   const [sortDir, setSortDir] = useState(() => { try { return localStorage.getItem('sp_sortDir') || "asc"; } catch { return "asc"; } });
   const [savingIds, setSavingIds] = useState(new Set());
@@ -111,7 +125,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     const q = search.trim().toLowerCase();
     const pad = n => String(n).padStart(2, "0");
     const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
-    const cutoffStr = (dateRange !== "all" && dateRange !== "past") ? (() => {
+    const isCalMonth = dateRange.startsWith("cal:");
+    const calYm = isCalMonth ? dateRange.slice(4) : null;
+    const cutoffStr = (dateRange !== "all" && dateRange !== "past" && !isCalMonth) ? (() => {
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       if (dateRange[0] === 'm') d.setMonth(d.getMonth() + parseInt(dateRange.slice(1), 10));
       else d.setDate(d.getDate() + parseInt(dateRange, 10));
@@ -124,7 +140,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         (filterCh === "all" || sp.chapterId === filterCh) &&
         (filterSt === "all" || sp.status === filterSt) &&
         (!q || sp.speakerName?.toLowerCase().includes(q) || sp.speakerKana?.toLowerCase().includes(q) || sp.company?.toLowerCase().includes(q) || sp.companyRole?.toLowerCase().includes(q) || sp.speakerUnit?.toLowerCase().includes(q) || sp.role?.toLowerCase().includes(q) || sp.topic?.toLowerCase().includes(q) || sp.email?.toLowerCase().includes(q) || sp.phone?.includes(q)) &&
-        (dateRange === "all" || (dateRange === "past" ? (sp.seminarDate && sp.seminarDate < todayStr) : (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr))) &&
+        (dateRange === "all" || (
+          isCalMonth ? (sp.seminarDate && sp.seminarDate.startsWith(calYm)) :
+          dateRange === "past" ? (sp.seminarDate && sp.seminarDate < todayStr) :
+          (sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr)
+        )) &&
         (!showActionOnly || (
           sp.status !== "cancelled" &&
           sp.seminarDate >= todayStr && sp.seminarDate <= cutoff30Str &&
@@ -224,6 +244,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           {DATE_RANGES.map(r => (
             <option key={r.value} value={r.value} style={{ background:"#fff", color:"#667085" }}>{r.label}</option>
           ))}
+          <optgroup label="月で絞り込む（印刷・CSV用）">
+            {monthRanges.map(r => (
+              <option key={r.value} value={r.value} style={{ background:"#fff", color:"#667085" }}>{r.label}</option>
+            ))}
+          </optgroup>
         </select>
         <button onClick={() => setShowActionOnly(v => !v)}
           style={{ fontSize:"var(--fs-sm)", padding:"5px 12px", borderRadius:14, border:`1px solid ${showActionOnly ? "#B71C1C" : "#D9E1EE"}`, background: showActionOnly ? "#B71C1C" : "#fff", color: showActionOnly ? "#fff" : "#667085", cursor:"pointer", fontWeight: showActionOnly ? 700 : 400, marginLeft:6 }}>
