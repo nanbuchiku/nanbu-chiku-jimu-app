@@ -157,15 +157,19 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     return { totalTasks, doneTasks, completeSpeakers, total: fyFiltered.length, pct: totalTasks ? Math.round(doneTasks / totalTasks * 100) : 100 };
   }, [filtered, today]);
 
-  // 単会（絞り込み中の単会・検索条件）ごとに、現在「確定」している講師の人数
-  const confirmedCount = useMemo(() => filtered.filter(sp => sp.status === "confirmed").length, [filtered]);
+  // 単会（絞り込み中の単会・検索条件）ごとに、今日以降で「確定」している講師の人数
+  // （過去の講話はステータス更新漏れで「確定」のまま残っていることがあるため対象外にする）
+  const confirmedCount = useMemo(() => {
+    const todayStr = toDateStr(today);
+    return filtered.filter(sp => sp.status === "confirmed" && sp.seminarDate && sp.seminarDate >= todayStr).length;
+  }, [filtered, today]);
 
   return (
     <div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
         <div>
           <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#061B44" }}>☑ 講師タスク管理 <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:"#98A2B3" }}>{visible.length}件</span></div>
-          {filtered.length > 0 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginTop:2 }}>確定{confirmedCount}名　タスク完了率 <span style={{ fontWeight:700, color: globalStats.pct === 100 ? "#2E7D32" : "#061B44" }}>{globalStats.pct}%</span>（{globalStats.doneTasks}/{globalStats.totalTasks}件）　完全完了 {globalStats.completeSpeakers}名</div>}
+          {filtered.length > 0 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginTop:2 }}>今後の確定{confirmedCount}名　タスク完了率 <span style={{ fontWeight:700, color: globalStats.pct === 100 ? "#2E7D32" : "#061B44" }}>{globalStats.pct}%</span>（{globalStats.doneTasks}/{globalStats.totalTasks}件）　完全完了 {globalStats.completeSpeakers}名</div>}
         </div>
         <input style={{ ...INP, width:140, fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="🔍 名前・会社検索" value={searchInput} onChange={e => setSearchInput(e.target.value)} />
         <select style={SEL} value={filterCh} onChange={e => setFilterCh(e.target.value)}>
