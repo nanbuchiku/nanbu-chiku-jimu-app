@@ -19,6 +19,7 @@ import SpeakerForm from './components/SpeakerForm';
 import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
 import LoginPage from './components/LoginPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 
 // 単会設定のデフォルト値（localStorage / Supabase Storage に保存済みデータがない場合のフォールバック）
 const DEFAULT_CHAPTER_SETTINGS = {
@@ -146,6 +147,7 @@ function getActorName(email) {
 
 export default function App() {
   const [authUser, setAuthUser] = useState(undefined); // undefined=loading, null=未認証
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     db.auth.getSession().then(({ data: { session } }) => {
@@ -153,6 +155,9 @@ export default function App() {
     });
     const { data: { subscription } } = db.auth.onAuthStateChange((_event, session) => {
       setAuthUser(session?.user ?? null);
+      // パスワード再設定メールのリンクから戻ってきた場合は、通常ログインではなく
+      // 新パスワード設定画面を挟む（そのまま普段の画面に入れてしまうと再設定にならない）
+      if (_event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -948,6 +953,7 @@ ${ch.name}単会事務局`;
   );
 
   // 認証チェック
+  if (passwordRecovery) return <ResetPasswordPage onDone={() => setPasswordRecovery(false)} />;
   if (authUser === undefined) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", background:"#F4F5F7", flexDirection:"column", gap:16 }}>
       <div style={{ width:48, height:48, border:"5px solid #E3F2FD", borderTop:"5px solid #061B44", borderRadius:"50%", animation:"spin 1s linear infinite" }} />
