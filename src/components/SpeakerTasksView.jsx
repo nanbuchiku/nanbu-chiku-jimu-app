@@ -12,6 +12,7 @@ const TASK_CATEGORY_COLOR = {
 };
 
 const RECEIPT_LABELS = { chapter: "単会宛で受領", office: "事務局宛で受領" };
+const METHOD_LABELS = { mail: "メール", line: "LINE", fax: "ファックス" };
 
 export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail, onEdit, currentUserName, focusId, onFocusHandled }) {
   const [filterCh,      setFilterCh]     = useState("all");
@@ -126,6 +127,18 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     }
     const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
     if (ok) showToast(dest ? "受領を記録しました ✓" : "未受領に戻しました");
+  }, [updateSpeaker, showToast, currentUserName]);
+
+  // 講師依頼フォームの送信手段（メール／LINE／FAX）を記録する
+  const setMethodTask = useCallback(async (sp, taskId, method) => {
+    const checks = { ...(sp.speakerChecks || {}) };
+    if (!method) {
+      delete checks[taskId];
+    } else {
+      checks[taskId] = { done: true, at: new Date().toISOString(), by: currentUserName || '', method };
+    }
+    const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
+    if (ok) showToast(method ? `${METHOD_LABELS[method]}で送付を記録しました ✓` : "未送付に戻しました");
   }, [updateSpeaker, showToast, currentUserName]);
 
   const getProgress = sp => {
@@ -281,8 +294,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                             const now = new Date().toISOString();
                             catTasks.forEach(t => {
                               if (isTaskDone(newChecks, t.id)) return;
-                              newChecks[t.id] = t.receipt
-                                ? { done:true, at:now, by:currentUserName || '', dest:'chapter' }
+                              newChecks[t.id] = t.receipt ? { done:true, at:now, by:currentUserName || '', dest:'chapter' }
+                                : t.method ? { done:true, at:now, by:currentUserName || '', method:'mail' }
                                 : { done:true, at:now, by:currentUserName || '' };
                             });
                             const ok = await updateSpeaker(sp.id, { speakerChecks: newChecks });
@@ -310,6 +323,33 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                                       color: meta?.dest === dest ? "#fff" : TASK_CATEGORY_COLOR[cat],
                                       border:`1px solid ${TASK_CATEGORY_COLOR[cat]}66` }}>
                                     {RECEIPT_LABELS[dest]}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            {done && meta && (
+                              <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:"#98A2B3", marginTop:3 }}>
+                                {formatDateTime(meta.at)}　{meta.by}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      if (t.method) {
+                        return (
+                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+                              <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none", fontWeight:600 }}>{t.label}</span>
+                              <div style={{ display:"flex", gap:4 }}>
+                                {["mail","line","fax"].map(method => (
+                                  <button key={method}
+                                    onClick={() => setMethodTask(sp, t.id, meta?.method === method ? null : method)}
+                                    style={{ fontSize:"clamp(11px,1.3vw,13px)", padding:"3px 8px", borderRadius:12, cursor:"pointer", fontWeight:700,
+                                      background: meta?.method === method ? TASK_CATEGORY_COLOR[cat] : "#fff",
+                                      color: meta?.method === method ? "#fff" : TASK_CATEGORY_COLOR[cat],
+                                      border:`1px solid ${TASK_CATEGORY_COLOR[cat]}66` }}>
+                                    {METHOD_LABELS[method]}
                                   </button>
                                 ))}
                               </div>
@@ -351,8 +391,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                     const now = new Date().toISOString();
                     tasks.forEach(t => {
                       if (isTaskDone(allChecks, t.id)) return;
-                      allChecks[t.id] = t.receipt
-                        ? { done:true, at:now, by:currentUserName || '', dest:'chapter' }
+                      allChecks[t.id] = t.receipt ? { done:true, at:now, by:currentUserName || '', dest:'chapter' }
+                        : t.method ? { done:true, at:now, by:currentUserName || '', method:'mail' }
                         : { done:true, at:now, by:currentUserName || '' };
                     });
                     const ok = await updateSpeaker(sp.id, { speakerChecks: allChecks });
