@@ -264,7 +264,18 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect, l
   const [taskForms,  setTaskForms]  = useState({});   // id → { open, title, dueDate, priority, chapterId }
   const [taskAdding, setTaskAdding] = useState('');
   const [deletingId, setDeletingId] = useState('');
-  const [period,     setPeriod]     = useState(28);   // 抽出期間（日数）
+  const [period,     setPeriod]     = useState("28");  // 抽出期間。日数の文字列、または暦月選択時は "cal:YYYY-MM"
+  const monthRanges = useMemo(() => {
+    const opts = [];
+    for (let i = -12; i <= 12; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const label = y === today.getFullYear() ? `${m}月` : `${y}年${m}月`;
+      opts.push({ value: `cal:${y}-${String(m).padStart(2, "0")}`, label });
+    }
+    return opts;
+  }, [today]);
 
   // ① OAuthリダイレクト後にURLハッシュからトークンを取得
   useEffect(() => {
@@ -303,7 +314,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect, l
     setError('');
   };
 
-  const fetchEmails = async (kw = keyword, cm = committee, tk = token, days = period) => {
+  const fetchEmails = async (kw = keyword, cm = committee, tk = token, per = period) => {
     if (!tk) return;
     setLoading(true);
     setError('');
@@ -313,7 +324,15 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect, l
       const qParts = ['in:inbox'];
       if (cm) qParts.push(`subject:${cm}`);
       if (kw.trim()) qParts.push(kw.trim());
-      qParts.push(`newer_than:${days}d`);
+      if (String(per).startsWith('cal:')) {
+        const [y, m] = per.slice(4).split('-').map(Number);
+        const start = new Date(y, m - 1, 1);
+        const end   = new Date(y, m, 1); // 翌月1日（Gmailのbeforeは指定日を含まない）
+        const fmt = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+        qParts.push(`after:${fmt(start)}`, `before:${fmt(end)}`);
+      } else {
+        qParts.push(`newer_than:${per}d`);
+      }
       const q = qParts.join(' ');
       const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=${encodeURIComponent(q)}`;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${tk}` } });
@@ -629,7 +648,7 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect, l
             {/* 抽出期間 */}
             <div style={{ display:"flex", gap:6, marginBottom:10, alignItems:"center", flexWrap:"wrap" }}>
               <span style={{ fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700, color:"#667085" }}>📅 期間</span>
-              {[["1週間",7],["2週間",14],["4週間",28],["3ヶ月",90]].map(([label, days]) => (
+              {[["1週間","7"],["2週間","14"],["4週間","28"],["3ヶ月","90"]].map(([label, days]) => (
                 <button key={days} type="button"
                   onClick={() => { setPeriod(days); fetchEmails(keyword, committee, token, days); }}
                   style={{ padding:"3px 11px", fontSize:"clamp(11px,1.3vw,12px)", fontWeight:700,
@@ -640,6 +659,15 @@ function GmailInbox({ today, showToast, onAddTaskDirect, onAddTaskBatchDirect, l
                   {label}
                 </button>
               ))}
+              <select value={period.startsWith("cal:") ? period : ""}
+                onChange={e => { if (!e.target.value) return; setPeriod(e.target.value); fetchEmails(keyword, committee, token, e.target.value); }}
+                style={{ ...SEL, padding:"3px 8px", fontSize:"clamp(11px,1.3vw,12px)", borderRadius:14,
+                  border:`1px solid ${period.startsWith("cal:") ? "#061B44" : "#D9E1EE"}`,
+                  background: period.startsWith("cal:") ? "#061B44" : "#fff",
+                  color: period.startsWith("cal:") ? "#fff" : "#667085", fontWeight:700 }}>
+                <option value="">月で絞り込む…</option>
+                {monthRanges.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
             </div>
 
             {/* キーワード検索 */}
