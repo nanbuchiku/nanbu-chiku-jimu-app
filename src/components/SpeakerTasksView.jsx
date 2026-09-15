@@ -25,22 +25,18 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const [expandAll,   setExpandAll]  = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [search,      setSearch]     = useState("");
-  const cardRefs = useRef({});
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 250);
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // 講師管理カードの「☑ タスク」から遷移してきた場合、対象講師を確実に表示・展開してスクロール
+  // 講師管理カードの「☑ タスク」から遷移してきた場合、対象講師を確実に表示・展開する（自動スクロールはしない）
   useEffect(() => {
     if (!focusId) return;
     setFilterCh("all"); setFilterDone("all"); setFilterPast(false); setFilterUpcoming(false);
     setSearchInput(""); setSearch("");
     setExpandedId(focusId);
-    const t = setTimeout(() => {
-      cardRefs.current[focusId]?.scrollIntoView({ behavior: "smooth", block: "center" });
-      onFocusHandled?.();
-    }, 120);
+    const t = setTimeout(() => onFocusHandled?.(), 2000);
     return () => clearTimeout(t);
   }, [focusId, onFocusHandled]);
 
