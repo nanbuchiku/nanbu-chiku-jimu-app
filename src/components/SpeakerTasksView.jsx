@@ -18,6 +18,18 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const [filterDone,    setFilterDone]   = useState("undone");
   const [filterPast,    setFilterPast]   = useState(false);
   const [filterUpcoming,setFilterUpcoming] = useState(false);
+  const [filterMonth,   setFilterMonth]  = useState(""); // "" または "YYYY-MM"（暦月で絞り込む）
+  const monthRanges = useMemo(() => {
+    const opts = [];
+    for (let i = -12; i <= 12; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const label = y === today.getFullYear() ? `${m}月` : `${y}年${m}月`;
+      opts.push({ value: `${y}-${String(m).padStart(2, "0")}`, label });
+    }
+    return opts;
+  }, [today]);
   const [expandedId,  setExpandedId] = useState(null);
   const [expandAll,   setExpandAll]  = useState(false);
   const [searchInput, setSearchInput] = useState("");
@@ -83,8 +95,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       const cutoffStr = toDateStr(cutoff);
       base = base.filter(sp => sp.seminarDate && sp.seminarDate >= todayStr && sp.seminarDate <= cutoffStr);
     }
+    if (filterMonth) {
+      base = base.filter(sp => sp.seminarDate && sp.seminarDate.startsWith(filterMonth));
+    }
     return base;
-  }, [filtered, filterDone, filterPast, filterUpcoming, today]);
+  }, [filtered, filterDone, filterPast, filterUpcoming, filterMonth, today]);
 
   const toggleTask = useCallback(async (sp, taskId) => {
     const checks = { ...(sp.speakerChecks || {}) };
@@ -153,12 +168,20 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
             <button key={v} style={{ ...(filterDone===v ? BP : BC), padding:"5px 12px", fontSize:"clamp(12px,1.4vw,14px)" }} onClick={() => setFilterDone(v)}>{l}</button>
           ))}
         </div>
-        <button style={{ ...(filterPast ? { ...BP, background:"#B71C1C" } : BC), padding:"5px 12px", fontSize:"clamp(12px,1.4vw,14px)" }} onClick={() => { setFilterPast(v => !v); setFilterUpcoming(false); }}>
+        <button style={{ ...(filterPast ? { ...BP, background:"#B71C1C" } : BC), padding:"5px 12px", fontSize:"clamp(12px,1.4vw,14px)" }} onClick={() => { setFilterPast(v => !v); setFilterUpcoming(false); setFilterMonth(""); }}>
           {filterPast ? "⚠ 未完了超過" : "超過のみ"}
         </button>
-        <button style={{ ...(filterUpcoming ? { ...BP, background:"#6D4C9F" } : BC), padding:"5px 12px", fontSize:"clamp(12px,1.4vw,14px)" }} onClick={() => { setFilterUpcoming(v => !v); setFilterPast(false); }}>
+        <button style={{ ...(filterUpcoming ? { ...BP, background:"#6D4C9F" } : BC), padding:"5px 12px", fontSize:"clamp(12px,1.4vw,14px)" }} onClick={() => { setFilterUpcoming(v => !v); setFilterPast(false); setFilterMonth(""); }}>
           {filterUpcoming ? "📅 30日以内" : "30日以内"}
         </button>
+        <select value={filterMonth} onChange={e => { setFilterMonth(e.target.value); if (e.target.value) { setFilterPast(false); setFilterUpcoming(false); } }}
+          style={{ ...SEL, padding:"5px 10px", fontSize:"clamp(12px,1.4vw,14px)", borderRadius:8,
+            border:`1px solid ${filterMonth ? "#061B44" : "#D9E1EE"}`,
+            background: filterMonth ? "#061B44" : "#fff",
+            color: filterMonth ? "#fff" : "#667085", fontWeight: filterMonth ? 700 : 400 }}>
+          <option value="">月で絞り込む…</option>
+          {monthRanges.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+        </select>
         <button style={{ ...BC, padding:"5px 12px", fontSize:"clamp(12px,1.4vw,14px)" }} onClick={() => setExpandAll(v => !v)}>
           {expandAll ? "▲ すべて折りたたむ" : "▼ すべて展開"}
         </button>
