@@ -189,13 +189,21 @@ export function buildSpeakerTasks(sp) {
   if (sp.printRequired && !sp.printRequired.startsWith("不要")) {
     add("print_done", "資料印刷完了",             "資料");
   }
+  add("material_check", "資料有無・印刷要否などの確認", "資料");
 
-  add("venue_ready", "会場準備・当日連絡",         "当日");
-  add("intro_prep",  "紹介文・プロフィール確認",   "当日");
+  // 講師管理画面の「宣伝・ご案内」「前日リマインダー」メールをその場で開くボタン付きタスク
+  // （emailType: EmailModalのdefaultTypeとして渡す）
+  add("contact_speaker", "講師への連絡（宣伝・ご案内）", "前日", { emailType: "promo" });
+  add("reminder_sent",   "前日リマインダーのメール",     "前日", { emailType: "reminder" });
+  add("receipt_issued",  "領収証発行（スマイル）",       "前日");
+  add("app_reception_ready", "倫理アプリ受付準備（ゲスト登録・会員前日まで受付など）", "前日");
+  add("venue_ready", "会場準備・当日連絡", "前日");
 
-  add("thanks_sent", "お礼メール送信",            "講話後");
-  add("receipt_sent","領収書・謝礼送付",           "講話後");
-  add("report_done", "講話レポート・メモ記録",     "講話後");
+  add("receipt_confirmed", "領収証受領内容確認",         "講話後");
+  add("thanks_sent",       "講師へのお礼メール",         "講話後", { emailType: "thanks" });
+  add("prefecture_report", "県ポータルサイトへ参加人数入力", "講話後");
+  add("app_attendee_check","倫理アプリの参加者一覧確認", "講話後");
+  add("guest_thanks",      "ゲストへお礼と次回のお知らせ", "講話後");
 
   return tasks;
 }

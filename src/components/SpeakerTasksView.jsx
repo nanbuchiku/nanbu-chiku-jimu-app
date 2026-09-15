@@ -7,7 +7,7 @@ const TASK_CATEGORY_COLOR = {
   "依頼": "#061B44",
   "宿泊": "#37474F",
   "資料": "#2E7D32",
-  "当日": "#BF360C",
+  "前日": "#BF360C",
   "講話後": "#667085",
 };
 
@@ -356,12 +356,20 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                       return (
                         <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
                           <input type="checkbox" checked={done} onChange={() => toggleTask(sp, t.id)} style={{ width:15, height:15, cursor:"pointer", accentColor: TASK_CATEGORY_COLOR[cat] }} />
-                          <div style={{ minWidth:0 }}>
+                          <div style={{ minWidth:0, flex:1 }}>
                             <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none" }}>{t.label}</span>
                             {done && meta && (
                               <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:"#98A2B3" }}>{formatDateTime(meta.at)}　{meta.by}</div>
                             )}
                           </div>
+                          {t.emailType && onEmail && (
+                            <button
+                              onClick={e => { e.preventDefault(); e.stopPropagation(); onEmail({ speaker: sp, defaultType: t.emailType }); }}
+                              style={{ fontSize:"clamp(11px,1.3vw,13px)", padding:"3px 9px", borderRadius:12, cursor:"pointer", fontWeight:700,
+                                background:"#fff", color: TASK_CATEGORY_COLOR[cat], border:`1px solid ${TASK_CATEGORY_COLOR[cat]}66`, flexShrink:0 }}>
+                              ✉ 開く
+                            </button>
+                          )}
                         </label>
                       );
                     })}
