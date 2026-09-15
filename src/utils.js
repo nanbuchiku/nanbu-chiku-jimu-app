@@ -16,6 +16,12 @@ export const toDateStr = d => {
 
 export const parseDate = s => s ? new Date(s + 'T00:00:00') : null;
 
+// 倫理法人会の年度は9月始まり。今日を含む年度の開始日（YYYY-09-01）を返す
+export const getFiscalYearStart = (today) => {
+  const y = today.getMonth() >= 8 ? today.getFullYear() : today.getFullYear() - 1;
+  return `${y}-09-01`;
+};
+
 export const formatDate = d => {
   if (!d) return "";
   const dt = typeof d === "string" ? new Date(d + "T00:00:00") : d;
