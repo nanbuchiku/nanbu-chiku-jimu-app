@@ -35,7 +35,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   // 講師管理カードの「☑ タスク」から遷移してきた場合、対象講師を確実に表示・展開してスクロール
   useEffect(() => {
     if (!focusId) return;
-    setFilterCh("all"); setFilterDone("all"); setFilterPast(false); setFilterUpcoming(false);
+    setFilterCh("all"); setFilterPast(false); setFilterUpcoming(false);
     setSearchInput(""); setSearch("");
     setExpandedId(focusId);
     setGlowId(focusId);
