@@ -198,7 +198,15 @@ ${sig}`,
             CC：{chEmail}（{ch.name}単会）
           </div>
         )}
-        <div style={{ display:"flex", gap:8, marginTop:14 }}>
+
+        <div style={{ background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"9px 12px", marginTop:10, fontSize:"clamp(11px,1.3vw,13px)", color:"#7A4A00", lineHeight:1.6 }}>
+          ⚠ 送信元アカウントの確認：メールアプリが開いたら、差出人（From）が
+          {chEmail ? <> <strong>{chEmail}（{ch.name}単会）</strong> </> : <> <strong>{ch.name}単会のメールアドレス</strong> </>}
+          になっているか必ず確認し、違う場合は送信前にアカウントを切り替えてください。（自分個人のアドレスのまま送信してしまう事故を防ぐためです）
+          {!chEmail && <div style={{ marginTop:4 }}>※ {ch.name}単会のメールアドレスが未設定です。設定画面から登録してください。</div>}
+        </div>
+
+        <div style={{ display:"flex", gap:8, marginTop:10 }}>
           <button style={{ ...BP, flex:1, opacity: sp.email ? 1 : .4, cursor: sp.email ? "pointer" : "not-allowed" }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?${chEmail ? `cc=${encodeURIComponent(chEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
           <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${subject}\n\n${body}`).catch(() => {}); onDone(); }}>📋 コピーして手動送信</button>
           <button style={BC} onClick={onClose}>閉じる</button>
