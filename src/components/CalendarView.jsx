@@ -1,15 +1,55 @@
 import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { isSameDay, toDateStr } from '../utils';
+import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone } from '../utils';
 import { BP, BC } from '../styles';
 
 const DAY_NAMES = ["日","月","火","水","木","金","土"];
 
+// カレンダーセルのホバーで表示する、講師のタスク進捗ツールチップ
+function SpeakerHoverCard({ sp, rect }) {
+  if (!sp || !rect) return null;
+  const seven = getSevenSetProgress(sp);
+  const tasks = buildSpeakerTasks(sp);
+  const taskDone = tasks.filter(t => isTaskDone(sp.speakerChecks, t.id)).length;
+  const top = rect.bottom + 6;
+  const left = Math.min(rect.left, window.innerWidth - 260);
+  return (
+    <div style={{
+      position:"fixed", top, left, zIndex:1000, width:240, background:"#fff",
+      border:"1px solid #D9E1EE", borderRadius:10, boxShadow:"0 6px 20px rgba(0,0,0,.15)",
+      padding:"10px 12px", pointerEvents:"none", fontSize:"clamp(11px,1.3vw,13px)",
+    }}>
+      <div style={{ fontWeight:800, color:"#061B44", marginBottom:2 }}>{sp.speakerName || "（名前未入力）"}</div>
+      {sp.topic && <div style={{ color:"#667085", marginBottom:6 }}>「{sp.topic}」</div>}
+
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+        <span style={{ fontWeight:700, color:"#37474F" }}>7点セット</span>
+        <span style={{ fontWeight:800, color: seven.done === seven.total ? "#2E7D32" : "#E65100" }}>{seven.done}/{seven.total}</span>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1px 8px", marginBottom:8 }}>
+        {seven.items.map(it => (
+          <div key={it.key} style={{ color: it.done ? "#2E7D32" : "#B0BEC5", whiteSpace:"nowrap" }}>
+            {it.done ? "✓" : "・"} {it.label}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:6, borderTop:"1px dashed #E0E0E0" }}>
+        <span style={{ fontWeight:700, color:"#37474F" }}>全体タスク</span>
+        <span style={{ fontWeight:800, color: taskDone === tasks.length ? "#2E7D32" : "#1565C0" }}>{taskDone}/{tasks.length}</span>
+      </div>
+    </div>
+  );
+}
+
 export default memo(function CalendarView({ speakers, weekDates, weekOffset, setWeekOffset, today, onSpeaker, onAddForDate, scopeChapter }) {
   const [viewMode, setViewMode] = useState("week");
   const [monthOffset, setMonthOffset] = useState(0);
+  const [hover, setHover] = useState(null); // { sp, rect }
   // 単会担当者は自分の単会のみ新規登録できる。事務局(scopeChapterなし)は全単会OK
   const canAddFor = chId => !!onAddForDate && (!scopeChapter || chId === scopeChapter);
+  const showHover = (sp) => e => setHover({ sp, rect: e.currentTarget.getBoundingClientRect() });
+  const hideHover = () => setHover(null);
 
   // ── Week view data ──────────────────────────────
   const weekLabel = useMemo(() => {
@@ -118,7 +158,9 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                   <div
                     style={{ background: sp ? ch.light : "#FAFAFA", border:`1px solid ${sp ? ch.accent : "#F1F5F9"}`, borderRadius:5, padding:"3px 5px", cursor: (sp || addable) ? "pointer" : "default", transition:"box-shadow .1s", overflow:"hidden" }}
                     onClick={e => { e.stopPropagation(); if (sp) onSpeaker(sp); else if (addable) onAddForDate(dStr, ch.id); }}
-                    title={sp ? `${sp.speakerName}「${sp.topic}」` : (addable ? `${ch.name} — クリックして講師を登録` : `${ch.name}（他単会）`)}
+                    onMouseEnter={sp ? showHover(sp) : undefined}
+                    onMouseLeave={sp ? hideHover : undefined}
+                    title={sp ? undefined : (addable ? `${ch.name} — クリックして講師を登録` : `${ch.name}（他単会）`)}
                   >
                     <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color, marginBottom:1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{ch.name}</div>
                     {sp ? (
@@ -155,8 +197,9 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
           })}
         </div>
         <div style={{ marginTop:8, padding:"7px 12px", background:"#F5F5F5", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C" }}>
-          💡 日付セルをクリック → 週表示へ移動　｜　MS日程セルをクリック → 確認書を表示 / 未登録セルをクリック → 新規登録
+          💡 日付セルをクリック → 週表示へ移動　｜　MS日程セルをクリック → 確認書を表示 / 未登録セルをクリック → 新規登録　｜　マウスを乗せるとタスク進捗が見られます
         </div>
+        <SpeakerHoverCard sp={hover?.sp} rect={hover?.rect} />
       </div>
     );
   }
@@ -203,7 +246,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
               return (
                 <div key={i} style={{ background: isChDay ? ch.light : "#fff", padding:4, minHeight:76, border:`1px solid ${isChDay ? ch.accent : "transparent"}` }}>
                   {isChDay && (sp ? (
-                    <div style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4 }} onClick={() => onSpeaker(sp)}>
+                    <div style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4 }} onClick={() => onSpeaker(sp)} onMouseEnter={showHover(sp)} onMouseLeave={hideHover}>
                       {sp._msDay && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#061B44", fontWeight:700, marginBottom:1 }}>MS（基礎講座翌日）</div>}
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color }}>{sp.speakerName}</div>
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginTop:1 }}>「{sp.topic}」</div>
@@ -223,7 +266,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                   })())}
                   {kisoSp && (
                     <div style={{ marginTop:4, background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:4, padding:"2px 4px", cursor:"pointer" }}
-                      onClick={() => onSpeaker(kisoSp)}>
+                      onClick={() => onSpeaker(kisoSp)} onMouseEnter={showHover(kisoSp)} onMouseLeave={hideHover}>
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:700 }}>基礎講座</div>
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#1B5E20", fontWeight:600 }}>{kisoSp.speakerName}</div>
                     </div>
@@ -235,8 +278,9 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
         ))}
       </div>
       <div style={{ marginTop:10, padding:"7px 12px", background:"#F5F5F5", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C" }}>
-        💡 登録済みセルをクリック → 確認書を表示　｜　未登録セルをクリック → 講師を新規登録　｜　MS = モーニングセミナー（毎週午前6時〜7時）
+        💡 登録済みセルをクリック → 確認書を表示　｜　未登録セルをクリック → 講師を新規登録　｜　MS = モーニングセミナー（毎週午前6時〜7時）｜　マウスを乗せるとタスク進捗が見られます
       </div>
+      <SpeakerHoverCard sp={hover?.sp} rect={hover?.rect} />
     </div>
   );
 });

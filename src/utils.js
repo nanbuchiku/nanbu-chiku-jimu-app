@@ -153,6 +153,23 @@ export function formatDateTime(iso) {
   return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// 毎月28日までに揃えたい「講師基本情報 7点セット」
+export const SEVEN_SET_ITEMS = [
+  { key: "seminarDate", label: "講話日" },
+  { key: "speakerName", label: "名前" },
+  { key: "materialUrl", label: "顔写真" },
+  { key: "company",     label: "所属名" },
+  { key: "topic",       label: "講話タイトル" },
+  { key: "email",       label: "メールアドレス" },
+  { key: "phone",       label: "電話番号" },
+];
+
+export function getSevenSetProgress(sp) {
+  const items = SEVEN_SET_ITEMS.map(it => ({ ...it, done: !!String(sp?.[it.key] ?? "").trim() }));
+  const done = items.filter(it => it.done).length;
+  return { items, done, total: items.length };
+}
+
 export function buildSpeakerTasks(sp) {
   const tasks = [];
   const add = (id, label, category, extra) => tasks.push({ id, label, category, ...extra });
