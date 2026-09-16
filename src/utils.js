@@ -135,6 +135,17 @@ export function extractMaterialLinks(notes) {
   return out;
 }
 
+// 顔写真②③（1枚目は materialUrl、追加分は notes に【顔写真0N】として埋め込む）
+export function extractPhotoLinks(notes) {
+  if (!notes) return [];
+  const normalized = String(notes).replace(/\\n/g, '\n');
+  const out = [];
+  const re = /【(顔写真\d+)】\s*(https?:\/\/\S+)/g;
+  let m;
+  while ((m = re.exec(normalized)) !== null) out.push({ label: m[1], url: m[2] });
+  return out;
+}
+
 // タスクのチェック状態を統一的に読むためのヘルパー
 // 旧データ（true/false のみ）と新データ（{done,at,by,dest}）の両方を扱う
 export function isTaskDone(checks, id) {

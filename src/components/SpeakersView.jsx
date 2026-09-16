@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, parseDate, buildMonthRanges } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges } from '../utils';
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
 import FileViewModal from './FileViewModal';
 import FaxPrintModal from './FaxPrintModal';
@@ -266,6 +266,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           const isUrgent = daysUntil !== null && daysUntil > 0 && daysUntil <= 3;
           const isSavingThis = savingIds.has(sp.id);
           const docs = extractMaterialLinks(sp.notes);
+          const extraPhotos = extractPhotoLinks(sp.notes);
           const staffMemo = extractStaffNotes(sp.notes);
           const isPhoto = sp.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split("?")[0] || "");
 
@@ -346,18 +347,24 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   )}
                   <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
                     {sp.materialUrl && (
-                      <button onClick={() => setFileModal({ url:sp.materialUrl, name:sp.materialName, speaker:sp })} title="顔写真"
+                      <button onClick={() => setFileModal({ url:sp.materialUrl, name:sp.materialName, speaker:sp })} title="顔写真①"
                         style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1, fontSize:"clamp(10px,1.4vw,13px)", color:"#1565C0", background:"none", border:"none", cursor:"pointer", fontWeight:600 }}>
-                        <span style={{ fontSize:"clamp(18px,2.6vw,24px)" }}>📷</span>顔写真
+                        <span style={{ fontSize:"clamp(18px,2.6vw,24px)" }}>📷</span>顔写真①
                       </button>
                     )}
+                    {extraPhotos.map(p => (
+                      <button key={p.label} onClick={() => setFileModal({ url:p.url, name:p.label, speaker:sp })} title={p.label}
+                        style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1, fontSize:"clamp(10px,1.4vw,13px)", color:"#1565C0", background:"none", border:"none", cursor:"pointer", fontWeight:600 }}>
+                        <span style={{ fontSize:"clamp(18px,2.6vw,24px)" }}>📷</span>{p.label.replace('顔写真0', '顔写真')}
+                      </button>
+                    ))}
                     {docs.map(d => (
                       <button key={d.label} onClick={() => setFileModal({ url:d.url, name:d.label, speaker:sp })} title={d.label}
                         style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1, fontSize:"clamp(10px,1.4vw,13px)", color:"#E65100", background:"none", border:"none", cursor:"pointer", fontWeight:600 }}>
                         <span style={{ fontSize:"clamp(18px,2.6vw,24px)" }}>📄</span>{d.label}
                       </button>
                     ))}
-                    {!sp.materialUrl && docs.length === 0 && (
+                    {!sp.materialUrl && extraPhotos.length === 0 && docs.length === 0 && (
                       <span style={{ fontSize:"clamp(10px,1.4vw,13px)", color:"#B0BEC5" }}>📭 未受信</span>
                     )}
                   </div>

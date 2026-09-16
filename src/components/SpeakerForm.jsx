@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, buildSpeakerStoragePath, extractStaffNotes } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, extractPhotoLinks, buildSpeakerStoragePath, extractStaffNotes } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 import { db } from '../lib/supabase';
 
@@ -56,11 +56,15 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
   const [uploading, setUploading] = useState(false);
   const [docUploading1, setDocUploading1] = useState(false);
   const [docUploading2, setDocUploading2] = useState(false);
+  const [photoUploading2, setPhotoUploading2] = useState(false);
+  const [photoUploading3, setPhotoUploading3] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
   const [showDetail, setShowDetail] = useState(false);
   const fileInputRef  = useRef(null);
   const docInput1Ref  = useRef(null);
   const docInput2Ref  = useRef(null);
+  const photoInput2Ref = useRef(null);
+  const photoInput3Ref = useRef(null);
 
   const set = (k, v) => {
     setErr("");
@@ -146,6 +150,49 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
   };
 
   const currentDocs = useMemo(() => extractMaterialLinks(form.notes || ''), [form.notes]);
+  const currentExtraPhotos = useMemo(() => extractPhotoLinks(form.notes || ''), [form.notes]);
+
+  // 顔写真②③（1枚目は materialUrl、追加分は notes に【顔写真0N】として保存）
+  const handleExtraPhotoUpload = async (e, photoNum, setLoading, inputRef) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true);
+    setUploadErr('');
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const path = buildSpeakerStoragePath(form.chapterId, form.seminarDate, form.speakerKana, form.speakerName, `photo${photoNum}`, ext);
+      const { error } = await db.storage.from('speaker-files').upload(path, file, {
+        upsert: true, contentType: file.type,
+      });
+      if (error) throw error;
+      const { data: { publicUrl } } = db.storage.from('speaker-files').getPublicUrl(path);
+      const label = `顔写真0${photoNum}`;
+      set('notes', upsertDocInNotes(form.notes, label, `${publicUrl}?t=${Date.now()}`));
+    } catch (err) {
+      setUploadErr(`顔写真アップロード失敗: ${err.message}`);
+    } finally {
+      setLoading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const handleExtraPhotoDelete = async (photoNum, setLoading) => {
+    const label = `顔写真0${photoNum}`;
+    const photo = currentExtraPhotos.find(p => p.label === label);
+    if (!photo) return;
+    if (!window.confirm(`アップロード済みの${label}を削除します。よろしいですか？`)) return;
+    setLoading(true);
+    setUploadErr('');
+    await deleteStorageFile(photo.url);
+    setForm(f => {
+      const n = String(f.notes || '')
+        .replace(new RegExp(`【${label}】\\s*https?://\\S+\\n?`), '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      return { ...f, notes: n };
+    });
+    setLoading(false);
+  };
 
   // Supabase Storage の公開URLからファイルを削除（パスが取れない/既に無い場合は無視）
   const deleteStorageFile = async (url) => {
@@ -411,7 +458,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
           </div>
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真・資料URL（URLを貼るか、ファイルをアップロード）</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真①・資料URL（URLを貼るか、ファイルをアップロード）</div>
             <div style={{ display:"flex", gap:6, alignItems:"center" }}>
               <input disabled={saving || uploading} type="url" style={{ ...INP, flex:1, opacity:(saving||uploading) ? .6 : 1 }}
                 placeholder="https://... またはアップロードボタンを使用" value={form.materialUrl || ""} onChange={e => set("materialUrl", e.target.value)} />
@@ -433,6 +480,34 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             )}
             {uploadErr && <div style={{ marginTop:5, fontSize:"clamp(12px,1.4vw,14px)", color:"#B71C1C" }}>⚠ {uploadErr}</div>}
           </div>
+
+          <div style={{ gridColumn:"1/-1" }}>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:6, fontWeight:600 }}>📷 追加の顔写真（②③・最大2枚まで任意で追加、合計3枚まで）</div>
+            <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
+              {[
+                { num:2, loading:photoUploading2, setLoading:setPhotoUploading2, ref:photoInput2Ref, color:"#00897B" },
+                { num:3, loading:photoUploading3, setLoading:setPhotoUploading3, ref:photoInput3Ref, color:"#6D4C9F" },
+              ].map(({ num, loading, setLoading, ref, color }) => {
+                const label = `顔写真0${num}`;
+                const photo = currentExtraPhotos.find(p => p.label === label);
+                return (
+                  <div key={num} style={{ flex:"1 1 160px" }}>
+                    <label style={{ display:"inline-flex", alignItems:"center", gap:5, background: loading ? "#98A2B3" : color, color:"#fff", borderRadius:6, padding:"8px 14px", cursor: loading ? "not-allowed" : "pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", whiteSpace:"nowrap", userSelect:"none" }}>
+                      {loading ? "⏳ 送信中…" : photo ? `📷 顔写真${num === 2 ? "②" : "③"}を差し替え` : `📷 顔写真${num === 2 ? "②" : "③"}をアップロード`}
+                      <input ref={ref} type="file" accept="image/*" style={{ display:"none" }} onChange={e => handleExtraPhotoUpload(e, num, setLoading, ref)} disabled={loading || saving} />
+                    </label>
+                    {photo && (
+                      <div style={{ marginTop:6, display:"flex", alignItems:"center", gap:8 }}>
+                        <img src={photo.url} alt={`顔写真${num}プレビュー`} style={{ width:44, height:44, objectFit:"cover", borderRadius:"50%", border:`2px solid ${color}` }} />
+                        <button type="button" disabled={loading || saving} onClick={() => handleExtraPhotoDelete(num, setLoading)} style={{ background:"none", border:"none", color:"#B71C1C", textDecoration:"underline", cursor:(loading||saving)?"not-allowed":"pointer", fontWeight:700, fontSize:"clamp(12px,1.4vw,14px)", padding:0 }}>🗑 削除</button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>資料ファイル名・メモ</div>
             <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="例：山田太郎_顔写真.jpg　資料あり" value={form.materialName || ""} onChange={e => set("materialName", e.target.value)} />
