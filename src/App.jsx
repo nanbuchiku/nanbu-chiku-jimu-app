@@ -1018,7 +1018,7 @@ ${ch.name}単会事務局`;
       {!isMobile && (
         <aside className="no-print" style={{ width:260, background:"linear-gradient(180deg,#061B44 0%,#082B66 100%)", display:"flex", flexDirection:"column", height:"100%", flexShrink:0, overflowY:"auto" }}>
           <div style={{ padding:"18px 16px 12px", borderBottom:"1px solid rgba(255,255,255,.1)" }}>
-            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"rgba(255,255,255,.55)", letterSpacing:"0.1em" }}>倫理法人会　南部地区事務局</div>
+            <div style={{ fontSize:"clamp(11px,1.5vw,13px)", color:"rgba(255,255,255,.55)", letterSpacing:"0.02em", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>倫理法人会 南部地区事務局</div>
             <div style={{ fontSize:"clamp(20px,3vw,28px)", fontWeight:700, color:"#fff", marginTop:4, lineHeight:1.4 }}>南部地区5単会<br/>タスク管理</div>
             <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"rgba(255,255,255,.5)", marginTop:6 }}>
               {today.toLocaleDateString("ja-JP", { year:"numeric", month:"long", day:"numeric", weekday:"short" })}
