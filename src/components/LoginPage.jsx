@@ -8,9 +8,11 @@ export default function LoginPage() {
   const [loading,  setLoading]  = useState(false);
 
   const [mode, setMode] = useState('login'); // 'login' | 'reset'
+  const [passphrase,   setPassphrase]   = useState('');
+  const [newPassword,  setNewPassword]  = useState('');
   const [resetError,   setResetError]   = useState('');
   const [resetLoading, setResetLoading] = useState(false);
-  const [resetSent,    setResetSent]    = useState(false);
+  const [resetDone,    setResetDone]    = useState(false);
 
   const handleLogin = async e => {
     e.preventDefault();
@@ -27,20 +29,31 @@ export default function LoginPage() {
   const handleReset = async e => {
     e.preventDefault();
     setResetError('');
-    if (!email.trim()) { setResetError('メールアドレスを入力してください。'); return; }
-    setResetLoading(true);
-    const redirectTo = window.location.origin + window.location.pathname;
-    const { error } = await db.auth.resetPasswordForEmail(email.trim(), { redirectTo });
-    setResetLoading(false);
-    if (error) {
-      setResetError('送信に失敗しました：' + error.message);
+    if (!email.trim() || !passphrase.trim() || !newPassword) {
+      setResetError('すべての項目を入力してください。');
       return;
     }
-    setResetSent(true);
+    if (newPassword.length < 6) {
+      setResetError('新しいパスワードは6文字以上にしてください。');
+      return;
+    }
+    setResetLoading(true);
+    const { error } = await db.rpc('reset_password_by_email', {
+      p_email: email.trim(), p_new_password: newPassword, p_passphrase: passphrase.trim(),
+    });
+    setResetLoading(false);
+    if (error) {
+      if (error.message?.includes('invalid_passphrase')) setResetError('合言葉が違います。');
+      else if (error.message?.includes('user_not_found')) setResetError('そのメールアドレスのアカウントが見つかりません。');
+      else setResetError('再設定に失敗しました：' + error.message);
+      return;
+    }
+    setResetDone(true);
+    setPassword(''); setPassphrase(''); setNewPassword('');
   };
 
   const backToLogin = () => {
-    setMode('login'); setResetError(''); setResetSent(false);
+    setMode('login'); setResetError(''); setResetDone(false); setPassphrase(''); setNewPassword('');
   };
 
   const INP = {
@@ -139,18 +152,18 @@ export default function LoginPage() {
           </form>
         ) : (
           <form onSubmit={handleReset}>
-            {resetSent ? (
+            {resetDone ? (
               <div style={{
                 background: '#E8F5E9', border: '1px solid #A5D6A7',
                 borderRadius: 8, padding: '12px 14px', marginBottom: 16,
                 fontSize: 13.5, color: '#1B5E20', fontWeight: 600, lineHeight: 1.7,
               }}>
-                ✓ パスワード再設定用のメールを送信しました。届いたメール内のリンクから新しいパスワードを設定してください。
+                ✓ パスワードを再設定しました。新しいパスワードでログインしてください。
               </div>
             ) : (
               <>
                 <div style={{ fontSize: 12.5, color: '#78909C', marginBottom: 14, lineHeight: 1.6 }}>
-                  登録しているメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。
+                  メールアドレス・合言葉・新しいパスワードを入力すると、その場でパスワードを再設定できます。
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontSize: 13, fontWeight: 600, color: '#667085', display: 'block', marginBottom: 5 }}>
@@ -159,6 +172,32 @@ export default function LoginPage() {
                   <input
                     type="email" value={email} onChange={e => setEmail(e.target.value)}
                     required autoComplete="email" placeholder="example@gmail.com"
+                    style={INP}
+                    onFocus={e => e.target.style.borderColor = '#061B44'}
+                    onBlur={e => e.target.style.borderColor = '#D9E1EE'}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#667085', display: 'block', marginBottom: 5 }}>
+                    合言葉
+                  </label>
+                  <input
+                    type="text" value={passphrase} onChange={e => setPassphrase(e.target.value)}
+                    required placeholder="合言葉を入力"
+                    style={INP}
+                    onFocus={e => e.target.style.borderColor = '#061B44'}
+                    onBlur={e => e.target.style.borderColor = '#D9E1EE'}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: '#667085', display: 'block', marginBottom: 5 }}>
+                    新しいパスワード
+                  </label>
+                  <input
+                    type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                    required autoComplete="new-password" placeholder="6文字以上"
                     style={INP}
                     onFocus={e => e.target.style.borderColor = '#061B44'}
                     onBlur={e => e.target.style.borderColor = '#D9E1EE'}
@@ -184,7 +223,7 @@ export default function LoginPage() {
                   boxShadow: '0 2px 8px rgba(26,58,107,.25)',
                   marginBottom: 14,
                 }}>
-                  {resetLoading ? '送信中...' : '再設定メールを送信'}
+                  {resetLoading ? '設定中...' : 'パスワードを再設定する'}
                 </button>
               </>
             )}
