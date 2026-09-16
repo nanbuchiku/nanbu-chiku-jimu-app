@@ -16,6 +16,7 @@ export const fromDB = r => ({
   lodging: r.lodging, printRequired: r.print_required,
   speakerChecks: r.speaker_checks || {}, calendarAdded: r.calendar_added,
   drinksAlcohol: r.drinks_alcohol, shioriArticle: r.shiori_article, postNotes: r.post_notes,
+  formRequestedAt: r.form_requested_at,
 });
 
 export const toDB = o => ({
@@ -28,6 +29,7 @@ export const toDB = o => ({
   material_name: o.materialName, lodging: o.lodging, print_required: o.printRequired,
   speaker_checks: o.speakerChecks || {}, calendar_added: o.calendarAdded,
   drinks_alcohol: o.drinksAlcohol, shiori_article: o.shioriArticle, post_notes: o.postNotes,
+  form_requested_at: o.formRequestedAt || null,
 });
 
 export const taskFromDB = r => ({

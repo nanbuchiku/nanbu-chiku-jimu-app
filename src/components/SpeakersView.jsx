@@ -309,6 +309,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       <span style={{ fontSize:"clamp(18px,3vw,26px)", fontWeight:700, color:"#061B44", lineHeight:1.2 }}>{sp.speakerName || "（名前未入力）"}</span>
                       {speakerAppearance[sp.id] === 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E8FFF8", color:"#16813A", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>初回</span>}
                       {speakerAppearance[sp.id] > 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E4ECFF", color:"#174A9C", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>}
+                      {sp.formRequestedAt && (
+                        <span title={`送付日時: ${new Date(sp.formRequestedAt).toLocaleString('ja-JP')}`}
+                          style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#FFF8E1", color:"#FF8F00", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>
+                          📝 フォーム入力依頼中
+                        </span>
+                      )}
                     </div>
                     {sp.speakerKana && <div style={{ fontSize:"clamp(12px,1.7vw,16px)", color:"#667085", marginBottom:3 }}>{sp.speakerKana}</div>}
                     {(sp.speakerUnit || sp.role) && (
@@ -417,6 +423,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
               {/* 補助操作（⋯で展開） */}
               {expandedId === sp.id && (
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginTop:12, paddingTop:12, borderTop:`1px solid ${isToday ? "#FFCDD2" : "#F0F4F8"}` }}>
+                  {onFormUrl && (
+                    <button onClick={() => onFormUrl(sp)}
+                      style={{ fontSize:"var(--fs-xs)", background:"#EDE7F6", color:"#4527A0", border:"1px solid #B39DDB", borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:700 }}
+                      title="講師依頼確認フォームのURLを作成・送付">📝 フォーム送付</button>
+                  )}
                   {sp.calendarAdded ? (
                     <button onClick={async () => { const ok = await updateSpeaker(sp.id,{calendarAdded:false}); if(ok)showToast("未転記に戻しました"); }}
                       style={{ fontSize:"var(--fs-xs)", color:"#2E7D32", background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:6, padding:"5px 12px", cursor:"pointer" }} title="転記済 → 戻す">✓📅 転記済</button>
