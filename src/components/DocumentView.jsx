@@ -268,7 +268,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           </div>
         );
 
-        const mkSpeaker = (c) => (
+        const mkSpeaker = (c, showReceipt = false) => (
           <DocSection title="① 講師情報" color={c}>
             <DocRow label="お名前（漢字）"   value={`${sp.speakerName}　様`}  color={c} />
             <DocRow label="ふりがな"         value={sp.speakerKana || ""}     color={c} />
@@ -278,6 +278,11 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocRow label="勤務先役職名"     value={sp.companyRole || ""}     color={c} />
             <DocRow label="連絡先TEL"        value={sp.phone || ""}           color={c} />
             <DocRow label="メールアドレス"   value={sp.email || ""}           color={c} />
+            {showReceipt && <>
+              <DocRow label="領収証の宛名"   value={parsedNotes['領収証宛名'] || ""}     color={c} />
+              <DocRow label="郵便番号"       value={parsedNotes['領収証郵便番号'] || ""} color={c} />
+              <DocRow label="住所"           value={parsedNotes['領収証住所'] || ""}     color={c} />
+            </>}
           </DocSection>
         );
 
@@ -320,51 +325,6 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         );
 
         const mkLodging = (c, n) => (
-          <DocSection title={`${n} 宿泊情報`} color={c}>
-            {(() => {
-              const req  = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
-              const notR = sp.lodging === "不要";
-              return <DocRow label="前泊要否" color={c} value={
-                <span>
-                  <Cb on={req}  label="要" />
-                  <Cb on={notR} label="不要" />
-                </span>
-              } />;
-            })()}
-            {lodgingRequired && (chSettings.hotelName || chSettings.hotelAddress || chSettings.hotelTel || chSettings.hotelStation || chSettings.hotelMapUrl) && (
-              <>
-                {chSettings.hotelName    && <DocRow label="ホテル名"     value={chSettings.hotelName}    color={c} />}
-                {chSettings.hotelAddress && <DocRow label="ホテル住所"   value={chSettings.hotelAddress} color={c} />}
-                {chSettings.hotelTel     && <DocRow label="ホテル連絡先" value={chSettings.hotelTel}     color={c} />}
-                {chSettings.hotelStation && <DocRow label="最寄駅"       value={chSettings.hotelStation} color={c} />}
-                {chSettings.hotelMapUrl  && (
-                  <DocRow label="ホテル地図" color={c}
-                    value={<a href={chSettings.hotelMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
-                )}
-              </>
-            )}
-            {(() => {
-              const room   = parsedNotes['禁煙ルーム']?.split('／')[0] || null;
-              const pickup = parsedNotes['お迎え'] || null;
-              return <>
-                <DocRow label="お部屋のタイプ" color={c} value={
-                  <span>{["禁煙","喫煙","どちらでも"].map(v => <Cb key={v} on={room === v} label={v} />)}</span>
-                } />
-                <DocRow label="お迎えの要否" color={c} value={
-                  <span>
-                    <Cb on={pickup === "要"}  label="要" />
-                    <Cb on={pickup === "不要"} label="不要" />
-                  </span>
-                } />
-              </>;
-            })()}
-            <DocRow label="領収証の宛名"   value={parsedNotes['領収証宛名'] || ""}     color={c} />
-            <DocRow label="郵便番号"       value={parsedNotes['領収証郵便番号'] || ""} color={c} />
-            <DocRow label="住所"           value={parsedNotes['領収証住所'] || ""}     color={c} />
-          </DocSection>
-        );
-
-        const mkLodgingNoReceipt = (c, n) => (
           <DocSection title={`${n} 宿泊情報`} color={c}>
             {(() => {
               const req  = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
@@ -507,7 +467,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                     color={c1} />
                 </DocSection>
                 {mkTransport(c1, "④")}
-                {mkLodgingNoReceipt(c1, "⑤")}
+                {mkLodging(c1, "⑤")}
                 {mkPhoto(c1, "⑥")}
                 {mkRemarks(c1, "⑦")}
                 {mkFooter(c1)}
@@ -539,7 +499,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   <DocRow label="内容要約"  value={parsedNotes['内容要約'] || ""}       color={c2} />
                 </DocSection>
                 {mkTransport(c2, "④")}
-                {mkLodgingNoReceipt(c2, "⑤")}
+                {mkLodging(c2, "⑤")}
                 {mkPhoto(c2, "⑥")}
                 {mkRemarks(c2, "⑦")}
                 {mkFooter(c2)}
@@ -553,7 +513,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           <div id="print-doc" style={docWrapStyle(st)}>
             {mkCornerBadge(st)}
             {mkHeader(st, sp.seminarDate)}
-            {mkSpeaker(st.color)}
+            {mkSpeaker(st.color, true)}
             <DocSection title="② 開催情報" color={st.color}>
               <DocRow label="講話日"          value={formatDate(sp.seminarDate)}                              color={st.color} />
               <DocRow label="講話単会名"      value={chSettings.name || ch.name}                              color={st.color} />
