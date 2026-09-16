@@ -41,7 +41,7 @@ function loadDraft() {
   catch { return null; }
 }
 
-export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings }) {
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker }) {
   const isNew = !spProp;
   const draft = isNew ? loadDraft() : null;
   const [form, setForm] = useState({
@@ -74,6 +74,13 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   }, [hasInput, onClose]);
 
   const sp = isNew ? { ...form, id: '' } : spProp;
+
+  // 既存講師にフォームURLを何らかの方法で送ったら「フォーム入力依頼中」にする。
+  // 講師が実際にフォームを送信すると form.html 側でこのフラグをクリアするので上書きされる。
+  const markSent = useCallback(() => {
+    if (!isNew && sp.id) updateSpeaker?.(sp.id, { formRequestedAt: new Date().toISOString() });
+  }, [isNew, sp.id, updateSpeaker]);
+
   const ch = getChapter(isNew ? form.chapterId : sp.chapterId);
   const chSettings = chapterSettings?.[isNew ? form.chapterId : sp.chapterId] || {};
   const chEmail = chSettings.chapterEmail || '';
@@ -155,9 +162,9 @@ ${formUrl}
 ${sig}`;
   }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel]);
 
-  const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); }, [formUrl, showToast]);
-  const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, clearDraft, onClose]);
-  const openMail = useCallback(() => { window.open(buildMailUrl(SENDER_EMAIL, displayEmail || '', mailSubject, mailBody, chEmail), '_blank'); clearDraft(); onClose(); }, [displayEmail, mailSubject, mailBody, chEmail, clearDraft, onClose]);
+  const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); markSent(); }, [formUrl, showToast, markSent]);
+  const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); markSent(); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, markSent, clearDraft, onClose]);
+  const openMail = useCallback(() => { window.open(buildMailUrl(SENDER_EMAIL, displayEmail || '', mailSubject, mailBody, chEmail), '_blank'); markSent(); clearDraft(); onClose(); }, [displayEmail, mailSubject, mailBody, chEmail, markSent, clearDraft, onClose]);
 
   // 合同事務局アカウント自身（GASウェブアプリ）から確実に送信する
   const sendViaOffice = useCallback(async () => {
@@ -172,13 +179,13 @@ ${sig}`;
       const data = await res.json().catch(() => null);
       if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       showToast('合同事務局から送信しました ✓');
-      clearDraft(); onClose();
+      markSent(); clearDraft(); onClose();
     } catch (e) {
       showToast('⚠ 送信に失敗しました: ' + (e.message || ''));
     } finally {
       setSending(false);
     }
-  }, [displayEmail, chEmail, mailSubject, mailBody, showToast, clearDraft, onClose]);
+  }, [displayEmail, chEmail, mailSubject, mailBody, showToast, markSent, clearDraft, onClose]);
 
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
@@ -189,7 +196,8 @@ ${sig}`;
       chapterEmail: ch?.email,
       showToast,
     });
-  }, [ch, displayDate, isNew, form, sp, showToast]);
+    markSent();
+  }, [ch, displayDate, isNew, form, sp, showToast, markSent]);
 
   const LB   = { display:"block", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#4527A0", marginBottom:3 };
   const INP2 = { width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:"clamp(12px,1.4vw,14px)", background:"#fff" };
