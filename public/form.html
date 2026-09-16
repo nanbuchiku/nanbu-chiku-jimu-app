@@ -133,6 +133,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       <div class="event-item"><span class="event-label">講師名</span><span class="event-value" id="ev-name">—</span></div>
       <div class="event-item"><span class="event-label">所属法人会名</span><span class="event-value" id="ev-unit">—</span></div>
       <div class="event-item"><span class="event-label">セミナー種別</span><span class="event-value" id="ev-type">—</span></div>
+      <div class="event-item" id="ev-kiso-row" style="display:none;"><span class="event-label">講座番号</span><span class="event-value" id="ev-kiso-num">—</span></div>
       <div class="event-item"><span class="event-label">開催日</span><span class="event-value" id="ev-date" style="white-space:pre-line;">—</span></div>
     </div>
     <div class="event-note">※ 記載内容に誤りがある場合は事務局までご連絡ください</div>
@@ -148,9 +149,26 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
   <!-- ===== PAGE 1: 講師プロフィール ===== -->
   <div id="page1" class="active">
-    <div class="info-box" style="margin-bottom:16px;">
+    <div class="info-box" style="margin-bottom:16px;" id="info-box-main">
       📋 このフォームはモーニングセミナー講師依頼の確認用です。<br>
       ご入力いただいた情報はチラシ・当日資料として使用いたします。
+    </div>
+
+    <div id="kiso-notice" style="display:none; background:linear-gradient(135deg,#FFF3E0,#FFE0B2); border-left:4px solid #E65100; border-radius:6px; padding:12px 14px; font-size:13px; color:#BF360C; line-height:1.7; margin-bottom:16px; font-weight:600;">
+      📘 基礎講座を選択時は、MSの確認書も同時作成されます。
+    </div>
+
+    <div class="section-card" id="kiso-section" style="display:none; margin-bottom:16px;">
+      <div class="section-header">📘 基礎講座情報</div>
+      <div class="section-body">
+        <div class="field" id="f-kiso-num">
+          <label>講座番号<span class="req">*</span></label>
+          <div style="display:flex; align-items:center; gap:8px; font-size:15px; font-weight:600;">
+            第 <input type="number" id="kisoNumber" min="1" max="30" placeholder="" style="width:70px; text-align:center; font-size:16px; font-weight:700;"> 講
+          </div>
+          <div class="error-msg">講座番号を入力してください</div>
+        </div>
+      </div>
     </div>
 
     <div class="section-card">
@@ -429,8 +447,8 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 </div><!-- /container -->
 
 <script>
-const SUPABASE_URL = 'https://leqavpnmtylmankbcdkd.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_sAahVVEPRHnLDsOxawsI5w_XtGZe25O';
+const SUPABASE_URL = 'https://euxssgbhbnmnxyzeehea.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_y3S-bGIi1TaJIh73_r9syA_ZvoTseeU';
 const DISTRICT_ID  = '11111111-1111-1111-1111-111111111111';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let existingData = null; // 更新時の既存DBデータを保持（スタッフメモ引継ぎ用）
@@ -479,6 +497,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // 基礎講座: 「第◯講」入力欄を表示
+  if (urlType === 'kiso') {
+    document.getElementById('kiso-notice').style.display = 'block';
+    document.getElementById('kiso-section').style.display = 'block';
+    document.getElementById('ev-kiso-row').style.display = 'flex';
+    const infoBox = document.getElementById('info-box-main');
+    if (infoBox) { infoBox.innerHTML = '📋 このフォームは<strong>倫理経営基礎講座</strong>講師依頼の確認用です。<br>ご入力いただいた情報はチラシ・当日資料として使用いたします。'; }
+    const kisoInput = document.getElementById('kisoNumber');
+    if (kisoInput) { kisoInput.addEventListener('input', function() { const el = document.getElementById('ev-kiso-num'); if (el) el.textContent = this.value ? '第' + this.value + '講' : '—'; }); }
+  }
+
   if (speakerId) {
     const infoBox = document.querySelector('#page1 .info-box');
     if (infoBox) infoBox.innerHTML = '⏳ 以前の回答内容を読み込み中...';
@@ -517,6 +546,11 @@ async function prefillFromDB() {
     };
 
     // ページ1
+    if (data.kiso_number) {
+      setVal('kisoNumber', data.kiso_number);
+      const evKiso = document.getElementById('ev-kiso-num');
+      if (evKiso) evKiso.textContent = '第' + data.kiso_number + '講';
+    }
     setVal('speakerKana', data.speaker_kana);
     setVal('company',     data.company);
     let companyRole = data.company_role || '';
@@ -638,6 +672,7 @@ function requiredRadio(name, errId, wrapperId) {
 
 function validatePage1() {
   let ok = true;
+  if (urlType === 'kiso') { ok = required('kisoNumber','f-kiso-num') && ok; }
   ok = required('speakerKana','f-kana')       && ok;
   ok = required('ethics',     'f-ethics')     && ok;
   ok = required('phone',      'f-phone')      && ok;
@@ -1021,6 +1056,7 @@ async function submitForm() {
     print_required: radio('print') || '不要',
     seminar_type: urlType || 'ms',
     seminar_date: urlDate || null,
+    kiso_number: urlType === 'kiso' ? (val('kisoNumber') || null) : null,
   };
   if (!speakerId) {
     payload.status = 'pending';
@@ -1071,6 +1107,7 @@ async function submitForm() {
         p_print_required: payload.print_required,
         p_material_url:   payload.material_url  || null,
         p_material_name:  payload.material_name || null,
+        p_kiso_number:    payload.kiso_number,
       });
       if (error) throw new Error(error.message);
     } else {
