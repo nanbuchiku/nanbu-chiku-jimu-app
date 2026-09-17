@@ -41,8 +41,10 @@ function loadDraft() {
   catch { return null; }
 }
 
-export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, showConfirm }) {
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, showConfirm, onCreateSpeaker }) {
   const isNew = !spProp;
+  const [createdId, setCreatedId] = useState(null);
+  const [creating, setCreating] = useState(false);
   const draft = isNew ? loadDraft() : null;
   const [form, setForm] = useState({
     chapterId:   draft?.chapterId   ?? spProp?.chapterId   ?? 'kawaguchi',
@@ -73,13 +75,36 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     onClose();
   }, [hasInput, onClose]);
 
-  const sp = isNew ? { ...form, id: '' } : spProp;
+  const sp = isNew ? { ...form, id: createdId || '' } : spProp;
+  const canGenerate = !isNew || (form.speakerName && form.seminarDate && form.email);
+
+  // 新規講師の場合、URLを生成した時点で最低限の情報だけ講師レコードを先に作る。
+  // こうしないと、講師管理画面に「依頼中」を出す先（id）が存在しない。
+  const handleGenerate = useCallback(async () => {
+    if (!canGenerate) return;
+    if (isNew) {
+      const fields = {
+        chapterId: form.chapterId, speakerName: form.speakerName, speakerUnit: form.speakerUnit,
+        seminarDate: form.seminarDate, seminarType: form.seminarType, role: form.role, email: form.email,
+      };
+      if (createdId) {
+        await updateSpeaker?.(createdId, fields);
+      } else {
+        setCreating(true);
+        const newId = `s${Date.now()}`;
+        const ok = await onCreateSpeaker?.({ ...fields, id: newId, status: 'pending', requestDate: new Date().toISOString().slice(0, 10) });
+        setCreating(false);
+        if (ok) setCreatedId(newId);
+      }
+    }
+    setGenerated(true);
+  }, [isNew, canGenerate, form, createdId, updateSpeaker, onCreateSpeaker]);
 
   // 既存講師にフォームURLを何らかの方法で送ったら「フォーム入力依頼中」にする。
   // 講師が実際にフォームを送信すると form.html 側でこのフラグをクリアするので上書きされる。
   const markSent = useCallback(() => {
-    if (!isNew && sp.id) updateSpeaker?.(sp.id, { formRequestedAt: new Date().toISOString() });
-  }, [isNew, sp.id, updateSpeaker]);
+    if (sp.id) updateSpeaker?.(sp.id, { formRequestedAt: new Date().toISOString() });
+  }, [sp.id, updateSpeaker]);
 
   const ch = getChapter(isNew ? form.chapterId : sp.chapterId);
   const chSettings = chapterSettings?.[isNew ? form.chapterId : sp.chapterId] || {};
@@ -99,8 +124,6 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     });
     return `${BASE}?${params.toString()}`;
   }, [isNew, form, sp, ch]);
-
-  const canGenerate = !isNew || (form.speakerName && form.seminarDate && form.email);
 
   const displayName  = isNew ? form.speakerName : sp.speakerName;
   const displayDate  = isNew ? form.seminarDate : sp.seminarDate;
@@ -273,10 +296,10 @@ ${sig}`;
               </div>
             </div>
             <button
-              style={{ marginTop:16, width:"100%", background: canGenerate ? "#7E57C2" : "#B0BEC5", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, cursor: canGenerate ? "pointer" : "not-allowed" }}
-              disabled={!canGenerate}
-              onClick={() => setGenerated(true)}>
-              フォームURLを生成する →
+              style={{ marginTop:16, width:"100%", background: (canGenerate && !creating) ? "#7E57C2" : "#B0BEC5", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, cursor: (canGenerate && !creating) ? "pointer" : "not-allowed" }}
+              disabled={!canGenerate || creating}
+              onClick={handleGenerate}>
+              {creating ? '作成中...' : 'フォームURLを生成する →'}
             </button>
           </div>
         )}
