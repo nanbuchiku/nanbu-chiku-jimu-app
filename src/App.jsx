@@ -1149,7 +1149,7 @@ ${ch.name}単会事務局`;
             {tab === "dashboard" && <Dashboard speakers={scopedSpeakers} tasks={scopedTasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} scopeChapter={scopeChapter} currentUserName={currentUserName} />}
             {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} scopeChapter={scopeChapter} />}
             {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} onTasks={onOpenSpeakerTasks} />}
-            {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} showToast={showToast} />}
+            {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} showToast={showToast} showConfirm={showConfirm} />}
             {tab === "tasks"     && <TasksView tasks={scopedTasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} showToast={showToast} lockChapterId={scopeChapter} />}
             {tab === "sptasks"   && <SpeakerTasksView speakers={scopedSpeakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} currentUserName={currentUserName} focusId={focusSpeakerId} onFocusHandled={() => setFocusSpeakerId(null)} />}
             {tab === "contact"   && <SpeakerContactView speakers={scopedSpeakers} today={today} onEmail={setEmailModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} />}
@@ -1302,8 +1302,8 @@ ${ch.name}単会事務局`;
       })()}
       {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} lockChapterId={scopeChapter} />}
       {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
-      {emailModal && <EmailModal speaker={emailModal.speaker || emailModal} defaultType={emailModal.defaultType} onClose={onCloseEmail} onDone={onDoneEmail} chapterSettings={chapterSettings} showToast={showToast} />}
-      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} />}
+      {emailModal && <EmailModal speaker={emailModal.speaker || emailModal} defaultType={emailModal.defaultType} onClose={onCloseEmail} onDone={onDoneEmail} chapterSettings={chapterSettings} showToast={showToast} showConfirm={showConfirm} />}
+      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} showConfirm={showConfirm} />}
 
       {lineModal && (
         <div style={OV} onClick={() => setLineModal(null)} role="presentation">

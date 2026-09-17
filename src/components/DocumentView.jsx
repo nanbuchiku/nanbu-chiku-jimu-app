@@ -70,7 +70,7 @@ function Cb({ on, label }) {
   );
 }
 
-export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today, chapterSettings, showToast }) {
+export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today, chapterSettings, showToast, showConfirm }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
   const [sendingDoc, setSendingDoc] = useState(false);
   useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
@@ -175,32 +175,36 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 style={{ ...BP, background: sendingDoc ? "#90A4AE" : "#1565C0", opacity: sp.email ? 1 : 0.5 }}
                 disabled={!sp.email || sendingDoc}
                 title={sp.email ? `合同事務局からPDF添付で ${sp.email} へ自動送信（CC：単会）` : "メールアドレス未入力"}
-                onClick={async () => {
-                  const ch2 = getChapter(sp.chapterId);
-                  const unitName = ch2.name + "倫理法人会";
-                  const chEmail = chSettings.chapterEmail || '';
-                  const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
-                  const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
-                  setSendingDoc(true);
-                  try {
-                    const base64 = await generatePdfBase64("print-doc");
-                    if (!base64) throw new Error('PDFの作成に失敗しました');
-                    const res = await fetch(MAIL_SEND_URL, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                      body: JSON.stringify({
-                        token: MAIL_SEND_TOKEN, to: sp.email, cc: chEmail, subject, body,
-                        attachmentBase64: base64, attachmentFilename: makePdfFilename(sp), attachmentMimeType: 'application/pdf',
-                      }),
-                    });
-                    const data = await res.json().catch(() => null);
-                    if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-                    showToast?.('合同事務局からPDF添付で送信しました ✓');
-                  } catch (e) {
-                    showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
-                  } finally {
-                    setSendingDoc(false);
-                  }
+                onClick={() => {
+                  const doSend = async () => {
+                    const ch2 = getChapter(sp.chapterId);
+                    const unitName = ch2.name + "倫理法人会";
+                    const chEmail = chSettings.chapterEmail || '';
+                    const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
+                    const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
+                    setSendingDoc(true);
+                    try {
+                      const base64 = await generatePdfBase64("print-doc");
+                      if (!base64) throw new Error('PDFの作成に失敗しました');
+                      const res = await fetch(MAIL_SEND_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({
+                          token: MAIL_SEND_TOKEN, to: sp.email, cc: chEmail, subject, body,
+                          attachmentBase64: base64, attachmentFilename: makePdfFilename(sp), attachmentMimeType: 'application/pdf',
+                        }),
+                      });
+                      const data = await res.json().catch(() => null);
+                      if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+                      showToast?.('合同事務局からPDF添付で送信しました ✓');
+                    } catch (e) {
+                      showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
+                    } finally {
+                      setSendingDoc(false);
+                    }
+                  };
+                  if (!showConfirm) { doSend(); return; }
+                  showConfirm(`確認書PDFを添付して ${sp.speakerName || ''} 様（${sp.email}）へ送信します。よろしいですか？`, doSend, '送信する');
                 }}
               >{sendingDoc ? '⏳ 送信中...' : '📎 PDF添付して自動送信'}</button>
             ) : (
