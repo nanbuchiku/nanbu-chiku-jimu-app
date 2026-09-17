@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime } from '../utils';
+
+const METHOD_LABELS = { mail: "メール", line: "LINE", fax: "ファックス" };
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
 import FileViewModal from './FileViewModal';
 import FaxPrintModal from './FaxPrintModal';
@@ -269,6 +271,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           const extraPhotos = extractPhotoLinks(sp.notes);
           const staffMemo = extractStaffNotes(sp.notes);
           const isPhoto = sp.materialUrl && /\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl?.split("?")[0] || "");
+          // 依頼フォームの送付は「講師タスク」画面のメール/LINE/FAXボタンで記録されるほか、
+          // 確認フォーム作成画面からのメール送信でも記録される。講師が実際に回答すると解除される。
+          const formSentMeta = getTaskMeta(sp.speakerChecks, 'form_sent');
+          const formRecvd = isTaskDone(sp.speakerChecks, 'form_recvd');
+          const formPending = !formRecvd && (sp.formRequestedAt || formSentMeta?.done);
+          const formPendingAt = formSentMeta?.at || sp.formRequestedAt;
 
           return (
             <div key={sp.id} style={{ background:"#fff", borderRadius:14, border:`1px solid #E2E8F0`, borderLeft:`8px solid ${st.color}`, boxShadow: isToday ? `0 0 0 2px #EF9A9A, 0 8px 24px rgba(15,35,71,.06)` : isUrgent ? `0 0 0 2px #FFE066, 0 8px 24px rgba(15,35,71,.06)` : "0 8px 24px rgba(15,35,71,.06)", padding:"clamp(10px,2vw,16px)", opacity: isPast ? 0.68 : 1 }}>
@@ -309,10 +317,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                       <span style={{ fontSize:"clamp(18px,3vw,26px)", fontWeight:700, color:"#061B44", lineHeight:1.2 }}>{sp.speakerName || "（名前未入力）"}</span>
                       {speakerAppearance[sp.id] === 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E8FFF8", color:"#16813A", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>初回</span>}
                       {speakerAppearance[sp.id] > 1 && <span style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#E4ECFF", color:"#174A9C", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>{speakerAppearance[sp.id]}回目</span>}
-                      {sp.formRequestedAt && (
-                        <span title={`送付日時: ${new Date(sp.formRequestedAt).toLocaleString('ja-JP')}`}
-                          style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#FFF8E1", color:"#FF8F00", padding:"2px 8px", borderRadius:10, fontWeight:700 }}>
-                          📝 フォーム入力依頼中
+                      {formPending && (
+                        <span title={`${formSentMeta?.by ? `${formSentMeta.by}が` : ''}${formSentMeta?.method ? METHOD_LABELS[formSentMeta.method] : 'メール'}で送付${formPendingAt ? `（${new Date(formPendingAt).toLocaleString('ja-JP')}）` : ''}`}
+                          style={{ fontSize:"clamp(11px,1.5vw,14px)", background:"#FFF8E1", color:"#FF8F00", padding:"2px 8px", borderRadius:10, fontWeight:700, whiteSpace:"nowrap" }}>
+                          📝 フォーム入力依頼中{formSentMeta?.method && `（${METHOD_LABELS[formSentMeta.method]}）`} {formPendingAt && formatDateTime(formPendingAt)}
                         </span>
                       )}
                     </div>
