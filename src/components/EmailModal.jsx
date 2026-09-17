@@ -9,7 +9,7 @@ import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
 const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
 
-export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast }) {
+export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast, showConfirm }) {
   const ch = getChapter(sp.chapterId);
   const chEmail = chapterSettings?.[sp.chapterId]?.chapterEmail || '';
   const [mailType, setMailType] = useState(defaultType || "material");
@@ -163,8 +163,7 @@ ${sig}`,
   const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
 
   // 単会自身のメールアドレスを差出人としてGAS経由で送信する
-  const sendViaChapter = useCallback(async () => {
-    if (!sp.email) { showToast?.('⚠ 講師のメールアドレスが未入力です'); return; }
+  const doSendViaChapter = useCallback(async () => {
     setSending(true);
     try {
       const res = await fetch(MAIL_SEND_URL, {
@@ -185,6 +184,13 @@ ${sig}`,
       setSending(false);
     }
   }, [sp.email, chEmail, subject, body, ch.name, showToast, onDone]);
+
+  // 内容を確認してもらってから送信する（誤送信防止のため確認ステップを挟む）
+  const sendViaChapter = useCallback(() => {
+    if (!sp.email) { showToast?.('⚠ 講師のメールアドレスが未入力です'); return; }
+    if (!showConfirm) { doSendViaChapter(); return; }
+    showConfirm(`上記の内容で ${sp.speakerName} 様へ送信します。よろしいですか？`, doSendViaChapter, '送信する');
+  }, [sp.email, sp.speakerName, showConfirm, doSendViaChapter, showToast]);
 
   return (
     <div style={OV} onClick={onClose} role="presentation">

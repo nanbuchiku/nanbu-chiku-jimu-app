@@ -41,7 +41,7 @@ function loadDraft() {
   catch { return null; }
 }
 
-export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker }) {
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, showConfirm }) {
   const isNew = !spProp;
   const draft = isNew ? loadDraft() : null;
   const [form, setForm] = useState({
@@ -167,8 +167,7 @@ ${sig}`;
   const openMail = useCallback(() => { window.open(buildMailUrl(SENDER_EMAIL, displayEmail || '', mailSubject, mailBody, chEmail), '_blank'); markSent(); clearDraft(); onClose(); }, [displayEmail, mailSubject, mailBody, chEmail, markSent, clearDraft, onClose]);
 
   // 合同事務局アカウント自身（GASウェブアプリ）から確実に送信する
-  const sendViaOffice = useCallback(async () => {
-    if (!displayEmail) { showToast('⚠ 講師のメールアドレスが未入力です'); return; }
+  const doSendViaOffice = useCallback(async () => {
     setSending(true);
     try {
       const res = await fetch(MAIL_SEND_URL, {
@@ -186,6 +185,13 @@ ${sig}`;
       setSending(false);
     }
   }, [displayEmail, chEmail, mailSubject, mailBody, showToast, markSent, clearDraft, onClose]);
+
+  // 内容を確認してもらってから送信する（誤送信防止のため確認ステップを挟む）
+  const sendViaOffice = useCallback(() => {
+    if (!displayEmail) { showToast('⚠ 講師のメールアドレスが未入力です'); return; }
+    if (!showConfirm) { doSendViaOffice(); return; }
+    showConfirm(`上記の内容で ${displayName || displayEmail} 様へ送信します。よろしいですか？`, doSendViaOffice, '送信する');
+  }, [displayEmail, displayName, showConfirm, doSendViaOffice, showToast]);
 
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
