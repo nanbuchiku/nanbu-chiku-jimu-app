@@ -185,7 +185,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
         <div style={{ marginTop:8, display:"flex", gap:8, flexWrap:"wrap" }}>
           {CHAPTERS.map(ch => {
             const count = speakers.filter(sp => {
-              if (!sp.seminarDate) return false;
+              if (sp.chapterId !== ch.id || !sp.seminarDate) return false;
               const [y, m] = sp.seminarDate.split('-').map(Number);
               return y === baseMonth.getFullYear() && m === baseMonth.getMonth()+1;
             }).length;
