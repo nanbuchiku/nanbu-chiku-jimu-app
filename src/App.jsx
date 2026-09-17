@@ -445,6 +445,22 @@ export default function App() {
     return true;
   }, [showToast]);
 
+  // 講師依頼フォームURLをまだDBに存在しない講師へ送る前に、最低限の情報だけで
+  // 講師レコードを先に作っておく（講師管理画面に「依頼中」として表示するため）。
+  // 講師が実際にフォームに回答すると、そのidを使ってこの仮登録レコードが上書きされる。
+  const createSpeakerStub = useCallback(async data => {
+    try {
+      const { data: inserted, error } = await db.from('speakers').insert(toDB(data)).select().single();
+      if (error) { showToast("⚠ 登録に失敗しました"); return false; }
+      const saved = inserted ? fromDB(inserted) : data;
+      setSpeakers(prev => [...prev, saved]);
+      return true;
+    } catch {
+      showToast("⚠ 登録に失敗しました");
+      return false;
+    }
+  }, [showToast]);
+
   const deleteSpeaker = useCallback(id => {
     showConfirm("この講師データを削除しますか？", async () => {
       const sp = speakersRef.current.find(s => s.id === id);
@@ -1303,7 +1319,7 @@ ${ch.name}単会事務局`;
       {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} lockChapterId={scopeChapter} />}
       {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
       {emailModal && <EmailModal speaker={emailModal.speaker || emailModal} defaultType={emailModal.defaultType} onClose={onCloseEmail} onDone={onDoneEmail} chapterSettings={chapterSettings} showToast={showToast} showConfirm={showConfirm} />}
-      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} showConfirm={showConfirm} />}
+      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} showConfirm={showConfirm} onCreateSpeaker={createSpeakerStub} />}
 
       {lineModal && (
         <div style={OV} onClick={() => setLineModal(null)} role="presentation">
