@@ -11,7 +11,9 @@ function SpeakerHoverCard({ sp, rect }) {
   const seven = getSevenSetProgress(sp);
   const tasks = buildSpeakerTasks(sp);
   const taskDone = tasks.filter(t => isTaskDone(sp.speakerChecks, t.id)).length;
-  const top = rect.bottom + 6;
+  const CARD_HEIGHT = 230; // 概算の高さ。画面下に収まらない場合はセルの上側に表示する
+  const fitsBelow = rect.bottom + 6 + CARD_HEIGHT <= window.innerHeight;
+  const top = fitsBelow ? rect.bottom + 6 : Math.max(8, rect.top - CARD_HEIGHT - 6);
   const left = Math.min(rect.left, window.innerWidth - 260);
   return (
     <div style={{
