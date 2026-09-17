@@ -238,6 +238,9 @@ ${sig}`;
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>セミナー種別</label>
+                <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginBottom:5, lineHeight:1.5 }}>
+                  基礎講座の講師依頼は同時にMS依頼書も作成されます。MS依頼書の作成は不要です。
+                </div>
                 {(() => {
                   const KNOWN = SEMINAR_TYPES.filter(x => x.id !== "other");
                   const isCustom = !!form.seminarType && !KNOWN.some(x => x.id === form.seminarType);
