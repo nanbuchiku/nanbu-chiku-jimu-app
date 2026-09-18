@@ -9,7 +9,7 @@ import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
 const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
 
-export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast, showConfirm }) {
+export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast }) {
   const ch = getChapter(sp.chapterId);
   const chEmail = chapterSettings?.[sp.chapterId]?.chapterEmail || '';
   const [mailType, setMailType] = useState(defaultType || "material");
@@ -17,6 +17,7 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
   const [freeSubject, setFreeSubject] = useState("");
   const [freeBody,    setFreeBody]    = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmingSend, setConfirmingSend] = useState(false);
 
   const matDL = useMemo(() => {
     if (!sp.seminarDate) return '';
@@ -182,15 +183,16 @@ ${sig}`,
       showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
     } finally {
       setSending(false);
+      setConfirmingSend(false);
     }
   }, [sp.email, chEmail, subject, body, ch.name, showToast, onDone]);
 
-  // 内容を確認してもらってから送信する（誤送信防止のため確認ステップを挟む）
+  // 誤送信防止のため、送信ボタンを押すと上の件名・本文を表示したまま
+  // その場で「本当に送信するか」を尋ねる（内容を隠さない）
   const sendViaChapter = useCallback(() => {
     if (!sp.email) { showToast?.('⚠ 講師のメールアドレスが未入力です'); return; }
-    if (!showConfirm) { doSendViaChapter(); return; }
-    showConfirm(`上記の内容で ${sp.speakerName} 様へ送信します。よろしいですか？`, doSendViaChapter, '送信する');
-  }, [sp.email, sp.speakerName, showConfirm, doSendViaChapter, showToast]);
+    setConfirmingSend(true);
+  }, [sp.email, showToast]);
 
   return (
     <div style={OV} onClick={onClose} role="presentation">
@@ -238,11 +240,25 @@ ${sig}`,
         )}
 
         {MAIL_SEND_URL && chEmail ? (
-          <button
-            style={{ width:"100%", marginTop:10, background: sending ? "#B39DDB" : "#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, cursor: (sending || !sp.email) ? "not-allowed" : "pointer", opacity: sp.email ? 1 : .5 }}
-            onClick={sendViaChapter} disabled={sending || !sp.email}>
-            {sending ? '⏳ 送信中...' : `✉ ${ch.name}単会（${chEmail}）から直接送信`}
-          </button>
+          confirmingSend ? (
+            <div style={{ marginTop:10, background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"10px 12px" }}>
+              <div style={{ fontSize:"clamp(12px,1.6vw,15px)", fontWeight:700, color:"#7A4A00", marginBottom:8 }}>
+                ↑ 上の件名・本文の内容で、{ch.name}単会（{chEmail}）から送信します。よろしいですか？
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <button style={{ flex:1, background:"#fff", color:"#7A4A00", border:"1px solid #FFB74D", borderRadius:8, padding:"10px", fontSize:"clamp(12px,1.6vw,15px)", fontWeight:700, cursor:"pointer" }}
+                  onClick={() => setConfirmingSend(false)} disabled={sending}>キャンセル</button>
+                <button style={{ flex:1, background: sending ? "#B39DDB" : "#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"10px", fontSize:"clamp(12px,1.6vw,15px)", fontWeight:800, cursor: sending ? "not-allowed" : "pointer" }}
+                  onClick={doSendViaChapter} disabled={sending}>{sending ? '⏳ 送信中...' : '✓ 送信する'}</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              style={{ width:"100%", marginTop:10, background:"#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, cursor: !sp.email ? "not-allowed" : "pointer", opacity: sp.email ? 1 : .5 }}
+              onClick={sendViaChapter} disabled={!sp.email}>
+              ✉ {ch.name}単会（{chEmail}）から直接送信
+            </button>
+          )
         ) : (
           <div style={{ background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"9px 12px", marginTop:10, fontSize:"clamp(11px,1.3vw,13px)", color:"#7A4A00", lineHeight:1.6 }}>
             ⚠ 送信元アカウントの確認：メールアプリが開いたら、差出人（From）が
