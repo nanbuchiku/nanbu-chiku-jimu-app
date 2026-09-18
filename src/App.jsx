@@ -88,6 +88,7 @@ const USER_CHAPTER_MAP = {
   'nagatakeyoshimasa@gmail.com': 'kawaguchi_east', // 長竹嘉昌（川口東）
   'nakada45034503@gmail.com':    'kawaguchi_east', // 中田ひろし（川口東）
   'y.yukiyama@gmail.com':        'kawaguchi_east', // 雪山靖（川口東）
+  'ohkih4701@gmail.com':         'kawaguchi_east', // 大木ひろみ（川口東）
   'nishii@westoc.co.jp':         'todawarabi',     // 西井正憲（とだわらび）
   'kishida.e@gmail.com':         'todawarabi',     // 岸田悦男（とだわらび）
   'hirosisisi72@gmail.com':      'todawarabi',     // 木之下寛（とだわらび）
@@ -124,6 +125,7 @@ const USER_NAMES = {
   'nagatakeyoshimasa@gmail.com':  '長竹',
   'nakada45034503@gmail.com':     '中田',
   'y.yukiyama@gmail.com':         '雪山',
+  'ohkih4701@gmail.com':          '大木',
   'nishii@westoc.co.jp':          '西井',
   'kishida.e@gmail.com':          '岸田',
   'hirosisisi72@gmail.com':       '木之下',
