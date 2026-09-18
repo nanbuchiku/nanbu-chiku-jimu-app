@@ -303,9 +303,6 @@ ${sig}`;
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>前泊要否</label>
-                <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginBottom:5, lineHeight:1.5 }}>
-                  誤解を避けるため、前泊の要否は講師には選ばせず事務局で決めます（基礎講座に限らずMS等でも起こり得ます）。
-                </div>
                 <select style={INP2} value={form.lodging} onChange={e => setForm(f => ({ ...f, lodging: e.target.value }))}>
                   <option value="不要">不要</option>
                   <option value="要">要（ホテルを手配する）</option>
