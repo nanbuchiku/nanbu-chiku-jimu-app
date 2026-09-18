@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { JIMU } from '../constants';
 import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr } from '../utils';
-import { BP, SEL } from '../styles';
+import { BP, BC, SEL, OV } from '../styles';
 
 // 合同事務局アカウント自身から確実に送信するGASウェブアプリ（未設定ならPDFダウンロード＋手動添付にフォールバック）
 const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
@@ -70,9 +70,10 @@ function Cb({ on, label }) {
   );
 }
 
-export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today, chapterSettings, showToast, showConfirm }) {
+export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today, chapterSettings, showToast }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
   const [sendingDoc, setSendingDoc] = useState(false);
+  const [pdfMailConfirm, setPdfMailConfirm] = useState(null); // { to, subject, body } | null
   useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
 
   const [recentIds, setRecentIds] = useState(() => {
@@ -131,6 +132,32 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
     return () => window.removeEventListener("keydown", onKey);
   }, [sel, sortedSpeakers, setDocSpeaker]);
 
+  const doSendPdf = useCallback(async () => {
+    if (!pdfMailConfirm || !sp) return;
+    setSendingDoc(true);
+    try {
+      const base64 = await generatePdfBase64("print-doc");
+      if (!base64) throw new Error('PDFの作成に失敗しました');
+      const res = await fetch(MAIL_SEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          token: MAIL_SEND_TOKEN, to: pdfMailConfirm.to, cc: pdfMailConfirm.cc,
+          subject: pdfMailConfirm.subject, body: pdfMailConfirm.body,
+          attachmentBase64: base64, attachmentFilename: makePdfFilename(sp), attachmentMimeType: 'application/pdf',
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      showToast?.('合同事務局からPDF添付で送信しました ✓');
+      setPdfMailConfirm(null);
+    } catch (e) {
+      showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
+    } finally {
+      setSendingDoc(false);
+    }
+  }, [pdfMailConfirm, sp, showToast]);
+
   return (
     <div>
       <div className="no-print" style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14, flexWrap:"wrap" }}>
@@ -176,35 +203,11 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 disabled={!sp.email || sendingDoc}
                 title={sp.email ? `合同事務局からPDF添付で ${sp.email} へ自動送信（CC：単会）` : "メールアドレス未入力"}
                 onClick={() => {
-                  const doSend = async () => {
-                    const ch2 = getChapter(sp.chapterId);
-                    const unitName = ch2.name + "倫理法人会";
-                    const chEmail = chSettings.chapterEmail || '';
-                    const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
-                    const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
-                    setSendingDoc(true);
-                    try {
-                      const base64 = await generatePdfBase64("print-doc");
-                      if (!base64) throw new Error('PDFの作成に失敗しました');
-                      const res = await fetch(MAIL_SEND_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({
-                          token: MAIL_SEND_TOKEN, to: sp.email, cc: chEmail, subject, body,
-                          attachmentBase64: base64, attachmentFilename: makePdfFilename(sp), attachmentMimeType: 'application/pdf',
-                        }),
-                      });
-                      const data = await res.json().catch(() => null);
-                      if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-                      showToast?.('合同事務局からPDF添付で送信しました ✓');
-                    } catch (e) {
-                      showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
-                    } finally {
-                      setSendingDoc(false);
-                    }
-                  };
-                  if (!showConfirm) { doSend(); return; }
-                  showConfirm(`確認書PDFを添付して ${sp.speakerName || ''} 様（${sp.email}）へ送信します。よろしいですか？`, doSend, '送信する');
+                  const ch2 = getChapter(sp.chapterId);
+                  const unitName = ch2.name + "倫理法人会";
+                  const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
+                  const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
+                  setPdfMailConfirm({ to: sp.email, cc: chSettings.chapterEmail || '', subject, body });
                 }}
               >{sendingDoc ? '⏳ 送信中...' : '📎 PDF添付して自動送信'}</button>
             ) : (
@@ -545,6 +548,29 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         <div style={{ textAlign:"center", padding:38, color:"#98A2B3", fontSize:"clamp(13px,1.8vw,16px)",
           background:"#fff", borderRadius:8, border:"2px dashed #D9E1EE" }}>
           ← 上のセレクトボックスから講師を選択してください
+        </div>
+      )}
+
+      {pdfMailConfirm && (
+        <div style={OV} role="presentation" onClick={() => !sendingDoc && setPdfMailConfirm(null)}>
+          <div role="alertdialog" aria-modal="true" aria-label="PDF送信確認" style={{ background:"#fff", borderRadius:12, padding:"20px 22px", maxWidth:520, width:"100%", maxHeight:"85vh", overflowY:"auto", boxShadow:"0 8px 32px rgba(0,0,0,.2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:"clamp(15px,2vw,18px)", fontWeight:800, color:"#061B44", marginBottom:12 }}>📎 確認書PDFを添付して送信します</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:10 }}>
+              宛先：<strong style={{ color:"#1565C0" }}>{pdfMailConfirm.to}</strong>
+              {pdfMailConfirm.cc && <>　CC：<strong>{pdfMailConfirm.cc}</strong></>}
+            </div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:600, marginBottom:3 }}>件名</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#F5F5F5", padding:"7px 11px", borderRadius:6, marginBottom:10 }}>{pdfMailConfirm.subject}</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:600, marginBottom:3 }}>本文</div>
+            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", marginBottom:14 }}>{pdfMailConfirm.body}</pre>
+            <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#98A2B3", marginBottom:14 }}>※ 講師依頼確認書PDFが添付されます</div>
+            <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+              <button style={BC} onClick={() => setPdfMailConfirm(null)} disabled={sendingDoc}>キャンセル</button>
+              <button style={{ ...BP, background: sendingDoc ? "#90A4AE" : "#1565C0" }} onClick={doSendPdf} disabled={sendingDoc}>
+                {sendingDoc ? '⏳ 送信中...' : '✓ 送信する'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

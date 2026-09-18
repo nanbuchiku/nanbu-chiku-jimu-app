@@ -41,7 +41,7 @@ function loadDraft() {
   catch { return null; }
 }
 
-export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, showConfirm, onCreateSpeaker }) {
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, onCreateSpeaker }) {
   const isNew = !spProp;
   const [createdId, setCreatedId] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -58,6 +58,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   const [restored, setRestored] = useState(!!draft);
   const [generated, setGenerated] = useState(!isNew);
   const [sending, setSending] = useState(false);
+  const [confirmingSend, setConfirmingSend] = useState(false);
 
   // 入力途中の内容を自動下書き保存（新規作成時のみ）。誤って閉じても再度開けば復元される。
   useEffect(() => {
@@ -204,17 +205,18 @@ ${sig}`;
       markSent(); clearDraft(); onClose();
     } catch (e) {
       showToast('⚠ 送信に失敗しました: ' + (e.message || ''));
+      setConfirmingSend(false);
     } finally {
       setSending(false);
     }
   }, [displayEmail, chEmail, mailSubject, mailBody, showToast, markSent, clearDraft, onClose]);
 
-  // 内容を確認してもらってから送信する（誤送信防止のため確認ステップを挟む）
+  // 誤送信防止のため、送信ボタンを押すと下のメール本文プレビューを表示したまま
+  // その場で「本当に送信するか」を尋ねる（内容を隠さない）
   const sendViaOffice = useCallback(() => {
     if (!displayEmail) { showToast('⚠ 講師のメールアドレスが未入力です'); return; }
-    if (!showConfirm) { doSendViaOffice(); return; }
-    showConfirm(`上記の内容で ${displayName || displayEmail} 様へ送信します。よろしいですか？`, doSendViaOffice, '送信する');
-  }, [displayEmail, displayName, showConfirm, doSendViaOffice, showToast]);
+    setConfirmingSend(true);
+  }, [displayEmail, showToast]);
 
   // ── FAX用紙印刷（手書き提出用・セミナー種別ごと） ────────────────
   const printForm = useCallback(() => {
@@ -317,12 +319,32 @@ ${sig}`;
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#9C27B0", fontWeight:700, marginBottom:4 }}>フォームURL</div>
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", wordBreak:"break-all", lineHeight:1.6 }}>{formUrl}</div>
             </div>
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#7E57C2", fontWeight:700, marginBottom:4 }}>件名</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", background:"#fff", border:"1px solid #CE93D8", padding:"7px 11px", borderRadius:6, marginBottom:8 }}>{mailSubject}</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#7E57C2", fontWeight:700, marginBottom:4 }}>送付メール本文プレビュー</div>
+              <pre style={{ background:"#fff", border:"1px solid #CE93D8", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:200, overflowY:"auto" }}>{mailBody}</pre>
+            </div>
             {MAIL_SEND_URL && (
-              <button
-                style={{ width:"100%", background: sending ? "#B39DDB" : "#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, cursor: sending ? "not-allowed" : "pointer", marginBottom:8 }}
-                onClick={sendViaOffice} disabled={sending}>
-                {sending ? '⏳ 送信中...' : `✉ 合同事務局（${SENDER_EMAIL}）から直接送信`}
-              </button>
+              confirmingSend ? (
+                <div style={{ background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"10px 12px", marginBottom:8 }}>
+                  <div style={{ fontSize:"clamp(12px,1.6vw,15px)", fontWeight:700, color:"#7A4A00", marginBottom:8 }}>
+                    ↑ 上の件名・本文の内容で、合同事務局（{SENDER_EMAIL}）から{displayName || displayEmail} 様へ送信します。よろしいですか？
+                  </div>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button style={{ flex:1, background:"#fff", color:"#7A4A00", border:"1px solid #FFB74D", borderRadius:8, padding:"10px", fontSize:"clamp(12px,1.6vw,15px)", fontWeight:700, cursor:"pointer" }}
+                      onClick={() => setConfirmingSend(false)} disabled={sending}>キャンセル</button>
+                    <button style={{ flex:1, background: sending ? "#B39DDB" : "#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"10px", fontSize:"clamp(12px,1.6vw,15px)", fontWeight:800, cursor: sending ? "not-allowed" : "pointer" }}
+                      onClick={doSendViaOffice} disabled={sending}>{sending ? '⏳ 送信中...' : '✓ 送信する'}</button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  style={{ width:"100%", background:"#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, cursor:"pointer", marginBottom:8 }}
+                  onClick={sendViaOffice}>
+                  ✉ 合同事務局（{SENDER_EMAIL}）から直接送信
+                </button>
+              )
             )}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
               <button style={{ background:"#7E57C2", color:"#fff", border:"none", borderRadius:8, padding:"11px", fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, cursor:"pointer" }} onClick={copyUrl}>📋 URLだけコピー</button>
@@ -351,13 +373,6 @@ ${sig}`;
                 依頼内容（単会・日時・会場）は事前印字されます。
               </div>
             </div>
-          </div>
-        )}
-
-        {generated && (
-          <div style={{ marginTop:14 }}>
-            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:700, marginBottom:5 }}>送付メール本文プレビュー</div>
-            <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:200, overflowY:"auto", border:"1px solid #E0E0E0" }}>{mailBody}</pre>
           </div>
         )}
 
