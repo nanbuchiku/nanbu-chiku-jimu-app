@@ -952,11 +952,11 @@ ${ch.name}単会事務局`;
   // ── Derived layout values ───────────────────────────────
   const isMobile = windowWidth < 768;
   const activeNavId =
-    ["document","sptasks","contact"].includes(tab) ? "speakers" :
+    ["document","contact"].includes(tab) ? "speakers" :
     tab === "calendar" ? "dashboard" :
     tab;
   const primaryTabIds  = new Set(["dashboard","speakers"]);
-  const secondaryTabIds = new Set(["flyer","tasks"]);
+  const secondaryTabIds = new Set(["sptasks","flyer","tasks"]);
   const mobileTabIds   = ["dashboard","speakers","tasks"];
   const mobileLabel    = { dashboard:"ダッシュボード", speakers:"講師", tasks:"タスク" };
   const mobileIcon     = { dashboard:"⊞", speakers:"♟", tasks:"✓" };
