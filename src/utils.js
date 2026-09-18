@@ -189,7 +189,7 @@ export function buildSpeakerTasks(sp) {
   // 送信手段（メール／LINE／FAX）を記録する専用タスクとして扱う（method: true）
   add("form_sent",   "講師依頼フォーム作成・送信", "依頼", { method: true });
   add("form_recvd",  "フォーム回答受領",          "依頼");
-  add("doc_sent",    "確認書送付",               "依頼");
+  add("doc_sent",    "確認書送付",               "依頼", { emailType: "confirm_doc" });
 
   if (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし") {
     if (sp.lodging !== "あり（当日のみ）") {

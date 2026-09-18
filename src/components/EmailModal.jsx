@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
-import { getChapter, formatDate } from '../utils';
+import { getChapter, getSeminarType, formatDate } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 
 // 単会自身のメールアドレスを差出人として送信するGASウェブアプリ（未設定ならこの機能は表示しない）
@@ -11,7 +11,8 @@ const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
 
 export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast }) {
   const ch = getChapter(sp.chapterId);
-  const chEmail = chapterSettings?.[sp.chapterId]?.chapterEmail || '';
+  const chSettings = chapterSettings?.[sp.chapterId] || {};
+  const chEmail = chSettings.chapterEmail || '';
   const [mailType, setMailType] = useState(defaultType || "material");
   const [promoIdx, setPromoIdx] = useState(0);
   const [freeSubject, setFreeSubject] = useState("");
@@ -39,7 +40,81 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
 
   const photoBlock = sp.materialUrl ? `\n▼ 講師 顔写真\n${sp.materialUrl}\n` : '';
 
+  // 【タグ】値 形式の自由記述メモから、確認書送付メールに再掲する項目を拾う
+  const parsedNotes = useMemo(() => {
+    if (!sp.notes) return {};
+    const normalized = String(sp.notes).replace(/\\n/g, '\n');
+    const result = {};
+    const tagLine = /【([^】]+)】([^\n【]*)/g;
+    let m;
+    while ((m = tagLine.exec(normalized)) !== null) {
+      if (m[1] !== '内容要約') result[m[1]] = m[2].trim();
+    }
+    return result;
+  }, [sp.notes]);
+
+  const isKiso = sp.seminarType === 'kiso';
+  const needsLodging = sp.lodging && sp.lodging !== '不要' && sp.lodging !== 'なし';
+  const kisoMsDateStr = useMemo(() => {
+    if (!isKiso || !sp.seminarDate) return '';
+    const [y, m, d] = sp.seminarDate.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + 1);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }, [isKiso, sp.seminarDate]);
+  const eventLabel = isKiso ? '倫理経営基礎講座' : (!sp.seminarType || sp.seminarType === 'ms') ? 'モーニングセミナー' : getSeminarType(sp.seminarType).label;
+
   const TEMPLATES = useMemo(() => ({
+    confirm_doc: {
+      label: "📋 確認書送付",
+      subject: `【${ch.name}単会 ${eventLabel}】講師依頼確認書のご送付（${sp.speakerName || ''}様）`,
+      body: (() => {
+        const msVenue   = chSettings.msVenue   || ch.venue;
+        const msAddress = chSettings.msAddress || ch.address;
+        const msMapUrl  = chSettings.msMapUrl  || ch.mapUrl;
+        const msTel     = chSettings.msVenueTel|| ch.venueTel;
+
+        const venueBlock = isKiso ? `
+【基礎講座 会場のご案内】
+　開催日　：${formatDate(sp.seminarDate)}
+　会　場　：${chSettings.kisoVenue || ''}
+　住　所　：${chSettings.kisoAddress || ''}${chSettings.kisoMapUrl ? `\n　地図　　：${chSettings.kisoMapUrl}` : ''}
+
+【翌日 モーニングセミナー 会場のご案内】
+　開催日　：${formatDate(kisoMsDateStr)}
+　会　場　：${msVenue}
+　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}` : `
+【会場のご案内】
+　開催日　：${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
+　会　場　：${msVenue}
+　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}`;
+
+        const hotelBlock = needsLodging ? `
+
+【宿泊先のご案内】
+　ホテル名：${chSettings.hotelName || ''}
+　住　所　：${chSettings.hotelAddress || ''}${chSettings.hotelStation ? `\n　最寄駅　：${chSettings.hotelStation}` : ''}${chSettings.hotelParking ? `\n　駐車場　：${chSettings.hotelParking}\n　　　　　　なお駐車場は事前予約が必要な場合がございます。各単会の担当者もしくは合同事務局までお問い合わせください。` : ''}${chSettings.hotelMapUrl ? `\n　地図　　：${chSettings.hotelMapUrl}` : ''}${chSettings.hotelTel ? `\n　連絡先　：${chSettings.hotelTel}` : ''}` : '';
+
+        const hasMaterial = !!(parsedNotes['資料01'] || parsedNotes['資料02']);
+
+        return `${sp.speakerName || ''} 様
+
+お世話になっております。${ch.name}倫理法人会です。
+講師依頼確認フォームへのご入力、誠にありがとうございました。
+ご入力いただいた内容を確認書としてまとめましたので、本メールにてお送りいたします。
+
+【ご入力内容の確認】
+　講話タイトル：「${sp.topic || ''}」
+　内容要約　　：${summary || ''}
+　交通手段　　：${parsedNotes['交通手段'] || ''}
+　当日資料　　：${hasMaterial ? 'あり' : 'なし'}
+${venueBlock}${hotelBlock}
+
+内容にお気づきの点がございましたら、本メールへご返信ください。
+当日はどうぞよろしくお願いいたします。
+
+${sig}`;
+      })(),
+    },
     material: {
       label: "📎 資料・写真の催促",
       subject: `【${ch.name}単会 MS】顔写真・講話資料のご送付のお願い`,
@@ -157,7 +232,7 @@ ${sig}`,
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, ch.name, ch.venue, ch.dayName, ch.address, ch.time, matDL, sig, summary, photoBlock, promoIdx]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, needsLodging, kisoMsDateStr, eventLabel]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
