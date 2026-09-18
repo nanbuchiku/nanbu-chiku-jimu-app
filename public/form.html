@@ -264,6 +264,7 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       <div class="section-body">
         <div class="field" id="f-lodging">
           <label>前泊要否<span class="req">*</span></label>
+          <div id="lodging-fixed" style="display:none; font-size:15px; font-weight:600; color:#1A3A6B; background:#F1F5F9; border-radius:8px; padding:10px 12px;"></div>
           <div class="radio-group" id="lodging-group">
             <label class="radio-item"><input type="radio" name="lodging" value="要"> 要（ホテルを手配します）</label>
             <label class="radio-item"><input type="radio" name="lodging" value="不要"> 不要</label>
@@ -463,6 +464,9 @@ const urlDate    = urlParams.get('date')  || '';
 const urlType    = urlParams.get('type')  || '';
 const urlEthics  = urlParams.get('ethics')|| '';
 const urlEmail   = urlParams.get('email') || '';
+// 宿泊要否は誤解を避けるため講師本人には選ばせず、事務局がフォーム作成時に決める。
+// 値が渡っていれば固定表示にする（古いリンク＝値なしの場合のみ講師に確認する）
+const urlLodging = urlParams.get('lodging') || '';
 
 const SEMINAR_LABELS = { ms:'モーニングセミナー', kiso:'倫理経営基礎講座', koen:'倫理経営講演会', tsudoi:'経営者の集い', evening:'イブニングセミナー', other:'自主企画' };
 
@@ -506,6 +510,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (infoBox) { infoBox.innerHTML = '📋 このフォームは<strong>倫理経営基礎講座</strong>講師依頼の確認用です。<br>ご入力いただいた情報はチラシ・当日資料として使用いたします。'; }
     const kisoInput = document.getElementById('kisoNumber');
     if (kisoInput) { kisoInput.addEventListener('input', function() { const el = document.getElementById('ev-kiso-num'); if (el) el.textContent = this.value ? '第' + this.value + '講' : '—'; }); }
+  }
+
+  // 前泊要否は事務局がフォーム作成時に決めるため、値が渡っていれば講師には選ばせず固定表示にする
+  if (urlLodging === '要' || urlLodging === '不要') {
+    document.getElementById('lodging-group').style.display = 'none';
+    document.getElementById('lodging-error').style.display = 'none';
+    const fixedEl = document.getElementById('lodging-fixed');
+    fixedEl.textContent = urlLodging === '要' ? '要（事務局にて手配いたします）' : '不要';
+    fixedEl.style.display = 'block';
+    document.getElementById('lodging-detail').style.display = urlLodging === '要' ? 'block' : 'none';
   }
 
   if (speakerId) {
@@ -692,7 +706,9 @@ function validatePage2() {
   if (prep.length === 0) { pe.style.display='block'; pf.classList.add('has-error'); ok=false; }
   else                   { pe.style.display='none';  pf.classList.remove('has-error'); }
 
-  ok = requiredRadio('lodging', 'lodging-error', 'f-lodging') && ok;
+  if (urlLodging !== '要' && urlLodging !== '不要') {
+    ok = requiredRadio('lodging', 'lodging-error', 'f-lodging') && ok;
+  }
   ok = requiredRadio('material','material-error','f-material') && ok;
 
   // 資料ありの場合は印刷要否が必須
@@ -939,7 +955,7 @@ function openConfirmationMail(payload, extraUrls) {
     dateLine = `${fmtD(payload.seminar_date)}【基礎講座】\n　　　　${fmtD(ms)}【モーニングセミナー】`;
   }
 
-  const lodging = radio('lodging');
+  const lodging = (urlLodging === '要' || urlLodging === '不要') ? urlLodging : radio('lodging');
   const lines = [
     '━━━━━━━━━━━━━━━━━━━━',
     '　　　　　講師依頼確認書',
@@ -1026,13 +1042,15 @@ async function submitForm() {
   const val   = id   => document.getElementById(id)?.value.trim() || '';
   const radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value || '';
   const checks= name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(x=>x.value).join('・');
+  // 前泊要否は事務局が事前に決めている場合はそちらを優先する（講師には選ばせていないため）
+  const effectiveLodging = (urlLodging === '要' || urlLodging === '不要') ? urlLodging : radio('lodging');
 
   // 備考にまとめる情報（DBに余計なカラムを増やさないため）
   const notesLines = [
     `【内容要約】\n${val('summary')}`,
     `【交通手段】${radio('transport')}`,
     `【単会で準備】${checks('prepare')}`,
-    radio('lodging') === '要' ? `【禁煙ルーム】${radio('room')||'未回答'}／【お迎え】${radio('pickup')||'未回答'}` : '',
+    effectiveLodging === '要' ? `【禁煙ルーム】${radio('room')||'未回答'}／【お迎え】${radio('pickup')||'未回答'}` : '',
     `【領収証宛名】${radio('receiptType')}`,
     `【領収証郵便番号】${val('zipcode')}`,
     `【領収証住所】${val('address')}`,
@@ -1052,7 +1070,7 @@ async function submitForm() {
     role:         val('ethics') || urlEthics || '',
     topic:        val('topic'),
     notes:   notesLines,
-    lodging: radio('lodging'),
+    lodging: effectiveLodging,
     print_required: radio('print') || '不要',
     seminar_type: urlType || 'ms',
     seminar_date: urlDate || null,
