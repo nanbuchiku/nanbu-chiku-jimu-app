@@ -253,9 +253,12 @@ export function getSpeakerDeadlineFlags(sp, today) {
   const flags = {};
   if (!sp.seminarDate) return flags;
   const seminar = parseDate(sp.seminarDate);
+  // todayは時刻付き（new Date()）で渡ってくるため、真夜中基準のdeadlineとの差が
+  // 時刻によって前後にずれてしまう。日付だけで比較できるよう正規化する。
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   DEADLINE_RULES.forEach(rule => {
     const deadline = new Date(seminar.getFullYear(), seminar.getMonth() + rule.monthOffset, rule.day);
-    const diffDays = Math.round((deadline - today) / 86400000);
+    const diffDays = Math.round((deadline - todayMidnight) / 86400000);
     const hit = rule.mode === "exact" ? diffDays === 0 : (diffDays >= 0 && diffDays <= 3);
     if (!hit) return;
     const level = rule.escalate ? "escalate" : "warn";
