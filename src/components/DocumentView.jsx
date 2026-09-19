@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { JIMU } from '../constants';
-import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr } from '../utils';
+import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr, parseDate } from '../utils';
+
+const weekdayOf = dateStr => dateStr ? `${"日月火水木金土"[parseDate(dateStr).getDay()]}曜日` : "";
 import { BP, BC, SEL, OV } from '../styles';
 
 // 合同事務局アカウント自身から確実に送信するGASウェブアプリ（未設定ならPDFダウンロード＋手動添付にフォールバック）
@@ -492,7 +494,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 <DocSection title="② 開催情報（モーニングセミナー）" color={c2}>
                   <DocRow label="講話日"         value={formatDate(msDateStr)}                           color={c2} />
                   <DocRow label="講話単会名"      value={chSettings.name || ch.name}                     color={c2} />
-                  <DocRow label="開催曜日・時間"  value={`${ch.dayName}　${ch.time}`}                   color={c2} />
+                  <DocRow label="開催曜日・時間"  value={`${weekdayOf(msDateStr)}　${ch.time}`}                   color={c2} />
                   <DocRow label="開催場所"        value={chSettings.msVenue || ch.venue}                  color={c2} />
                   <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}              color={c2} />
                   {chSettings.msStation && <DocRow label="最寄駅"    value={chSettings.msStation}         color={c2} />}
@@ -524,7 +526,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocSection title="② 開催情報" color={st.color}>
               <DocRow label="講話日"          value={formatDate(sp.seminarDate)}                              color={st.color} />
               <DocRow label="講話単会名"      value={chSettings.name || ch.name}                              color={st.color} />
-              <DocRow label="開催曜日・時間"  value={`${ch.dayName}　${ch.time}`}                            color={st.color} />
+              <DocRow label="開催曜日・時間"  value={`${weekdayOf(sp.seminarDate)}　${ch.time}`}                            color={st.color} />
               <DocRow label="開催場所"        value={chSettings.msVenue || ch.venue}                          color={st.color} />
               <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}                      color={st.color} />
               {chSettings.msStation && <DocRow label="最寄駅"  value={chSettings.msStation}                   color={st.color} />}
