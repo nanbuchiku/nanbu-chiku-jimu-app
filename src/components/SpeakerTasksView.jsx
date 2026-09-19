@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from '
 import { CHAPTERS } from '../constants';
 import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime, getFiscalYearStart, buildMonthRanges, getSpeakerDeadlineFlags } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL, C } from '../styles';
+import mascotNormal from '../assets/mascot-normal.png';
 
 const TASK_CATEGORY_COLOR = {
   "依頼": "#061B44",
@@ -13,6 +14,12 @@ const TASK_CATEGORY_COLOR = {
 
 const RECEIPT_LABELS = { chapter: "単会宛で受領", office: "事務局宛で受領" };
 const METHOD_LABELS = { mail: "メール", line: "LINE", fax: "ファックス" };
+
+// じむちょーさんがひょっこり顔を出すタスク（講師依頼フォーム送信・前日までの全タスク・お礼メール・ゲストへのお礼）
+const MASCOT_TASK_IDS = new Set([
+  "form_sent", "contact_speaker", "reminder_sent", "receipt_issued",
+  "app_reception_ready", "venue_ready", "thanks_sent", "guest_thanks",
+]);
 
 export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, showToast, onEmail, onEdit, currentUserName, focusId, onFocusHandled }) {
   const [filterCh,      setFilterCh]     = useState("all");
@@ -31,6 +38,16 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
     const t = setTimeout(() => setSearch(searchInput), 250);
     return () => clearTimeout(t);
   }, [searchInput]);
+
+  // タスク完了時の「＋3P」演出／じむちょーさんのひょっこり演出
+  const [celebrate, setCelebrate] = useState(null); // { key: "spId:taskId", mascot, seq }
+  const celebrateTimer = useRef(null);
+  const triggerCelebrate = useCallback((spId, taskId) => {
+    clearTimeout(celebrateTimer.current);
+    setCelebrate(prev => ({ key: `${spId}:${taskId}`, mascot: MASCOT_TASK_IDS.has(taskId), seq: (prev?.seq || 0) + 1 }));
+    celebrateTimer.current = setTimeout(() => setCelebrate(null), 2000);
+  }, []);
+  useEffect(() => () => clearTimeout(celebrateTimer.current), []);
 
   // 講師管理カードの「☑ タスク」から遷移してきた場合、対象講師を確実に表示・展開してスクロール
   useEffect(() => {
@@ -104,8 +121,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       checks[taskId] = { done: true, at: new Date().toISOString(), by: currentUserName || '' };
     }
     const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
-    if (ok) showToast(wasDone ? "未完了に戻しました" : "✓ 完了にしました");
-  }, [updateSpeaker, showToast, currentUserName]);
+    if (ok) {
+      showToast(wasDone ? "未完了に戻しました" : "✓ 完了にしました");
+      if (!wasDone) triggerCelebrate(sp.id, taskId);
+    }
+  }, [updateSpeaker, showToast, currentUserName, triggerCelebrate]);
 
   // 顔写真・資料の受領タスク専用：宛先（単会 or 合同事務局）を記録する
   const setReceiptTask = useCallback(async (sp, taskId, dest) => {
@@ -119,8 +139,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       if (dest === "chapter") delete checks[sharedId]; // 単会へ直接届いた場合は共有タスク自体が不要
     }
     const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
-    if (ok) showToast(dest ? "受領を記録しました ✓" : "未受領に戻しました");
-  }, [updateSpeaker, showToast, currentUserName]);
+    if (ok) {
+      showToast(dest ? "受領を記録しました ✓" : "未受領に戻しました");
+      if (dest) triggerCelebrate(sp.id, taskId);
+    }
+  }, [updateSpeaker, showToast, currentUserName, triggerCelebrate]);
 
   // 講師依頼フォームの送信手段（メール／LINE／FAX）を記録する
   const setMethodTask = useCallback(async (sp, taskId, method) => {
@@ -131,8 +154,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
       checks[taskId] = { done: true, at: new Date().toISOString(), by: currentUserName || '', method };
     }
     const ok = await updateSpeaker(sp.id, { speakerChecks: checks });
-    if (ok) showToast(method ? `${METHOD_LABELS[method]}で送付を記録しました ✓` : "未送付に戻しました");
-  }, [updateSpeaker, showToast, currentUserName]);
+    if (ok) {
+      showToast(method ? `${METHOD_LABELS[method]}で送付を記録しました ✓` : "未送付に戻しました");
+      if (method) triggerCelebrate(sp.id, taskId);
+    }
+  }, [updateSpeaker, showToast, currentUserName, triggerCelebrate]);
 
   const getProgress = sp => {
     const tasks = buildSpeakerTasks(sp);
@@ -280,7 +306,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
               </div>
 
               {Object.entries(byCategory).map(([cat, catTasks]) => {
-                const visibleTasks = isExpanded ? catTasks : catTasks.filter(t => !isTaskDone(checks, t.id));
+                // 完了直後は演出（＋3P／じむちょーさん）が終わるまで、折りたたみ中でも行を消さずに残す
+                const visibleTasks = isExpanded ? catTasks : catTasks.filter(t => !isTaskDone(checks, t.id) || celebrate?.key === `${sp.id}:${t.id}`);
                 if (visibleTasks.length === 0) return null;
                 const catAllDone = catTasks.every(t => isTaskDone(checks, t.id));
                 const catColor = TASK_CATEGORY_COLOR[cat] || "#667085";
@@ -314,10 +341,26 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                       const deadlineBorder = deadlineLevel === "escalate" ? `2px solid ${C.danger}`
                         : deadlineLevel === "warn" ? `2px solid ${C.warningBorder}`
                         : null;
+                      // タスク完了時の演出：celebrateのkeyが一致する行にだけ「＋3P」／じむちょーさんを表示する
+                      const isCelebrating = celebrate?.key === `${sp.id}:${t.id}`;
+                      const showMascot = isCelebrating && celebrate.mascot;
+                      const celebrateFx = isCelebrating && (
+                        <>
+                          <span key={`pt-${celebrate.seq}`} style={{ position:"absolute", right:6, top:-8, fontWeight:800, fontSize:"clamp(12px,1.4vw,14px)", color:"#FF6F9C", pointerEvents:"none", animation:"taskPointFloat 1.3s ease-out forwards", zIndex:3 }}>
+                            <span style={{ display:"inline-block", animation:"taskPointSparkle .5s ease-in-out infinite" }}>✨</span>＋3P
+                          </span>
+                          {showMascot && (
+                            <span key={`ms-${celebrate.seq}`} style={{ position:"absolute", right:-10, top:"50%", width:34, height:34, pointerEvents:"none", zIndex:4, animation:"mascotDance 1.8s ease-in-out forwards", filter:"drop-shadow(0 3px 6px rgba(16,38,77,.3))" }}>
+                              <img src={mascotNormal} alt="" style={{ width:"100%", height:"100%", objectFit:"contain", display:"block" }} />
+                            </span>
+                          )}
+                        </>
+                      );
 
                       if (t.receipt) {
                         return (
-                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}`, position:"relative" }}>
+                            {celebrateFx}
                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
                               <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none", fontWeight:600 }}>{t.label}</span>
                               <div style={{ display:"flex", gap:4 }}>
@@ -344,7 +387,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
 
                       if (t.method) {
                         return (
-                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}`, position:"relative" }}>
+                            {celebrateFx}
                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
                               <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none", fontWeight:600 }}>{t.label}</span>
                               <div style={{ display:"flex", gap:4 }}>
@@ -370,7 +414,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                       }
 
                       return (
-                        <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                        <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}`, position:"relative" }}>
+                          {celebrateFx}
                           <input type="checkbox" checked={done} onChange={() => toggleTask(sp, t.id)} style={{ width:15, height:15, cursor:"pointer", accentColor: TASK_CATEGORY_COLOR[cat] }} />
                           <div style={{ minWidth:0, flex:1 }}>
                             <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none" }}>{t.label}</span>
