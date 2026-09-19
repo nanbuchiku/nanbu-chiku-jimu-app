@@ -23,8 +23,6 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const monthRanges = useMemo(() => buildMonthRanges(today), [today]);
   const [expandedId,  setExpandedId] = useState(null);
   const [expandAll,   setExpandAll]  = useState(false);
-  const [simDate, setSimDate] = useState(""); // 期限の赤枠表示を確認するための「本日」の仮設定（空なら実際の今日）
-  const effToday = simDate ? parseDate(simDate) : today;
   const [searchInput, setSearchInput] = useState("");
   const [search,      setSearch]     = useState("");
   const cardRefs = useRef({});
@@ -168,11 +166,6 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
 
   return (
     <div>
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, flexWrap:"wrap" }}>
-        <label style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", fontWeight:600 }}>期限の赤枠を確認する日：</label>
-        <input type="date" value={simDate} onChange={e => setSimDate(e.target.value)} style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }} />
-        {simDate && <button style={BC} onClick={() => setSimDate("")}>実際の今日に戻す</button>}
-      </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
         <div>
           <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#061B44" }}>☑ 講師タスク管理 <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:"#98A2B3" }}>{visible.length}件</span></div>
@@ -212,7 +205,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
           const ch = getChapter(sp.chapterId);
           const tasks = buildSpeakerTasks(sp);
           const checks = sp.speakerChecks || {};
-          const deadlineFlags = getSpeakerDeadlineFlags(sp, effToday);
+          const deadlineFlags = getSpeakerDeadlineFlags(sp, today);
           const prog = getProgress(sp);
           const allDone = prog.done === prog.total;
           const isExpanded = expandAll || expandedId === sp.id;
