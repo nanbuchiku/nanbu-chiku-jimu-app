@@ -1319,7 +1319,7 @@ ${ch.name}単会事務局`;
         return <PwModal />;
       })()}
       {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} lockChapterId={scopeChapter} />}
-      {showForm && <SpeakerForm initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} />}
+      {showForm && <SpeakerForm key={editSpeaker?.id || 'new'} initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} onEditExisting={onEditSpeaker} onGoToList={() => { onCloseForm(); setTab('speakers'); }} />}
       {emailModal && <EmailModal speaker={emailModal.speaker || emailModal} defaultType={emailModal.defaultType} onClose={onCloseEmail} onDone={onDoneEmail} chapterSettings={chapterSettings} showToast={showToast} />}
       {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} onCreateSpeaker={createSpeakerStub} />}
 

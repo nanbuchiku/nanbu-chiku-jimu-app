@@ -8,7 +8,7 @@ const BLANK = { chapterId:"kawaguchi", speakerName:"", speakerKana:"", speakerUn
 
 const DRAFT_KEY = 'speakerFormDraft';
 
-export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, saving }) {
+export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, saving, onEditExisting, onGoToList }) {
   const isNew = !initial?.id;
   const normalizeLodging = v => (!v || v === "不要" || v === "なし") ? "不要" : v === "要" ? "あり（前泊）" : v;
   const normalizePrint = v => (!v || v === "不要" || v?.startsWith("不要")) ? "不要" : (v === "あり" || v?.startsWith("要")) ? "あり" : "不要";
@@ -306,6 +306,22 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       sp.status !== "cancelled"
     ) || null;
   }, [form.chapterId, form.seminarDate, form.id, speakers]);
+
+  // 日付・単会・名前が一致する場合は、うっかりの二重登録である可能性が高い（意図した複数講話者は名前が異なるはず）
+  const nameDuplicate = useMemo(() => {
+    const name = form.speakerName?.trim();
+    if (!form.chapterId || !form.seminarDate || !name || !speakers) return null;
+    return speakers.find(sp =>
+      sp.chapterId === form.chapterId &&
+      sp.seminarDate === form.seminarDate &&
+      sp.id !== form.id &&
+      sp.status !== "cancelled" &&
+      sp.speakerName?.trim() === name
+    ) || null;
+  }, [form.chapterId, form.seminarDate, form.id, form.speakerName, speakers]);
+
+  const [dismissedDupId, setDismissedDupId] = useState(null);
+  const showNameDupWarning = nameDuplicate && nameDuplicate.id !== dismissedDupId;
 
   const pastTalks = useMemo(() => {
     const name = form.speakerName?.trim();
@@ -768,7 +784,18 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             {pastTalks.length > 3 && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#98A2B3" }}>…他{pastTalks.length - 3}件</div>}
           </div>
         )}
-        {duplicate && (
+        {showNameDupWarning ? (
+          <div style={{ marginTop:10, padding:"10px 12px", background:"#FFEBEE", border:"1px solid #FFCDD2", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#B71C1C" }}>
+            <div style={{ fontWeight:700, marginBottom:8 }}>
+              ⚠ この日付（単会）には既に登録があるようです：{nameDuplicate.speakerName}{nameDuplicate.topic ? `「${nameDuplicate.topic}」` : ''}
+            </div>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              <button type="button" style={{ ...BP, background:"#B71C1C", borderColor:"#B71C1C" }} onClick={() => onEditExisting?.(nameDuplicate)}>既存の登録を開いて編集する</button>
+              <button type="button" style={BC} onClick={() => setDismissedDupId(nameDuplicate.id)}>このまま新規登録を続ける</button>
+              <button type="button" style={BC} onClick={() => onGoToList?.()}>講師管理画面で確認する</button>
+            </div>
+          </div>
+        ) : duplicate && (
           <div style={{ marginTop:10, padding:"8px 12px", background:"#FFF8E1", border:"1px solid #FFE082", borderRadius:6, fontSize:"clamp(12px,1.4vw,14px)", color:"#E65100", fontWeight:600 }}>
             ⚠ 同じ単会・開催日の講師が既に登録されています（{duplicate.speakerName}）。続けて登録することもできます。
           </div>
