@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from '
 import { CHAPTERS } from '../constants';
 import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime, getFiscalYearStart, buildMonthRanges, getSpeakerDeadlineFlags } from '../utils';
 import { CARD, BP, BC, SEL, INP, PILL, C } from '../styles';
-import mascotNormal from '../assets/mascot-normal.png';
+import mascotHappy from '../assets/mascot-happy.png';
 
 const TASK_CATEGORY_COLOR = {
   "依頼": "#061B44",
@@ -351,7 +351,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                           </span>
                           {showMascot && (
                             <span key={`ms-${celebrate.seq}`} style={{ position:"absolute", right:-20, top:"50%", width:68, height:68, pointerEvents:"none", zIndex:4, animation:"mascotDance 1.8s ease-in-out forwards", filter:"drop-shadow(0 3px 6px rgba(16,38,77,.3))" }}>
-                              <img src={mascotNormal} alt="" style={{ width:"100%", height:"100%", objectFit:"contain", display:"block" }} />
+                              <img src={mascotHappy} alt="" style={{ width:"100%", height:"100%", objectFit:"contain", display:"block" }} />
                             </span>
                           )}
                         </>
