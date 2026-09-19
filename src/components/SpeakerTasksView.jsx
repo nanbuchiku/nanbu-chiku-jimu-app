@@ -350,7 +350,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                             <span style={{ display:"inline-block", animation:"taskPointSparkle .5s ease-in-out infinite" }}>✨</span>＋3P
                           </span>
                           {showMascot && (
-                            <span key={`ms-${celebrate.seq}`} style={{ position:"absolute", right:-10, top:"50%", width:34, height:34, pointerEvents:"none", zIndex:4, animation:"mascotDance 1.8s ease-in-out forwards", filter:"drop-shadow(0 3px 6px rgba(16,38,77,.3))" }}>
+                            <span key={`ms-${celebrate.seq}`} style={{ position:"absolute", right:-20, top:"50%", width:68, height:68, pointerEvents:"none", zIndex:4, animation:"mascotDance 1.8s ease-in-out forwards", filter:"drop-shadow(0 3px 6px rgba(16,38,77,.3))" }}>
                               <img src={mascotNormal} alt="" style={{ width:"100%", height:"100%", objectFit:"contain", display:"block" }} />
                             </span>
                           )}
