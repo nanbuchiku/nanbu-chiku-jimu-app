@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime, getFiscalYearStart, buildMonthRanges } from '../utils';
-import { CARD, BP, BC, SEL, INP, PILL } from '../styles';
+import { getChapter, buildSpeakerTasks, toDateStr, extractStaffNotes, parseDate, isTaskDone, getTaskMeta, formatDateTime, getFiscalYearStart, buildMonthRanges, getSpeakerDeadlineFlags } from '../utils';
+import { CARD, BP, BC, SEL, INP, PILL, C } from '../styles';
 
 const TASK_CATEGORY_COLOR = {
   "依頼": "#061B44",
@@ -23,6 +23,8 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
   const monthRanges = useMemo(() => buildMonthRanges(today), [today]);
   const [expandedId,  setExpandedId] = useState(null);
   const [expandAll,   setExpandAll]  = useState(false);
+  const [simDate, setSimDate] = useState(""); // 期限の赤枠表示を確認するための「本日」の仮設定（空なら実際の今日）
+  const effToday = simDate ? parseDate(simDate) : today;
   const [searchInput, setSearchInput] = useState("");
   const [search,      setSearch]     = useState("");
   const cardRefs = useRef({});
@@ -166,6 +168,11 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
 
   return (
     <div>
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+        <label style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", fontWeight:600 }}>期限の赤枠を確認する日：</label>
+        <input type="date" value={simDate} onChange={e => setSimDate(e.target.value)} style={{ ...INP, fontSize:"clamp(12px,1.4vw,14px)" }} />
+        {simDate && <button style={BC} onClick={() => setSimDate("")}>実際の今日に戻す</button>}
+      </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14, flexWrap:"wrap" }}>
         <div>
           <div style={{ fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, color:"#061B44" }}>☑ 講師タスク管理 <span style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:400, color:"#98A2B3" }}>{visible.length}件</span></div>
@@ -205,6 +212,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
           const ch = getChapter(sp.chapterId);
           const tasks = buildSpeakerTasks(sp);
           const checks = sp.speakerChecks || {};
+          const deadlineFlags = getSpeakerDeadlineFlags(sp, effToday);
           const prog = getProgress(sp);
           const allDone = prog.done === prog.total;
           const isExpanded = expandAll || expandedId === sp.id;
@@ -308,10 +316,15 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                     {visibleTasks.map(t => {
                       const meta = getTaskMeta(checks, t.id);
                       const done = isTaskDone(checks, t.id);
+                      // 期限が近い（3日前〜当日）タスクは橙枠、9/30のような「当日のみ」の特別警告は赤枠にする
+                      const deadlineLevel = !done && deadlineFlags[t.id];
+                      const deadlineBorder = deadlineLevel === "escalate" ? `2px solid ${C.danger}`
+                        : deadlineLevel === "warn" ? `2px solid ${C.warningBorder}`
+                        : null;
 
                       if (t.receipt) {
                         return (
-                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
                               <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none", fontWeight:600 }}>{t.label}</span>
                               <div style={{ display:"flex", gap:4 }}>
@@ -338,7 +351,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
 
                       if (t.method) {
                         return (
-                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                          <div key={t.id} style={{ padding:"6px 6px", borderRadius:5, background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
                               <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none", fontWeight:600 }}>{t.label}</span>
                               <div style={{ display:"flex", gap:4 }}>
@@ -364,7 +377,7 @@ export default memo(function SpeakerTasksView({ speakers, today, updateSpeaker, 
                       }
 
                       return (
-                        <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border:`1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
+                        <label key={t.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 6px", borderRadius:5, cursor:"pointer", background: done ? "#F1F8E9" : "#FAFAFA", marginBottom:3, border: deadlineBorder || `1px solid ${done ? "#C5E1A5" : "#EEEEEE"}` }}>
                           <input type="checkbox" checked={done} onChange={() => toggleTask(sp, t.id)} style={{ width:15, height:15, cursor:"pointer", accentColor: TASK_CATEGORY_COLOR[cat] }} />
                           <div style={{ minWidth:0, flex:1 }}>
                             <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color: done ? "#78909C" : "#263238", textDecoration: done ? "line-through" : "none" }}>{t.label}</span>

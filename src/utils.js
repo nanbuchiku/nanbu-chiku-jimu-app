@@ -235,3 +235,33 @@ export function buildSpeakerTasks(sp) {
 
   return tasks;
 }
+
+// 講話月から逆算した期限ルール（例：11月分講師なら 9/20・9/28・9/30・10/5・10/15）。
+// 「講話月の何ヶ月前の何日か」で持つので、月が変わっても自動でずれる。
+// mode: "before3" = 期限の3日前〜当日に警告／"exact" = その日だけ特別警告（責任移行の合図など）
+const DEADLINE_RULES = [
+  { taskIds: ["form_sent", "hotel_rsrv"],              monthOffset: -2, day: 20, mode: "before3" },
+  { taskIds: ["form_recvd"],                           monthOffset: -2, day: 28, mode: "before3" },
+  { taskIds: ["form_recvd"],                           monthOffset: -2, day: 30, mode: "exact", escalate: true },
+  { taskIds: ["photo_received", "material_received"],  monthOffset: -1, day: 5,  mode: "before3" },
+  { taskIds: ["photo_received", "material_received"],  monthOffset: -1, day: 15, mode: "before3" },
+];
+
+// 講師の講話日と（シミュレート可能な）本日を比較し、タスクIDごとに
+// "escalate"（当日のみの特別警告）／"warn"（3日前からの警告）を返す。該当なしはキー自体が無い。
+export function getSpeakerDeadlineFlags(sp, today) {
+  const flags = {};
+  if (!sp.seminarDate) return flags;
+  const seminar = parseDate(sp.seminarDate);
+  DEADLINE_RULES.forEach(rule => {
+    const deadline = new Date(seminar.getFullYear(), seminar.getMonth() + rule.monthOffset, rule.day);
+    const diffDays = Math.round((deadline - today) / 86400000);
+    const hit = rule.mode === "exact" ? diffDays === 0 : (diffDays >= 0 && diffDays <= 3);
+    if (!hit) return;
+    const level = rule.escalate ? "escalate" : "warn";
+    rule.taskIds.forEach(id => {
+      if (flags[id] !== "escalate") flags[id] = level;
+    });
+  });
+  return flags;
+}
