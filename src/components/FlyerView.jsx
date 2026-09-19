@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from '
 import JSZip from 'jszip';
 import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
-import { getSeminarType } from '../utils';
+import { getSeminarType, parseDate } from '../utils';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
 
 export default memo(function FlyerView({ speakers, today, showToast, updateSpeaker }) {
@@ -132,7 +132,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
           const r = ws.addRow({
             chapter: ch.name,
             stype:   getSeminarType(sp.seminarType).label,
-            day:     ch.dayName,
+            day:     sp.seminarDate ? `${"日月火水木金土"[parseDate(sp.seminarDate).getDay()]}曜日` : ch.dayName,
             date:    sp.seminarDate || '',
             name:    sp.speakerName || '',
             kana:    sp.speakerKana || '',
