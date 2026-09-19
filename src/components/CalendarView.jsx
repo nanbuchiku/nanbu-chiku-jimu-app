@@ -59,17 +59,20 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
     return `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日 〜 ${b.getMonth()+1}月${b.getDate()}日`;
   }, [weekDates]);
 
+  // 同じ単会・同じ日に講師が複数人いる場合（ハーフ講話・スピーチリレー等）があるため、
+  // 1件のsp ではなく配列で保持する（以前はMap.setで後勝ちになり、他の講師が消えて見えるバグがあった）
   const speakerByKey = useMemo(() => {
     const map = new Map();
+    const push = (key, sp) => { if (!map.has(key)) map.set(key, []); map.get(key).push(sp); };
     speakers.forEach(sp => {
       if (!sp.seminarDate) return;
-      map.set(`${sp.chapterId}|${sp.seminarDate}`, sp);
+      push(`${sp.chapterId}|${sp.seminarDate}`, sp);
       // kiso speakers also appear on msDate (kiso day + 1)
       if (sp.seminarType === 'kiso') {
         const d = new Date(sp.seminarDate + 'T00:00:00');
         d.setDate(d.getDate() + 1);
         const msStr = toDateStr(d);
-        map.set(`${sp.chapterId}|${msStr}`, { ...sp, _msDay: true });
+        push(`${sp.chapterId}|${msStr}`, { ...sp, _msDay: true });
       }
     });
     return map;
@@ -80,7 +83,9 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
     const map = new Map();
     speakers.forEach(sp => {
       if (sp.seminarType === 'kiso' && sp.seminarDate) {
-        map.set(`${sp.chapterId}|${sp.seminarDate}`, sp);
+        const key = `${sp.chapterId}|${sp.seminarDate}`;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(sp);
       }
     });
     return map;
@@ -139,7 +144,8 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
             const isT = isSameDay(d, today);
             const dow = d.getDay();
             const ch = chapterByDay[dow];
-            const sp = ch ? speakerByKey.get(`${ch.id}|${dStr}`) : null;
+            const spList = ch ? (speakerByKey.get(`${ch.id}|${dStr}`) || []) : [];
+            const sp = spList[0] || null;
             const isSun = dow === 0, isSat = dow === 6;
             const jumpToWeek = () => {
               const todayMon = new Date(today); todayMon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
@@ -170,6 +176,9 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#263238", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{sp.speakerName}</div>
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>「{sp.topic}」</div>
                         <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"1px 4px", borderRadius:8, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9", display:"inline-block", whiteSpace:"nowrap" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
+                        {spList.length > 1 && (
+                          <span title={spList.slice(1).map(s => s.speakerName).join('、')} style={{ fontSize:"clamp(11px,1.3vw,13px)", padding:"1px 4px", borderRadius:8, fontWeight:700, color:"#fff", background:"#78909C", display:"inline-block", whiteSpace:"nowrap", marginLeft:3 }}>+{spList.length - 1}件</span>
+                        )}
                       </>
                     ) : (
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#B0BEC5", whiteSpace:"nowrap" }}>
@@ -243,18 +252,18 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
             {weekDates.map((d, i) => {
               const isChDay = d.getDay() === ch.day;
               const dKey = toDateStr(d);
-              const sp = isChDay ? (speakerByKey.get(`${ch.id}|${dKey}`) || null) : null;
-              const kisoSp = !isChDay ? kisoByChDate.get(`${ch.id}|${dKey}`) : null;
+              const spList = isChDay ? (speakerByKey.get(`${ch.id}|${dKey}`) || []) : [];
+              const kisoList = !isChDay ? (kisoByChDate.get(`${ch.id}|${dKey}`) || []) : [];
               return (
                 <div key={i} style={{ background: isChDay ? ch.light : "#fff", padding:4, minHeight:76, border:`1px solid ${isChDay ? ch.accent : "transparent"}` }}>
-                  {isChDay && (sp ? (
-                    <div style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4 }} onClick={() => onSpeaker(sp)} onMouseEnter={showHover(sp)} onMouseLeave={hideHover}>
+                  {isChDay && (spList.length > 0 ? spList.map((sp, spIdx) => (
+                    <div key={sp.id || spIdx} style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4, marginTop: spIdx > 0 ? 4 : 0, borderTop: spIdx > 0 ? `1px dashed ${ch.accent}` : "none" }} onClick={() => onSpeaker(sp)} onMouseEnter={showHover(sp)} onMouseLeave={hideHover}>
                       {sp._msDay && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#061B44", fontWeight:700, marginBottom:1 }}>MS（基礎講座翌日）</div>}
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color }}>{sp.speakerName}</div>
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginTop:1 }}>「{sp.topic}」</div>
                       <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                     </div>
-                  ) : (() => {
+                  )) : (() => {
                     const addable = canAddFor(ch.id);
                     return (
                     <div style={{ textAlign:"center", paddingTop:10, cursor: addable ? "pointer" : "default" }}
@@ -266,13 +275,13 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                     </div>
                     );
                   })())}
-                  {kisoSp && (
-                    <div style={{ marginTop:4, background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:4, padding:"2px 4px", cursor:"pointer" }}
+                  {kisoList.map((kisoSp, kIdx) => (
+                    <div key={kisoSp.id || kIdx} style={{ marginTop:4, background:"#E8F5E9", border:"1px solid #A5D6A7", borderRadius:4, padding:"2px 4px", cursor:"pointer" }}
                       onClick={() => onSpeaker(kisoSp)} onMouseEnter={showHover(kisoSp)} onMouseLeave={hideHover}>
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:700 }}>基礎講座</div>
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#1B5E20", fontWeight:600 }}>{kisoSp.speakerName}</div>
                     </div>
-                  )}
+                  ))}
                 </div>
               );
             })}
