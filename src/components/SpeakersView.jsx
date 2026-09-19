@@ -287,7 +287,9 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 <div style={{ flexShrink:0, width:"clamp(84px,11vw,116px)", textAlign:"center" }}>
                   <div style={{ fontSize:"clamp(10px,1.4vw,13px)", color:"#98A2B3" }}>{sp.seminarDate || "日付未定"}</div>
                   {sp.seminarDate && <div style={{ fontSize:"clamp(20px,3.4vw,30px)", fontWeight:800, color:"#263238", lineHeight:1.15 }}>{sp.seminarDate.slice(5)}</div>}
-                  <div style={{ fontSize:"clamp(11px,1.6vw,15px)", color:"#667085", marginBottom:6 }}>{ch.dayName}</div>
+                  <div style={{ fontSize:"clamp(11px,1.6vw,15px)", color:"#667085", marginBottom:6 }}>
+                    {sp.seminarDate ? `${"日月火水木金土"[parseDate(sp.seminarDate).getDay()]}曜日` : ch.dayName}
+                  </div>
                   <span style={{ display:"inline-block", fontSize:"clamp(11px,1.6vw,15px)", fontWeight:700, color:"#fff", background:ch.color, padding:"3px 10px", borderRadius:12 }}>{ch.name}</span>
                   <div style={{ marginTop:4 }}>
                     <span style={{ display:"inline-block", fontSize:"clamp(10px,1.4vw,13px)", fontWeight:700, color:"#fff", background:st.color, padding:"2px 8px", borderRadius:10 }}>{st.label}</span>
