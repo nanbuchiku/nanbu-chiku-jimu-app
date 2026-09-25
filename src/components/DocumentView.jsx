@@ -349,7 +349,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           </DocSection>
         );
 
-        const mkLodging = (c, n, showMsPickup = false) => (
+        const mkLodging = (c, n) => (
           <DocSection title={`${n} 宿泊情報`} color={c}>
             {(() => {
               const req  = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
@@ -387,15 +387,6 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   </span>
                 } />
               </>;
-            })()}
-            {showMsPickup && (() => {
-              const msPickup = parsedNotes['MS当日朝お迎え'] || null;
-              return <DocRow label="MS当日朝のお迎え" color={c} value={
-                <span>
-                  <Cb on={msPickup === "要"}  label="要" />
-                  <Cb on={msPickup === "不要"} label="不要" />
-                </span>
-              } />;
             })()}
           </DocSection>
         );
@@ -563,7 +554,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   <DocRow label="内容要約"  value={parsedNotes['MS内容要約'] || parsedNotes['内容要約'] || ""}       color={c2} />
                 </DocSection>
                 {mkTransport(c2, "④", true)}
-                {mkLodging(c2, "⑤", true)}
+                {mkLodging(c2, "⑤")}
                 {mkPhoto(c2, "⑥", true)}
                 {mkRemarks(c2, "⑦")}
                 {mkFooter(c2)}
