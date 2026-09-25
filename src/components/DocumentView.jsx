@@ -473,7 +473,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         if (hasNextDayMs) {
           const c1 = st.color;
           const c2 = stMs.color;
-          const doc1Label = isKiso ? '① 倫理経営基礎講座' : '① 経営者の集い';
+          const doc1Label = isKiso ? '① 倫理経営基礎講座' : `① ${st.label}`;
           return (
             <>
               {/* ─── タブ切替：前夜分／翌朝MS分を別々に表示する ─── */}
@@ -514,12 +514,12 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   </>
                 ) : (
                   <>
-                    <DocSection title="② 開催情報（経営者の集い）" color={c1}>
+                    <DocSection title={`② 開催情報（${st.label}）`} color={c1}>
                       <DocRow label="講話日"     value={formatDate(sp.seminarDate)}                    color={c1} />
                       <DocRow label="開催時間"   value={sp.eventTime || ""}                             color={c1} />
                       <DocRow label="開催場所"   value={sp.venue || ""}                                 color={c1} />
                     </DocSection>
-                    <DocSection title="③ 経営者の集い 内容" color={c1}>
+                    <DocSection title={`③ ${st.label} 内容`} color={c1}>
                       <DocRow label="タイトル"  value={sp.topic ? `「${sp.topic}」` : ""}  color={c1} />
                       <DocRow label="内容要約"  value={parsedNotes['内容要約'] || ""}       color={c1} />
                     </DocSection>

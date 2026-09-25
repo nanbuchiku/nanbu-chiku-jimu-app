@@ -469,7 +469,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
               <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="会場名を入力" value={form.venue || ""} onChange={e => set("venue", e.target.value)} />
             )}
           </div>
-          {["tsudoi","evening","other"].includes(form.seminarType) && (
+          {["tsudoi","koen","evening","other"].includes(form.seminarType) && (
             <div style={{ gridColumn:"1/-1" }}>
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>開催時間</div>
               <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="例: PM7:00〜9:00" value={form.eventTime || ""} onChange={e => set("eventTime", e.target.value)} />

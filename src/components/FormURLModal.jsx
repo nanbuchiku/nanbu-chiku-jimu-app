@@ -167,7 +167,6 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
 
   const seminarType = isNew ? form.seminarType : sp.seminarType;
   const isKiso = seminarType === 'kiso';
-  const isTsudoi = seminarType === 'tsudoi';
   const hasNextDayMs = getHasNextDayMs(seminarType);
   const isMs = !seminarType || seminarType === 'ms';
   // 種別ラベル（ms=モーニングセミナー / kiso=倫理経営基礎講座 / それ以外＝自主企画の自由入力名）
@@ -185,7 +184,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   // 開催日の曜日はformatDate側で正しく出るので、ここでは時間だけ添える。
   const scheduleNote = isKiso
     ? (chSettings.kisoTime || ch?.time || '')
-    : isTsudoi
+    : hasNextDayMs
       ? ((isNew ? form.eventTime : sp.eventTime) || ch?.time || '')
       : `毎週${ch?.dayName || ''}　${ch?.time || ''}`;
 

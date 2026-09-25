@@ -87,8 +87,8 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
 【翌日 モーニングセミナー 会場のご案内】
 　開催日　：${formatDate(kisoMsDateStr)}
 　会　場　：${msVenue}
-　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}` : isTsudoiType ? `
-【経営者の集い 会場のご案内】
+　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}` : hasNextDayMs ? `
+【${eventLabel} 会場のご案内】
 　開催日　：${formatDate(sp.seminarDate)}${sp.eventTime ? `（${sp.eventTime}）` : ''}
 　会　場　：${sp.venue || ''}
 

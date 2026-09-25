@@ -40,7 +40,7 @@ export const SEMINAR_TYPES = [
   { id:"kiso",    label:"倫理経営基礎講座",   short:"基礎", color:"#2E7D32", venueFixed:false, hasLodging:true,        nextDayMs:true  },
   { id:"tsudoi",  label:"経営者の集い",       short:"集い", color:"#4E342E", venueFixed:false, hasLodging:true,        nextDayMs:true  },
   { id:"evening", label:"イブニングセミナー", short:"イブ", color:"#37474F", venueFixed:false, hasLodging:"optional",  nextDayMs:false },
-  { id:"koen",    label:"倫理経営講演会",     short:"倫経", color:"#7B0000", venueFixed:false, hasLodging:true,        nextDayMs:false },
+  { id:"koen",    label:"倫理経営講演会",     short:"倫経", color:"#7B0000", venueFixed:false, hasLodging:true,        nextDayMs:true  },
   { id:"other",   label:"自主企画",           short:"自主", color:"#78909C", venueFixed:false, hasLodging:"optional",  nextDayMs:false },
 ];
 

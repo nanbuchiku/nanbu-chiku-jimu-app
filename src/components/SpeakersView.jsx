@@ -314,7 +314,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
               {sp._virtualType === 'ms' && (
                 <div style={{ fontSize:"clamp(10px,1.3vw,12px)", color:"#98A2B3", marginBottom:6 }}>
-                  ↳ {sp.seminarType === 'kiso' ? '基礎講座' : '経営者の集い'}（{sp.seminarDate}）と同時登録
+                  ↳ {sp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(sp.seminarType).label}（{sp.seminarDate}）と同時登録
                 </div>
               )}
               <div style={{ display:"flex", gap:"clamp(10px,2vw,18px)", alignItems:"center", flexWrap:"wrap" }}>

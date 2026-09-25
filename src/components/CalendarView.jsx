@@ -1,6 +1,6 @@
 import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isPlaceholderSpeaker, hasNextDayMs } from '../utils';
+import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isPlaceholderSpeaker, hasNextDayMs, getSeminarType } from '../utils';
 import { BP, BC } from '../styles';
 
 const DAY_NAMES = ["日","月","火","水","木","金","土"];
@@ -281,7 +281,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C", textAlign:"center", padding:"6px 0" }}>🚫 休会</div>
                       ) : (
                       <>
-                      {sp._msDay && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#061B44", fontWeight:700, marginBottom:1 }}>MS（{sp.seminarType === 'tsudoi' ? '経営者の集い' : '基礎講座'}翌日）</div>}
+                      {sp._msDay && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#061B44", fontWeight:700, marginBottom:1 }}>MS（{sp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(sp.seminarType).label}翌日）</div>}
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color }}>{sp.speakerName}</div>
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginTop:1 }}>「{sp.topic}」</div>
                       <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
@@ -309,7 +309,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:700 }}>🚫 休会</div>
                       ) : (
                         <>
-                          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:700 }}>{kisoSp.seminarType === 'tsudoi' ? '経営者の集い' : '基礎講座'}</div>
+                          <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:700 }}>{kisoSp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(kisoSp.seminarType).label}</div>
                           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#1B5E20", fontWeight:600 }}>{kisoSp.speakerName}</div>
                         </>
                       )}

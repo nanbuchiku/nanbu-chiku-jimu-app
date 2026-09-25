@@ -538,8 +538,8 @@ const urlEmail   = urlParams.get('email') || '';
 const urlLodging = urlParams.get('lodging') || '';
 // 領収証作成の要否も事務局がフォーム作成時に決める。「否」なら領収証欄自体を非表示・入力不要にする。
 const urlReceipt = urlParams.get('receipt') || '';
-// 基礎講座・経営者の集いは前夜開催で、翌朝のモーニングセミナー分の入力欄も追加で出す
-const hasNextDayMs = urlType === 'kiso' || urlType === 'tsudoi';
+// 基礎講座・経営者の集い・倫理経営講演会は前夜開催で、翌朝のモーニングセミナー分の入力欄も追加で出す
+const hasNextDayMs = urlType === 'kiso' || urlType === 'tsudoi' || urlType === 'koen';
 
 const SEMINAR_LABELS = { ms:'モーニングセミナー', kiso:'倫理経営基礎講座', koen:'倫理経営講演会', tsudoi:'経営者の集い', evening:'イブニングセミナー', other:'自主企画' };
 
@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const d2 = new Date(urlDate + 'T00:00:00');
       d2.setDate(d2.getDate() + 1);
       const msDateStr = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
-      const nightLabel = urlType === 'kiso' ? '【基礎講座】' : '【経営者の集い】';
+      const nightLabel = `【${SEMINAR_LABELS[urlType] || urlType}】`;
       set('ev-date', `${fmt(urlDate)}　${nightLabel}\n${fmt(msDateStr)}　【モーニングセミナー】`);
     } else {
       set('ev-date', urlDate ? fmt(urlDate) : '');
