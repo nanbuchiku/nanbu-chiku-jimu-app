@@ -168,7 +168,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
               setViewMode("week");
             };
             return (
-              <div key={dStr} onClick={jumpToWeek} style={{ background: isT ? "#EDE7F6" : "#fff", height:112, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative", cursor:"pointer", overflow:"hidden", boxSizing:"border-box" }}
+              <div key={dStr} onClick={jumpToWeek} style={{ background: isT ? "#EDE7F6" : "#fff", minHeight:112, padding:"4px 5px", borderTop: isT ? "2px solid #7E57C2" : "none", position:"relative", cursor:"pointer", boxSizing:"border-box" }}
                 title="クリックで週表示へ">
                 <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: isT ? "#7E57C2" : isSun ? "#E65100" : isSat ? "#1565C0" : "#37474F", marginBottom:3, whiteSpace:"nowrap" }}>
                   {d.getDate()}
@@ -179,7 +179,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                   const isKyukai = sp && isPlaceholderSpeaker(sp);
                   return (
                   <div
-                    style={{ background: sp ? (isKyukai ? "#ECEFF1" : ch.light) : "#FAFAFA", border:`1px solid ${sp ? (isKyukai ? "#CFD8DC" : ch.accent) : "#F1F5F9"}`, borderRadius:5, padding:"3px 5px", cursor: (sp || addable) ? "pointer" : "default", transition:"box-shadow .1s", overflow:"hidden" }}
+                    style={{ background: sp ? (isKyukai ? "#ECEFF1" : ch.light) : "#FAFAFA", border:`1px solid ${sp ? (isKyukai ? "#CFD8DC" : ch.accent) : "#F1F5F9"}`, borderRadius:5, padding:"3px 5px", cursor: (sp || addable) ? "pointer" : "default", transition:"box-shadow .1s" }}
                     onClick={e => { e.stopPropagation(); if (sp) onSpeaker(sp); else if (addable) onAddForDate(dStr, ch.id); }}
                     onMouseEnter={sp ? showHover(sp) : undefined}
                     onMouseLeave={sp ? hideHover : undefined}
