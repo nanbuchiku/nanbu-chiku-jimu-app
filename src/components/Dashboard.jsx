@@ -14,7 +14,7 @@ const HOTEL_ITEMS = [
   { id:"hotel_paid",    label:"支払い完了",               icon:"💴" },
 ];
 
-export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings, scopeChapter, currentUserName }) {
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings, scopeChapter, currentUserName, showTutorial }) {
   // 単会担当者は自分の単会のみ新規登録できる。事務局(scopeChapterなし)は全単会OK
   const canAddFor = chId => !!onAddForDate && (!scopeChapter || chId === scopeChapter);
   const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
@@ -293,6 +293,25 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           <div style={{ marginLeft:"auto", fontSize:"clamp(18px,2.5vw,24px)", color:"#7E57C2" }}>›</div>
         </div>
       </div>
+
+      {/* チュートリアル（左メニューのトグルで表示/非表示） */}
+      {showTutorial && (
+        <div style={{ marginBottom:12, background:"#FFF8E1", border:"2px solid #FFCA28", borderRadius:10, padding:"14px 16px" }}>
+          <div style={{ fontSize:FS_MD, fontWeight:800, color:"#8D6E00", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
+            📘 各単会の役員会議で2ヶ月先の講師が決まったら
+          </div>
+          <div style={{ fontSize:FS_SM, color:"#8D6E00", marginBottom:10 }}>まずこれをやろう。</div>
+          <div style={{ background:"#fff", border:"1px solid #FFE082", borderRadius:8, padding:"10px 12px" }}>
+            <div style={{ fontSize:FS_MD, fontWeight:700, color:"#4527A0", marginBottom:6 }}>📝 講師依頼フォームを作成</div>
+            <div style={{ fontSize:FS_SM, color:"#667085", fontWeight:700, marginBottom:4 }}>確認しよう</div>
+            <ol style={{ margin:0, paddingLeft:20, fontSize:FS_SM, color:"#37474F", lineHeight:1.9 }}>
+              <li>正確なメールアドレスはわかりますか？</li>
+              <li>ホテル予約は必要ですか？</li>
+              <li>セミナー会場の変更はありませんか？</li>
+            </ol>
+          </div>
+        </div>
+      )}
 
       {/* ホテル予約管理 - 全幅 */}
       <div style={{ marginBottom:12, ...CARD, padding:"10px 13px", borderLeft:"4px solid #00838F" }}>

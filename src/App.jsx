@@ -215,6 +215,14 @@ export default function App() {
   const [confirm,        setConfirm]       = useState(null);
   const [restoreModal,   setRestoreModal]  = useState(null); // バックアップ復元プレビュー用
   const [showHelp,       setShowHelp]      = useState(false);
+  const [showTutorial,   setShowTutorial]  = useState(() => { try { return localStorage.getItem('tutorial_visible') === '1'; } catch { return false; } });
+  const toggleTutorial = useCallback(() => {
+    setShowTutorial(v => {
+      const next = !v;
+      try { localStorage.setItem('tutorial_visible', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }, []);
   const [isOnline,       setIsOnline]      = useState(() => navigator.onLine);
   const [refreshing,     setRefreshing]    = useState(false);
   const [chapterSettings,setChSettings]   = useState(() => {
@@ -1090,6 +1098,9 @@ ${ch.name}単会事務局`;
               <div style={{ fontWeight:700, color:"rgba(255,255,255,.9)" }}>{isAdmin ? "🏛 合同事務局" : `📍 ${CHAPTERS.find(c => c.id === userRole?.chapterId)?.name || ""}単会`}</div>
               <div style={{ fontSize:11, wordBreak:"break-all" }}>{authUser?.email}</div>
             </div>
+            <div style={{ display:"flex", gap:4, marginBottom:4 }}>
+              <button onClick={toggleTutorial} title="チュートリアル表示 / 非表示" style={{ flex:1, background: showTutorial ? "rgba(255,213,79,.35)" : "rgba(255,255,255,.1)", border: showTutorial ? "1px solid rgba(255,213,79,.7)" : "1px solid rgba(255,255,255,.2)", borderRadius:6, color: showTutorial ? "#fff" : "rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(14px,2vw,17px)", fontWeight:700, cursor:"pointer" }}>📘 チュートリアル{showTutorial ? "：表示中" : ""}</button>
+            </div>
             <div style={{ display:"flex", gap:4 }}>
               <button onClick={() => setShowHelp(h => !h)} title="ショートカット" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>?</button>
               <button onClick={exportBackup} title="バックアップを自分のPCに保存" style={{ flex:1, background:"rgba(220,80,80,.25)", border:"1px solid rgba(255,150,150,.5)", borderRadius:6, color:"#fff", padding:"8px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer" }}>⬇</button>
@@ -1165,7 +1176,7 @@ ${ch.name}単会事務局`;
 
         <main style={{ flex:1, padding:"16px 20px", maxWidth:1200, margin:"0 auto", width:"100%", boxSizing:"border-box", paddingBottom: isMobile ? 100 : 16 }}>
           <ErrorBoundary key={tab}>
-            {tab === "dashboard" && <Dashboard speakers={scopedSpeakers} tasks={scopedTasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} scopeChapter={scopeChapter} currentUserName={currentUserName} />}
+            {tab === "dashboard" && <Dashboard speakers={scopedSpeakers} tasks={scopedTasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} scopeChapter={scopeChapter} currentUserName={currentUserName} showTutorial={showTutorial} />}
             {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} scopeChapter={scopeChapter} />}
             {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} onTasks={onOpenSpeakerTasks} />}
             {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} showToast={showToast} showConfirm={showConfirm} />}
@@ -1274,6 +1285,9 @@ ${ch.name}単会事務局`;
               </button>
             </nav>
             <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,.1)" }}>
+              <div style={{ display:"flex", gap:4, marginBottom:4 }}>
+                <button onClick={toggleTutorial} title="チュートリアル表示 / 非表示" style={{ flex:1, background: showTutorial ? "rgba(255,213,79,.35)" : "rgba(255,255,255,.1)", border: showTutorial ? "1px solid rgba(255,213,79,.7)" : "1px solid rgba(255,255,255,.2)", borderRadius:6, color: showTutorial ? "#fff" : "rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(14px,2vw,17px)", fontWeight:700, cursor:"pointer" }}>📘 チュートリアル{showTutorial ? "：表示中" : ""}</button>
+              </div>
               <div style={{ display:"flex", gap:4 }}>
                 <button onClick={() => loadData(true)} title="更新" style={{ flex:1, background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", borderRadius:6, color:"rgba(255,255,255,.75)", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", cursor:"pointer" }}>⟳</button>
                 <button onClick={exportBackup} title="バックアップを自分のPCに保存" style={{ flex:1, background:"rgba(220,80,80,.25)", border:"1px solid rgba(255,150,150,.5)", borderRadius:6, color:"#fff", padding:"9px 4px", fontSize:"clamp(16px,2.4vw,20px)", fontWeight:700, cursor:"pointer" }}>⬇</button>
