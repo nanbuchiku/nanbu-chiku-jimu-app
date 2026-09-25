@@ -176,17 +176,20 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   }, [filtered, sortCol, sortDir]);
 
   const exportCSV = useCallback(() => {
-    const headers = ["開催日","単会","講師名","ふりがな","所属法人会名","法人会役職","勤務先","勤務先役職名","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","資料ファイル名","お酒","栞・条","講話後メモ","スタッフメモ"];
-    const rows = filtered.map(sp => {
+    const headers = ["開催日","単会","セミナー種別","講師名","ふりがな","所属法人会名","法人会役職","勤務先","勤務先役職名","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","資料ファイル名","お酒","栞・条","講話後メモ","スタッフメモ"];
+    // 基礎講座・経営者の集いは、講師管理の表示と同じく翌朝MS分も1行として分けて出力する（同一レコードIDのまま2行になる）
+    const rows = displayList.map(sp => {
       const ch = getChapter(sp.chapterId);
-      return [sp.seminarDate, ch.name, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.role, sp.company, sp.companyRole, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.materialName || "", sp.drinksAlcohol || "", sp.shioriArticle || "", sp.postNotes || "", extractStaffNotes(sp.notes)];
+      const displayDate = sp._virtualDate || sp.seminarDate;
+      const displayType = sp._virtualType || sp.seminarType;
+      return [displayDate, ch.name, getSeminarType(displayType || "ms").label, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.role, sp.company, sp.companyRole, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.materialName || "", sp.drinksAlcohol || "", sp.shioriArticle || "", sp.postNotes || "", extractStaffNotes(sp.notes)];
     });
     const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });
     a.click();
     URL.revokeObjectURL(a.href);
-    showToast(`CSVをエクスポートしました 📥（${filtered.length}件）`);
-  }, [filtered, showToast]);
+    showToast(`CSVをエクスポートしました 📥（${rows.length}件）`);
+  }, [displayList, showToast]);
 
   const todayStr = useMemo(() => toDateStr(today), [today]);
 
