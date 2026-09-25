@@ -34,7 +34,7 @@ function getMailLabel(fromEmail) {
 const DRAFT_KEY = 'formurl_draft_v1';
 const EMPTY_FORM = {
   chapterId: 'kawaguchi', speakerName: '', speakerUnit: '',
-  seminarDate: '', seminarType: 'ms', role: '', email: '', lodging: '不要',
+  seminarDate: '', seminarType: 'ms', role: '', email: '', lodging: '不要', receiptNeeded: '要',
 };
 function loadDraft() {
   try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY)); return d && typeof d === 'object' ? d : null; }
@@ -57,6 +57,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     role:        draft?.role        ?? spProp?.role        ?? '',
     email:       draft?.email       ?? spProp?.email       ?? '',
     lodging:     draft?.lodging     ?? toBinaryLodging(spProp?.lodging),
+    receiptNeeded: draft?.receiptNeeded ?? (spProp?.receiptNeeded || '要'),
   });
   const [restored, setRestored] = useState(!!draft);
   const [generated, setGenerated] = useState(!isNew);
@@ -90,7 +91,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
       const fields = {
         chapterId: form.chapterId, speakerName: form.speakerName, speakerUnit: form.speakerUnit,
         seminarDate: form.seminarDate, seminarType: form.seminarType, role: form.role, email: form.email,
-        lodging: form.lodging,
+        lodging: form.lodging, receiptNeeded: form.receiptNeeded,
       };
       if (createdId) {
         await updateSpeaker?.(createdId, fields);
@@ -127,6 +128,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
       ethics: (isNew ? form.role        : sp.role)         || '',
       email:  (isNew ? form.email       : sp.email)        || '',
       lodging: isNew ? form.lodging : toBinaryLodging(sp.lodging),
+      receipt: isNew ? form.receiptNeeded : (sp.receiptNeeded || '要'),
     });
     return `${BASE}?${params.toString()}`;
   }, [isNew, form, sp, ch]);
@@ -306,6 +308,13 @@ ${sig}`;
                 <select style={INP2} value={form.lodging} onChange={e => setForm(f => ({ ...f, lodging: e.target.value }))}>
                   <option value="不要">不要</option>
                   <option value="要">要（ホテルを手配する）</option>
+                </select>
+              </div>
+              <div style={{ gridColumn:"1/-1" }}>
+                <label style={LB}>領収証作成</label>
+                <select style={INP2} value={form.receiptNeeded} onChange={e => setForm(f => ({ ...f, receiptNeeded: e.target.value }))}>
+                  <option value="要">要</option>
+                  <option value="否">否</option>
                 </select>
               </div>
             </div>

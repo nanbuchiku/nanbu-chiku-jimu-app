@@ -17,6 +17,7 @@ export const fromDB = r => ({
   speakerChecks: r.speaker_checks || {}, calendarAdded: r.calendar_added,
   drinksAlcohol: r.drinks_alcohol, shioriArticle: r.shiori_article, postNotes: r.post_notes,
   formRequestedAt: r.form_requested_at, kisoNumber: r.kiso_number,
+  receiptNeeded: r.receipt_needed,
 });
 
 export const toDB = o => ({
@@ -30,6 +31,7 @@ export const toDB = o => ({
   speaker_checks: o.speakerChecks || {}, calendar_added: o.calendarAdded,
   drinks_alcohol: o.drinksAlcohol, shiori_article: o.shioriArticle, post_notes: o.postNotes,
   form_requested_at: o.formRequestedAt || null, kiso_number: o.kisoNumber || null,
+  receipt_needed: o.receiptNeeded || null,
 });
 
 export const taskFromDB = r => ({

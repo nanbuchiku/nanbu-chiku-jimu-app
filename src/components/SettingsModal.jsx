@@ -2,17 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { CHAPTERS, KISO_CHAPTER_TITLES } from '../constants';
 import { OV, MH, BP, BC, INP } from '../styles';
 
+const DAY_NAMES = ["日","月","火","水","木","金","土"];
+
 const DEFAULTS = ch => ({
   name:            ch.name      || '',
   msVenue:         ch.venue     || '',
   msAddress:       ch.address   || '',
   msStation:       '',
   msMapUrl:        ch.mapUrl    || '',
+  msDayOfWeek:     ch.dayName   || '',
+  msTime:          ch.time      || '',
   msParking:       '',
   msVenueTel:      ch.venueTel  || '',
   kisoVenue:       '',
   kisoAddress:     '',
   kisoMapUrl:      '',
+  kisoDayOfWeek:   '',
+  kisoTime:        '',
   kisoTextChapter: '',
   hotelName:       '',
   hotelTel:        '',
@@ -117,6 +123,15 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           <Row label="MS会場地図URL">
             <Inp value={form.msMapUrl} onChange={v => set('msMapUrl', v)} placeholder={activeCh.mapUrl} />
           </Row>
+          <Row label="MS開催曜日">
+            <select value={form.msDayOfWeek || ''} onChange={e => set('msDayOfWeek', e.target.value)} style={{ ...INP, width:'100%' }}>
+              <option value="">選択してください</option>
+              {DAY_NAMES.map(d => <option key={d} value={d}>{d}曜日</option>)}
+            </select>
+          </Row>
+          <Row label="MS開催時間">
+            <Inp value={form.msTime} onChange={v => set('msTime', v)} placeholder="例: AM6:30〜7:30" />
+          </Row>
           <Row label="駐車場情報">
             <Inp value={form.msParking} onChange={v => set('msParking', v)} placeholder="例: 無料駐車場あり（10台）" />
           </Row>
@@ -133,6 +148,15 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           </Row>
           <Row label="基礎講座会場地図URL">
             <Inp value={form.kisoMapUrl} onChange={v => set('kisoMapUrl', v)} placeholder="https://maps.app.goo.gl/..." />
+          </Row>
+          <Row label="基礎講座開催曜日">
+            <select value={form.kisoDayOfWeek || ''} onChange={e => set('kisoDayOfWeek', e.target.value)} style={{ ...INP, width:'100%' }}>
+              <option value="">選択してください</option>
+              {DAY_NAMES.map(d => <option key={d} value={d}>{d}曜日</option>)}
+            </select>
+          </Row>
+          <Row label="基礎講座開催時間">
+            <Inp value={form.kisoTime} onChange={v => set('kisoTime', v)} placeholder="例: PM7:00〜9:00" />
           </Row>
           <div style={{ background:"#F1F5F9", border:"1px solid #D9E1EE", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
             <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#667085", marginBottom:6 }}>
