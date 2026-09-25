@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime, hasNextDayMs } from '../utils';
 
 const METHOD_LABELS = { mail: "メール", line: "LINE", fax: "ファックス" };
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
@@ -155,7 +155,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   const displayList = useMemo(() => {
     const expanded = [];
     filtered.forEach(sp => {
-      if (sp.seminarType === "kiso" || sp.seminarType === "tsudoi") {
+      if (hasNextDayMs(sp.seminarType)) {
         expanded.push({ ...sp, _virtualKey: sp.id });
         if (sp.seminarDate) {
           const d = new Date(sp.seminarDate + 'T00:00:00');

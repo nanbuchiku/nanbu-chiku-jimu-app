@@ -8,6 +8,10 @@ export const getSeminarType = id => {
   return SEMINAR_TYPES.find(t => t.id === id)
     || { id, label: id, short: id.slice(0, 2), color: "#78909C", venueFixed: false, hasLodging: "optional" };
 };
+// 「前夜開催で、翌朝そのままモーニングセミナーとしても登録される」種別かどうか。
+// カレンダー・メール文・確認書など、日付/曜日/翌日MSの有無を扱う箇所は必ずこれを使う。
+// 新しい前夜開催タイプを増やす場合は SEMINAR_TYPES 側に nextDayMs:true を足すだけでよい。
+export const hasNextDayMs = seminarType => !!getSeminarType(seminarType).nextDayMs;
 export const realToday = () => new Date();
 export const toDateStr = d => {
   const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : d;

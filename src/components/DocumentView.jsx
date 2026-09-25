@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { JIMU, KISO_CHAPTER_TITLES } from '../constants';
-import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr, parseDate } from '../utils';
+import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr, parseDate, hasNextDayMs as getHasNextDayMs } from '../utils';
 
 const weekdayOf = dateStr => dateStr ? `${"日月火水木金土"[parseDate(dateStr).getDay()]}曜日` : "";
 import { BP, BC, SEL, OV } from '../styles';
@@ -246,8 +246,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
       {sp && ch ? (() => {
         const isKiso = sp.seminarType === "kiso";
         const isTsudoi = sp.seminarType === "tsudoi";
-        // 基礎講座・経営者の集いは前夜開催で、翌朝のモーニングセミナー分の確認書も同時に作成する
-        const hasNextDayMs = isKiso || isTsudoi;
+        // 前夜開催タイプ（基礎講座・経営者の集い）は、翌朝のモーニングセミナー分の確認書も同時に作成する
+        const hasNextDayMs = getHasNextDayMs(sp.seminarType);
         const st    = getSeminarType(sp.seminarType || "ms");
         const stMs  = getSeminarType("ms");
         const stKiso = getSeminarType("kiso");

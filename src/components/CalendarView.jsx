@@ -1,6 +1,6 @@
 import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isPlaceholderSpeaker } from '../utils';
+import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isPlaceholderSpeaker, hasNextDayMs } from '../utils';
 import { BP, BC } from '../styles';
 
 const DAY_NAMES = ["日","月","火","水","木","金","土"];
@@ -81,8 +81,8 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
     speakers.forEach(sp => {
       if (!sp.seminarDate) return;
       push(`${sp.chapterId}|${sp.seminarDate}`, sp);
-      // kiso・tsudoiは前夜開催で、翌朝MS分としても同じ講師が登場する（kiso/tsudoi day + 1）
-      if (sp.seminarType === 'kiso' || sp.seminarType === 'tsudoi') {
+      // 前夜開催タイプ（kiso/tsudoi）は、翌朝MS分としても同じ講師が登場する
+      if (hasNextDayMs(sp.seminarType)) {
         const d = new Date(sp.seminarDate + 'T00:00:00');
         d.setDate(d.getDate() + 1);
         const msStr = toDateStr(d);
@@ -96,7 +96,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
   const kisoByChDate = useMemo(() => {
     const map = new Map();
     speakers.forEach(sp => {
-      if ((sp.seminarType === 'kiso' || sp.seminarType === 'tsudoi') && sp.seminarDate) {
+      if (hasNextDayMs(sp.seminarType) && sp.seminarDate) {
         const key = `${sp.chapterId}|${sp.seminarDate}`;
         if (!map.has(key)) map.set(key, []);
         map.get(key).push(sp);

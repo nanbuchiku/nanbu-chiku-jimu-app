@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS, SEMINAR_TYPES } from '../constants';
-import { getChapter, formatDate, getSeminarType } from '../utils';
+import { getChapter, formatDate, getSeminarType, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 import { printFaxForm } from '../faxPrint';
 
@@ -168,7 +168,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   const seminarType = isNew ? form.seminarType : sp.seminarType;
   const isKiso = seminarType === 'kiso';
   const isTsudoi = seminarType === 'tsudoi';
-  const hasNextDayMs = isKiso || isTsudoi;
+  const hasNextDayMs = getHasNextDayMs(seminarType);
   const isMs = !seminarType || seminarType === 'ms';
   // 種別ラベル（ms=モーニングセミナー / kiso=倫理経営基礎講座 / それ以外＝自主企画の自由入力名）
   const eventLabel = isKiso ? '倫理経営基礎講座' : isMs ? 'モーニングセミナー' : getSeminarType(seminarType).label;

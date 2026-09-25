@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
-import { getChapter, getSeminarType, formatDate } from '../utils';
+import { getChapter, getSeminarType, formatDate, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 
 // 単会自身のメールアドレスを差出人として送信するGASウェブアプリ（未設定ならこの機能は表示しない）
@@ -54,14 +54,19 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
   }, [sp.notes]);
 
   const isKiso = sp.seminarType === 'kiso';
-  const needsLodging = sp.lodging && sp.lodging !== '不要' && sp.lodging !== 'なし';
+  const isTsudoiType = sp.seminarType === 'tsudoi';
+  // 前夜開催タイプ（基礎講座・経営者の集い）かどうかは一次情報(SEMINAR_TYPES.nextDayMs)を必ず参照する。
+  // ここをisKisoだけで判定すると、経営者の集いの翌日MS情報が抜け落ちたり、
+  // 単会の定例曜日（毎週◯曜日）が前夜の実際の曜日と食い違って表示される不具合になる。
+  const hasNextDayMs = getHasNextDayMs(sp.seminarType);
   const kisoMsDateStr = useMemo(() => {
-    if (!isKiso || !sp.seminarDate) return '';
+    if (!hasNextDayMs || !sp.seminarDate) return '';
     const [y, m, d] = sp.seminarDate.split('-').map(Number);
     const dt = new Date(y, m - 1, d + 1);
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-  }, [isKiso, sp.seminarDate]);
-  const eventLabel = isKiso ? '倫理経営基礎講座' : (!sp.seminarType || sp.seminarType === 'ms') ? 'モーニングセミナー' : getSeminarType(sp.seminarType).label;
+  }, [hasNextDayMs, sp.seminarDate]);
+  const needsLodging = sp.lodging && sp.lodging !== '不要' && sp.lodging !== 'なし';
+  const eventLabel = isKiso ? '倫理経営基礎講座' : isTsudoiType ? '経営者の集い' : (!sp.seminarType || sp.seminarType === 'ms') ? 'モーニングセミナー' : getSeminarType(sp.seminarType).label;
 
   const TEMPLATES = useMemo(() => ({
     confirm_doc: {
@@ -82,9 +87,17 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
 【翌日 モーニングセミナー 会場のご案内】
 　開催日　：${formatDate(kisoMsDateStr)}
 　会　場　：${msVenue}
+　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}` : isTsudoiType ? `
+【経営者の集い 会場のご案内】
+　開催日　：${formatDate(sp.seminarDate)}${sp.eventTime ? `（${sp.eventTime}）` : ''}
+　会　場　：${sp.venue || ''}
+
+【翌日 モーニングセミナー 会場のご案内】
+　開催日　：${formatDate(kisoMsDateStr)}
+　会　場　：${msVenue}
 　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}` : `
 【会場のご案内】
-　開催日　：${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
+　開催日　：${formatDate(sp.seminarDate)}${(!sp.seminarType || sp.seminarType === 'ms') ? `（毎週${ch.dayName}　${ch.time}）` : (sp.eventTime ? `（${sp.eventTime}）` : '')}
 　会　場　：${msVenue}
 　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}`;
 
@@ -232,7 +245,7 @@ ${sig}`,
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, needsLodging, kisoMsDateStr, eventLabel]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;

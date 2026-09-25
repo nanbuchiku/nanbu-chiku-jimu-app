@@ -28,13 +28,20 @@ export const STATUS = {
   kyukai:    { label:"休会",       color:"#78909C", bg:"#ECEFF1" },
 };
 
+// nextDayMs: true の種別は「前夜開催で、翌朝そのままモーニングセミナーとしても
+// 登録される」タイプ（基礎講座・経営者の集い）。この場合、開催日は単会の定例曜日
+// （dayName）の"前日"になるため、単会の定例曜日をそのまま「毎週◯曜日」と表示すると
+// 実際の開催日の曜日と食い違って見える。カレンダー・メール文・確認書など、日付や
+// 曜日、翌日MSの有無を扱う箇所は、この一次情報（SEMINAR_TYPESのnextDayMsフラグ）
+// を必ず参照すること。ここに新しい「前夜開催タイプ」を追加する場合も、他の場所を
+// 個別に直す必要はなく、nextDayMs:true を付けるだけでよい。
 export const SEMINAR_TYPES = [
-  { id:"ms",      label:"モーニングセミナー", short:"MS",   color:"#061B44", venueFixed:true,  hasLodging:true  },
-  { id:"kiso",    label:"倫理経営基礎講座",   short:"基礎", color:"#2E7D32", venueFixed:false, hasLodging:true  },
-  { id:"tsudoi",  label:"経営者の集い",       short:"集い", color:"#4E342E", venueFixed:false, hasLodging:true  },
-  { id:"evening", label:"イブニングセミナー", short:"イブ", color:"#37474F", venueFixed:false, hasLodging:"optional" },
-  { id:"koen",    label:"倫理経営講演会",     short:"倫経", color:"#7B0000", venueFixed:false, hasLodging:true  },
-  { id:"other",   label:"自主企画",           short:"自主", color:"#78909C", venueFixed:false, hasLodging:"optional" },
+  { id:"ms",      label:"モーニングセミナー", short:"MS",   color:"#061B44", venueFixed:true,  hasLodging:true,        nextDayMs:false },
+  { id:"kiso",    label:"倫理経営基礎講座",   short:"基礎", color:"#2E7D32", venueFixed:false, hasLodging:true,        nextDayMs:true  },
+  { id:"tsudoi",  label:"経営者の集い",       short:"集い", color:"#4E342E", venueFixed:false, hasLodging:true,        nextDayMs:true  },
+  { id:"evening", label:"イブニングセミナー", short:"イブ", color:"#37474F", venueFixed:false, hasLodging:"optional",  nextDayMs:false },
+  { id:"koen",    label:"倫理経営講演会",     short:"倫経", color:"#7B0000", venueFixed:false, hasLodging:true,        nextDayMs:false },
+  { id:"other",   label:"自主企画",           short:"自主", color:"#78909C", venueFixed:false, hasLodging:"optional",  nextDayMs:false },
 ];
 
 export const DISTRICT_ID = '11111111-1111-1111-1111-111111111111';
