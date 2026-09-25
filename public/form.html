@@ -468,6 +468,15 @@ const urlLodging = urlParams.get('lodging') || '';
 
 const SEMINAR_LABELS = { ms:'モーニングセミナー', kiso:'倫理経営基礎講座', koen:'倫理経営講演会', tsudoi:'経営者の集い', evening:'イブニングセミナー', other:'自主企画' };
 
+// 倫理経営基礎講座テキストの目次（5単会共通・第1〜25講で循環。src/constants.js の KISO_CHAPTER_TITLES と同一内容）
+const KISO_CHAPTER_TITLES = [
+  '丸山敏雄と倫理運動','倫理法人会のあゆみ','純粋倫理の概要','倫理実践の三つの指標','苦難感の革新',
+  '倫理経営とは','物と金銭に対する心得','家庭と事業','地球倫理の推進','経営の眼目',
+  '実践の要件','「倫理経営指導」の偉力','決断と直観','運命を切り開く','働きの原動力',
+  '終わりを慎む','自他共尊の生き方','人生の主役として生きる','','','','','','','',
+];
+const kisoTitleFor = n => KISO_CHAPTER_TITLES[n - 1] ? `第${n}講　${KISO_CHAPTER_TITLES[n - 1]}` : `第${n}講`;
+
 // イベントバナーに事務局入力情報を表示
 document.addEventListener('DOMContentLoaded', () => {
   if (urlName || urlUnit || urlDate || urlType) {
@@ -561,9 +570,9 @@ async function prefillFromDB() {
     if (data.kiso_number) {
       setVal('kisoNumber', data.kiso_number);
       const kisoDisplay = document.getElementById('kisoNumberDisplay');
-      if (kisoDisplay) kisoDisplay.textContent = '第' + data.kiso_number + '講';
+      if (kisoDisplay) kisoDisplay.textContent = kisoTitleFor(data.kiso_number);
       const evKiso = document.getElementById('ev-kiso-num');
-      if (evKiso) evKiso.textContent = '第' + data.kiso_number + '講';
+      if (evKiso) evKiso.textContent = kisoTitleFor(data.kiso_number);
     }
     setVal('speakerKana', data.speaker_kana);
     setVal('company',     data.company);

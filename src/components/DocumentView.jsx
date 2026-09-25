@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo, useCallback } from 'react';
-import { JIMU } from '../constants';
+import { JIMU, KISO_CHAPTER_TITLES } from '../constants';
 import { getChapter, getSeminarType, formatDate, extractStaffNotes, toDateStr, parseDate } from '../utils';
 
 const weekdayOf = dateStr => dateStr ? `${"日月火水木金土"[parseDate(dateStr).getDay()]}曜日` : "";
@@ -472,7 +472,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 </DocSection>
                 <DocSection title="③ 倫理経営基礎講座 内容" color={c1}>
                   <DocRow label="テキスト"
-                    value={sp.kisoNumber ? `第${sp.kisoNumber}講` : "（自動採番待ち）"}
+                    value={sp.kisoNumber ? `第${sp.kisoNumber}講　${KISO_CHAPTER_TITLES[sp.kisoNumber - 1] || ""}` : "（自動採番待ち）"}
                     color={c1} />
                 </DocSection>
                 {mkTransport(c1, "④")}

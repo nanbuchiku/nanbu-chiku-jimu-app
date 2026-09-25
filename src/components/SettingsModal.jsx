@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CHAPTERS } from '../constants';
+import { CHAPTERS, KISO_CHAPTER_TITLES } from '../constants';
 import { OV, MH, BP, BC, INP } from '../styles';
 
 const DEFAULTS = ch => ({
@@ -134,8 +134,17 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           <Row label="基礎講座会場地図URL">
             <Inp value={form.kisoMapUrl} onChange={v => set('kisoMapUrl', v)} placeholder="https://maps.app.goo.gl/..." />
           </Row>
-          <div style={{ background:"#F1F5F9", border:"1px solid #D9E1EE", borderRadius:8, padding:"8px 12px", marginBottom:10, fontSize:"clamp(11px,1.3vw,13px)", color:"#667085" }}>
-            ℹ 倫理経営基礎講座テキストの「第◯講」は、2026年9月より5単会共通で自動採番されるようになったため、この設定は使われなくなりました。
+          <div style={{ background:"#F1F5F9", border:"1px solid #D9E1EE", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+            <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#667085", marginBottom:6 }}>
+              ℹ 「第◯講」は2026年9月より5単会共通で自動採番されます（各単会での個別設定は不要）。目次は以下の通りです。
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"2px 12px" }}>
+              {KISO_CHAPTER_TITLES.map((title, i) => (
+                <div key={i} style={{ fontSize:"clamp(11px,1.3vw,13px)", color: title ? "#37474F" : "#B0BEC5" }}>
+                  第{i + 1}講　{title || "（未定）"}
+                </div>
+              ))}
+            </div>
           </div>
 
           <SectionTitle>🏨 ホテル情報</SectionTitle>
