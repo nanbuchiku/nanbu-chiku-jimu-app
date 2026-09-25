@@ -149,6 +149,32 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       });
   }, [speakers, filterCh, filterSt, search, dateRange, sortCol, sortDir, today, showActionOnly]);
 
+  // 基礎講座・経営者の集いは前夜開催で、翌朝のモーニングセミナー分の確認書も同時に作られる。
+  // 実データは1件のままだが、表示上は「前夜の講話」と「翌朝のMS」の2枚に分けて見せる
+  // （id・実データはどちらも同じ元レコードを指すため、編集・削除・メール等の操作は元レコードに正しく反映される）。
+  const displayList = useMemo(() => {
+    const expanded = [];
+    filtered.forEach(sp => {
+      if (sp.seminarType === "kiso" || sp.seminarType === "tsudoi") {
+        expanded.push({ ...sp, _virtualKey: sp.id });
+        if (sp.seminarDate) {
+          const d = new Date(sp.seminarDate + 'T00:00:00');
+          d.setDate(d.getDate() + 1);
+          expanded.push({ ...sp, _virtualKey: sp.id + '__ms', _virtualDate: toDateStr(d), _virtualType: 'ms' });
+        }
+      } else {
+        expanded.push({ ...sp, _virtualKey: sp.id });
+      }
+    });
+    if (sortCol === "date") {
+      expanded.sort((a, b) => {
+        const cmp = new Date(a._virtualDate || a.seminarDate) - new Date(b._virtualDate || b.seminarDate);
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+    }
+    return expanded;
+  }, [filtered, sortCol, sortDir]);
+
   const exportCSV = useCallback(() => {
     const headers = ["開催日","単会","講師名","ふりがな","所属法人会名","法人会役職","勤務先","勤務先役職名","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","資料ファイル名","お酒","栞・条","講話後メモ","スタッフメモ"];
     const rows = filtered.map(sp => {
@@ -259,10 +285,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
 
       {/* ── Card list ─────────────────────────────── */}
       <div className="sp-screen-main" style={{ display:"flex", flexDirection:"column", gap:12 }}>
-        {filtered.map(sp => {
+        {displayList.map(sp => {
           const ch = getChapter(sp.chapterId);
-          const st = getSeminarType(sp.seminarType || "ms");
-          const daysUntil = sp.seminarDate ? Math.ceil((parseDate(sp.seminarDate) - today) / 86400000) : null;
+          const displayDate = sp._virtualDate || sp.seminarDate;
+          const displayType = sp._virtualType || sp.seminarType;
+          const st = getSeminarType(displayType || "ms");
+          const daysUntil = displayDate ? Math.ceil((parseDate(displayDate) - today) / 86400000) : null;
           const isPast   = daysUntil !== null && daysUntil < 0;
           const isToday  = daysUntil === 0;
           const isUrgent = daysUntil !== null && daysUntil > 0 && daysUntil <= 3;
@@ -279,16 +307,21 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           const formPendingAt = formSentMeta?.at || sp.formRequestedAt;
 
           return (
-            <div key={sp.id} style={{ background:"#fff", borderRadius:14, border:`1px solid #E2E8F0`, borderLeft:`8px solid ${st.color}`, boxShadow: isToday ? `0 0 0 2px #EF9A9A, 0 8px 24px rgba(15,35,71,.06)` : isUrgent ? `0 0 0 2px #FFE066, 0 8px 24px rgba(15,35,71,.06)` : "0 8px 24px rgba(15,35,71,.06)", padding:"clamp(10px,2vw,16px)", opacity: isPast ? 0.68 : 1 }}>
+            <div key={sp._virtualKey} style={{ background:"#fff", borderRadius:14, border:`1px solid #E2E8F0`, borderLeft:`8px solid ${st.color}`, boxShadow: isToday ? `0 0 0 2px #EF9A9A, 0 8px 24px rgba(15,35,71,.06)` : isUrgent ? `0 0 0 2px #FFE066, 0 8px 24px rgba(15,35,71,.06)` : "0 8px 24px rgba(15,35,71,.06)", padding:"clamp(10px,2vw,16px)", opacity: isPast ? 0.68 : 1 }}>
 
+              {sp._virtualType === 'ms' && (
+                <div style={{ fontSize:"clamp(10px,1.3vw,12px)", color:"#98A2B3", marginBottom:6 }}>
+                  ↳ {sp.seminarType === 'kiso' ? '基礎講座' : '経営者の集い'}（{sp.seminarDate}）と同時登録
+                </div>
+              )}
               <div style={{ display:"flex", gap:"clamp(10px,2vw,18px)", alignItems:"center", flexWrap:"wrap" }}>
 
                 {/* 1. 日付ブロック */}
                 <div style={{ flexShrink:0, width:"clamp(84px,11vw,116px)", textAlign:"center" }}>
-                  <div style={{ fontSize:"clamp(10px,1.4vw,13px)", color:"#98A2B3" }}>{sp.seminarDate || "日付未定"}</div>
-                  {sp.seminarDate && <div style={{ fontSize:"clamp(20px,3.4vw,30px)", fontWeight:800, color:"#263238", lineHeight:1.15 }}>{sp.seminarDate.slice(5)}</div>}
+                  <div style={{ fontSize:"clamp(10px,1.4vw,13px)", color:"#98A2B3" }}>{displayDate || "日付未定"}</div>
+                  {displayDate && <div style={{ fontSize:"clamp(20px,3.4vw,30px)", fontWeight:800, color:"#263238", lineHeight:1.15 }}>{displayDate.slice(5)}</div>}
                   <div style={{ fontSize:"clamp(11px,1.6vw,15px)", color:"#667085", marginBottom:6 }}>
-                    {sp.seminarDate ? `${"日月火水木金土"[parseDate(sp.seminarDate).getDay()]}曜日` : ch.dayName}
+                    {displayDate ? `${"日月火水木金土"[parseDate(displayDate).getDay()]}曜日` : ch.dayName}
                   </div>
                   <span style={{ display:"inline-block", fontSize:"clamp(11px,1.6vw,15px)", fontWeight:700, color:"#fff", background:ch.color, padding:"3px 10px", borderRadius:12 }}>{ch.name}</span>
                   <div style={{ marginTop:4 }}>

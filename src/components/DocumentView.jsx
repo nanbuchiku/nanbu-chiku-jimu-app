@@ -243,6 +243,9 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
 
       {sp && ch ? (() => {
         const isKiso = sp.seminarType === "kiso";
+        const isTsudoi = sp.seminarType === "tsudoi";
+        // 基礎講座・経営者の集いは前夜開催で、翌朝のモーニングセミナー分の確認書も同時に作成する
+        const hasNextDayMs = isKiso || isTsudoi;
         const st    = getSeminarType(sp.seminarType || "ms");
         const stMs  = getSeminarType("ms");
         const stKiso = getSeminarType("kiso");
@@ -251,8 +254,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         const contactTel    = chSettings.contactTel    || "";
         const chapterEmail  = chSettings.chapterEmail  || "";
 
-        // kiso day + 1 = MS day
-        const msDateStr = isKiso && sp.seminarDate ? (() => {
+        // 前夜開催日 + 1 = MS day
+        const msDateStr = hasNextDayMs && sp.seminarDate ? (() => {
           const d = new Date(sp.seminarDate + 'T00:00:00');
           d.setDate(d.getDate() + 1);
           return toDateStr(d);
@@ -450,31 +453,46 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             color:"#fff", zIndex:2, lineHeight:1.1, textAlign:"right" }}>{sheetSt.short}</div>
         </>);
 
-        // ── KISO: 2 documents ──
-        if (isKiso) {
-          const c1 = stKiso.color;
+        // ── 基礎講座・経営者の集い: 2 documents ──
+        if (hasNextDayMs) {
+          const c1 = st.color;
           const c2 = stMs.color;
           return (
             <>
-              {/* ─── Document 1: 倫理経営基礎講座 ─── */}
-              <div id="print-doc" style={docWrapStyle(stKiso)}>
-                {mkCornerBadge(stKiso)}
-                {mkHeader(stKiso, sp.seminarDate)}
+              {/* ─── Document 1: 倫理経営基礎講座 / 経営者の集い ─── */}
+              <div id="print-doc" style={docWrapStyle(st)}>
+                {mkCornerBadge(st)}
+                {mkHeader(st, sp.seminarDate)}
                 {mkSpeaker(c1)}
-                <DocSection title="② 開催情報（倫理経営基礎講座）" color={c1}>
-                  <DocRow label="講話日"     value={formatDate(sp.seminarDate)}       color={c1} />
-                  <DocRow label="開催場所"   value={chSettings.kisoVenue || ""}       color={c1} />
-                  <DocRow label="会場住所"   value={chSettings.kisoAddress || ""}     color={c1} />
-                  {chSettings.kisoMapUrl && (
-                    <DocRow label="会場地図" color={c1}
-                      value={<a href={chSettings.kisoMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
-                  )}
-                </DocSection>
-                <DocSection title="③ 倫理経営基礎講座 内容" color={c1}>
-                  <DocRow label="テキスト"
-                    value={sp.kisoNumber ? `第${sp.kisoNumber}講　${KISO_CHAPTER_TITLES[sp.kisoNumber - 1] || ""}` : "（自動採番待ち）"}
-                    color={c1} />
-                </DocSection>
+                {isKiso ? (
+                  <>
+                    <DocSection title="② 開催情報（倫理経営基礎講座）" color={c1}>
+                      <DocRow label="講話日"     value={formatDate(sp.seminarDate)}       color={c1} />
+                      <DocRow label="開催場所"   value={chSettings.kisoVenue || ""}       color={c1} />
+                      <DocRow label="会場住所"   value={chSettings.kisoAddress || ""}     color={c1} />
+                      {chSettings.kisoMapUrl && (
+                        <DocRow label="会場地図" color={c1}
+                          value={<a href={chSettings.kisoMapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
+                      )}
+                    </DocSection>
+                    <DocSection title="③ 倫理経営基礎講座 内容" color={c1}>
+                      <DocRow label="テキスト"
+                        value={sp.kisoNumber ? `第${sp.kisoNumber}講　${KISO_CHAPTER_TITLES[sp.kisoNumber - 1] || ""}` : "（自動採番待ち）"}
+                        color={c1} />
+                    </DocSection>
+                  </>
+                ) : (
+                  <>
+                    <DocSection title="② 開催情報（経営者の集い）" color={c1}>
+                      <DocRow label="講話日"     value={formatDate(sp.seminarDate)}                    color={c1} />
+                      <DocRow label="開催場所"   value={sp.venue || chSettings.msVenue || ch.venue}    color={c1} />
+                    </DocSection>
+                    <DocSection title="③ 経営者の集い 内容" color={c1}>
+                      <DocRow label="タイトル"  value={sp.topic ? `「${sp.topic}」` : ""}  color={c1} />
+                      <DocRow label="内容要約"  value={parsedNotes['内容要約'] || ""}       color={c1} />
+                    </DocSection>
+                  </>
+                )}
                 {mkTransport(c1, "④")}
                 {mkLodging(c1, "⑤")}
                 {mkPhoto(c1, "⑥")}
