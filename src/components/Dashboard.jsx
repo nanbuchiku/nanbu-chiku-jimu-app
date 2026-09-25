@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, memo } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
 import { getChapter, getSeminarType, toDateStr, parseDate, formatDate, formatDateTime, isTaskDone, getTaskMeta } from '../utils';
 import { CARD, BSM, PILL, OV, MOD, MH, BC, BP, FS_MD, FS_SM, FS_XS } from '../styles';
@@ -14,13 +14,34 @@ const HOTEL_ITEMS = [
   { id:"hotel_paid",    label:"支払い完了",               icon:"💴" },
 ];
 
-export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings, scopeChapter, currentUserName, showTutorial }) {
+// チュートリアル（試験実装：まずは1本のみ）。文字数が多い場合はここに
+// ステップを追加すれば「次へ」で自動的に複数カードに分かれる。
+const TUTORIAL_STEPS = [
+  {
+    title: "📘 各単会の役員会議で2ヶ月先の講師が決まったら",
+    body: "まずこれをやろう。",
+  },
+  {
+    title: "📝 講師依頼フォームを作成",
+    body: "確認しよう",
+    checklist: [
+      "正確なメールアドレスはわかりますか？",
+      "ホテル予約は必要ですか？",
+      "セミナー会場の変更はありませんか？",
+    ],
+  },
+];
+
+export default memo(function Dashboard({ speakers, tasks, weekDates, today, onView, setTab, onFormUrl, onGoSpeakers, onAddForDate, updateSpeaker, showToast, chapterSettings, onOpenSettings, scopeChapter, currentUserName, showTutorial, onCloseTutorial }) {
   // 単会担当者は自分の単会のみ新規登録できる。事務局(scopeChapterなし)は全単会OK
   const canAddFor = chId => !!onAddForDate && (!scopeChapter || chId === scopeChapter);
   const [memoText, setMemoText] = useState(() => { try { return localStorage.getItem('dashboard_memo') || ''; } catch { return ''; } });
   const [memoOpen, setMemoOpen] = useState(() => { try { return localStorage.getItem('dashboard_memo_open') === '1'; } catch { return false; } });
   const [hotelOpen, setHotelOpen] = useState(() => { try { return localStorage.getItem('dashboard_hotel_open') === '1'; } catch { return false; } });
   const [monthSpeakerView, setMonthSpeakerView] = useState(null);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  // 表示するたびに最初のカードから見せる（前回途中で閉じても混乱しないように）
+  useEffect(() => { if (showTutorial) setTutorialStep(0); }, [showTutorial]);
   const toggleHotel = useCallback(() => {
     setHotelOpen(o => {
       const next = !o;
@@ -294,24 +315,43 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         </div>
       </div>
 
-      {/* チュートリアル（左メニューのトグルで表示/非表示） */}
-      {showTutorial && (
-        <div style={{ marginBottom:12, background:"#FFF8E1", border:"2px solid #FFCA28", borderRadius:10, padding:"14px 16px" }}>
-          <div style={{ fontSize:FS_MD, fontWeight:800, color:"#8D6E00", marginBottom:8, display:"flex", alignItems:"center", gap:6 }}>
-            📘 各単会の役員会議で2ヶ月先の講師が決まったら
+      {/* チュートリアル吹き出し（左メニューのトグルで表示/非表示。「次へ」でカードが進む） */}
+      {showTutorial && (() => {
+        const stepData = TUTORIAL_STEPS[tutorialStep];
+        const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+        return (
+          <div style={{ position:"relative", marginTop:-4, marginBottom:12 }}>
+            {/* 吹き出しの三角（フォーム作成ボタンを指す） */}
+            <div style={{ width:0, height:0, marginLeft:28, borderLeft:"9px solid transparent", borderRight:"9px solid transparent", borderBottom:"9px solid #FFCA28" }} />
+            <div style={{ width:0, height:0, marginLeft:29, marginTop:-9, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderBottom:"8px solid #FFF8E1" }} />
+            <div style={{ background:"#FFF8E1", border:"2px solid #FFCA28", borderRadius:10, padding:"14px 16px", boxShadow:"0 6px 18px rgba(141,110,0,.15)" }}>
+              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
+                <div style={{ fontSize:FS_MD, fontWeight:800, color:"#8D6E00" }}>{stepData.title}</div>
+                <button onClick={onCloseTutorial} title="チュートリアルを閉じる" style={{ background:"none", border:"none", color:"#8D6E00", fontSize:FS_MD, fontWeight:700, cursor:"pointer", padding:0, lineHeight:1, flexShrink:0 }}>✕</button>
+              </div>
+              <div style={{ fontSize:FS_SM, color:"#8D6E00", marginTop:6 }}>{stepData.body}</div>
+              {stepData.checklist && (
+                <ol style={{ margin:"8px 0 0", paddingLeft:20, fontSize:FS_SM, color:"#37474F", lineHeight:1.9, background:"#fff", border:"1px solid #FFE082", borderRadius:8, padding:"10px 12px 10px 28px" }}>
+                  {stepData.checklist.map((c, i) => <li key={i}>{c}</li>)}
+                </ol>
+              )}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:12 }}>
+                <span style={{ fontSize:FS_XS, color:"#A1887F" }}>{tutorialStep + 1} / {TUTORIAL_STEPS.length}</span>
+                <div style={{ display:"flex", gap:8 }}>
+                  {tutorialStep > 0 && (
+                    <button onClick={() => setTutorialStep(s => s - 1)} style={{ background:"#fff", color:"#8D6E00", border:"1px solid #FFCA28", borderRadius:8, padding:"6px 14px", fontSize:FS_SM, fontWeight:700, cursor:"pointer" }}>← 戻る</button>
+                  )}
+                  {isLast ? (
+                    <button onClick={onCloseTutorial} style={{ background:"#FFA000", color:"#fff", border:"none", borderRadius:8, padding:"6px 16px", fontSize:FS_SM, fontWeight:700, cursor:"pointer" }}>閉じる</button>
+                  ) : (
+                    <button onClick={() => setTutorialStep(s => s + 1)} style={{ background:"#FFA000", color:"#fff", border:"none", borderRadius:8, padding:"6px 16px", fontSize:FS_SM, fontWeight:700, cursor:"pointer" }}>次へ →</button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-          <div style={{ fontSize:FS_SM, color:"#8D6E00", marginBottom:10 }}>まずこれをやろう。</div>
-          <div style={{ background:"#fff", border:"1px solid #FFE082", borderRadius:8, padding:"10px 12px" }}>
-            <div style={{ fontSize:FS_MD, fontWeight:700, color:"#4527A0", marginBottom:6 }}>📝 講師依頼フォームを作成</div>
-            <div style={{ fontSize:FS_SM, color:"#667085", fontWeight:700, marginBottom:4 }}>確認しよう</div>
-            <ol style={{ margin:0, paddingLeft:20, fontSize:FS_SM, color:"#37474F", lineHeight:1.9 }}>
-              <li>正確なメールアドレスはわかりますか？</li>
-              <li>ホテル予約は必要ですか？</li>
-              <li>セミナー会場の変更はありませんか？</li>
-            </ol>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ホテル予約管理 - 全幅 */}
       <div style={{ marginBottom:12, ...CARD, padding:"10px 13px", borderLeft:"4px solid #00838F" }}>
