@@ -303,55 +303,56 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
         </div>
       )}
 
-      {/* 講師依頼フォームを作成 - 全幅 */}
-      <div style={{ marginBottom:12, background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(18px,2.5vw,24px)", flexShrink:0 }}>📝</div>
-          <div>
-            <div style={{ fontSize:FS_MD, fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
-            <div style={{ fontSize:FS_SM, color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
+      {/* 講師依頼フォームを作成 - 全幅（チュートリアル吹き出しの位置基準にするため position:relative） */}
+      <div style={{ position:"relative", marginBottom:12 }}>
+        <div style={{ background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:10, padding:"14px 16px", cursor:"pointer" }} onClick={() => onFormUrl(null)}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ background:"#7E57C2", color:"#fff", borderRadius:"50%", width:36, height:36, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"clamp(18px,2.5vw,24px)", flexShrink:0 }}>📝</div>
+            <div>
+              <div style={{ fontSize:FS_MD, fontWeight:800, color:"#4527A0" }}>講師依頼フォームを作成</div>
+              <div style={{ fontSize:FS_SM, color:"#7E57C2", marginTop:2 }}>情報を入力してURLを発行 → 講師へ送付</div>
+            </div>
+            <div style={{ marginLeft:"auto", fontSize:"clamp(18px,2.5vw,24px)", color:"#7E57C2" }}>›</div>
           </div>
-          <div style={{ marginLeft:"auto", fontSize:"clamp(18px,2.5vw,24px)", color:"#7E57C2" }}>›</div>
         </div>
-      </div>
 
-      {/* チュートリアル吹き出し（左メニューのトグルで表示/非表示。「次へ」でカードが進む） */}
-      {showTutorial && (() => {
-        const stepData = TUTORIAL_STEPS[tutorialStep];
-        const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
-        return (
-          <div style={{ position:"relative", marginTop:-4, marginBottom:12 }}>
-            {/* 吹き出しの三角（フォーム作成ボタンを指す） */}
-            <div style={{ width:0, height:0, marginLeft:28, borderLeft:"9px solid transparent", borderRight:"9px solid transparent", borderBottom:"9px solid #FFCA28" }} />
-            <div style={{ width:0, height:0, marginLeft:29, marginTop:-9, borderLeft:"8px solid transparent", borderRight:"8px solid transparent", borderBottom:"8px solid #FFF8E1" }} />
-            <div style={{ background:"#FFF8E1", border:"2px solid #FFCA28", borderRadius:10, padding:"14px 16px", boxShadow:"0 6px 18px rgba(141,110,0,.15)" }}>
-              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
-                <div style={{ fontSize:FS_MD, fontWeight:800, color:"#8D6E00" }}>{stepData.title}</div>
-                <button onClick={onCloseTutorial} title="チュートリアルを閉じる" style={{ background:"none", border:"none", color:"#8D6E00", fontSize:FS_MD, fontWeight:700, cursor:"pointer", padding:0, lineHeight:1, flexShrink:0 }}>✕</button>
-              </div>
-              <div style={{ fontSize:FS_SM, color:"#8D6E00", marginTop:6 }}>{stepData.body}</div>
-              {stepData.checklist && (
-                <ol style={{ margin:"8px 0 0", paddingLeft:20, fontSize:FS_SM, color:"#37474F", lineHeight:1.9, background:"#fff", border:"1px solid #FFE082", borderRadius:8, padding:"10px 12px 10px 28px" }}>
-                  {stepData.checklist.map((c, i) => <li key={i}>{c}</li>)}
-                </ol>
-              )}
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:12 }}>
-                <span style={{ fontSize:FS_XS, color:"#A1887F" }}>{tutorialStep + 1} / {TUTORIAL_STEPS.length}</span>
-                <div style={{ display:"flex", gap:8 }}>
-                  {tutorialStep > 0 && (
-                    <button onClick={() => setTutorialStep(s => s - 1)} style={{ background:"#fff", color:"#8D6E00", border:"1px solid #FFCA28", borderRadius:8, padding:"6px 14px", fontSize:FS_SM, fontWeight:700, cursor:"pointer" }}>← 戻る</button>
-                  )}
-                  {isLast ? (
-                    <button onClick={onCloseTutorial} style={{ background:"#FFA000", color:"#fff", border:"none", borderRadius:8, padding:"6px 16px", fontSize:FS_SM, fontWeight:700, cursor:"pointer" }}>閉じる</button>
-                  ) : (
-                    <button onClick={() => setTutorialStep(s => s + 1)} style={{ background:"#FFA000", color:"#fff", border:"none", borderRadius:8, padding:"6px 16px", fontSize:FS_SM, fontWeight:700, cursor:"pointer" }}>次へ →</button>
-                  )}
+        {/* チュートリアル吹き出し：ボタン右上に少し重ねて表示。小さく・目立つ色で。「次へ」でカードが進む */}
+        {showTutorial && (() => {
+          const stepData = TUTORIAL_STEPS[tutorialStep];
+          const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+          return (
+            <div style={{ position:"absolute", top:-16, right:10, zIndex:30, width:"min(220px, 76%)" }} onClick={e => e.stopPropagation()}>
+              <div style={{ position:"relative", background:"#FF7A00", color:"#fff", borderRadius:12, padding:"9px 11px", boxShadow:"0 6px 16px rgba(0,0,0,.28)" }}>
+                <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:6 }}>
+                  <div style={{ fontSize:12.5, fontWeight:800, lineHeight:1.4 }}>{stepData.title}</div>
+                  <button onClick={onCloseTutorial} title="チュートリアルを閉じる" style={{ background:"none", border:"none", color:"#fff", opacity:.85, fontSize:13, fontWeight:700, cursor:"pointer", padding:0, lineHeight:1, flexShrink:0 }}>✕</button>
                 </div>
+                <div style={{ fontSize:11.5, marginTop:4, lineHeight:1.5 }}>{stepData.body}</div>
+                {stepData.checklist && (
+                  <ol style={{ margin:"6px 0 0", paddingLeft:16, fontSize:11.5, lineHeight:1.6 }}>
+                    {stepData.checklist.map((c, i) => <li key={i}>{c}</li>)}
+                  </ol>
+                )}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:8 }}>
+                  <span style={{ fontSize:10, opacity:.8 }}>{tutorialStep + 1}/{TUTORIAL_STEPS.length}</span>
+                  <div style={{ display:"flex", gap:5 }}>
+                    {tutorialStep > 0 && (
+                      <button onClick={() => setTutorialStep(s => s - 1)} style={{ background:"rgba(255,255,255,.2)", color:"#fff", border:"none", borderRadius:6, padding:"4px 9px", fontSize:11, fontWeight:700, cursor:"pointer" }}>戻る</button>
+                    )}
+                    {isLast ? (
+                      <button onClick={onCloseTutorial} style={{ background:"#fff", color:"#FF7A00", border:"none", borderRadius:6, padding:"4px 11px", fontSize:11, fontWeight:800, cursor:"pointer" }}>閉じる</button>
+                    ) : (
+                      <button onClick={() => setTutorialStep(s => s + 1)} style={{ background:"#fff", color:"#FF7A00", border:"none", borderRadius:6, padding:"4px 11px", fontSize:11, fontWeight:800, cursor:"pointer" }}>次へ →</button>
+                    )}
+                  </div>
+                </div>
+                {/* 吹き出しの三角（ボタン側=左下を指す） */}
+                <div style={{ position:"absolute", bottom:-7, left:20, width:0, height:0, borderLeft:"7px solid transparent", borderRight:"7px solid transparent", borderTop:"7px solid #FF7A00" }} />
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
+      </div>
 
       {/* ホテル予約管理 - 全幅 */}
       <div style={{ marginBottom:12, ...CARD, padding:"10px 13px", borderLeft:"4px solid #00838F" }}>
