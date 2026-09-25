@@ -541,10 +541,6 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 {mkFooter(c1)}
               </div>
 
-              {/* ─── Page break between docs ─── */}
-              <div style={{ pageBreakAfter:"always", height:0 }} />
-              <div className="no-print" style={{ height:36 }} />
-
               {/* ─── Document 2: MS確認書 ─── */}
               <div id="print-doc-ms" style={{ ...docWrapStyle(stMs), display: docTab === 'ms' ? undefined : 'none' }}>
                 {mkCornerBadge(stMs)}
