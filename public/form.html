@@ -162,11 +162,9 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       <div class="section-header">📘 基礎講座情報</div>
       <div class="section-body">
         <div class="field" id="f-kiso-num">
-          <label>講座番号<span class="req">*</span></label>
-          <div style="display:flex; align-items:center; gap:8px; font-size:15px; font-weight:600;">
-            第 <input type="number" id="kisoNumber" min="1" max="30" placeholder="" style="width:70px; text-align:center; font-size:16px; font-weight:700;"> 講
-          </div>
-          <div class="error-msg">講座番号を入力してください</div>
+          <label>講座番号</label>
+          <div id="kisoNumberDisplay" style="font-size:16px; font-weight:700;">—</div>
+          <input type="hidden" id="kisoNumber">
         </div>
       </div>
     </div>
@@ -562,6 +560,8 @@ async function prefillFromDB() {
     // ページ1
     if (data.kiso_number) {
       setVal('kisoNumber', data.kiso_number);
+      const kisoDisplay = document.getElementById('kisoNumberDisplay');
+      if (kisoDisplay) kisoDisplay.textContent = '第' + data.kiso_number + '講';
       const evKiso = document.getElementById('ev-kiso-num');
       if (evKiso) evKiso.textContent = '第' + data.kiso_number + '講';
     }
@@ -686,7 +686,6 @@ function requiredRadio(name, errId, wrapperId) {
 
 function validatePage1() {
   let ok = true;
-  if (urlType === 'kiso') { ok = required('kisoNumber','f-kiso-num') && ok; }
   ok = required('speakerKana','f-kana')       && ok;
   ok = required('ethics',     'f-ethics')     && ok;
   ok = required('phone',      'f-phone')      && ok;

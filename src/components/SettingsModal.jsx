@@ -134,16 +134,9 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           <Row label="基礎講座会場地図URL">
             <Inp value={form.kisoMapUrl} onChange={v => set('kisoMapUrl', v)} placeholder="https://maps.app.goo.gl/..." />
           </Row>
-          <Row label={<>倫理経営基礎講座<br />テキスト 第<span style={{fontWeight:700}}>〜</span>講</>}>
-            <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-              <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:'#37474F' }}>第</span>
-              <input type="number" min="1" max="20" value={form.kisoTextChapter || ''}
-                onChange={e => set('kisoTextChapter', e.target.value)}
-                placeholder="3"
-                style={{ ...INP, width:60, fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, textAlign:'center' }} />
-              <span style={{ fontSize:"clamp(12px,1.4vw,14px)", color:'#37474F' }}>講</span>
-            </div>
-          </Row>
+          <div style={{ background:"#F1F5F9", border:"1px solid #D9E1EE", borderRadius:8, padding:"8px 12px", marginBottom:10, fontSize:"clamp(11px,1.3vw,13px)", color:"#667085" }}>
+            ℹ 倫理経営基礎講座テキストの「第◯講」は、2026年9月より5単会共通で自動採番されるようになったため、この設定は使われなくなりました。
+          </div>
 
           <SectionTitle>🏨 ホテル情報</SectionTitle>
           <Row label="ホテル名">

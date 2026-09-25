@@ -472,7 +472,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 </DocSection>
                 <DocSection title="③ 倫理経営基礎講座 内容" color={c1}>
                   <DocRow label="テキスト"
-                    value={chSettings.kisoTextChapter ? `第${chSettings.kisoTextChapter}講` : "（設定で入力）"}
+                    value={sp.kisoNumber ? `第${sp.kisoNumber}講` : "（自動採番待ち）"}
                     color={c1} />
                 </DocSection>
                 {mkTransport(c1, "④")}
