@@ -74,9 +74,16 @@ function Cb({ on, label }) {
 
 export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker, today, chapterSettings, showToast }) {
   const [sel, setSel] = useState(docSpeaker?.id || "");
+  // 基礎講座・経営者の集いは前夜分／翌朝MS分の2枚の確認書を持つため、どちらを表示するかのタブ。
+  // 講師管理画面の「MS」カードから開いた場合はMS側を初期表示にする。
+  const [docTab, setDocTab] = useState(docSpeaker?._virtualType === 'ms' ? 'ms' : 'main');
   const [sendingDoc, setSendingDoc] = useState(false);
   const [pdfMailConfirm, setPdfMailConfirm] = useState(null); // { to, subject, body } | null
-  useEffect(() => { if (docSpeaker?.id) setSel(docSpeaker.id); }, [docSpeaker?.id]);
+  useEffect(() => {
+    if (!docSpeaker?.id) return;
+    setSel(docSpeaker.id);
+    setDocTab(docSpeaker._virtualType === 'ms' ? 'ms' : 'main');
+  }, [docSpeaker?.id, docSpeaker?._virtualType]);
 
   const [recentIds, setRecentIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('doc_recent') || '[]'); } catch { return []; }
@@ -99,6 +106,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
   );
   const sp = useMemo(() => speakers.find(x => x.id === sel), [speakers, sel]);
   const ch = useMemo(() => sp ? getChapter(sp.chapterId) : null, [sp]);
+  // 印刷/PDF操作は「今表示中」の1枚だけを対象にする（2枚とも欲しい場合は🖨印刷でタブを切り替えて2回）
+  const activeDocId = docTab === 'ms' ? 'print-doc-ms' : 'print-doc';
   const chSettings = useMemo(() =>
     (sp && chapterSettings) ? (chapterSettings[sp.chapterId] || {}) : {},
     [sp, chapterSettings]
@@ -140,7 +149,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
     if (!pdfMailConfirm || !sp) return;
     setSendingDoc(true);
     try {
-      const base64 = await generatePdfBase64("print-doc");
+      const base64 = await generatePdfBase64(activeDocId);
       if (!base64) throw new Error('PDFの作成に失敗しました');
       const res = await fetch(MAIL_SEND_URL, {
         method: 'POST',
@@ -160,7 +169,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
     } finally {
       setSendingDoc(false);
     }
-  }, [pdfMailConfirm, sp, showToast]);
+  }, [pdfMailConfirm, sp, showToast, activeDocId]);
 
   return (
     <div>
@@ -198,8 +207,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               setTimeout(restore, 1000);
             }}>🖨 印刷 / PDF保存</button>
             <button style={{ ...BP, background:"#2E7D32" }} onClick={async () => {
-              const isKiso = sp.seminarType === "kiso";
-              await downloadPdf(isKiso ? "print-doc" : "print-doc", makePdfFilename(sp));
+              await downloadPdf(activeDocId, makePdfFilename(sp));
             }}>💾 PDFダウンロード</button>
             {MAIL_SEND_URL ? (
               <button
@@ -225,7 +233,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
                   const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
                   const mailto = `mailto:${encodeURIComponent(sp.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                  await downloadPdf("print-doc", makePdfFilename(sp));
+                  await downloadPdf(activeDocId, makePdfFilename(sp));
                   setTimeout(() => { window.location.href = mailto; }, 500);
                 }}
               >📎 PDF保存＋講師へメール（要手動添付）</button>
@@ -474,10 +482,25 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         if (hasNextDayMs) {
           const c1 = st.color;
           const c2 = stMs.color;
+          const doc1Label = isKiso ? '① 倫理経営基礎講座' : '① 経営者の集い';
           return (
             <>
+              {/* ─── タブ切替：前夜分／翌朝MS分を別々に表示する ─── */}
+              <div className="no-print" style={{ display:"flex", gap:8, marginBottom:14 }}>
+                <button onClick={() => setDocTab('main')}
+                  style={{ flex:1, padding:"9px 12px", borderRadius:8, cursor:"pointer", fontWeight:700, fontSize:"clamp(12px,1.6vw,15px)",
+                    background: docTab === 'main' ? c1 : "#F1F5F9", color: docTab === 'main' ? "#fff" : "#667085", border: `1px solid ${docTab === 'main' ? c1 : "#D9E1EE"}` }}>
+                  {doc1Label}
+                </button>
+                <button onClick={() => setDocTab('ms')}
+                  style={{ flex:1, padding:"9px 12px", borderRadius:8, cursor:"pointer", fontWeight:700, fontSize:"clamp(12px,1.6vw,15px)",
+                    background: docTab === 'ms' ? c2 : "#F1F5F9", color: docTab === 'ms' ? "#fff" : "#667085", border: `1px solid ${docTab === 'ms' ? c2 : "#D9E1EE"}` }}>
+                  ② モーニングセミナー
+                </button>
+              </div>
+
               {/* ─── Document 1: 倫理経営基礎講座 / 経営者の集い ─── */}
-              <div id="print-doc" style={docWrapStyle(st)}>
+              <div id="print-doc" style={{ ...docWrapStyle(st), display: docTab === 'main' ? undefined : 'none' }}>
                 {mkCornerBadge(st)}
                 {mkHeader(st, sp.seminarDate)}
                 {mkSpeaker(c1)}
@@ -523,7 +546,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
               <div className="no-print" style={{ height:36 }} />
 
               {/* ─── Document 2: MS確認書 ─── */}
-              <div id="print-doc-ms" style={docWrapStyle(stMs)}>
+              <div id="print-doc-ms" style={{ ...docWrapStyle(stMs), display: docTab === 'ms' ? undefined : 'none' }}>
                 {mkCornerBadge(stMs)}
                 {mkHeader(stMs, msDateStr)}
                 {mkSpeaker(c2)}
