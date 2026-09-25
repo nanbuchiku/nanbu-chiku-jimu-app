@@ -167,16 +167,27 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
 
   const seminarType = isNew ? form.seminarType : sp.seminarType;
   const isKiso = seminarType === 'kiso';
+  const isTsudoi = seminarType === 'tsudoi';
+  const hasNextDayMs = isKiso || isTsudoi;
   const isMs = !seminarType || seminarType === 'ms';
   // 種別ラベル（ms=モーニングセミナー / kiso=倫理経営基礎講座 / それ以外＝自主企画の自由入力名）
   const eventLabel = isKiso ? '倫理経営基礎講座' : isMs ? 'モーニングセミナー' : getSeminarType(seminarType).label;
 
   const msDateLine = useMemo(() => {
-    if (!isKiso || !displayDate) return '';
+    if (!hasNextDayMs || !displayDate) return '';
     const [y, m, d] = displayDate.split('-').map(Number);
     const next = new Date(y, m - 1, d + 1);
     return `\n※ 翌日 ${formatDate(`${next.getFullYear()}-${String(next.getMonth()+1).padStart(2,'0')}-${String(next.getDate()).padStart(2,'0')}`)} がモーニングセミナーです`;
-  }, [isKiso, displayDate]);
+  }, [hasNextDayMs, displayDate]);
+
+  // 基礎講座・経営者の集いは「前夜」開催のため、単会の定例日（ch.dayName、＝翌朝MSの曜日）
+  // をそのまま「毎週◯曜日」と書くと、この開催日自体の曜日と食い違って見える。
+  // 開催日の曜日はformatDate側で正しく出るので、ここでは時間だけ添える。
+  const scheduleNote = isKiso
+    ? (chSettings.kisoTime || ch?.time || '')
+    : isTsudoi
+      ? ((isNew ? form.eventTime : sp.eventTime) || ch?.time || '')
+      : `毎週${ch?.dayName || ''}　${ch?.time || ''}`;
 
   const mailSubject = useMemo(() =>
     `【${ch?.name}単会 ${eventLabel}】講師依頼のご確認`,
@@ -191,7 +202,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
 
 このたびは、${ch?.name}単会 ${eventLabel}の講師をお引き受けいただき、誠にありがとうございます。
 
-開催日：${displayDate ? formatDate(displayDate) : '　　　年　　月　　日'}（毎週${ch?.dayName || ''}　${ch?.time || ''}）
+開催日：${displayDate ? formatDate(displayDate) : '　　　年　　月　　日'}（${scheduleNote}）
 会　場：${ch?.venue || ''}${msDateLine}
 
 下記の内容をご確認・ご回答いただけますようお願いいたします。
@@ -209,7 +220,7 @@ ${formUrl}
 ご不明な点がございましたら、お気軽にご連絡ください。
 
 ${sig}`;
-  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel]);
+  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel, scheduleNote]);
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); markSent(); }, [formUrl, showToast, markSent]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); markSent(); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, markSent, clearDraft, onClose]);
