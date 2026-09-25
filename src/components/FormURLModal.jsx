@@ -63,6 +63,9 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   const [generated, setGenerated] = useState(!isNew);
   const [sending, setSending] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
+  // 休会：その回（週）は単会自体が開催されない場合。実在の講師がいないため、
+  // フォームURL生成・メール送信の代わりに「休会」レコードだけを直接登録する。
+  const [isKyukai, setIsKyukai] = useState(false);
 
   // 入力途中の内容を自動下書き保存（新規作成時のみ）。誤って閉じても再度開けば復元される。
   useEffect(() => {
@@ -73,7 +76,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   const hasInput = isNew && (form.speakerName || form.speakerUnit || form.seminarDate || form.role || form.email);
   const clearDraft = useCallback(() => { try { localStorage.removeItem(DRAFT_KEY); } catch {} }, []);
   const resetInput = useCallback(() => {
-    clearDraft(); setForm({ ...EMPTY_FORM }); setGenerated(false); setRestored(false);
+    clearDraft(); setForm({ ...EMPTY_FORM }); setGenerated(false); setRestored(false); setIsKyukai(false);
   }, [clearDraft]);
   const requestClose = useCallback(() => {
     if (hasInput && !window.confirm('入力内容が消えます。閉じてよろしいですか？\n（「キャンセル」で入力に戻れます。入力は自動保存され、次に開くと復元されます）')) return;
@@ -81,7 +84,22 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   }, [hasInput, onClose]);
 
   const sp = isNew ? { ...form, id: createdId || '' } : spProp;
-  const canGenerate = !isNew || (form.speakerName && form.seminarDate && form.email);
+  const canGenerate = !isNew || (isKyukai ? !!form.seminarDate : (form.speakerName && form.seminarDate && form.email));
+
+  // 休会登録：実在の講師がいないため、URL生成・メール送信をせず
+  // 「休会」レコードだけを直接作成して閉じる。基礎講座の場合も通常どおり
+  // 講座番号（kiso_number）を消費して次回に正しく引き継ぐ。
+  const handleRegisterKyukai = useCallback(async () => {
+    if (!form.seminarDate) return;
+    setCreating(true);
+    const newId = `s${Date.now()}`;
+    const ok = await onCreateSpeaker?.({
+      id: newId, chapterId: form.chapterId, seminarDate: form.seminarDate, seminarType: form.seminarType,
+      speakerName: '休会', status: 'kyukai', requestDate: new Date().toISOString().slice(0, 10),
+    });
+    setCreating(false);
+    if (ok) { clearDraft(); showToast('休会として登録しました'); onClose(); }
+  }, [form, onCreateSpeaker, clearDraft, showToast, onClose]);
 
   // 新規講師の場合、URLを生成した時点で最低限の情報だけ講師レコードを先に作る。
   // こうしないと、講師管理画面に「依頼中」を出す先（id）が存在しない。
@@ -255,6 +273,12 @@ ${sig}`;
         {isNew && !generated && (
           <div style={{ background:"linear-gradient(135deg,#EDE7F6,#F3E5F5)", border:"2px solid #7E57C2", borderRadius:12, padding:"18px 20px", marginTop:12 }}>
             <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, color:"#4527A0", marginBottom:14 }}>事務局入力項目</div>
+
+            <label style={{ display:"flex", alignItems:"center", gap:8, background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"10px 12px", marginBottom:14, cursor:"pointer" }}>
+              <input type="checkbox" checked={isKyukai} onChange={e => setIsKyukai(e.target.checked)} />
+              <span style={{ fontSize:"clamp(12px,1.5vw,14px)", fontWeight:700, color:"#E65100" }}>この回は休会（単会自体が開催されない）</span>
+            </label>
+
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>単会 *</label>
@@ -267,18 +291,12 @@ ${sig}`;
                 <input type="date" style={INP2} value={form.seminarDate} onChange={e => setForm(f => ({ ...f, seminarDate: e.target.value }))} />
               </div>
               <div style={{ gridColumn:"1/-1" }}>
-                <label style={LB}>講師名 *</label>
-                <input type="text" style={INP2} placeholder="例：山田 太郎" value={form.speakerName} onChange={e => setForm(f => ({ ...f, speakerName: e.target.value }))} />
-              </div>
-              <div style={{ gridColumn:"1/-1" }}>
-                <label style={LB}>所属法人会名</label>
-                <input type="text" style={INP2} placeholder="例：川口倫理法人会" value={form.speakerUnit} onChange={e => setForm(f => ({ ...f, speakerUnit: e.target.value }))} />
-              </div>
-              <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>セミナー種別</label>
-                <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginBottom:5, lineHeight:1.5 }}>
-                  基礎講座の講師依頼は同時にMS依頼書も作成されます。MS依頼書の作成は不要です。
-                </div>
+                {!isKyukai && (
+                  <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginBottom:5, lineHeight:1.5 }}>
+                    基礎講座の講師依頼は同時にMS依頼書も作成されます。MS依頼書の作成は不要です。
+                  </div>
+                )}
                 {(() => {
                   const KNOWN = SEMINAR_TYPES.filter(x => x.id !== "other");
                   const isCustom = !!form.seminarType && !KNOWN.some(x => x.id === form.seminarType);
@@ -299,30 +317,41 @@ ${sig}`;
                   );
                 })()}
               </div>
-              <div style={{ gridColumn:"1/-1" }}>
-                <label style={LB}>講師メールアドレス *</label>
-                <input type="email" style={INP2} placeholder="example@email.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-              </div>
-              <div style={{ gridColumn:"1/-1" }}>
-                <label style={LB}>前泊要否</label>
-                <select style={INP2} value={form.lodging} onChange={e => setForm(f => ({ ...f, lodging: e.target.value }))}>
-                  <option value="不要">不要</option>
-                  <option value="要">要（ホテルを手配する）</option>
-                </select>
-              </div>
-              <div style={{ gridColumn:"1/-1" }}>
-                <label style={LB}>領収証作成</label>
-                <select style={INP2} value={form.receiptNeeded} onChange={e => setForm(f => ({ ...f, receiptNeeded: e.target.value }))}>
-                  <option value="要">要</option>
-                  <option value="否">否</option>
-                </select>
-              </div>
+
+              {!isKyukai && <>
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={LB}>講師名 *</label>
+                  <input type="text" style={INP2} placeholder="例：山田 太郎" value={form.speakerName} onChange={e => setForm(f => ({ ...f, speakerName: e.target.value }))} />
+                </div>
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={LB}>所属法人会名</label>
+                  <input type="text" style={INP2} placeholder="例：川口倫理法人会" value={form.speakerUnit} onChange={e => setForm(f => ({ ...f, speakerUnit: e.target.value }))} />
+                </div>
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={LB}>講師メールアドレス *</label>
+                  <input type="email" style={INP2} placeholder="example@email.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                </div>
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={LB}>前泊要否</label>
+                  <select style={INP2} value={form.lodging} onChange={e => setForm(f => ({ ...f, lodging: e.target.value }))}>
+                    <option value="不要">不要</option>
+                    <option value="要">要（ホテルを手配する）</option>
+                  </select>
+                </div>
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={LB}>領収証作成</label>
+                  <select style={INP2} value={form.receiptNeeded} onChange={e => setForm(f => ({ ...f, receiptNeeded: e.target.value }))}>
+                    <option value="要">要</option>
+                    <option value="否">否</option>
+                  </select>
+                </div>
+              </>}
             </div>
             <button
-              style={{ marginTop:16, width:"100%", background: (canGenerate && !creating) ? "#7E57C2" : "#B0BEC5", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, cursor: (canGenerate && !creating) ? "pointer" : "not-allowed" }}
+              style={{ marginTop:16, width:"100%", background: (canGenerate && !creating) ? (isKyukai ? "#E65100" : "#7E57C2") : "#B0BEC5", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, cursor: (canGenerate && !creating) ? "pointer" : "not-allowed" }}
               disabled={!canGenerate || creating}
-              onClick={handleGenerate}>
-              {creating ? '作成中...' : 'フォームURLを生成する →'}
+              onClick={isKyukai ? handleRegisterKyukai : handleGenerate}>
+              {isKyukai ? (creating ? '登録中...' : '休会として登録する') : (creating ? '作成中...' : 'フォームURLを生成する →')}
             </button>
           </div>
         )}

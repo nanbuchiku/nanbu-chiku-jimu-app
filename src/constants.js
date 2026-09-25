@@ -25,6 +25,7 @@ export const STATUS = {
   confirmed: { label:"確定",       color:"#2E7D32", bg:"#E8F5E9" },
   completed: { label:"終了",       color:"#667085", bg:"#F1F5F9" },
   cancelled: { label:"キャンセル", color:"#B71C1C", bg:"#FFEBEE" },
+  kyukai:    { label:"休会",       color:"#78909C", bg:"#ECEFF1" },
 };
 
 export const SEMINAR_TYPES = [

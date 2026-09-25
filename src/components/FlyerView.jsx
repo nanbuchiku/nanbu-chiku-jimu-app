@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from '
 import JSZip from 'jszip';
 import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
-import { getSeminarType, parseDate } from '../utils';
+import { getSeminarType, parseDate, isPlaceholderSpeaker } from '../utils';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
 
 export default memo(function FlyerView({ speakers, today, showToast, updateSpeaker }) {
@@ -126,6 +126,21 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         });
       } else {
         sps.forEach(sp => {
+          if (isPlaceholderSpeaker(sp)) {
+            const r = ws.addRow({
+              chapter: ch.name,
+              stype:   '休会',
+              day:     sp.seminarDate ? `${"日月火水木金土"[parseDate(sp.seminarDate).getDay()]}曜日` : ch.dayName,
+              date:    sp.seminarDate || '',
+              name:    '休会（単会自体が開催されません）',
+              kana: '', unit: '', role: '', company: '', companyRole: '', topic: '', photo: '',
+            });
+            r.eachCell({ includeEmpty:true }, cell => {
+              cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFECEFF1' } };
+            });
+            r.getCell('name').font = { name:'Yu Gothic', size:11, italic:true, bold:true, color:{ argb:'FF78909C' } };
+            return;
+          }
           const ext = sp.materialUrl ? (sp.materialUrl.split('.').pop().split('?')[0] || 'jpg') : '';
           const dlName = sp.materialUrl ? `${(sp.seminarDate||'').replace(/-/g,'')}_${ch.name}_${sp.speakerName||''}_顔写真.${ext}` : '';
           const photoUrl = sp.materialUrl ? `${sp.materialUrl}?download=${encodeURIComponent(dlName)}` : '';
@@ -295,7 +310,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
   // ── Canva流し込み（横持ち・最大4講師/行・顔写真埋め込み）─────────────
   // 選択対象（選択中の月の講師フラット一覧）
   const canvaSpeakers = useMemo(
-    () => flyerData.flatMap(({ ch, sps }) => sps.map(sp => ({ ...sp, _chName: ch.name }))),
+    () => flyerData.flatMap(({ ch, sps }) => sps.filter(sp => !isPlaceholderSpeaker(sp)).map(sp => ({ ...sp, _chName: ch.name }))),
     [flyerData]
   );
 
@@ -438,20 +453,22 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
 
   // 完成度（予定人数基準）
   const completeness = useMemo(() => flyerData.map(({ ch, sps }) => {
+    // 休会は「チラシデータが必要な枠」ではないため、完成度の計算対象から除外する
+    const realSps = sps.filter(sp => !isPlaceholderSpeaker(sp));
     const key = `${selMonth}_${ch.id}`;
-    const expected = expectedCounts[key] || Math.max(sps.length, 1);
-    const ready = sps.filter(sp => sp.speakerName && sp.speakerKana && sp.topic && sp.materialUrl).length;
+    const expected = expectedCounts[key] || Math.max(realSps.length, 1);
+    const ready = realSps.filter(sp => sp.speakerName && sp.speakerKana && sp.topic && sp.materialUrl).length;
     const pct = Math.min(100, Math.round(ready / expected * 100));
     const missingSet = new Set();
-    if (sps.length === 0) missingSet.add("講師未登録");
-    sps.forEach(sp => {
+    if (realSps.length === 0 && sps.length === 0) missingSet.add("講師未登録");
+    realSps.forEach(sp => {
       if (!sp.speakerKana) missingSet.add("ふりがな");
       if (!sp.topic)       missingSet.add("テーマ");
       if (!sp.materialUrl) missingSet.add("顔写真");
     });
-    const unregistered = Math.max(0, expected - sps.length);
+    const unregistered = Math.max(0, expected - realSps.length);
     if (unregistered > 0) missingSet.add(`未登録${unregistered}名`);
-    return { ch, pct, missing: [...missingSet], ready, expected, registered: sps.length };
+    return { ch, pct, missing: [...missingSet], ready, expected, registered: realSps.length };
   }), [flyerData, expectedCounts, selMonth]);
 
   const readyCount = useMemo(() => completeness.filter(c => c.pct === 100).length, [completeness]);
@@ -468,6 +485,11 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         lines.push(`  ※講師未登録`);
       } else {
         sps.forEach((sp, i) => {
+          if (isPlaceholderSpeaker(sp)) {
+            lines.push(`  開催日：${sp.seminarDate}`);
+            lines.push(`  🚫 休会（単会自体が開催されません）`);
+            return;
+          }
           if (sps.length > 1) lines.push(`  ▷ 第${i + 1}講`);
           lines.push(`  開催日：${sp.seminarDate}`);
           lines.push(`  講師：${sp.speakerName}（${sp.speakerKana || "ふりがな未入力"}）`);
@@ -498,6 +520,11 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         lines.push(`  ※後日送付`);
       } else {
         sps.forEach((sp, i) => {
+          if (isPlaceholderSpeaker(sp)) {
+            lines.push(`  開催日：${sp.seminarDate}`);
+            lines.push(`  🚫 休会（単会自体が開催されません）`);
+            return;
+          }
           if (sps.length > 1) lines.push(`  ◆ 第${i + 1}講`);
           lines.push(`  開催日：${sp.seminarDate}`);
           lines.push(`  講師名：${sp.speakerName}`);
@@ -698,6 +725,26 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                   );
                 }
                 return sps.map((sp, idx) => {
+                  if (isPlaceholderSpeaker(sp)) {
+                    return (
+                      <tr key={sp.id} className="hover-row" style={{ borderTop: idx === 0 ? undefined : "1px dashed #F0F4F8", background:"#ECEFF1" }}>
+                        {idx === 0 ? (
+                          <td style={{ ...TD, verticalAlign:"top" }} rowSpan={sps.length}>
+                            <span style={PILL(ch)}>{ch.name}</span>
+                            <div style={{ fontSize:FS_SM, color:"#98A2B3", marginTop:2 }}>{ch.dayName}</div>
+                            {sps.length > 1 && <div style={{ marginTop:4, fontSize:FS_SM, color:ch.color, fontWeight:700 }}>{sps.length}名</div>}
+                          </td>
+                        ) : null}
+                        <td style={{ ...TD, fontSize:FS_SM, whiteSpace:"nowrap" }}>{sp.seminarDate || none}</td>
+                        <td style={{ ...TD, fontWeight:700, fontSize:FS_SM, color:"#78909C" }} colSpan={7}>🚫 休会（単会自体が開催されません）</td>
+                        <td style={TD}><span style={{ fontSize:FS_SM, color:"#B0BEC5" }}>―</span></td>
+                        <td style={TD}>
+                          <span style={{ fontSize:FS_SM, fontWeight:700, color:"#78909C", background:"#ECEFF1", padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>休会</span>
+                        </td>
+                        <td style={TD}>{none}</td>
+                      </tr>
+                    );
+                  }
                   const ready   = sp.speakerName && sp.speakerKana && sp.topic && sp.materialUrl;
                   const partial = (sp.speakerName || sp.topic) && !ready;
                   const statusColor = ready ? "#2E7D32" : partial ? "#FF8F00" : "#B71C1C";

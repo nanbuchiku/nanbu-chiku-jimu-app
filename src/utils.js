@@ -192,7 +192,17 @@ export function getSevenSetProgress(sp) {
   return { items, done, total: items.length };
 }
 
+// 講師名が「休会」等の特殊ケース（実在の講師がいないレコード）は、依頼・宿泊・資料などの
+// タスクチェックリストが意味を持たないため生成しない。
+const PLACEHOLDER_NAME_PATTERNS = ['休会', '新役員', '委員', 'スピーチリレー'];
+export function isPlaceholderSpeaker(sp) {
+  if (sp?.status === 'kyukai') return true;
+  const name = (sp?.speakerName || '').trim();
+  return PLACEHOLDER_NAME_PATTERNS.some(p => name.includes(p));
+}
+
 export function buildSpeakerTasks(sp) {
+  if (isPlaceholderSpeaker(sp)) return [];
   const tasks = [];
   const add = (id, label, category, extra) => tasks.push({ id, label, category, ...extra });
   const checks = sp.speakerChecks || {};
