@@ -18,6 +18,7 @@ export const fromDB = r => ({
   drinksAlcohol: r.drinks_alcohol, shioriArticle: r.shiori_article, postNotes: r.post_notes,
   formRequestedAt: r.form_requested_at, kisoNumber: r.kiso_number,
   receiptNeeded: r.receipt_needed,
+  msTopic: r.ms_topic, eventTime: r.event_time,
 });
 
 export const toDB = o => ({
@@ -32,6 +33,7 @@ export const toDB = o => ({
   drinks_alcohol: o.drinksAlcohol, shiori_article: o.shioriArticle, post_notes: o.postNotes,
   form_requested_at: o.formRequestedAt || null, kiso_number: o.kisoNumber || null,
   receipt_needed: o.receiptNeeded || null,
+  ms_topic: o.msTopic || null, event_time: o.eventTime || null,
 });
 
 export const taskFromDB = r => ({

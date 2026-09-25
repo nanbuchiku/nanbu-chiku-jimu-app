@@ -230,6 +230,51 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       </div>
     </div>
 
+    <div class="section-card" id="ms-content-section" style="display:none;">
+      <div class="section-header">🌅 翌朝のモーニングセミナーについて</div>
+      <div class="section-body">
+        <div class="field" id="f-ms-topic-same">
+          <label>講話タイトル・内容要約<span class="req">*</span><span class="hint">前夜の内容と同じですか？</span></label>
+          <div class="radio-group" id="ms-topic-same-group">
+            <label class="radio-item"><input type="radio" name="msTopicSame" value="same"> 前夜と共通</label>
+            <label class="radio-item"><input type="radio" name="msTopicSame" value="diff"> 別に入力する</label>
+          </div>
+          <div class="error-msg" id="ms-topic-same-error">選択してください</div>
+        </div>
+        <div id="ms-topic-detail" style="display:none;">
+          <div class="field" id="f-ms-topic">
+            <label>MS講話タイトル<span class="req">*</span></label>
+            <input type="text" id="msTopic" placeholder="「〇〇から学んだこと」">
+            <div class="error-msg">MS講話タイトルを入力してください</div>
+          </div>
+          <div class="field" id="f-ms-summary">
+            <label>MS内容要約<span class="req">*</span><span class="hint">300字以内・35分の講話です</span></label>
+            <textarea id="msSummary" placeholder="モーニングセミナーの内容要約をご記入ください（300字以内）" maxlength="300" oninput="updateMsCharCount()"></textarea>
+            <div class="char-count" id="msCharCount">0 / 300文字</div>
+            <div class="error-msg">MS内容要約を入力してください</div>
+          </div>
+        </div>
+
+        <div class="field" id="f-ms-material-same">
+          <label>使用する資料<span class="req">*</span><span class="hint">前夜と同じ資料を使いますか？</span></label>
+          <div class="radio-group" id="ms-material-same-group">
+            <label class="radio-item"><input type="radio" name="msMaterialSame" value="same"> 前夜と共通</label>
+            <label class="radio-item"><input type="radio" name="msMaterialSame" value="diff"> 別に用意する</label>
+          </div>
+          <div class="error-msg" id="ms-material-same-error">選択してください</div>
+        </div>
+
+        <div class="field" id="f-ms-pickup">
+          <label>モーニング当日朝のお迎え<span class="req">*</span></label>
+          <div class="radio-group" id="ms-pickup-group">
+            <label class="radio-item"><input type="radio" name="msPickup" value="要"> 要</label>
+            <label class="radio-item"><input type="radio" name="msPickup" value="不要"> 不要</label>
+          </div>
+          <div class="error-msg" id="ms-pickup-error">選択してください</div>
+        </div>
+      </div>
+    </div>
+
     <div class="section-card">
       <div class="section-header">🚗 当日のご準備</div>
       <div class="section-body">
@@ -371,6 +416,32 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
       </div>
     </div>
 
+    <div class="section-card" id="ms-material-section" style="display:none;">
+      <div class="section-header">📄 モーニングセミナー用の資料（前夜と別の場合）</div>
+      <div class="section-body">
+        <div class="field">
+          <label>MS資料①<span class="hint">PDF・Word・PowerPoint（任意）</span></label>
+          <div class="file-upload-area" id="msmaterial-drop">
+            <input type="file" id="msmaterialFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.key" onchange="onFileSelect('msmaterial')">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text" id="msmaterial-label">クリックまたはドラッグ＆ドロップ</div>
+            <div class="upload-hint">資料がない場合は空欄で構いません</div>
+            <div class="upload-progress" id="msmaterial-progress"><div class="upload-progress-bar" id="msmaterial-progress-bar"></div></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>MS資料②<span class="hint">追加資料（任意）</span></label>
+          <div class="file-upload-area" id="msmaterial2-drop">
+            <input type="file" id="msmaterial2File" accept=".pdf,.doc,.docx,.ppt,.pptx,.key" onchange="onFileSelect('msmaterial2')">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text" id="msmaterial2-label">クリックまたはドラッグ＆ドロップ</div>
+            <div class="upload-hint">追加資料がある場合のみ</div>
+            <div class="upload-progress" id="msmaterial2-progress"><div class="upload-progress-bar" id="msmaterial2-progress-bar"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="section-card" id="receipt-section-card">
       <div class="section-header">🧾 領収証</div>
       <div class="section-body">
@@ -467,6 +538,8 @@ const urlEmail   = urlParams.get('email') || '';
 const urlLodging = urlParams.get('lodging') || '';
 // 領収証作成の要否も事務局がフォーム作成時に決める。「否」なら領収証欄自体を非表示・入力不要にする。
 const urlReceipt = urlParams.get('receipt') || '';
+// 基礎講座・経営者の集いは前夜開催で、翌朝のモーニングセミナー分の入力欄も追加で出す
+const hasNextDayMs = urlType === 'kiso' || urlType === 'tsudoi';
 
 const SEMINAR_LABELS = { ms:'モーニングセミナー', kiso:'倫理経営基礎講座', koen:'倫理経営講演会', tsudoi:'経営者の集い', evening:'イブニングセミナー', other:'自主企画' };
 
@@ -489,11 +562,12 @@ document.addEventListener('DOMContentLoaded', () => {
     set('ev-type',   SEMINAR_LABELS[urlType] || urlType);
     // 法人会役職は講師本人が入力。万一URLで渡された場合のみ初期値として補完
     const ethEl = document.getElementById('ethics'); if (ethEl && urlEthics) ethEl.value = urlEthics;
-    if (urlType === 'kiso' && urlDate) {
+    if (hasNextDayMs && urlDate) {
       const d2 = new Date(urlDate + 'T00:00:00');
       d2.setDate(d2.getDate() + 1);
       const msDateStr = `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
-      set('ev-date', `${fmt(urlDate)}　【基礎講座】\n${fmt(msDateStr)}　【モーニングセミナー】`);
+      const nightLabel = urlType === 'kiso' ? '【基礎講座】' : '【経営者の集い】';
+      set('ev-date', `${fmt(urlDate)}　${nightLabel}\n${fmt(msDateStr)}　【モーニングセミナー】`);
     } else {
       set('ev-date', urlDate ? fmt(urlDate) : '');
     }
@@ -519,6 +593,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (infoBox) { infoBox.innerHTML = '📋 このフォームは<strong>倫理経営基礎講座</strong>講師依頼の確認用です。<br>ご入力いただいた情報はチラシ・当日資料として使用いたします。'; }
     const kisoInput = document.getElementById('kisoNumber');
     if (kisoInput) { kisoInput.addEventListener('input', function() { const el = document.getElementById('ev-kiso-num'); if (el) el.textContent = this.value ? '第' + this.value + '講' : '—'; }); }
+  }
+
+  // 基礎講座・経営者の集い: 翌朝MS分の入力欄（タイトル・資料の共通/別選択、当日朝のお迎え）を表示
+  if (hasNextDayMs) {
+    document.getElementById('ms-content-section').style.display = 'block';
+    document.querySelectorAll('input[name="msTopicSame"]').forEach(r => r.addEventListener('change', () => {
+      const diff = document.querySelector('input[name="msTopicSame"]:checked')?.value === 'diff';
+      document.getElementById('ms-topic-detail').style.display = diff ? 'block' : 'none';
+    }));
+    document.querySelectorAll('input[name="msMaterialSame"]').forEach(r => r.addEventListener('change', () => {
+      const diff = document.querySelector('input[name="msMaterialSame"]:checked')?.value === 'diff';
+      document.getElementById('ms-material-section').style.display = diff ? 'block' : 'none';
+    }));
   }
 
   // 領収証作成が「否」の場合は欄自体を非表示にし、入力不要にする
@@ -613,6 +700,26 @@ async function prefillFromDB() {
       const pr = data.print_required;
       const prVal = (pr === 'あり' || pr.startsWith('要')) ? '要（単会で印刷）' : '不要（持参）';
       triggerRadio('print', prVal);
+    }
+
+    // 基礎講座・経営者の集い: 翌朝MS分の既存回答を復元
+    if (hasNextDayMs) {
+      if (data.ms_topic) {
+        triggerRadio('msTopicSame', 'diff');
+        setVal('msTopic', data.ms_topic);
+        if (data.notes) {
+          const msm = data.notes.match(/【MS内容要約】\n([\s\S]*?)(?=\n【|$)/);
+          if (msm) { document.getElementById('msSummary').value = msm[1].trim(); updateMsCharCount(); }
+        }
+      } else {
+        triggerRadio('msTopicSame', 'same');
+      }
+      const hasMsMaterial = !!(data.notes && /【MS資料0[12]】/.test(data.notes));
+      triggerRadio('msMaterialSame', hasMsMaterial ? 'diff' : 'same');
+      if (data.notes) {
+        const mpk = data.notes.match(/【MS当日朝お迎え】([^\n]+)/);
+        if (mpk) triggerRadio('msPickup', mpk[1].trim());
+      }
     }
 
     // ページ3 (領収証・写真利用範囲)
@@ -715,6 +822,17 @@ function validatePage2() {
   ok = required('summary','f-summary') && ok;
   ok = requiredRadio('transport','transport-error','f-transport') && ok;
 
+  // 基礎講座・経営者の集い: 翌朝MS分の入力
+  if (hasNextDayMs) {
+    ok = requiredRadio('msTopicSame','ms-topic-same-error','f-ms-topic-same') && ok;
+    if (document.querySelector('input[name="msTopicSame"]:checked')?.value === 'diff') {
+      ok = required('msTopic','f-ms-topic') && ok;
+      ok = required('msSummary','f-ms-summary') && ok;
+    }
+    ok = requiredRadio('msMaterialSame','ms-material-same-error','f-ms-material-same') && ok;
+    ok = requiredRadio('msPickup','ms-pickup-error','f-ms-pickup') && ok;
+  }
+
   // 単会で準備するもの（1つ以上）
   const prep = document.querySelectorAll('input[name="prepare"]:checked');
   const pe   = document.getElementById('prepare-error');
@@ -758,6 +876,14 @@ function updateCharCount() {
   const el = document.getElementById('summary');
   const count = el.value.length;
   const cc = document.getElementById('charCount');
+  cc.textContent = count + ' / 300文字';
+  cc.className = 'char-count' + (count >= 300 ? ' over' : '');
+}
+
+function updateMsCharCount() {
+  const el = document.getElementById('msSummary');
+  const count = el.value.length;
+  const cc = document.getElementById('msCharCount');
   cc.textContent = count + ' / 300文字';
   cc.className = 'char-count' + (count >= 300 ? ' over' : '');
 }
@@ -807,7 +933,7 @@ function onFileSelect(type) {
 }
 
 // ドラッグ＆ドロップ
-['photo-drop','material-drop','material2-drop'].forEach(id => {
+['photo-drop','material-drop','material2-drop','msmaterial-drop','msmaterial2-drop'].forEach(id => {
   const el = document.getElementById(id);
   el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
   el.addEventListener('dragleave', () => el.classList.remove('dragover'));
@@ -907,7 +1033,7 @@ function buildFileName(type, ext, speakerName, unit, date) {
     || (speakerName || '').replace(/[^\x21-\x7E]/g, '').replace(/\s/g, '').toLowerCase()
     || String(Date.now());
   const ch = (chapterId || 'unknown').replace(/[^\x21-\x7E]/g, '');
-  const typeKey = type === '顔写真' ? 'photo' : type === '資料01' ? 'doc1' : 'doc2';
+  const typeKey = type === '顔写真' ? 'photo' : type === '資料01' ? 'doc1' : type === '資料02' ? 'doc2' : type === 'MS資料01' ? 'msdoc1' : 'msdoc2';
   const fileExt = type === '顔写真' ? 'jpg' : ext;
   return `${ch}/${d}/${name}/${typeKey}.${fileExt}`;
 }
@@ -1000,6 +1126,15 @@ function openConfirmationMail(payload, extraUrls) {
     '【③ 内容要約】',
     `${val('summary') || '（未記入）'}`,
     '',
+    ...(hasNextDayMs ? [
+      '【③-2 モーニングセミナー内容】',
+      document.querySelector('input[name="msTopicSame"]:checked')?.value === 'diff'
+        ? `　タイトル　　：${val('msTopic') || ''}\n${val('msSummary') || ''}`
+        : '　前夜と共通',
+      `　資料　　　　：${document.querySelector('input[name="msMaterialSame"]:checked')?.value === 'diff' ? '別に用意' : '前夜と共通'}`,
+      `　当日朝お迎え：${radio('msPickup') || '未回答'}`,
+      '',
+    ] : []),
     '【④ 交通・準備】',
     `　交通手段　　：${radio('transport') || '未回答'}`,
     `　資料印刷　　：${payload.print_required || '不要'}`,
@@ -1063,9 +1198,15 @@ async function submitForm() {
   // 前泊要否は事務局が事前に決めている場合はそちらを優先する（講師には選ばせていないため）
   const effectiveLodging = (urlLodging === '要' || urlLodging === '不要') ? urlLodging : radio('lodging');
 
+  // 基礎講座・経営者の集い: 翌朝MS分（前夜と別入力の場合のみ内容要約を保存。お迎えは常に保存）
+  const msTopicDiff = hasNextDayMs && radio('msTopicSame') === 'diff';
+  const msMaterialDiff = hasNextDayMs && radio('msMaterialSame') === 'diff';
+
   // 備考にまとめる情報（DBに余計なカラムを増やさないため）
   const notesLines = [
     `【内容要約】\n${val('summary')}`,
+    msTopicDiff ? `【MS内容要約】\n${val('msSummary')}` : '',
+    hasNextDayMs ? `【MS当日朝お迎え】${radio('msPickup')||'未回答'}` : '',
     `【交通手段】${radio('transport')}`,
     `【単会で準備】${checks('prepare')}`,
     effectiveLodging === '要' ? `【禁煙ルーム】${radio('room')||'未回答'}／【お迎え】${radio('pickup')||'未回答'}` : '',
@@ -1093,6 +1234,7 @@ async function submitForm() {
     seminar_type: urlType || 'ms',
     seminar_date: urlDate || null,
     kiso_number: urlType === 'kiso' ? (val('kisoNumber') || null) : null,
+    ms_topic: msTopicDiff ? val('msTopic') : '',
   };
   if (!speakerId) {
     payload.status = 'pending';
@@ -1123,6 +1265,18 @@ async function submitForm() {
       const url = await uploadToStorage(material2File, speakerName, '資料02', 'material2');
       extraUrls.push('【資料02】' + url);
     }
+    if (msMaterialDiff) {
+      const msMaterialFile  = document.getElementById('msmaterialFile').files[0];
+      const msMaterial2File = document.getElementById('msmaterial2File').files[0];
+      if (msMaterialFile) {
+        const url = await uploadToStorage(msMaterialFile, speakerName, 'MS資料01', 'msmaterial');
+        extraUrls.push('【MS資料01】' + url);
+      }
+      if (msMaterial2File) {
+        const url = await uploadToStorage(msMaterial2File, speakerName, 'MS資料02', 'msmaterial2');
+        extraUrls.push('【MS資料02】' + url);
+      }
+    }
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
 
     if (speakerId) {
@@ -1144,6 +1298,7 @@ async function submitForm() {
         p_material_url:   payload.material_url  || null,
         p_material_name:  payload.material_name || null,
         p_kiso_number:    payload.kiso_number,
+        p_ms_topic:       payload.ms_topic,
       });
       if (error) throw new Error(error.message);
     } else {

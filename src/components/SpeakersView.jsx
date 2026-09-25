@@ -379,7 +379,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 {/* 4. テーマ */}
                 <div style={{ flex:"1 1 150px", minWidth:0 }}>
                   <div style={{ fontSize:"clamp(11px,1.5vw,14px)", color:"#98A2B3", fontWeight:600, marginBottom:2 }}>テーマ</div>
-                  <div style={{ fontSize:"clamp(14px,2vw,20px)", color:"#263238", fontWeight:700 }}>{sp.topic ? `「${sp.topic}」` : <span style={{ color:"#B0BEC5", fontWeight:400 }}>未定</span>}</div>
+                  {(() => {
+                    const displayTopic = (sp._virtualType === 'ms' ? (sp.msTopic || sp.topic) : sp.topic);
+                    return <div style={{ fontSize:"clamp(14px,2vw,20px)", color:"#263238", fontWeight:700 }}>{displayTopic ? `「${displayTopic}」` : <span style={{ color:"#B0BEC5", fontWeight:400 }}>未定</span>}</div>;
+                  })()}
                 </div>
 
                 {/* 5. ステータス＋資料 */}

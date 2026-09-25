@@ -146,6 +146,17 @@ export function extractPhotoLinks(notes) {
   return out;
 }
 
+// 基礎講座・経営者の集いの翌朝MS分で、資料が前夜と別に用意された場合のみ【MS資料0N】として保存される
+export function extractMsMaterialLinks(notes) {
+  if (!notes) return [];
+  const normalized = String(notes).replace(/\\n/g, '\n');
+  const out = [];
+  const re = /【(MS資料\d+)】\s*(https?:\/\/\S+)/g;
+  let m;
+  while ((m = re.exec(normalized)) !== null) out.push({ label: m[1], url: m[2] });
+  return out;
+}
+
 // タスクのチェック状態を統一的に読むためのヘルパー
 // 旧データ（true/false のみ）と新データ（{done,at,by,dest}）の両方を扱う
 export function isTaskDone(checks, id) {

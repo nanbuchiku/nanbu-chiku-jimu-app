@@ -111,10 +111,12 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
     const result = {};
     const summaryMatch = notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
     if (summaryMatch) result['内容要約'] = summaryMatch[1].trim();
+    const msSummaryMatch = notes.match(/【MS内容要約】\n([\s\S]*?)(?=\n【|$)/);
+    if (msSummaryMatch) result['MS内容要約'] = msSummaryMatch[1].trim();
     const tagLine = /【([^】]+)】([^\n【]*)/g;
     let m;
     while ((m = tagLine.exec(notes)) !== null) {
-      if (m[1] !== '内容要約') result[m[1]] = m[2].trim();
+      if (m[1] !== '内容要約' && m[1] !== 'MS内容要約') result[m[1]] = m[2].trim();
     }
     return result;
   }, [sp?.notes]);
@@ -298,7 +300,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           </DocSection>
         );
 
-        const mkTransport = (c, n) => (
+        const mkTransport = (c, n, isMs = false) => (
           <DocSection title={`${n} 交通・当日の準備`} color={c}>
             {(() => {
               const t = parsedNotes['交通手段'];
@@ -310,12 +312,15 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 </span>
               } />;
             })()}
-            <DocRow label="資料の有無" color={c} value={
-              <span>
-                <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="あり" />
+            <DocRow label="資料の有無" color={c} value={(() => {
+              const hasOwn = !!(parsedNotes['資料01'] || parsedNotes['資料02']);
+              const hasMs  = !!(parsedNotes['MS資料01'] || parsedNotes['MS資料02']);
+              const has = isMs ? (hasMs || hasOwn) : hasOwn;
+              return <span>
+                <Cb on={has} label="あり" />
                 <Cb on={false} label="なし" />
-              </span>
-            } />
+              </span>;
+            })()} />
             {(() => {
               const req  = sp.printRequired === "あり" || sp.printRequired?.startsWith("要");
               const notR = sp.printRequired === "不要" || sp.printRequired?.startsWith("不要");
@@ -336,7 +341,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
           </DocSection>
         );
 
-        const mkLodging = (c, n) => (
+        const mkLodging = (c, n, showMsPickup = false) => (
           <DocSection title={`${n} 宿泊情報`} color={c}>
             {(() => {
               const req  = sp.lodging === "要" || (sp.lodging && sp.lodging !== "不要" && sp.lodging !== "なし");
@@ -375,10 +380,19 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 } />
               </>;
             })()}
+            {showMsPickup && (() => {
+              const msPickup = parsedNotes['MS当日朝お迎え'] || null;
+              return <DocRow label="MS当日朝のお迎え" color={c} value={
+                <span>
+                  <Cb on={msPickup === "要"}  label="要" />
+                  <Cb on={msPickup === "不要"} label="不要" />
+                </span>
+              } />;
+            })()}
           </DocSection>
         );
 
-        const mkPhoto = (c, n) => (
+        const mkPhoto = (c, n, isMs = false) => (
           <DocSection title={`${n} 顔写真・資料`} color={c}>
             {sp.materialUrl && (/\.(jpg|jpeg|png|webp)$/i.test(sp.materialUrl) || sp.materialUrl.includes('/object/public/')) && (
               <tr>
@@ -395,13 +409,16 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 <Cb on={false} label="未受領" />
               </span>
             } />
-            <DocRow label="講話資料" color={c} value={
-              <span>
-                <Cb on={!!(parsedNotes['資料01'] || parsedNotes['資料02'])} label="フォームアップ済" />
+            <DocRow label={isMs ? "MS講話資料" : "講話資料"} color={c} value={(() => {
+              const hasOwn = !!(parsedNotes['資料01'] || parsedNotes['資料02']);
+              const hasMs  = !!(parsedNotes['MS資料01'] || parsedNotes['MS資料02']);
+              const has = isMs ? (hasMs || hasOwn) : hasOwn;
+              return <span>
+                <Cb on={has} label={isMs && hasMs ? "MS用に別途アップ済" : "フォームアップ済"} />
                 <Cb on={false} label="メール送付済" />
                 <Cb on={false} label="未受領" />
-              </span>
-            } />
+              </span>;
+            })()} />
             {sp.materialName && <DocRow label="ファイル名・メモ" value={sp.materialName} color={c} />}
             <DocRow label="顔写真の使用範囲" value={parsedNotes['顔写真の使用範囲'] || ""} color={c} />
           </DocSection>
@@ -485,7 +502,8 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   <>
                     <DocSection title="② 開催情報（経営者の集い）" color={c1}>
                       <DocRow label="講話日"     value={formatDate(sp.seminarDate)}                    color={c1} />
-                      <DocRow label="開催場所"   value={sp.venue || chSettings.msVenue || ch.venue}    color={c1} />
+                      <DocRow label="開催時間"   value={sp.eventTime || ""}                             color={c1} />
+                      <DocRow label="開催場所"   value={sp.venue || ""}                                 color={c1} />
                     </DocSection>
                     <DocSection title="③ 経営者の集い 内容" color={c1}>
                       <DocRow label="タイトル"  value={sp.topic ? `「${sp.topic}」` : ""}  color={c1} />
@@ -512,7 +530,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                 <DocSection title="② 開催情報（モーニングセミナー）" color={c2}>
                   <DocRow label="講話日"         value={formatDate(msDateStr)}                           color={c2} />
                   <DocRow label="講話単会名"      value={chSettings.name || ch.name}                     color={c2} />
-                  <DocRow label="開催曜日・時間"  value={`${weekdayOf(msDateStr)}　${ch.time}`}                   color={c2} />
+                  <DocRow label="開催曜日・時間"  value={`${weekdayOf(msDateStr)}　${chSettings.msTime || ch.time}`}    color={c2} />
                   <DocRow label="開催場所"        value={chSettings.msVenue || ch.venue}                  color={c2} />
                   <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}              color={c2} />
                   {chSettings.msStation && <DocRow label="最寄駅"    value={chSettings.msStation}         color={c2} />}
@@ -522,18 +540,21 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   <DocRow label="会場連絡先"      value={chSettings.msVenueTel || ch.venueTel || "—"}   color={c2} />
                 </DocSection>
                 <DocSection title="③ MS講話内容" color={c2}>
-                  <DocRow label="タイトル"  value={sp.topic ? `「${sp.topic}」` : ""}  color={c2} />
-                  <DocRow label="内容要約"  value={parsedNotes['内容要約'] || ""}       color={c2} />
+                  <DocRow label="タイトル"  value={(sp.msTopic || sp.topic) ? `「${sp.msTopic || sp.topic}」` : ""}  color={c2} />
+                  <DocRow label="内容要約"  value={parsedNotes['MS内容要約'] || parsedNotes['内容要約'] || ""}       color={c2} />
                 </DocSection>
-                {mkTransport(c2, "④")}
-                {mkLodging(c2, "⑤")}
-                {mkPhoto(c2, "⑥")}
+                {mkTransport(c2, "④", true)}
+                {mkLodging(c2, "⑤", true)}
+                {mkPhoto(c2, "⑥", true)}
                 {mkRemarks(c2, "⑦")}
                 {mkFooter(c2)}
               </div>
             </>
           );
         }
+
+        // ── MS以外の単発種別（イブニング・自主企画・倫理経営講演会）は毎回入力の開催時間・場所を使う ──
+        const isMsType = sp.seminarType === 'ms' || !sp.seminarType;
 
         // ── Non-kiso: single document ──
         return (
@@ -544,14 +565,20 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocSection title="② 開催情報" color={st.color}>
               <DocRow label="講話日"          value={formatDate(sp.seminarDate)}                              color={st.color} />
               <DocRow label="講話単会名"      value={chSettings.name || ch.name}                              color={st.color} />
-              <DocRow label="開催曜日・時間"  value={`${weekdayOf(sp.seminarDate)}　${ch.time}`}                            color={st.color} />
-              <DocRow label="開催場所"        value={chSettings.msVenue || ch.venue}                          color={st.color} />
-              <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}                      color={st.color} />
-              {chSettings.msStation && <DocRow label="最寄駅"  value={chSettings.msStation}                   color={st.color} />}
-              <DocRow label="会場地図" color={st.color}
-                value={<a href={chSettings.msMapUrl || ch.mapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
-              {chSettings.msParking && <DocRow label="駐車場"  value={chSettings.msParking}                   color={st.color} />}
-              <DocRow label="会場連絡先"      value={chSettings.msVenueTel || ch.venueTel || "—"}            color={st.color} />
+              {isMsType ? (
+                <DocRow label="開催曜日・時間"  value={`${weekdayOf(sp.seminarDate)}　${chSettings.msTime || ch.time}`}      color={st.color} />
+              ) : (
+                <DocRow label="開催時間"        value={sp.eventTime || ""}                                    color={st.color} />
+              )}
+              <DocRow label="開催場所"        value={isMsType ? (chSettings.msVenue || ch.venue) : (sp.venue || "")}      color={st.color} />
+              {isMsType && <DocRow label="会場住所"        value={chSettings.msAddress || ch.address}                      color={st.color} />}
+              {isMsType && chSettings.msStation && <DocRow label="最寄駅"  value={chSettings.msStation}                   color={st.color} />}
+              {isMsType && (
+                <DocRow label="会場地図" color={st.color}
+                  value={<a href={chSettings.msMapUrl || ch.mapUrl} target="_blank" rel="noreferrer" style={{ color:"#1565C0", fontSize:"10.5pt" }}>Googleマップで開く →</a>} />
+              )}
+              {isMsType && chSettings.msParking && <DocRow label="駐車場"  value={chSettings.msParking}                   color={st.color} />}
+              {isMsType && <DocRow label="会場連絡先"      value={chSettings.msVenueTel || ch.venueTel || "—"}            color={st.color} />}
             </DocSection>
             <DocSection title="③ MS講話内容" color={st.color}>
               <DocRow label="タイトル"  value={sp.topic ? `「${sp.topic}」` : ""}  color={st.color} />
