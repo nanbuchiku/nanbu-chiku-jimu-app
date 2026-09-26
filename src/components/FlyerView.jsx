@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from '
 import JSZip from 'jszip';
 import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
-import { getSeminarType, parseDate, isPlaceholderSpeaker } from '../utils';
+import { getSeminarType, parseDate, isKyukaiRecord } from '../utils';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
 
 export default memo(function FlyerView({ speakers, today, showToast, updateSpeaker }) {
@@ -126,7 +126,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         });
       } else {
         sps.forEach(sp => {
-          if (isPlaceholderSpeaker(sp)) {
+          if (isKyukaiRecord(sp)) {
             const r = ws.addRow({
               chapter: ch.name,
               stype:   '休会',
@@ -310,7 +310,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
   // ── Canva流し込み（横持ち・最大4講師/行・顔写真埋め込み）─────────────
   // 選択対象（選択中の月の講師フラット一覧）
   const canvaSpeakers = useMemo(
-    () => flyerData.flatMap(({ ch, sps }) => sps.filter(sp => !isPlaceholderSpeaker(sp)).map(sp => ({ ...sp, _chName: ch.name }))),
+    () => flyerData.flatMap(({ ch, sps }) => sps.filter(sp => !isKyukaiRecord(sp)).map(sp => ({ ...sp, _chName: ch.name }))),
     [flyerData]
   );
 
@@ -454,7 +454,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
   // 完成度（予定人数基準）
   const completeness = useMemo(() => flyerData.map(({ ch, sps }) => {
     // 休会は「チラシデータが必要な枠」ではないため、完成度の計算対象から除外する
-    const realSps = sps.filter(sp => !isPlaceholderSpeaker(sp));
+    const realSps = sps.filter(sp => !isKyukaiRecord(sp));
     const key = `${selMonth}_${ch.id}`;
     const expected = expectedCounts[key] || Math.max(realSps.length, 1);
     const ready = realSps.filter(sp => sp.speakerName && sp.speakerKana && sp.topic && sp.materialUrl).length;
@@ -485,7 +485,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         lines.push(`  ※講師未登録`);
       } else {
         sps.forEach((sp, i) => {
-          if (isPlaceholderSpeaker(sp)) {
+          if (isKyukaiRecord(sp)) {
             lines.push(`  開催日：${sp.seminarDate}`);
             lines.push(`  🚫 休会（単会自体が開催されません）`);
             return;
@@ -520,7 +520,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         lines.push(`  ※後日送付`);
       } else {
         sps.forEach((sp, i) => {
-          if (isPlaceholderSpeaker(sp)) {
+          if (isKyukaiRecord(sp)) {
             lines.push(`  開催日：${sp.seminarDate}`);
             lines.push(`  🚫 休会（単会自体が開催されません）`);
             return;
@@ -725,7 +725,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                   );
                 }
                 return sps.map((sp, idx) => {
-                  if (isPlaceholderSpeaker(sp)) {
+                  if (isKyukaiRecord(sp)) {
                     return (
                       <tr key={sp.id} className="hover-row" style={{ borderTop: idx === 0 ? undefined : "1px dashed #F0F4F8", background:"#ECEFF1" }}>
                         {idx === 0 ? (

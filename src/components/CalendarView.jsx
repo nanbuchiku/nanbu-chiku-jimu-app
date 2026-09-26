@@ -1,6 +1,6 @@
 import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isPlaceholderSpeaker, hasNextDayMs, getSeminarType, getChapter } from '../utils';
+import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isKyukaiRecord, hasNextDayMs, getSeminarType, getChapter } from '../utils';
 import { BP, BC } from '../styles';
 
 const DAY_NAMES = ["日","月","火","水","木","金","土"];
@@ -8,7 +8,7 @@ const DAY_NAMES = ["日","月","火","水","木","金","土"];
 // カレンダーセルのホバーで表示する、講師のタスク進捗ツールチップ
 function SpeakerHoverCard({ sp, rect }) {
   if (!sp || !rect) return null;
-  if (isPlaceholderSpeaker(sp)) {
+  if (isKyukaiRecord(sp)) {
     const top = rect.bottom + 6;
     const left = Math.min(rect.left, window.innerWidth - 200);
     return (
@@ -194,7 +194,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                 </div>
                 {ch && (() => {
                   const addable = canAddFor(ch.id);
-                  const isKyukai = sp && isPlaceholderSpeaker(sp);
+                  const isKyukai = sp && isKyukaiRecord(sp);
                   return (
                   <div
                     style={{ background: sp ? (isKyukai ? "#ECEFF1" : ch.light) : "#FAFAFA", border:`1px solid ${sp ? (isKyukai ? "#CFD8DC" : ch.accent) : "#F1F5F9"}`, borderRadius:5, padding:"3px 5px", cursor: (sp || addable) ? "pointer" : "default", transition:"box-shadow .1s" }}
@@ -228,7 +228,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                 })()}
                 {otherEve.map((eveSp, eIdx) => {
                   const eveCh = getChapter(eveSp.chapterId);
-                  const isKyukaiEve = isPlaceholderSpeaker(eveSp);
+                  const isKyukaiEve = isKyukaiRecord(eveSp);
                   const eveLabel = eveSp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(eveSp.seminarType).label;
                   return (
                     <div key={eveSp.id || eIdx}
@@ -311,7 +311,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                 <div key={i} style={{ background: isChDay ? ch.light : "#fff", padding:4, minHeight:76, border:`1px solid ${isChDay ? ch.accent : "transparent"}` }}>
                   {isChDay && (spList.length > 0 ? spList.map((sp, spIdx) => (
                     <div key={sp.id || spIdx} style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4, marginTop: spIdx > 0 ? 4 : 0, borderTop: spIdx > 0 ? `1px dashed ${ch.accent}` : "none" }} onClick={() => onSpeaker(sp)} onMouseEnter={showHover(sp)} onMouseLeave={hideHover}>
-                      {isPlaceholderSpeaker(sp) ? (
+                      {isKyukaiRecord(sp) ? (
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C", textAlign:"center", padding:"6px 0" }}>🚫 休会</div>
                       ) : (
                       <>
@@ -335,7 +335,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                     );
                   })())}
                   {kisoList.map((kisoSp, kIdx) => {
-                    const isKyukai = isPlaceholderSpeaker(kisoSp);
+                    const isKyukai = isKyukaiRecord(kisoSp);
                     return (
                     <div key={kisoSp.id || kIdx} style={{ marginTop:4, background: isKyukai ? "#ECEFF1" : "#E8F5E9", border:`1px solid ${isKyukai ? "#CFD8DC" : "#A5D6A7"}`, borderRadius:4, padding:"2px 4px", cursor:"pointer" }}
                       onClick={() => onSpeaker(kisoSp)} onMouseEnter={showHover(kisoSp)} onMouseLeave={hideHover}>

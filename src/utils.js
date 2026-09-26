@@ -196,11 +196,20 @@ export function getSevenSetProgress(sp) {
   return { items, done, total: items.length };
 }
 
-// 講師名が「休会」等の特殊ケース（実在の講師がいないレコード）は、依頼・宿泊・資料などの
-// タスクチェックリストが意味を持たないため生成しない。
+// 単会自体が開催されない「休会」かどうか。カレンダー・チラシ管理などの見た目の
+// 休会表示は、必ずこのステータス（status==='kyukai'）だけを根拠にすること。
+// 「新役員・委員」「スピーチリレー」等は実在の講師がいないだけで単会自体は開催されるため、
+// 休会表示に混ぜてはいけない（isPlaceholderSpeakerと混同すると誤って休会扱いになる）。
+export function isKyukaiRecord(sp) {
+  return sp?.status === 'kyukai';
+}
+
+// 講師名が「休会」「新役員・委員」等の特殊ケース（実在の講師がいないレコード）は、
+// 依頼・宿泊・資料などのタスクチェックリストが意味を持たないため生成しない。
+// ※これは見た目の休会表示とは別の判定。カレンダー等の表示にはisKyukaiRecordを使うこと。
 const PLACEHOLDER_NAME_PATTERNS = ['休会', '新役員', '委員', 'スピーチリレー'];
 export function isPlaceholderSpeaker(sp) {
-  if (sp?.status === 'kyukai') return true;
+  if (isKyukaiRecord(sp)) return true;
   const name = (sp?.speakerName || '').trim();
   return PLACEHOLDER_NAME_PATTERNS.some(p => name.includes(p));
 }
