@@ -27,7 +27,6 @@ function SpeakerHoverCard({ sp, rect }) {
         padding:"10px 12px", pointerEvents:"none", fontSize:"clamp(11px,1.3vw,13px)",
       }}>
         <KyukaiMark size={28} fontSize={13} />
-        <div style={{ color:"#98A2B3", marginTop:2 }}>単会自体が開催されません</div>
       </div>
     );
   }

@@ -133,7 +133,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
               stype:   '休会',
               day:     sp.seminarDate ? `${"日月火水木金土"[parseDate(sp.seminarDate).getDay()]}曜日` : ch.dayName,
               date:    sp.seminarDate || '',
-              name:    '休会（単会自体が開催されません）',
+              name:    '休会',
               kana: '', unit: '', role: '', company: '', companyRole: '', topic: '', photo: '',
             });
             r.eachCell({ includeEmpty:true }, cell => {
@@ -488,7 +488,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         sps.forEach((sp, i) => {
           if (isKyukaiRecord(sp)) {
             lines.push(`  開催日：${sp.seminarDate}`);
-            lines.push(`  🚫 休会（単会自体が開催されません）`);
+            lines.push(`  🚫 休会`);
             return;
           }
           if (sps.length > 1) lines.push(`  ▷ 第${i + 1}講`);
@@ -523,7 +523,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
         sps.forEach((sp, i) => {
           if (isKyukaiRecord(sp)) {
             lines.push(`  開催日：${sp.seminarDate}`);
-            lines.push(`  🚫 休会（単会自体が開催されません）`);
+            lines.push(`  🚫 休会`);
             return;
           }
           if (sps.length > 1) lines.push(`  ◆ 第${i + 1}講`);
@@ -737,7 +737,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                           </td>
                         ) : null}
                         <td style={{ ...TD, fontSize:FS_SM, whiteSpace:"nowrap" }}>{sp.seminarDate || none}</td>
-                        <td style={{ ...TD, fontWeight:700, fontSize:FS_SM, color:"#78909C" }} colSpan={7}>🚫 休会（単会自体が開催されません）</td>
+                        <td style={{ ...TD, fontWeight:700, fontSize:FS_SM, color:"#78909C" }} colSpan={7}>🚫 休会</td>
                         <td style={TD}><img src={mascotSleep} alt="休会" style={{ width:32, height:32, objectFit:"contain" }} /></td>
                         <td style={TD}>
                           <span style={{ fontSize:FS_SM, fontWeight:700, color:"#78909C", background:"#ECEFF1", padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>休会</span>

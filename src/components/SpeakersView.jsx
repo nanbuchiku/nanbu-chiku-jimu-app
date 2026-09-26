@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime, hasNextDayMs } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime, hasNextDayMs, isKyukaiRecord } from '../utils';
 
 const METHOD_LABELS = { mail: "メール", line: "LINE", fax: "ファックス" };
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
+import mascotSleep from '../assets/mascot-sleep.png';
 import FileViewModal from './FileViewModal';
 import FaxPrintModal from './FaxPrintModal';
 
@@ -339,7 +340,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 <div className="person-panel" style={{ display:"flex", alignItems:"center", gap:"clamp(8px,1.5vw,14px)", flex:"3 1 280px", minWidth:0, background:"#EAF0FF", border:"1px solid transparent", borderRadius:16, padding:"clamp(8px,1.6vw,12px)" }}>
                   {/* 丸型写真 */}
                   <div style={{ flexShrink:0 }}>
-                    {isPhoto ? (
+                    {isKyukaiRecord(sp) ? (
+                      <div style={{ width:"clamp(56px,8vw,80px)", height:"clamp(56px,8vw,80px)", background:"#ECEFF1", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", border:`3px solid #CFD8DC` }}>
+                        <img src={mascotSleep} alt="休会" style={{ width:"70%", height:"70%", objectFit:"contain" }} />
+                      </div>
+                    ) : isPhoto ? (
                       <img loading="lazy" src={sp.materialUrl} alt={sp.speakerName}
                         style={{ width:"clamp(56px,8vw,80px)", height:"clamp(56px,8vw,80px)", objectFit:"cover", borderRadius:"50%", border:`3px solid #2563EB`, cursor:"pointer", display:"block" }}
                         onClick={() => setFileModal({ url:sp.materialUrl, name:sp.materialName, speaker:sp })}
