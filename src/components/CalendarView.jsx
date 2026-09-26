@@ -2,8 +2,17 @@ import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
 import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isKyukaiRecord, hasNextDayMs, getSeminarType, getChapter } from '../utils';
 import { BP, BC } from '../styles';
+import mascotSleep from '../assets/mascot-sleep.png';
 
 const DAY_NAMES = ["日","月","火","水","木","金","土"];
+
+// 休会マーク（キャラクター＋「休会」）。サイズだけ呼び出し側で変える。
+const KyukaiMark = ({ size = 18, fontSize = "clamp(12px,1.4vw,14px)" }) => (
+  <span style={{ display:"inline-flex", alignItems:"center", gap:4 }}>
+    <img src={mascotSleep} alt="" style={{ width:size, height:size, objectFit:"contain", flexShrink:0 }} />
+    <span style={{ fontSize, fontWeight:700, color:"#78909C" }}>休会</span>
+  </span>
+);
 
 // カレンダーセルのホバーで表示する、講師のタスク進捗ツールチップ
 function SpeakerHoverCard({ sp, rect }) {
@@ -17,7 +26,7 @@ function SpeakerHoverCard({ sp, rect }) {
         border:"1px solid #D9E1EE", borderRadius:10, boxShadow:"0 6px 20px rgba(0,0,0,.15)",
         padding:"10px 12px", pointerEvents:"none", fontSize:"clamp(11px,1.3vw,13px)",
       }}>
-        <div style={{ fontWeight:800, color:"#78909C" }}>🚫 休会</div>
+        <KyukaiMark size={28} fontSize={13} />
         <div style={{ color:"#98A2B3", marginTop:2 }}>単会自体が開催されません</div>
       </div>
     );
@@ -206,7 +215,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                     <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: isKyukai ? "#78909C" : ch.color, marginBottom:1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{ch.name}</div>
                     {sp ? (
                       isKyukai ? (
-                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C" }}>🚫 休会</div>
+                        <KyukaiMark size={18} />
                       ) : (
                       <>
                         {sp._msDay && <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color: ch.color, fontWeight:700 }}>MS（{sp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(sp.seminarType).label}翌日）</div>}
@@ -237,7 +246,11 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       onMouseEnter={showHover(eveSp)} onMouseLeave={hideHover}
                       title={`${eveCh.name}（他単会）`}>
                       <div style={{ fontSize:"clamp(10px,1.2vw,12px)", fontWeight:700, color: isKyukaiEve ? "#78909C" : eveCh.color, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveCh.name}・{eveLabel}</div>
-                      {!isKyukaiEve && <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#37474F", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveSp.speakerName}</div>}
+                      {isKyukaiEve ? (
+                        <KyukaiMark size={14} fontSize="clamp(10px,1.2vw,12px)" />
+                      ) : (
+                        <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#37474F", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveSp.speakerName}</div>
+                      )}
                     </div>
                   );
                 })}
@@ -312,7 +325,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                   {isChDay && (spList.length > 0 ? spList.map((sp, spIdx) => (
                     <div key={sp.id || spIdx} style={{ cursor:"pointer", padding:"3px 4px", borderRadius:4, marginTop: spIdx > 0 ? 4 : 0, borderTop: spIdx > 0 ? `1px dashed ${ch.accent}` : "none" }} onClick={() => onSpeaker(sp)} onMouseEnter={showHover(sp)} onMouseLeave={hideHover}>
                       {isKyukaiRecord(sp) ? (
-                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C", textAlign:"center", padding:"6px 0" }}>🚫 休会</div>
+                        <div style={{ textAlign:"center", padding:"6px 0" }}><KyukaiMark size={24} /></div>
                       ) : (
                       <>
                       {sp._msDay && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#061B44", fontWeight:700, marginBottom:1 }}>MS（{sp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(sp.seminarType).label}翌日）</div>}
@@ -340,7 +353,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                     <div key={kisoSp.id || kIdx} style={{ marginTop:4, background: isKyukai ? "#ECEFF1" : "#E8F5E9", border:`1px solid ${isKyukai ? "#CFD8DC" : "#A5D6A7"}`, borderRadius:4, padding:"2px 4px", cursor:"pointer" }}
                       onClick={() => onSpeaker(kisoSp)} onMouseEnter={showHover(kisoSp)} onMouseLeave={hideHover}>
                       {isKyukai ? (
-                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", fontWeight:700 }}>🚫 休会</div>
+                        <KyukaiMark size={16} fontSize="clamp(11px,1.3vw,13px)" />
                       ) : (
                         <>
                           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:700 }}>{kisoSp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(kisoSp.seminarType).label}</div>

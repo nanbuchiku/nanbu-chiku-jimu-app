@@ -4,6 +4,7 @@ import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
 import { getSeminarType, parseDate, isKyukaiRecord } from '../utils';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
+import mascotSleep from '../assets/mascot-sleep.png';
 
 export default memo(function FlyerView({ speakers, today, showToast, updateSpeaker }) {
   const months = useMemo(() => Array.from({ length: 9 }, (_, i) => {
@@ -737,7 +738,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                         ) : null}
                         <td style={{ ...TD, fontSize:FS_SM, whiteSpace:"nowrap" }}>{sp.seminarDate || none}</td>
                         <td style={{ ...TD, fontWeight:700, fontSize:FS_SM, color:"#78909C" }} colSpan={7}>🚫 休会（単会自体が開催されません）</td>
-                        <td style={TD}><span style={{ fontSize:FS_SM, color:"#B0BEC5" }}>―</span></td>
+                        <td style={TD}><img src={mascotSleep} alt="休会" style={{ width:32, height:32, objectFit:"contain" }} /></td>
                         <td style={TD}>
                           <span style={{ fontSize:FS_SM, fontWeight:700, color:"#78909C", background:"#ECEFF1", padding:"3px 8px", borderRadius:4, whiteSpace:"nowrap" }}>休会</span>
                         </td>
