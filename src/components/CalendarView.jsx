@@ -1,6 +1,6 @@
 import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isPlaceholderSpeaker, hasNextDayMs, getSeminarType } from '../utils';
+import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isPlaceholderSpeaker, hasNextDayMs, getSeminarType, getChapter } from '../utils';
 import { BP, BC } from '../styles';
 
 const DAY_NAMES = ["日","月","火","水","木","金","土"];
@@ -105,6 +105,20 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
     return map;
   }, [speakers]);
 
+  // 月表示用：日付だけで引ける前夜イベント一覧（その日の定例単会とは別の単会の前夜開催も
+  // 月表示に出すため。週表示は単会ごとの行があるのでkisoByChDateで足りるが、月表示は
+  // 1マスに1単会分の枠しかないので、他単会の前夜開催が完全に見えなくなっていた）
+  const kisoByDateAll = useMemo(() => {
+    const map = new Map();
+    speakers.forEach(sp => {
+      if (hasNextDayMs(sp.seminarType) && sp.seminarDate) {
+        if (!map.has(sp.seminarDate)) map.set(sp.seminarDate, []);
+        map.get(sp.seminarDate).push(sp);
+      }
+    });
+    return map;
+  }, [speakers]);
+
   // ── Month view data ─────────────────────────────
   const baseMonth = useMemo(() => new Date(today.getFullYear(), today.getMonth() + monthOffset, 1), [today, monthOffset]);
 
@@ -160,6 +174,10 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
             const ch = chapterByDay[dow];
             const spList = ch ? (speakerByKey.get(`${ch.id}|${dStr}`) || []) : [];
             const sp = spList[0] || null;
+            // その日の定例単会（ch）とは別の単会の前夜開催（基礎講座・経営者の集い・
+            // 倫理経営講演会）。月表示は1マスに1単会分の枠しかないため、別枠の
+            // 小さなバッジとして追加表示する（週表示のkisoByChDate相当）。
+            const otherEve = (kisoByDateAll.get(dStr) || []).filter(k => !ch || k.chapterId !== ch.id);
             const isSun = dow === 0, isSat = dow === 6;
             const jumpToWeek = () => {
               const todayMon = new Date(today); todayMon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
@@ -191,8 +209,9 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color:"#78909C" }}>🚫 休会</div>
                       ) : (
                       <>
+                        {sp._msDay && <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color: ch.color, fontWeight:700 }}>MS（{sp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(sp.seminarType).label}翌日）</div>}
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#263238", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{sp.speakerName}</div>
-                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>「{sp.topic}」</div>
+                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", lineHeight:1.3 }}>「{sp.topic}」</div>
                         <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"1px 4px", borderRadius:8, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9", display:"inline-block", whiteSpace:"nowrap" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         {spList.length > 1 && (
                           <span title={spList.slice(1).map(s => s.speakerName).join('、')} style={{ fontSize:"clamp(11px,1.3vw,13px)", padding:"1px 4px", borderRadius:8, fontWeight:700, color:"#fff", background:"#78909C", display:"inline-block", whiteSpace:"nowrap", marginLeft:3 }}>+{spList.length - 1}件</span>
@@ -201,12 +220,27 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       )
                     ) : (
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#B0BEC5", whiteSpace:"nowrap" }}>
-                        未定{addable ? <span style={{ color: ch.color, marginLeft:3 }}>＋</span> : ""}
+                        講師未定{addable ? <span style={{ color: ch.color, marginLeft:3 }}>＋</span> : ""}
                       </div>
                     )}
                   </div>
                   );
                 })()}
+                {otherEve.map((eveSp, eIdx) => {
+                  const eveCh = getChapter(eveSp.chapterId);
+                  const isKyukaiEve = isPlaceholderSpeaker(eveSp);
+                  const eveLabel = eveSp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(eveSp.seminarType).label;
+                  return (
+                    <div key={eveSp.id || eIdx}
+                      style={{ marginTop:3, background: isKyukaiEve ? "#ECEFF1" : eveCh.light, border:`1px solid ${isKyukaiEve ? "#CFD8DC" : eveCh.accent}`, borderRadius:5, padding:"2px 5px", cursor:"pointer" }}
+                      onClick={e => { e.stopPropagation(); onSpeaker(eveSp); }}
+                      onMouseEnter={showHover(eveSp)} onMouseLeave={hideHover}
+                      title={`${eveCh.name}（他単会）`}>
+                      <div style={{ fontSize:"clamp(10px,1.2vw,12px)", fontWeight:700, color: isKyukaiEve ? "#78909C" : eveCh.color, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveCh.name}・{eveLabel}</div>
+                      {!isKyukaiEve && <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#37474F", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveSp.speakerName}</div>}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
