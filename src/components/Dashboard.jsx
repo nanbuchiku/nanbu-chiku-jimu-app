@@ -252,16 +252,19 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
           </div>
         </div>
 
-        {/* チュートリアル吹き出し：ボタン右上に少し重ねて表示。小さく・目立つ色で。「次へ」でカードが進む */}
+        {/* チュートリアル吹き出し：カード中央に重ねて表示。薄い青・左向きの吹き出しで。「次へ」でカードが進む */}
         {showTutorial && (() => {
           const stepData = TUTORIAL_STEPS[tutorialStep];
           const isLast = tutorialStep === TUTORIAL_STEPS.length - 1;
+          const bubbleBg = "#E3F2FD";
+          const bubbleBorder = "#90CAF9";
+          const bubbleText = "#0D47A1";
           return (
-            <div style={{ position:"absolute", top:-16, right:10, zIndex:30, width:"min(220px, 76%)" }} onClick={e => e.stopPropagation()}>
-              <div style={{ position:"relative", background:"#FF7A00", color:"#fff", borderRadius:12, padding:"9px 11px", boxShadow:"0 6px 16px rgba(0,0,0,.28)" }}>
+            <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%, -50%)", zIndex:30, width:"min(240px, 88%)" }} onClick={e => e.stopPropagation()}>
+              <div style={{ position:"relative", background:bubbleBg, border:`1px solid ${bubbleBorder}`, color:bubbleText, borderRadius:12, padding:"9px 11px", boxShadow:"0 6px 16px rgba(0,0,0,.2)" }}>
                 <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:6 }}>
                   <div style={{ fontSize:12.5, fontWeight:800, lineHeight:1.4 }}>{stepData.title}</div>
-                  <button onClick={onCloseTutorial} title="チュートリアルを閉じる" style={{ background:"none", border:"none", color:"#fff", opacity:.85, fontSize:13, fontWeight:700, cursor:"pointer", padding:0, lineHeight:1, flexShrink:0 }}>✕</button>
+                  <button onClick={onCloseTutorial} title="チュートリアルを閉じる" style={{ background:"none", border:"none", color:bubbleText, opacity:.7, fontSize:13, fontWeight:700, cursor:"pointer", padding:0, lineHeight:1, flexShrink:0 }}>✕</button>
                 </div>
                 <div style={{ fontSize:11.5, marginTop:4, lineHeight:1.5 }}>{stepData.body}</div>
                 {stepData.checklist && (
@@ -270,20 +273,21 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                   </ol>
                 )}
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:8 }}>
-                  <span style={{ fontSize:10, opacity:.8 }}>{tutorialStep + 1}/{TUTORIAL_STEPS.length}</span>
+                  <span style={{ fontSize:10, opacity:.7 }}>{tutorialStep + 1}/{TUTORIAL_STEPS.length}</span>
                   <div style={{ display:"flex", gap:5 }}>
                     {tutorialStep > 0 && (
-                      <button onClick={() => setTutorialStep(s => s - 1)} style={{ background:"rgba(255,255,255,.2)", color:"#fff", border:"none", borderRadius:6, padding:"4px 9px", fontSize:11, fontWeight:700, cursor:"pointer" }}>戻る</button>
+                      <button onClick={() => setTutorialStep(s => s - 1)} style={{ background:"rgba(13,71,161,.1)", color:bubbleText, border:"none", borderRadius:6, padding:"4px 9px", fontSize:11, fontWeight:700, cursor:"pointer" }}>戻る</button>
                     )}
                     {isLast ? (
-                      <button onClick={onCloseTutorial} style={{ background:"#fff", color:"#FF7A00", border:"none", borderRadius:6, padding:"4px 11px", fontSize:11, fontWeight:800, cursor:"pointer" }}>閉じる</button>
+                      <button onClick={onCloseTutorial} style={{ background:bubbleText, color:"#fff", border:"none", borderRadius:6, padding:"4px 11px", fontSize:11, fontWeight:800, cursor:"pointer" }}>閉じる</button>
                     ) : (
-                      <button onClick={() => setTutorialStep(s => s + 1)} style={{ background:"#fff", color:"#FF7A00", border:"none", borderRadius:6, padding:"4px 11px", fontSize:11, fontWeight:800, cursor:"pointer" }}>次へ →</button>
+                      <button onClick={() => setTutorialStep(s => s + 1)} style={{ background:bubbleText, color:"#fff", border:"none", borderRadius:6, padding:"4px 11px", fontSize:11, fontWeight:800, cursor:"pointer" }}>次へ →</button>
                     )}
                   </div>
                 </div>
-                {/* 吹き出しの三角（ボタン側=左下を指す） */}
-                <div style={{ position:"absolute", bottom:-7, left:20, width:0, height:0, borderLeft:"7px solid transparent", borderRight:"7px solid transparent", borderTop:"7px solid #FF7A00" }} />
+                {/* 吹き出しの三角（左向き＝ボタンのアイコン側を指す） */}
+                <div style={{ position:"absolute", top:"50%", left:-8, transform:"translateY(-50%)", width:0, height:0, borderTop:"8px solid transparent", borderBottom:"8px solid transparent", borderRight:`8px solid ${bubbleBorder}` }} />
+                <div style={{ position:"absolute", top:"50%", left:-6.5, transform:"translateY(-50%)", width:0, height:0, borderTop:"7px solid transparent", borderBottom:"7px solid transparent", borderRight:`7px solid ${bubbleBg}` }} />
               </div>
             </div>
           );
