@@ -104,7 +104,8 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
             <div style={{ textAlign:'center', color:'#98A2B3', padding:48 }}>
               <div style={{ fontSize:"clamp(20px,3vw,28px)", lineHeight:1 }}>📄</div>
               <div style={{ fontSize:"clamp(13px,1.8vw,16px)", marginTop:14, color:'#D9E1EE' }}>{displayName}</div>
-              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", marginTop:6 }}>このファイル形式はプレビューできません</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", marginTop:6, color:'#98A2B3' }}>ファイルは正常です。この形式は画面上でのプレビューに対応していないだけです。</div>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", marginTop:3, color:'#98A2B3' }}>下の「ダウンロード」からご確認ください。</div>
             </div>
           )}
         </div>
@@ -119,10 +120,6 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
 
         {/* Action Buttons */}
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:10 }}>
-          <button style={{ ...BP, flex:1, minWidth:90 }}
-            onClick={() => window.open(url, '_blank', 'noopener')}>
-            🔗 開く
-          </button>
           <button style={{ ...BP, flex:1, minWidth:110, background:'#2E7D32' }}
             onClick={handleDownload}>
             ⬇ ダウンロード
