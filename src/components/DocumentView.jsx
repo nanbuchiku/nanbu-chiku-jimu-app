@@ -323,7 +323,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocRow label="資料の有無" color={c} value={(() => {
               const hasOwn = !!(parsedNotes['資料01'] || parsedNotes['資料02']);
               const hasMs  = !!(parsedNotes['MS資料01'] || parsedNotes['MS資料02']);
-              const has = isMs ? (hasMs || hasOwn) : hasOwn;
+              const has = isMs ? hasMs : hasOwn;
               return <span>
                 <Cb on={has} label="あり" />
                 <Cb on={false} label="なし" />
@@ -411,9 +411,9 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
             <DocRow label={isMs ? "MS講話資料" : "講話資料"} color={c} value={(() => {
               const hasOwn = !!(parsedNotes['資料01'] || parsedNotes['資料02']);
               const hasMs  = !!(parsedNotes['MS資料01'] || parsedNotes['MS資料02']);
-              const has = isMs ? (hasMs || hasOwn) : hasOwn;
+              const has = isMs ? hasMs : hasOwn;
               return <span>
-                <Cb on={has} label={isMs && hasMs ? "MS用に別途アップ済" : "フォームアップ済"} />
+                <Cb on={has} label={isMs ? "MS用に別途アップ済" : "フォームアップ済"} />
                 <Cb on={false} label="メール送付済" />
                 <Cb on={false} label="未受領" />
               </span>;
