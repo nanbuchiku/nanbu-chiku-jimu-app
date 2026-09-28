@@ -7,7 +7,7 @@ export const CHAPTERS = [
     time:"AM6:00〜7:00", venue:"CKスクエア新座　６F", address:"新座市野火止５−２−１０（駐車場：４F無料）", venueTel:"―", mapUrl:"https://share.google/rSXTQ2jqiGDttsCyE", staff:"小林靖会長" },
   { id:"asaka",         name:"朝霞",       short:"朝霞",    day:5, dayName:"金曜日", color:"#F97316", light:"#FFF4E5", accent:"#FFB86B",
     time:"AM6:30〜7:30", venue:"浜崎会館　２Fホール（氷川神社境内）", address:"朝霞市浜崎３丁目９番地", venueTel:"―", mapUrl:"https://maps.app.goo.gl/phdDu7hZSuUbmErN6", staff:"" },
-  { id:"kawaguchi",     name:"川口",       short:"川口",    day:6, dayName:"土曜日", color:"#DC2626", light:"#FEF2F2", accent:"#FECACA",
+  { id:"kawaguchi",     name:"川口市",     short:"川口市",  day:6, dayName:"土曜日", color:"#DC2626", light:"#FEF2F2", accent:"#FECACA",
     time:"AM6:30〜7:30", venue:"元郷四丁目町会会館", address:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）", venueTel:"―", mapUrl:"https://share.google/nIYPjDL6MsMpt1ek8", staff:"" },
 ];
 

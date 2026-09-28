@@ -141,7 +141,7 @@ const USER_NAMES = {
   'nizashikirinri@gmail.com':     '新座志木事務局',
   'toda@rinri-saitama.org':             'とだわらび事務局',
   'kawaguchihigasi@rinri-saitama.org':  '川口東事務局',
-  'kawaguchi@rinri-saitama.org':        '川口事務局',
+  'kawaguchi@rinri-saitama.org':        '川口市事務局',
 };
 function getActorName(email) {
   const addr = (email || '').toLowerCase();
