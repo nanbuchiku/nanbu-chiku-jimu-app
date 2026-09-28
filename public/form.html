@@ -1256,14 +1256,29 @@ async function submitForm() {
       payload.material_url  = existingData.material_url;
       payload.material_name = existingData.material_name || '顔写真';
     }
+    // 新しいファイルが選ばれていない場合は、既存の資料タグをそのまま引き継ぐ
+    // （顔写真と同じ考え方。これが無いと、資料欄を触らずに再送信しただけで
+    // 　既にアップロード済みの資料が記録から消えてしまう）
+    const keepExistingTag = (tagName) => {
+      if (!speakerId || !existingData?.notes) return null;
+      const m = String(existingData.notes).match(new RegExp('【' + tagName + '】(\\S+)'));
+      return m ? `【${tagName}】${m[1]}` : null;
+    };
+
     const extraUrls = [];
     if (materialFile) {
       const url = await uploadToStorage(materialFile, speakerName, '資料01', 'material');
       extraUrls.push('【資料01】' + url);
+    } else {
+      const kept = keepExistingTag('資料01');
+      if (kept) extraUrls.push(kept);
     }
     if (material2File) {
       const url = await uploadToStorage(material2File, speakerName, '資料02', 'material2');
       extraUrls.push('【資料02】' + url);
+    } else {
+      const kept = keepExistingTag('資料02');
+      if (kept) extraUrls.push(kept);
     }
     if (msMaterialDiff) {
       const msMaterialFile  = document.getElementById('msmaterialFile').files[0];
@@ -1271,10 +1286,16 @@ async function submitForm() {
       if (msMaterialFile) {
         const url = await uploadToStorage(msMaterialFile, speakerName, 'MS資料01', 'msmaterial');
         extraUrls.push('【MS資料01】' + url);
+      } else {
+        const kept = keepExistingTag('MS資料01');
+        if (kept) extraUrls.push(kept);
       }
       if (msMaterial2File) {
         const url = await uploadToStorage(msMaterial2File, speakerName, 'MS資料02', 'msmaterial2');
         extraUrls.push('【MS資料02】' + url);
+      } else {
+        const kept = keepExistingTag('MS資料02');
+        if (kept) extraUrls.push(kept);
       }
     }
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
