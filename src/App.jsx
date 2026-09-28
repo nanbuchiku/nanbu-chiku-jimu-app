@@ -48,7 +48,7 @@ const DEFAULT_CHAPTER_SETTINGS = {
     contactPerson:"小林靖会長", contactTel:"", chapterEmail:"nizashikirinri@gmail.com",
   },
   asaka: {
-    name:"朝霞", msVenue:"浜崎会館　２Fホール（氷川神社境内）", msAddress:"朝霞市浜崎３丁目９番地",
+    name:"朝霞市", msVenue:"浜崎会館　２Fホール（氷川神社境内）", msAddress:"朝霞市浜崎３丁目９番地",
     msStation:"", msMapUrl:"https://maps.app.goo.gl/phdDu7hZSuUbmErN6",
     msParking:"", msVenueTel:"―",
     kisoVenue:"", kisoAddress:"", kisoMapUrl:"", kisoTextChapter:"",
@@ -56,7 +56,7 @@ const DEFAULT_CHAPTER_SETTINGS = {
     contactPerson:"", contactTel:"", chapterEmail:"",
   },
   kawaguchi: {
-    name:"川口", msVenue:"元郷四丁目町会会館", msAddress:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）",
+    name:"川口市", msVenue:"元郷四丁目町会会館", msAddress:"川口市元郷４丁目１２−２（駐車場：（株）もといち　川口市元郷４−８−２４）",
     msStation:"", msMapUrl:"https://share.google/nIYPjDL6MsMpt1ek8",
     msParking:"（株）もといち　川口市元郷４−８−２４", msVenueTel:"―",
     kisoVenue:"", kisoAddress:"", kisoMapUrl:"", kisoTextChapter:"",
