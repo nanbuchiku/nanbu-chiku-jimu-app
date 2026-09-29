@@ -15,10 +15,12 @@ function extractStructuredNotes(notes) {
   const lines = [];
   const sm = normalized.match(/【内容要約】\n[\s\S]*?(?=\n【|$)/);
   if (sm) lines.push(sm[0].trim());
+  const msm = normalized.match(/【MS内容要約】\n[\s\S]*?(?=\n【|$)/);
+  if (msm) lines.push(msm[0].trim());
   const re = /【([^】]+)】([^\n]*)/g;
   let m;
   while ((m = re.exec(normalized)) !== null) {
-    if (m[1] !== '内容要約') lines.push(`【${m[1]}】${m[2]}`);
+    if (m[1] !== '内容要約' && m[1] !== 'MS内容要約') lines.push(`【${m[1]}】${m[2]}`);
   }
   return lines.join('\n');
 }
@@ -49,7 +51,7 @@ function getSmartMail(sp, today) {
   return { label:"📣 宣伝案内", type:"promo", bg:"#1565C0" };
 }
 
-export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate, onTasks }) {
+export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate, onTasks, onMerge }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
@@ -497,6 +499,10 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   )}
                   {onDuplicate && (
                     <button onClick={() => onDuplicate(sp)} style={{ fontSize:"var(--fs-xs)", background:"#E8F5E9", color:"#1B5E20", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }}>複製</button>
+                  )}
+                  {onMerge && (
+                    <button onClick={() => onMerge(sp)} title="同じ講師名・単会の別レコードと見比べて1件に統合する"
+                      style={{ fontSize:"var(--fs-xs)", background:"#E3F2FD", color:"#0D47A1", border:"none", borderRadius:6, padding:"5px 12px", cursor:"pointer" }}>🔗 統合</button>
                   )}
                   {(sp.phone || sp.email) && (
                     <button onClick={() => { const lines = [sp.speakerName, sp.phone && `TEL: ${sp.phone}`, sp.email && `Mail: ${sp.email}`].filter(Boolean); navigator.clipboard?.writeText(lines.join("\n")).catch(() => {}); showToast("連絡先をコピーしました 📋"); }}

@@ -58,6 +58,8 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     email:       draft?.email       ?? spProp?.email       ?? '',
     lodging:     draft?.lodging     ?? toBinaryLodging(spProp?.lodging),
     receiptNeeded: draft?.receiptNeeded ?? (spProp?.receiptNeeded || '要'),
+    venue:       draft?.venue       ?? spProp?.venue       ?? '',
+    eventTime:   draft?.eventTime   ?? spProp?.eventTime   ?? '',
   });
   const [restored, setRestored] = useState(!!draft);
   const [generated, setGenerated] = useState(!isNew);
@@ -110,6 +112,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
         chapterId: form.chapterId, speakerName: form.speakerName, speakerUnit: form.speakerUnit,
         seminarDate: form.seminarDate, seminarType: form.seminarType, role: form.role, email: form.email,
         lodging: form.lodging, receiptNeeded: form.receiptNeeded,
+        venue: form.venue, eventTime: form.eventTime,
       };
       if (createdId) {
         await updateSpeaker?.(createdId, fields);
@@ -328,6 +331,18 @@ ${sig}`;
                 })()}
               </div>
 
+              {!isKyukai && !isMs && !isKiso && (
+                <>
+                  <div style={{ gridColumn:"1/-1" }}>
+                    <label style={LB}>開催場所</label>
+                    <input type="text" style={INP2} placeholder="例：〇〇会館 2階ホール" value={form.venue} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))} />
+                  </div>
+                  <div style={{ gridColumn:"1/-1" }}>
+                    <label style={LB}>開催時間</label>
+                    <input type="text" style={INP2} placeholder="例：PM7:00〜9:00" value={form.eventTime} onChange={e => setForm(f => ({ ...f, eventTime: e.target.value }))} />
+                  </div>
+                </>
+              )}
               {!isKyukai && <>
                 <div style={{ gridColumn:"1/-1" }}>
                   <label style={LB}>講師名 *</label>

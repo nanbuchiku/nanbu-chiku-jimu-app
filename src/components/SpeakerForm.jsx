@@ -35,7 +35,9 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
       const tagged = [];
       const summaryMatch = n.match(/【内容要約】\n[\s\S]*?(?=\n【|$)/);
       if (summaryMatch) tagged.push(summaryMatch[0].trim());
-      (n.match(/【[^】]+】[^\n]*/g) || []).forEach(t => { if (!t.startsWith('【内容要約】')) tagged.push(t); });
+      const msSummaryMatch = n.match(/【MS内容要約】\n[\s\S]*?(?=\n【|$)/);
+      if (msSummaryMatch) tagged.push(msSummaryMatch[0].trim());
+      (n.match(/【[^】]+】[^\n]*/g) || []).forEach(t => { if (!t.startsWith('【内容要約】') && !t.startsWith('【MS内容要約】')) tagged.push(t); });
       const newNotes = [val.trim(), tagged.join('\n')].filter(Boolean).join('\n\n');
       return { ...f, notes: newNotes };
     });

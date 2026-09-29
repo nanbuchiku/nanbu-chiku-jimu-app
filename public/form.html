@@ -1075,6 +1075,7 @@ function extractStaffNotes(notes) {
   if (!notes) return '';
   return notes
     .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
+    .replace(/【MS内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
     .replace(/【[^】]+】[^\n]*/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();

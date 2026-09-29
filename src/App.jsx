@@ -18,6 +18,7 @@ import FlyerView from './components/FlyerView';
 import SpeakerForm from './components/SpeakerForm';
 import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
+import RecordCompareModal from './components/RecordCompareModal';
 import LoginPage from './components/LoginPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
 
@@ -214,6 +215,7 @@ export default function App() {
   const [isSaving,       setIsSaving]      = useState(false);
   const [confirm,        setConfirm]       = useState(null);
   const [restoreModal,   setRestoreModal]  = useState(null); // バックアップ復元プレビュー用
+  const [compareModal,   setCompareModal]  = useState(null); // レコード見比べ（統合／重複削除）用
   const [showHelp,       setShowHelp]      = useState(false);
   const [showTutorial,   setShowTutorial]  = useState(() => { try { return localStorage.getItem('tutorial_visible') === '1'; } catch { return false; } });
   const toggleTutorial = useCallback(() => {
@@ -476,9 +478,76 @@ export default function App() {
     }
   }, [showToast]);
 
-  const deleteSpeaker = useCallback(id => {
-    showConfirm("この講師データを削除しますか？", async () => {
+  // 削除前に必ずスナップショットを speaker_archive へ保存しておく（誤削除からの復元用）。
+  // ここが失敗しても削除自体は続行する（バックアップ機能のためにユーザー操作をブロックしない）。
+  const archiveSpeakerBackup = useCallback(async (sp, reason) => {
+    try {
+      await db.from('speaker_archive').insert({
+        original_id: sp.id, chapter_id: sp.chapterId, speaker_name: sp.speakerName,
+        data: toDB(sp), reason: reason || '削除',
+      });
+    } catch {}
+  }, []);
+
+  const deleteSpeakerIds = useCallback(async (ids) => {
+    const removed = [];
+    for (const id of ids) {
       const sp = speakersRef.current.find(s => s.id === id);
+      if (!sp) continue;
+      await archiveSpeakerBackup(sp, '重複削除');
+      const { error } = await db.from('speakers').delete().eq('id', id);
+      if (!error) removed.push(sp);
+    }
+    if (removed.length > 0) {
+      const removedIds = new Set(removed.map(s => s.id));
+      setSpeakers(prev => prev.filter(s => !removedIds.has(s.id)));
+      showToast(`${removed.length}件削除しました`, {
+        actionLabel: "取り消し",
+        action: async () => {
+          const { error: re } = await db.from('speakers').insert(removed.map(toDB));
+          if (!re) { setSpeakers(prev => [...prev, ...removed].sort((a,b) => (a.seminarDate||"").localeCompare(b.seminarDate||""))); showToast("削除を取り消しました ✓"); }
+        }
+      });
+    }
+    setCompareModal(null);
+  }, [archiveSpeakerBackup, showToast]);
+
+  const mergeSpeakers = useCallback(async (merged, keepId, dropId) => {
+    const dropSp = speakersRef.current.find(s => s.id === dropId);
+    if (dropSp) await archiveSpeakerBackup(dropSp, '統合により削除');
+    const { error: upErr } = await db.from('speakers').update(toDB(merged)).eq('id', keepId);
+    if (upErr) { showToast("⚠ 統合に失敗しました"); return; }
+    const { error: delErr } = await db.from('speakers').delete().eq('id', dropId);
+    if (delErr) { showToast("⚠ 統合後の削除に失敗しました"); }
+    setSpeakers(prev => prev.filter(s => s.id !== dropId).map(s => s.id === keepId ? merged : s));
+    setCompareModal(null);
+    showToast("統合しました ✓");
+  }, [archiveSpeakerBackup, showToast]);
+
+  // 同じ講師名・同じ単会の別レコードを探して統合画面を開く（経営者の集い＋翌日MSを
+  // 別々に手入力してしまった場合などに、1件へまとめるための入口）
+  const requestMerge = useCallback(sp => {
+    const dup = speakersRef.current.find(s =>
+      s.id !== sp.id && s.chapterId === sp.chapterId &&
+      (s.speakerName || '').trim() && (s.speakerName || '').trim() === (sp.speakerName || '').trim()
+    );
+    if (!dup) { showToast("同じ講師名・単会の別レコードが見つかりません"); return; }
+    setCompareModal({ recordA: sp, recordB: dup, mode: 'merge' });
+  }, [showToast]);
+
+  const deleteSpeaker = useCallback(id => {
+    const sp = speakersRef.current.find(s => s.id === id);
+    // 同じ講師名・同じ単会の別レコードがないか確認する（統合し忘れ・削除ミス対策）
+    const dup = sp && speakersRef.current.find(s =>
+      s.id !== id && s.chapterId === sp.chapterId &&
+      (s.speakerName || '').trim() && (s.speakerName || '').trim() === (sp.speakerName || '').trim()
+    );
+    if (sp && dup) {
+      setCompareModal({ recordA: sp, recordB: dup, mode: 'duplicate' });
+      return;
+    }
+    showConfirm("この講師データを削除しますか？", async () => {
+      await archiveSpeakerBackup(sp, '削除');
       const { error } = await db.from('speakers').delete().eq('id', id);
       if (error) { showToast("⚠ 削除に失敗しました"); return; }
       setSpeakers(prev => prev.filter(s => s.id !== id));
@@ -490,7 +559,7 @@ export default function App() {
         }
       });
     });
-  }, [showConfirm, showToast]);
+  }, [showConfirm, showToast, archiveSpeakerBackup]);
 
   const addOrUpdateSpeaker = useCallback(async data => {
     setIsSaving(true);
@@ -1182,7 +1251,7 @@ ${ch.name}単会事務局`;
           <ErrorBoundary key={tab}>
             {tab === "dashboard" && <Dashboard speakers={scopedSpeakers} tasks={scopedTasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} scopeChapter={scopeChapter} currentUserName={currentUserName} showTutorial={showTutorial} onCloseTutorial={closeTutorial} />}
             {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} scopeChapter={scopeChapter} />}
-            {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} onTasks={onOpenSpeakerTasks} />}
+            {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} onTasks={onOpenSpeakerTasks} onMerge={requestMerge} />}
             {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} showToast={showToast} showConfirm={showConfirm} />}
             {tab === "tasks"     && <TasksView tasks={scopedTasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} showToast={showToast} lockChapterId={scopeChapter} />}
             {tab === "sptasks"   && <SpeakerTasksView speakers={scopedSpeakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} currentUserName={currentUserName} focusId={focusSpeakerId} onFocusHandled={() => setFocusSpeakerId(null)} />}
@@ -1378,6 +1447,15 @@ ${ch.name}単会事務局`;
             </div>
           </div>
         </div>
+      )}
+
+      {compareModal && (
+        <RecordCompareModal
+          recordA={compareModal.recordA} recordB={compareModal.recordB} mode={compareModal.mode}
+          onClose={() => setCompareModal(null)}
+          onMerge={mergeSpeakers}
+          onDelete={deleteSpeakerIds}
+        />
       )}
 
       {restoreModal && (

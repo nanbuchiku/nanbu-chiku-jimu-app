@@ -124,6 +124,7 @@ export function extractStaffNotes(notes) {
   return String(notes)
     .replace(/\\n/g, '\n') // 旧データの literal \n を正規化
     .replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
+    .replace(/【MS内容要約】\n[\s\S]*?(?=\n【|$)/g, '')
     .replace(/【[^】]+】[^\n]*/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -148,6 +149,27 @@ export function extractPhotoLinks(notes) {
   let m;
   while ((m = re.exec(normalized)) !== null) out.push({ label: m[1], url: m[2] });
   return out;
+}
+
+export function extractSummary(notes) {
+  if (!notes) return '';
+  const normalized = String(notes).replace(/\\n/g, '\n');
+  const m = normalized.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
+  return m ? m[1].trim() : '';
+}
+
+export function extractMsSummary(notes) {
+  if (!notes) return '';
+  const normalized = String(notes).replace(/\\n/g, '\n');
+  const m = normalized.match(/【MS内容要約】\n([\s\S]*?)(?=\n【|$)/);
+  return m ? m[1].trim() : '';
+}
+
+export function extractTag(notes, tagName) {
+  if (!notes) return '';
+  const normalized = String(notes).replace(/\\n/g, '\n');
+  const m = normalized.match(new RegExp(`【${tagName}】([^\\n]*)`));
+  return m ? m[1].trim() : '';
 }
 
 // 基礎講座・経営者の集いの翌朝MS分で、資料が前夜と別に用意された場合のみ【MS資料0N】として保存される
