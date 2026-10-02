@@ -1083,6 +1083,7 @@ function extractStaffNotes(notes) {
 
 // 講師依頼確認書メールを自動で開く（宛先：講師／CC：合同事務局＋単会）
 const OFFICE_MAIL = 'rinri.nanbu@gmail.com'; // 南部地区合同事務局（固定）
+const MAIL_RECEIPT_URL = 'https://script.google.com/macros/s/AKfycbyiYqXn7fAUy-Tr7N4cojiDa7-ERu3QpAjkqHE5avfww-FBtWI3GbLSRRiss82bDzg/exec'; // 合同事務局アカウントから送信するGAS（gas/rinri_mail_send.gs）
 let NANBU_MAIL = OFFICE_MAIL; // 単会メール（chapter_settingsから取得。無い場合は事務局で代用）
 
 function openConfirmationMail(payload, extraUrls) {
@@ -1106,8 +1107,9 @@ function openConfirmationMail(payload, extraUrls) {
     '　　　　　講師依頼確認書',
     '━━━━━━━━━━━━━━━━━━━━',
     '',
-    '講師依頼フォームへご入力頂きありがとうございました。',
-    '後日、講師依頼確認書を改めてお送りさせていただきます。',
+    'ご協力いただきましてありがとうございます。',
+    '入力内容の変更がありましたら、担当者へご連絡ください。',
+    '（後日、講師依頼確認書を改めてお送りいたします。）',
     '',
     '【① 講師情報】',
     `　お名前　　　：${payload.speaker_name || ''} 様`,
@@ -1170,19 +1172,25 @@ function openConfirmationMail(payload, extraUrls) {
   const subject = `【講師依頼確認書】${fmtD(payload.seminar_date)} ${seminarLabel} ${payload.speaker_name || ''}様`;
   const href    = `mailto:${to}?${cc ? 'cc=' + encodeURIComponent(cc) + '&' : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join('\n'))}`;
 
-  const a = document.createElement('a');
-  a.href = href;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  // 完了画面に再送ボタンを表示（自動オープンがブロックされた場合のフォールバック）
+  // 講師が下書きを送信せずに閉じてしまう例が多発したため、メールアプリ任せにせず
+  // 合同事務局のGAS経由で、講師本人と単会・合同事務局（CC）へ自動送信する。
+  // 送信に失敗した場合のみ、従来どおりメールアプリの下書きを開くボタンを完了画面に出す。
   const doneMsg = document.querySelector('.done-msg');
-  if (doneMsg) {
-    doneMsg.insertAdjacentHTML('afterbegin',
-      `<a href="${href.replace(/"/g, '&quot;')}" style="display:inline-block;background:#1B5E20;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-weight:800;margin-bottom:14px;">📧 確認書メールを開く</a><br>` +
-      `<span style="font-size:13px;color:#78909C;">確認書を講師ご本人と事務局へ送付できます。<br>メール画面が開かない場合は上のボタンを押してください。</span><br><br>`);
-  }
+  const fallbackLink = `<a href="${href.replace(/"/g, '&quot;')}" style="display:inline-block;background:#1B5E20;color:#fff;text-decoration:none;padding:11px 22px;border-radius:8px;font-weight:800;margin-bottom:14px;">📧 確認メールを開く</a><br>`;
+  const showFallback = () => {
+    if (doneMsg) doneMsg.insertAdjacentHTML('afterbegin', fallbackLink +
+      `<span style="font-size:13px;color:#78909C;">確認メールの自動送信に失敗しました。<br>上のボタンから、講師ご本人と事務局へ送付をお願いします。</span><br><br>`);
+  };
+  if (!payload.email) { showFallback(); return; }
+  fetch(MAIL_RECEIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'form_receipt', to, cc: ccList, subject, body: lines.join('\n') }),
+  }).then(r => r.json()).then(d => {
+    if (!d || !d.ok) throw new Error((d && d.error) || 'send failed');
+    if (doneMsg) doneMsg.insertAdjacentHTML('afterbegin',
+      `<span style="display:inline-block;background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7;border-radius:8px;padding:10px 16px;font-weight:700;margin-bottom:14px;">✅ 入力内容の確認メールをお送りしました（${payload.email}）</span><br>`);
+  }).catch(err => { console.error('確認メール自動送信に失敗', err); showFallback(); });
 }
 
 // 送信

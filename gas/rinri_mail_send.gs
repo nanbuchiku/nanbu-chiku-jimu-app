@@ -65,6 +65,13 @@ function doPost(e) {
   try {
     var payload = JSON.parse(e.postData.contents);
 
+    // 講師が依頼フォームを送信した直後の自動確認メール（講師本人＋単会・合同事務局CC）。
+    // 公開フォーム(form.html)から呼ぶためトークンを持たせられない。代わりに、宛先は1件のみ・
+    // 件名と本文の体裁を固定・同一宛先への連続送信と全体の送信数を制限して、踏み台悪用を抑える。
+    if (payload.action === 'form_receipt') {
+      return jsonResponse_(sendFormReceipt_(payload));
+    }
+
     var token = PropertiesService.getScriptProperties().getProperty('MAIL_SEND_TOKEN');
     if (!token || payload.token !== token) {
       return jsonResponse_({ ok: false, error: 'unauthorized' });
@@ -99,6 +106,36 @@ function doPost(e) {
   } catch (err) {
     return jsonResponse_({ ok: false, error: String(err) });
   }
+}
+
+function sendFormReceipt_(p) {
+  var to = String(p.to || '').trim();
+  var re = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+  if (!re.test(to)) return { ok: false, error: 'invalid to' };
+
+  var cc = String(p.cc || '').split(',').map(function (s) { return s.trim(); })
+    .filter(function (s) { return re.test(s); }).slice(0, 3).join(',');
+
+  var subject = String(p.subject || '').trim();
+  if (subject.indexOf('【講師依頼確認書】') !== 0 || subject.length > 150) {
+    return { ok: false, error: 'invalid subject' };
+  }
+  var body = String(p.body || '');
+  if (!body || body.length > 8000) return { ok: false, error: 'invalid body' };
+
+  // 連続送信・総量の制限
+  var cache = CacheService.getScriptCache();
+  var key = 'receipt_' + to.toLowerCase();
+  if (cache.get(key)) return { ok: false, error: 'rate limited' };
+  var total = Number(cache.get('receipt_total') || 0);
+  if (total >= 60) return { ok: false, error: 'rate limited (total)' };
+  cache.put(key, '1', 120);
+  cache.put('receipt_total', String(total + 1), 3600);
+
+  var options = { name: '倫理法人会 南部地区合同事務局', replyTo: 'rinri.nanbu@gmail.com' };
+  if (cc) options.cc = cc;
+  GmailApp.sendEmail(to, subject, body, options);
+  return { ok: true };
 }
 
 function jsonResponse_(obj) {
