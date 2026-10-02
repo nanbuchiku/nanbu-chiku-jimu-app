@@ -152,15 +152,33 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
     if (!pdfMailConfirm || !sp) return;
     setSendingDoc(true);
     try {
-      const base64 = await generatePdfBase64(activeDocId);
-      if (!base64) throw new Error('PDFの作成に失敗しました');
+      // 基礎講座・経営者の集い・倫理経営講演会は前夜分とMS分の2枚を添付する
+      // （表示中でない側はdisplay:noneでPDF化できないため、タブを切り替えて順に生成し、最後に元へ戻す）
+      const twoDocs = getHasNextDayMs(sp.seminarType);
+      const gen = async (tab) => {
+        setDocTab(tab);
+        await new Promise(r => setTimeout(r, 200));
+        return generatePdfBase64(tab === 'ms' ? 'print-doc-ms' : 'print-doc');
+      };
+      const attachments = [];
+      if (twoDocs) {
+        const mainB64 = await gen('main');
+        const msB64 = await gen('ms');
+        setDocTab(docTab);
+        if (!mainB64 || !msB64) throw new Error('PDFの作成に失敗しました');
+        attachments.push({ base64: mainB64, filename: makePdfFilename(sp, '_前夜'), mimeType: 'application/pdf' });
+        attachments.push({ base64: msB64, filename: makePdfFilename(sp, '_MS'), mimeType: 'application/pdf' });
+      } else {
+        const base64 = await generatePdfBase64(activeDocId);
+        if (!base64) throw new Error('PDFの作成に失敗しました');
+        attachments.push({ base64, filename: makePdfFilename(sp), mimeType: 'application/pdf' });
+      }
       const res = await fetch(MAIL_SEND_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           token: MAIL_SEND_TOKEN, to: pdfMailConfirm.to, cc: pdfMailConfirm.cc,
-          subject: pdfMailConfirm.subject, body: pdfMailConfirm.body,
-          attachmentBase64: base64, attachmentFilename: makePdfFilename(sp), attachmentMimeType: 'application/pdf',
+          subject: pdfMailConfirm.subject, body: pdfMailConfirm.body, attachments,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -172,7 +190,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
     } finally {
       setSendingDoc(false);
     }
-  }, [pdfMailConfirm, sp, showToast, activeDocId]);
+  }, [pdfMailConfirm, sp, showToast, activeDocId, docTab]);
 
   return (
     <div>
