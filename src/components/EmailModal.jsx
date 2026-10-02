@@ -23,6 +23,7 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
   // 確認書送付メールでは、確認書（講師依頼確認書）をPDFにして自動で添付する。
   // PDFは確認書画面と同じ描画を画面外に置いて変換する（基礎講座・経営者の集い等は前夜分とMS分の2枚）。
   const [attachPdf, setAttachPdf] = useState(true);
+  const [showOther, setShowOther] = useState(false);
   const docMainRef = useRef(null);
   const docMsRef = useRef(null);
 
@@ -376,7 +377,7 @@ ${sig}`,
 
         {chEmail && (
           <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#78909C", marginTop:8 }}>
-            {MAIL_SEND_URL ? "差出人／CC" : "CC"}：{chEmail}（{ch.name}単会）
+            {MAIL_SEND_URL ? <>差出人：<strong style={{ color:"#2E7D32" }}>{ch.name}単会（{chEmail}）</strong>　CC：{chEmail}</> : <>CC：{chEmail}（{ch.name}単会）</>}
           </div>
         )}
 
@@ -409,11 +410,31 @@ ${sig}`,
           </div>
         )}
 
+        {MAIL_SEND_URL && chEmail ? (
+          <>
+            <div style={{ display:"flex", gap:8, marginTop:10 }}>
+              <button style={{ ...BC, flex:1 }} onClick={() => setShowOther(v => !v)}>{showOther ? "▲ 他の送り方を閉じる" : "▼ 他の送り方（メールアプリ・コピー）"}</button>
+              <button style={BC} onClick={onClose}>閉じる</button>
+            </div>
+            {showOther && (
+              <div style={{ marginTop:8, border:"1px solid #EF9A9A", background:"#FFF5F5", borderRadius:8, padding:"10px 12px" }}>
+                <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#B71C1C", lineHeight:1.6, marginBottom:8 }}>
+                  ⚠ メールアプリで開くと、<strong>このパソコンの標準アカウント（個人のアドレス等）</strong>から送信されます。{ch.name}単会からは送られません。通常は上の「{ch.name}単会から直接送信」をお使いください。
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button style={{ ...BC, flex:1, opacity: sp.email ? 1 : .4 }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?${chEmail ? `cc=${encodeURIComponent(chEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く（このパソコンのアカウント）</button>
+                  <button style={{ ...BC, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${subject}\n\n${body}`).catch(() => {}); onDone(); }}>📋 コピーして手動送信</button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
         <div style={{ display:"flex", gap:8, marginTop:10 }}>
-          <button style={{ ...BG, flex:1, opacity: sp.email ? 1 : .4, cursor: sp.email ? "pointer" : "not-allowed" }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?${chEmail ? `cc=${encodeURIComponent(chEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く{MAIL_SEND_URL && chEmail ? "（自分のアカウント）" : ""}</button>
+          <button style={{ ...BG, flex:1, opacity: sp.email ? 1 : .4, cursor: sp.email ? "pointer" : "not-allowed" }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?${chEmail ? `cc=${encodeURIComponent(chEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く</button>
           <button style={{ ...BG, flex:1 }} onClick={() => { navigator.clipboard?.writeText(`件名：${subject}\n\n${body}`).catch(() => {}); onDone(); }}>📋 コピーして手動送信</button>
           <button style={BC} onClick={onClose}>閉じる</button>
         </div>
+        )}
       </div>
     </div>
   );
