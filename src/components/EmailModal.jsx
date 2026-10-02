@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useCallback, memo } from 'react';
+import React, { useState, useMemo, useCallback, useRef, memo } from 'react';
 import { getChapter, getSeminarType, formatDate, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
+import DocumentView, { elementToPdfBase64, makePdfFilename } from './DocumentView';
 
 // 単会自身のメールアドレスを差出人として送信するGASウェブアプリ（未設定ならこの機能は表示しない）
 // ※ from に単会メールを指定するには、事前に rinri.nanbu@gmail.com のGmail設定で
@@ -19,6 +20,11 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
   const [freeBody,    setFreeBody]    = useState("");
   const [sending, setSending] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
+  // 確認書送付メールでは、確認書（講師依頼確認書）をPDFにして自動で添付する。
+  // PDFは確認書画面と同じ描画を画面外に置いて変換する（基礎講座・経営者の集い等は前夜分とMS分の2枚）。
+  const [attachPdf, setAttachPdf] = useState(true);
+  const docMainRef = useRef(null);
+  const docMsRef = useRef(null);
 
   const matDL = useMemo(() => {
     if (!sp.seminarDate) return '';
@@ -135,7 +141,7 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
 
 お世話になっております。${ch.name}倫理法人会です。
 講師依頼確認フォームへのご入力、誠にありがとうございました。
-ご入力いただいた内容を確認書としてまとめましたので、本メールにてお送りいたします。
+ご入力いただいた内容を確認書としてまとめましたので、本メールにてお送りいたします。${attachPdf && MAIL_SEND_URL ? '\n確認書（PDF）を添付しておりますので、あわせてご確認ください。' : ''}
 
 【ご入力内容の確認】
 　講話タイトル：「${sp.topic || ''}」
@@ -267,22 +273,38 @@ ${sig}`,
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel, isMsType, eventVenue, eventAddress, eventTimeText]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel, isMsType, eventVenue, eventAddress, eventTimeText, attachPdf]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
   const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
 
+  const wantPdf = !!MAIL_SEND_URL && attachPdf && mailType === 'confirm_doc';
+
   // 単会自身のメールアドレスを差出人としてGAS経由で送信する
   const doSendViaChapter = useCallback(async () => {
     setSending(true);
     try {
+      let attachments;
+      if (wantPdf) {
+        attachments = [];
+        const main = docMainRef.current?.querySelector('#print-doc');
+        const mainB64 = await elementToPdfBase64(main);
+        if (!mainB64) throw new Error('確認書PDFの作成に失敗しました');
+        attachments.push({ base64: mainB64, filename: makePdfFilename(sp, hasNextDayMs ? '_前夜' : ''), mimeType: 'application/pdf' });
+        if (hasNextDayMs) {
+          const msB64 = await elementToPdfBase64(docMsRef.current?.querySelector('#print-doc-ms'));
+          if (!msB64) throw new Error('確認書(MS)PDFの作成に失敗しました');
+          attachments.push({ base64: msB64, filename: makePdfFilename(sp, '_MS'), mimeType: 'application/pdf' });
+        }
+      }
       const res = await fetch(MAIL_SEND_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           token: MAIL_SEND_TOKEN, to: sp.email, cc: chEmail,
           subject, body, from: chEmail, senderName: `倫理法人会 ${ch.name}単会`,
+          ...(attachments ? { attachments } : {}),
         }),
       });
       const data = await res.json().catch(() => null);
@@ -295,7 +317,7 @@ ${sig}`,
       setSending(false);
       setConfirmingSend(false);
     }
-  }, [sp.email, chEmail, subject, body, ch.name, showToast, onDone]);
+  }, [sp, chEmail, subject, body, ch.name, showToast, onDone, wantPdf, hasNextDayMs]);
 
   // 誤送信防止のため、送信ボタンを押すと上の件名・本文を表示したまま
   // その場で「本当に送信するか」を尋ねる（内容を隠さない）
@@ -342,6 +364,26 @@ ${sig}`,
           ? <textarea style={{ ...INP, width:"100%", minHeight:180, resize:"vertical", fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8 }} placeholder="本文を入力..." value={freeBody} onChange={e => setFreeBody(e.target.value)} />
           : <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:220, overflowY:"auto" }}>{body}</pre>
         }
+
+        {mailType === 'confirm_doc' && MAIL_SEND_URL && (
+          <label style={{ display:"flex", alignItems:"center", gap:8, marginTop:8, fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", cursor:"pointer" }}>
+            <input type="checkbox" checked={attachPdf} onChange={e => setAttachPdf(e.target.checked)} />
+            📎 確認書をPDFで添付して送る{hasNextDayMs ? '（前夜分・MS分の2枚）' : ''}
+            <span style={{ fontSize:"clamp(11px,1.2vw,12px)", color:"#98A2B3" }}>※「直接送信」のとき自動添付</span>
+          </label>
+        )}
+        {wantPdf && (
+          <div aria-hidden="true" style={{ position:"fixed", left:-12000, top:0, width:900, pointerEvents:"none" }}>
+            <div ref={docMainRef}>
+              <DocumentView speakers={[sp]} docSpeaker={{ ...sp, _virtualType: undefined }} setDocSpeaker={() => {}} today={new Date()} chapterSettings={chapterSettings} showToast={() => {}} />
+            </div>
+            {hasNextDayMs && (
+              <div ref={docMsRef}>
+                <DocumentView speakers={[sp]} docSpeaker={{ ...sp, _virtualType: 'ms' }} setDocSpeaker={() => {}} today={new Date()} chapterSettings={chapterSettings} showToast={() => {}} />
+              </div>
+            )}
+          </div>
+        )}
 
         {chEmail && (
           <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#78909C", marginTop:8 }}>

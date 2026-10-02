@@ -10,11 +10,11 @@ const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
 const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
 
 /** PDF ファイル名生成: 日付_単会名_講師名_講師依頼確認書.pdf */
-function makePdfFilename(sp) {
+export function makePdfFilename(sp, suffix = '') {
   const date  = (sp.seminarDate || "").replace(/-/g, "") || String(Date.now());
   const unit  = (getChapter(sp.chapterId).name || "単会").replace(/[/\\:*?"<>|]/g, "_");
   const name  = (sp.speakerName || "講師").replace(/[/\\:*?"<>|]/g, "_");
-  return `${date}_${unit}_${name}_講師依頼確認書.pdf`;
+  return `${date}_${unit}_${name}_講師依頼確認書${suffix}.pdf`;
 }
 
 const PDF_OPTS = {
@@ -34,7 +34,10 @@ async function downloadPdf(elementId, filename) {
 
 /** html2pdf で確認書PDFをbase64化（ダウンロードはせず、メール添付用データとして取得） */
 async function generatePdfBase64(elementId) {
-  const el = document.getElementById(elementId);
+  return elementToPdfBase64(document.getElementById(elementId));
+}
+
+export async function elementToPdfBase64(el) {
   if (!el) return null;
   const { default: html2pdf } = await import('html2pdf.js');
   const dataUri = await html2pdf().set(PDF_OPTS).from(el).output('datauristring');

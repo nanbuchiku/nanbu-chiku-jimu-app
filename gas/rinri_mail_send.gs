@@ -93,12 +93,18 @@ function doPost(e) {
     if (from) options.from = from;
 
     // PDF等の添付ファイル（base64エンコード済みのデータを受け取り、Blobに戻して添付する）
-    if (payload.attachmentBase64 && payload.attachmentFilename) {
-      var mimeType = payload.attachmentMimeType || 'application/pdf';
-      var bytes = Utilities.base64Decode(payload.attachmentBase64);
-      var blob  = Utilities.newBlob(bytes, mimeType, payload.attachmentFilename);
-      options.attachments = [blob];
+    // 複数添付は payload.attachments=[{base64, filename, mimeType}]、単数は従来の attachmentBase64 系
+    var atts = Array.isArray(payload.attachments) ? payload.attachments.slice(0, 5) : [];
+    if (!atts.length && payload.attachmentBase64 && payload.attachmentFilename) {
+      atts = [{ base64: payload.attachmentBase64, filename: payload.attachmentFilename, mimeType: payload.attachmentMimeType }];
     }
+    var blobs = [];
+    atts.forEach(function (a) {
+      if (!a || !a.base64 || !a.filename) return;
+      var bytes = Utilities.base64Decode(a.base64);
+      blobs.push(Utilities.newBlob(bytes, a.mimeType || 'application/pdf', a.filename));
+    });
+    if (blobs.length) options.attachments = blobs;
 
     GmailApp.sendEmail(to, subject, body, options);
 
