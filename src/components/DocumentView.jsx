@@ -17,8 +17,11 @@ export function makePdfFilename(sp, suffix = '') {
   return `${date}_${unit}_${name}_講師依頼確認書${suffix}.pdf`;
 }
 
+// ページ区切りで表の行や見出しが途中で切れないよう、セクション（見出し＋表）と行は分割を避ける。
+// 上下に余白を付けて、改ページ後も内容が用紙の端に張り付かないようにする。
 const PDF_OPTS = {
-  margin: 0,
+  margin: [8, 0, 8, 0],
+  pagebreak: { mode: ['css', 'legacy'], avoid: ['.doc-section', 'tr', '.doc-footer'] },
   image: { type: "jpeg", quality: 0.95 },
   html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
   jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
@@ -47,7 +50,7 @@ export async function elementToPdfBase64(el) {
 function DocSection({ title, color, children }) {
   const c = color || "#061B44";
   return (
-    <div style={{ marginBottom:14 }}>
+    <div className="doc-section" style={{ marginBottom:14 }}>
       <div style={{ fontSize:"11pt", fontWeight:700, color:c, marginBottom:4, letterSpacing:"0.05em" }}>{title}</div>
       <table style={{ width:"100%", borderCollapse:"collapse", tableLayout:"fixed" }}>
         <tbody>{children}</tbody>
@@ -457,7 +460,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
         );
 
         const mkFooter = (c) => (
-          <div style={{ marginTop:16, paddingTop:10, borderTop:`2px solid ${c}`,
+          <div className="doc-footer" style={{ marginTop:16, paddingTop:10, borderTop:`2px solid ${c}`,
             fontSize:"10.5pt", color:"#667085", display:"flex", flexDirection:"column", gap:4 }}>
             <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
               <div>
