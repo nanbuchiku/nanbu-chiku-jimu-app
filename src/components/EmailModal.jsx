@@ -129,26 +129,15 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
 　開催日　：${formatDate(sp.seminarDate)}${sp.eventTime ? `（${sp.eventTime}）` : ''}
 　会　場　：${sp.venue || ''}`;
 
-        const hotelBlock = needsLodging ? `
-
-【宿泊先のご案内】
-　ホテル名：${chSettings.hotelName || ''}
-　住　所　：${chSettings.hotelAddress || ''}${chSettings.hotelStation ? `\n　最寄駅　：${chSettings.hotelStation}` : ''}${chSettings.hotelParking ? `\n　駐車場　：${chSettings.hotelParking}\n　　　　　　なお駐車場は事前予約が必要な場合がございます。各単会の担当者もしくは合同事務局までお問い合わせください。` : ''}${chSettings.hotelMapUrl ? `\n　地図　　：${chSettings.hotelMapUrl}` : ''}${chSettings.hotelTel ? `\n　連絡先　：${chSettings.hotelTel}` : ''}` : '';
-
-        const hasMaterial = !!(parsedNotes['資料01'] || parsedNotes['資料02']);
-
         return `${sp.speakerName || ''} 様
 
 お世話になっております。${ch.name}倫理法人会です。
 講師依頼確認フォームへのご入力、誠にありがとうございました。
-ご入力いただいた内容を確認書としてまとめましたので、本メールにてお送りいたします。${attachPdf && MAIL_SEND_URL ? '\n確認書（PDF）を添付しておりますので、あわせてご確認ください。' : ''}
-
-【ご入力内容の確認】
-　講話タイトル：「${sp.topic || ''}」
-　内容要約　　：${summary || ''}
-　交通手段　　：${parsedNotes['交通手段'] || ''}
-　当日資料　　：${hasMaterial ? 'あり' : 'なし'}
-${venueBlock}${hotelBlock}
+ご入力いただいた内容を確認書としてまとめました。一読くださいますようお願いいたします。${attachPdf && MAIL_SEND_URL ? '\n確認書（PDF）を添付しておりますので、あわせてご確認ください。' : ''}
+${venueBlock}
+${needsLodging ? '\n宿泊情報については追ってご連絡いたします。\n' : ''}
+【当日の待ち合わせ場所確認について】
+日程が近くなりましたら、お電話させて頂きます。
 
 内容にお気づきの点がございましたら、本メールへご返信ください。
 当日はどうぞよろしくお願いいたします。
