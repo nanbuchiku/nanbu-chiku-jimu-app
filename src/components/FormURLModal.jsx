@@ -185,11 +185,19 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   // 基礎講座・経営者の集いは「前夜」開催のため、単会の定例日（ch.dayName、＝翌朝MSの曜日）
   // をそのまま「毎週◯曜日」と書くと、この開催日自体の曜日と食い違って見える。
   // 開催日の曜日はformatDate側で正しく出るので、ここでは時間だけ添える。
+  // モーニングセミナー・基礎講座以外（経営者の集い・倫理経営講演会・イブニング・自主企画）は
+  // 開催ごとに時間・会場が変わるため、単会の定例時間にフォールバックせず
+  // 必ず今回入力された開催時間・開催場所をそのまま使う。
   const scheduleNote = isKiso
     ? (chSettings.kisoTime || ch?.time || '')
-    : hasNextDayMs
-      ? ((isNew ? form.eventTime : sp.eventTime) || ch?.time || '')
-      : `毎週${ch?.dayName || ''}　${ch?.time || ''}`;
+    : isMs
+      ? `毎週${ch?.dayName || ''}　${ch?.time || ''}`
+      : ((isNew ? form.eventTime : sp.eventTime) || '');
+  const venueNote = isKiso
+    ? (chSettings.kisoVenue || ch?.venue || '')
+    : isMs
+      ? (ch?.venue || '')
+      : ((isNew ? form.venue : sp.venue) || '');
 
   const mailSubject = useMemo(() =>
     `【${ch?.name}単会 ${eventLabel}】講師依頼のご確認`,
@@ -205,7 +213,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
 このたびは、${ch?.name}単会 ${eventLabel}の講師をお引き受けいただき、誠にありがとうございます。
 
 開催日：${displayDate ? formatDate(displayDate) : '　　　年　　月　　日'}（${scheduleNote}）
-会　場：${ch?.venue || ''}${msDateLine}
+会　場：${venueNote}${msDateLine}
 
 下記の内容をご確認・ご回答いただけますようお願いいたします。
 
@@ -222,7 +230,7 @@ ${formUrl}
 ご不明な点がございましたら、お気軽にご連絡ください。
 
 ${sig}`;
-  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel, scheduleNote]);
+  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel, scheduleNote, venueNote]);
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); markSent(); }, [formUrl, showToast, markSent]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); markSent(); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, markSent, clearDraft, onClose]);

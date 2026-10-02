@@ -152,6 +152,23 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       });
   }, [speakers, filterCh, filterSt, search, dateRange, sortCol, sortDir, today, showActionOnly]);
 
+  // 同じ講師・単会・日付で「本物の」MSレコードが別に存在するかどうかの索引。
+  // 基礎講座等の翌朝MSは通常ここに実レコードが無いため仮想表示で補うが、
+  // 福井さんのケースのように偶然その日に本物のMS予約が別レコードとして存在する場合、
+  // 仮想②と本物③が見た目そっくりな2枚として並んでしまい、②（実体は前夜のレコードそのもの）
+  // を「重複だから」と削除すると前夜分まで丸ごと消える——という誤操作の温床になる。
+  // 本物のMSレコードがある日は仮想②を出さず、本物のレコードだけを表示することで、
+  // この紛らわしさ自体を無くす。
+  const realMsKeys = useMemo(() => {
+    const keys = new Set();
+    speakers.forEach(s => {
+      if (s.seminarType === 'ms' && s.chapterId && s.speakerName && s.seminarDate) {
+        keys.add(`${s.chapterId}__${(s.speakerName || '').trim()}__${s.seminarDate}`);
+      }
+    });
+    return keys;
+  }, [speakers]);
+
   // 基礎講座・経営者の集いは前夜開催で、翌朝のモーニングセミナー分の確認書も同時に作られる。
   // 実データは1件のままだが、表示上は「前夜の講話」と「翌朝のMS」の2枚に分けて見せる
   // （id・実データはどちらも同じ元レコードを指すため、編集・削除・メール等の操作は元レコードに正しく反映される）。
@@ -163,7 +180,11 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
         if (sp.seminarDate) {
           const d = new Date(sp.seminarDate + 'T00:00:00');
           d.setDate(d.getDate() + 1);
-          expanded.push({ ...sp, _virtualKey: sp.id + '__ms', _virtualDate: toDateStr(d), _virtualType: 'ms' });
+          const virtualDate = toDateStr(d);
+          const hasRealMs = realMsKeys.has(`${sp.chapterId}__${(sp.speakerName || '').trim()}__${virtualDate}`);
+          if (!hasRealMs) {
+            expanded.push({ ...sp, _virtualKey: sp.id + '__ms', _virtualDate: virtualDate, _virtualType: 'ms' });
+          }
         }
       } else {
         expanded.push({ ...sp, _virtualKey: sp.id });
@@ -176,7 +197,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       });
     }
     return expanded;
-  }, [filtered, sortCol, sortDir]);
+  }, [filtered, sortCol, sortDir, realMsKeys]);
 
   const exportCSV = useCallback(() => {
     const headers = ["開催日","単会","セミナー種別","講師名","ふりがな","所属法人会名","法人会役職","勤務先","勤務先役職名","テーマ","ステータス","メール","電話","前泊","資料印刷","資料URL","資料ファイル名","お酒","栞・条","講話後メモ","スタッフメモ"];

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, extractPhotoLinks, buildSpeakerStoragePath, extractStaffNotes } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, extractPhotoLinks, buildSpeakerStoragePath, extractStaffNotes, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 import { db } from '../lib/supabase';
 
@@ -242,10 +242,12 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     const result = {};
     const summaryMatch = notes.match(/【内容要約】\n([\s\S]*?)(?=\n【|$)/);
     if (summaryMatch) result.summary = summaryMatch[1].trim();
+    const msSummaryMatch = notes.match(/【MS内容要約】\n([\s\S]*?)(?=\n【|$)/);
+    if (msSummaryMatch) result.msSummary = msSummaryMatch[1].trim();
     const tagLine = /【([^】]+)】([^\n【]*)/g;
     let m;
     while ((m = tagLine.exec(notes)) !== null) {
-      if (m[1] !== '内容要約') result[m[1]] = m[2].trim();
+      if (m[1] !== '内容要約' && m[1] !== 'MS内容要約') result[m[1]] = m[2].trim();
     }
     result.prepareArr = result['単会で準備']
       ? result['単会で準備'].split('・').map(s => s.trim()).filter(Boolean)
@@ -258,9 +260,10 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
     setForm(f => {
       const n = String(f.notes || '').replace(/\\n/g, '\n');
       let newNotes;
-      if (tag === '内容要約') {
-        const cleared = n.replace(/【内容要約】\n[\s\S]*?(?=\n【|$)/g, '').replace(/\n{3,}/g, '\n\n').trim();
-        newNotes = value ? (cleared ? cleared + '\n\n' : '') + `【内容要約】\n${value}` : cleared;
+      if (tag === '内容要約' || tag === 'MS内容要約') {
+        const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const cleared = n.replace(new RegExp(`【${escapedTag}】\\n[\\s\\S]*?(?=\\n【|$)`, 'g'), '').replace(/\n{3,}/g, '\n\n').trim();
+        newNotes = value ? (cleared ? cleared + '\n\n' : '') + `【${tag}】\n${value}` : cleared;
       } else if (Array.isArray(value)) {
         const tagVal = value.filter(Boolean).join('・');
         const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -478,9 +481,20 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             </div>
           )}
           <div style={{ gridColumn:"1/-1" }}>
-            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>テーマ</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>
+              {getHasNextDayMs(form.seminarType) ? "テーマ（前夜）" : "テーマ"}
+            </div>
             <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="セミナーテーマ" value={form.topic || ""} onChange={e => set("topic", e.target.value)} />
           </div>
+          {getHasNextDayMs(form.seminarType) && (
+            <div style={{ gridColumn:"1/-1" }}>
+              <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>
+                翌日MSのテーマ
+                <span style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#98A2B3", marginLeft:6 }}>※ 空欄なら前夜と同じ内容で確認書・メールに表示されます</span>
+              </div>
+              <input disabled={saving} type="text" style={{ ...INP, width:"100%", opacity: saving ? .6 : 1 }} placeholder="前夜と異なる場合のみ入力" value={form.msTopic || ""} onChange={e => set("msTopic", e.target.value)} />
+            </div>
+          )}
           <div style={{ gridColumn:"1/-1" }}>
             <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>顔写真①・資料URL（URLを貼るか、ファイルをアップロード）</div>
             <div style={{ display:"flex", gap:6, alignItems:"center" }}>
@@ -600,6 +614,26 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
                     {(detailFromNotes.summary||"").length} / 300文字
                   </div>
                 </div>
+
+                {getHasNextDayMs(form.seminarType) && (
+                  <div style={{ gridColumn:"1/-1" }}>
+                    <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>
+                      翌日MSの内容要約（300字以内）
+                      <span style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#98A2B3", marginLeft:6 }}>※ 空欄なら前夜と同じ内容で確認書・メールに表示されます</span>
+                    </div>
+                    <textarea
+                      disabled={saving}
+                      maxLength={300}
+                      style={{ ...INP, width:"100%", minHeight:80, resize:"vertical", opacity: saving ? .6 : 1 }}
+                      placeholder="前夜と異なる場合のみ入力"
+                      value={detailFromNotes.msSummary || ""}
+                      onChange={e => setDetailField('MS内容要約', e.target.value)}
+                    />
+                    <div style={{ fontSize:"clamp(11px,1.2vw,12px)", color:(detailFromNotes.msSummary||"").length >= 300 ? "#E53935" : "#98A2B3", textAlign:"right" }}>
+                      {(detailFromNotes.msSummary||"").length} / 300文字
+                    </div>
+                  </div>
+                )}
 
                 {/* ④ 交通手段 */}
                 <div style={{ gridColumn:"1/-1" }}>

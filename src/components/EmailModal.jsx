@@ -66,7 +66,26 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
     return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
   }, [hasNextDayMs, sp.seminarDate]);
   const needsLodging = sp.lodging && sp.lodging !== '不要' && sp.lodging !== 'なし';
-  const eventLabel = isKiso ? '倫理経営基礎講座' : isTsudoiType ? '経営者の集い' : (!sp.seminarType || sp.seminarType === 'ms') ? 'モーニングセミナー' : getSeminarType(sp.seminarType).label;
+  const isMsType = !sp.seminarType || sp.seminarType === 'ms';
+  const eventLabel = isKiso ? '倫理経営基礎講座' : isTsudoiType ? '経営者の集い' : isMsType ? 'モーニングセミナー' : getSeminarType(sp.seminarType).label;
+  // 種別ごとの会場・開催時間テキスト。基礎講座・MS以外（経営者の集い・倫理経営講演会・
+  // イブニング・自主企画）は開催ごとに会場・時間が変わるため、単会固定のMS会場に
+  // フォールバックしてはならず、必ずその講師レコード自身のsp.venue/sp.eventTimeを使う。
+  const eventVenue = isKiso
+    ? (chSettings.kisoVenue || '')
+    : isMsType
+      ? (chSettings.msVenue || ch.venue)
+      : (sp.venue || '');
+  const eventAddress = isKiso
+    ? (chSettings.kisoAddress || '')
+    : isMsType
+      ? (chSettings.msAddress || ch.address)
+      : (sp.venue || '');
+  const eventTimeText = isKiso
+    ? (chSettings.kisoTime || ch.time || '')
+    : isMsType
+      ? `毎週${ch.dayName}　${ch.time}`
+      : (sp.eventTime || '');
 
   const TEMPLATES = useMemo(() => ({
     confirm_doc: {
@@ -95,11 +114,14 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
 【翌日 モーニングセミナー 会場のご案内】
 　開催日　：${formatDate(kisoMsDateStr)}
 　会　場　：${msVenue}
+　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}` : isMsType ? `
+【会場のご案内】
+　開催日　：${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
+　会　場　：${msVenue}
 　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}` : `
 【会場のご案内】
-　開催日　：${formatDate(sp.seminarDate)}${(!sp.seminarType || sp.seminarType === 'ms') ? `（毎週${ch.dayName}　${ch.time}）` : (sp.eventTime ? `（${sp.eventTime}）` : '')}
-　会　場　：${msVenue}
-　住　所　：${msAddress}${chSettings.msParking ? `\n　駐車場　：${chSettings.msParking}` : ''}${msMapUrl ? `\n　地図　　：${msMapUrl}` : ''}${msTel ? `\n　会場連絡先：${msTel}` : ''}`;
+　開催日　：${formatDate(sp.seminarDate)}${sp.eventTime ? `（${sp.eventTime}）` : ''}
+　会　場　：${sp.venue || ''}`;
 
         const hotelBlock = needsLodging ? `
 
@@ -130,13 +152,13 @@ ${sig}`;
     },
     material: {
       label: "📎 資料・写真の催促",
-      subject: `【${ch.name}単会 MS】顔写真・講話資料のご送付のお願い`,
+      subject: `【${ch.name}単会 ${eventLabel}】顔写真・講話資料のご送付のお願い`,
       body:
 `${sp.speakerName} 様
 
 いつもお世話になっております。${ch.name}単会 事務局です。
 
-${formatDate(sp.seminarDate)}（${ch.time}）にご登壇いただきますが、現在下記の資料がまだ届いておりません。
+${formatDate(sp.seminarDate)}${eventTimeText ? `（${eventTimeText}）` : ''}にご登壇いただきますが、現在下記の資料がまだ届いておりません。
 
 【ご送付をお願いしたい資料】
 □ 顔写真（データ形式：JPG/PNG、合同チラシ掲載に使用）
@@ -152,15 +174,15 @@ ${sig}`,
     },
     promo: {
       label: "📣 講話の宣伝・ご案内",
-      subject: `【${ch.name}単会MS】${formatDate(sp.seminarDate)} ${sp.speakerName}様 ご講話のご案内`,
+      subject: `【${ch.name}単会 ${eventLabel}】${formatDate(sp.seminarDate)} ${sp.speakerName}様 ご講話のご案内`,
       body: (() => {
         const intros = [
-          `モーニングセミナーにて、${sp.company ? `${sp.company}${sp.companyRole ? `　${sp.companyRole}` : ""}の` : ""}${sp.speakerName}様にご講話をいただきます。`,
+          `${eventLabel}にて、${sp.company ? `${sp.company}${sp.companyRole ? `　${sp.companyRole}` : ""}の` : ""}${sp.speakerName}様にご講話をいただきます。`,
           `${sp.speakerName}様をお迎えしてご講話をいただきます。`,
           `${sp.speakerName}様による講話のご案内です。`,
           `${sp.speakerName}様をお招きし、貴重なお話を伺います。`,
           `${sp.speakerName}様にご登壇いただきます。`,
-          `今回のモーニングセミナーは${sp.speakerName}様の講話です。`,
+          `今回の${eventLabel}は${sp.speakerName}様の講話です。`,
           `${sp.speakerName}様から学びの時間をいただきます。`,
           `${sp.speakerName}様のご講話をお届けします。`,
           `${sp.speakerName}様にお越しいただきます。`,
@@ -193,9 +215,9 @@ ${summary ? `\n【講話内容】\n${summary}\n` : ''}${photoBlock}
 🎤 ${sp.speakerName} 様${sp.company ? `（${sp.company}${sp.companyRole ? `　${sp.companyRole}` : ""}）` : ""}${affiliation ? `\n（倫理法人会：${affiliation}）` : ""}
 ${intros[pi]}
 
-【開催日時】${formatDate(sp.seminarDate)}（毎週${ch.dayName}　${ch.time}）
-【会　　場】${ch.venue}
-【住　　所】${ch.address || ch.venue}
+【開催日時】${formatDate(sp.seminarDate)}${eventTimeText ? `（${eventTimeText}）` : ''}
+【会　　場】${eventVenue}
+【住　　所】${eventAddress}
 
 皆様のご参加を心よりお待ちしております。
 
@@ -204,18 +226,18 @@ ${sig}`;
     },
     reminder: {
       label: "🔔 前日リマインダー",
-      subject: `【${ch.name}単会 モーニングセミナー】明日のご講話について`,
+      subject: `【${ch.name}単会 ${eventLabel}】明日のご講話について`,
       body:
 `${sp.speakerName} 様
 
-明日、${ch.name}単会 モーニングセミナーにてご講話をいただきます。
+明日、${ch.name}単会 ${eventLabel}にてご講話をいただきます。
 どうぞよろしくお願いいたします。
 
-【開催日時】${formatDate(sp.seminarDate)}　${ch.time}
-【会　　場】${ch.venue}
-【住　　所】${ch.address || ch.venue}
+【開催日時】${formatDate(sp.seminarDate)}${eventTimeText ? `　${eventTimeText}` : ''}
+【会　　場】${eventVenue}
+【住　　所】${eventAddress}
 
-開始の15分前（5:45頃）にお越しいただけますと幸いです。
+${isMsType ? '開始の15分前（5:45頃）にお越しいただけますと幸いです。' : '開始時間の15分前にはお越しいただけますと幸いです。'}
 ご不明な点がございましたら、お気軽にご連絡ください。
 
 お忙しいところ恐れ入りますが、明日のご登壇をどうぞよろしくお願いいたします。
@@ -224,11 +246,11 @@ ${sig}`,
     },
     thanks: {
       label: "🙏 講話後お礼",
-      subject: `【${ch.name}単会 モーニングセミナー】ご講話のお礼`,
+      subject: `【${ch.name}単会 ${eventLabel}】ご講話のお礼`,
       body:
 `${sp.speakerName} 様
 
-先日は、${ch.name}単会 モーニングセミナーにてご講話をいただき、誠にありがとうございました。
+先日は、${ch.name}単会 ${eventLabel}にてご講話をいただき、誠にありがとうございました。
 
 開催日：${formatDate(sp.seminarDate)}
 
@@ -245,7 +267,7 @@ ${sig}`,
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel, isMsType, eventVenue, eventAddress, eventTimeText]);
 
   const isFree  = mailType === "free";
   const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
