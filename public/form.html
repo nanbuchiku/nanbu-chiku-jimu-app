@@ -82,7 +82,13 @@ header .sub { font-size: 12px; opacity: .8; margin-top: 6px; }
 
 .error-msg { color: #E53935; font-size: 11px; margin-top: 4px; display: none; }
 .field.has-error input, .field.has-error textarea, .field.has-error select { border-color: #E53935; }
-.field.has-error .error-msg { display: block; }
+.field.has-error .error-msg { display: block; font-size: 13px; font-weight: 700; }
+/* 必須項目の入力漏れ：枠ごと赤くして、どこが未入力か一目で分かるようにする */
+.field.has-error { border: 2px solid #E53935; border-radius: 10px; background: #FFF4F4; padding: 10px 12px 8px; }
+.field.has-error > label { color: #C62828; }
+.field.has-error .file-upload-area { border-color: #E53935; background: #FFEBEE; }
+.validation-banner { background: #E53935; color: #fff; border-radius: 8px; padding: 10px 14px; font-size: 14px; font-weight: 700; margin-top: 16px; line-height: 1.6; }
+.draft-banner { background: #FFF8E1; border: 1.5px solid #FFB300; color: #5D4037; border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.7; margin-bottom: 14px; }
 
 #page1, #page2, #page3, #done { display: none; }
 #page1.active, #page2.active, #page3.active, #done.active { display: block; }
@@ -627,7 +633,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (speakerId) {
     const infoBox = document.querySelector('#page1 .info-box');
     if (infoBox) infoBox.innerHTML = '⏳ 以前の回答内容を読み込み中...';
-    prefillFromDB();
+    prefillFromDB().finally(() => { try { restoreDraft(); } catch (e) { console.error(e); } });
+  } else {
+    try { restoreDraft(); } catch (e) { console.error(e); }
   }
 
   // 単会設定からメールアドレスを取得（確認書メールのCC用のみ。
@@ -774,14 +782,108 @@ async function lookupZip() {
 
 // 住所から郵便番号を検索
 // ページ遷移
+
+// ===== 入力内容の一時保存（スマホでカメラ／写真アプリを開いてページが再読み込みされても消えないように） =====
+// 同じ端末のブラウザにだけ保存し、送信が完了したら消す。3日で期限切れ。写真ファイルは保存できないので選び直しが必要。
+const DRAFT_KEY = 'nanbuFormDraft:' + (speakerId || [urlName, urlDate, urlType].join('|'));
+const DRAFT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+function draftFields() {
+  return [...document.querySelectorAll('#page1 input, #page1 textarea, #page1 select, #page2 input, #page2 textarea, #page2 select, #page3 input, #page3 textarea, #page3 select')]
+    .filter(el => el.type !== 'file' && el.type !== 'button' && el.type !== 'submit' && (el.id || el.name));
+}
+function collectDraft() {
+  const f = {};
+  draftFields().forEach(el => {
+    if (el.type === 'radio') { if (el.checked) f['r:' + el.name] = el.value; }
+    else if (el.type === 'checkbox') { (f['c:' + el.name] = f['c:' + el.name] || []); if (el.checked) f['c:' + el.name].push(el.value); }
+    else if (el.id) f['v:' + el.id] = el.value;
+  });
+  return { t: Date.now(), page: currentPage, photo: !!preparedPhoto, f };
+}
+function saveDraftNow() {
+  if (document.getElementById('done')?.classList.contains('active')) return;
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft())); } catch (e) {}
+}
+let draftTimer = null;
+function saveDraftSoon() { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraftNow, 400); }
+function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+function restoreDraft() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) {}
+  if (!d || !d.f || Date.now() - d.t > DRAFT_TTL_MS) return false;
+  const fire = (el, type) => el.dispatchEvent(new Event(type, { bubbles: true }));
+  let restored = 0;
+  draftFields().forEach(el => {
+    if (el.type === 'radio') {
+      const v = d.f['r:' + el.name];
+      if (v !== undefined && el.value === v && !el.checked) { el.checked = true; fire(el, 'change'); restored++; }
+    } else if (el.type === 'checkbox') {
+      const arr = d.f['c:' + el.name];
+      if (arr && arr.includes(el.value) && !el.checked) { el.checked = true; fire(el, 'change'); restored++; }
+    } else if (el.id && d.f['v:' + el.id] !== undefined && d.f['v:' + el.id] !== '' && el.value !== d.f['v:' + el.id]) {
+      el.value = d.f['v:' + el.id]; fire(el, 'input'); restored++;
+    }
+  });
+  if (!restored) return false;
+  if (typeof updateCharCount === 'function') { try { updateCharCount(); updateMsCharCount(); } catch (e) {} }
+  const page = [1, 2, 3].includes(d.page) ? d.page : 1;
+  showPage(page);
+  const target = document.getElementById('page' + page);
+  const photoNote = d.photo ? '<br><strong>写真は、お手数ですがもう一度お選びください。</strong>' : '';
+  target.insertAdjacentHTML('afterbegin', '<div class="draft-banner">📝 前回の入力内容を復元しました。' + photoNote + '</div>');
+  return true;
+}
+document.addEventListener('input', saveDraftSoon);
+document.addEventListener('change', saveDraftSoon);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveDraftNow(); });
+window.addEventListener('pagehide', saveDraftNow);
+
+let currentPage = 1;
 function goPage(n) {
-  if (n === 2 && !validatePage1()) return;
-  if (n === 3 && !validatePage2()) return;
+  if (n === 2 && !validatePage1()) { showValidationFailure('page1'); return; }
+  if (n === 3 && !validatePage2()) { showValidationFailure('page2'); return; }
+  showPage(n);
+  window.scrollTo(0, 0);
+  saveDraftSoon();
+}
+function showPage(n) {
+  currentPage = n;
+  document.querySelectorAll('.validation-banner').forEach(e => e.remove());
   document.querySelectorAll('#page1,#page2,#page3,#done').forEach(el => el.classList.remove('active'));
   document.getElementById('page' + n).classList.add('active');
   updateProgress(n);
-  window.scrollTo(0, 0);
 }
+
+// 入力漏れがあったとき：赤い帯で件数を知らせ、最初の未入力の項目へ画面を移動する
+function visibleErrorFields(pageId) {
+  return [...document.querySelectorAll('#' + pageId + ' .field.has-error')].filter(e => e.offsetParent !== null);
+}
+function showValidationFailure(pageId) {
+  const page = document.getElementById(pageId);
+  page.querySelectorAll('.validation-banner').forEach(e => e.remove());
+  const errs = visibleErrorFields(pageId);
+  const banner = document.createElement('div');
+  banner.className = 'validation-banner';
+  banner.id = 'validation-banner-' + pageId;
+  banner.textContent = `⚠ 赤い枠の必須項目が ${errs.length} か所、未入力です。入力すると先に進めます。`;
+  const row = page.querySelector('.btn-row');
+  if (row) row.parentNode.insertBefore(banner, row); else page.appendChild(banner);
+  if (errs[0]) errs[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+// 入力・選択すると、その項目の赤枠を消し、帯の件数も更新する
+['input', 'change'].forEach(ev => document.addEventListener(ev, e => {
+  const f = e.target.closest && e.target.closest('.field.has-error');
+  if (!f) return;
+  f.classList.remove('has-error');
+  f.querySelectorAll('.error-msg').forEach(m => { m.style.display = 'none'; });
+  const pageId = f.closest('#page1,#page2,#page3')?.id;
+  const banner = pageId && document.getElementById('validation-banner-' + pageId);
+  if (banner) {
+    const left = visibleErrorFields(pageId).length;
+    if (left === 0) banner.remove();
+    else banner.textContent = `⚠ 赤い枠の必須項目が あと ${left} か所、未入力です。`;
+  }
+}));
 
 function updateProgress(n) {
   for (let i = 1; i <= 3; i++) {
@@ -922,6 +1024,7 @@ document.querySelectorAll('.check-item input').forEach(inp => {
 // ファイル選択時のUI更新
 function onFileSelect(type) {
   const input = document.getElementById(type + 'File');
+  if (type === 'photo') { preparePhoto(input); return; }
   const label = document.getElementById(type + '-label');
   const area  = document.getElementById(type + '-drop');
   if (input.files[0]) {
@@ -949,38 +1052,88 @@ function onFileSelect(type) {
 });
 
 // 画像を700KB以下に自動圧縮（Canvas API使用）
+// 読み込めない画像（HEICなどブラウザが開けない形式）は reject する。呼び出し側で案内を出すこと。
 async function compressImage(file, maxKB = 700) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     const objUrl = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(objUrl);
-      const canvas = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      const maxDim = 1400;
-      if (w > maxDim || h > maxDim) {
-        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-        else        { w = Math.round(w * maxDim / h); h = maxDim; }
-      }
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      try {
+        if (!img.width || !img.height) throw new Error('size0');
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        const maxDim = 1400;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else        { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); // 透過PNGが黒くならないように白で下塗り
+        ctx.drawImage(img, 0, 0, w, h);
 
-      let quality = 0.88;
-      const compress = () => {
-        canvas.toBlob(blob => {
-          if (blob.size <= maxKB * 1024 || quality <= 0.15) {
-            resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
-          } else {
-            quality = Math.max(quality - 0.10, 0.15);
-            compress();
-          }
-        }, 'image/jpeg', quality);
-      };
-      compress();
+        let quality = 0.88;
+        const compress = () => {
+          canvas.toBlob(blob => {
+            if (!blob) { reject(new Error('toBlob failed')); return; }
+            if (blob.size <= maxKB * 1024 || quality <= 0.15) {
+              resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' }));
+            } else {
+              quality = Math.max(quality - 0.10, 0.15);
+              compress();
+            }
+          }, 'image/jpeg', quality);
+        };
+        compress();
+      } catch (e) { reject(e); }
     };
-    img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(file); };
+    img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error('decode failed')); };
     img.src = objUrl;
   });
+}
+
+// HEIC/HEIFなど、ブラウザによっては開けない写真形式か
+function isHeicLike(file) {
+  return /image\/hei[cf]/i.test(file.type || '') || /\.hei[cf]$/i.test(file.name || '');
+}
+const PHOTO_DECODE_MSG = 'この写真は形式の関係で読み込めませんでした。\niPhoneの場合は「設定 → カメラ → フォーマット → 互換性優先」に変更して撮り直すか、別の写真（JPEG・PNG）をお選びください。';
+
+// 顔写真を選んだ時点で圧縮して保持する（送信時の待ち時間と失敗を減らす）
+let preparedPhoto = null;
+async function preparePhoto(input) {
+  const f = input.files[0];
+  const label = document.getElementById('photo-label');
+  const area  = document.getElementById('photo-drop');
+  preparedPhoto = null;
+  if (!f) return;
+  label.textContent = '🔄 写真を読み込み中...';
+  try {
+    const out = await compressImage(f, 700);
+    preparedPhoto = out;
+    label.textContent = `✓ ${f.name}（圧縮後 ${(out.size / 1024 / 1024).toFixed(2)} MB）`;
+    area.classList.add('file-selected');
+  } catch (e) {
+    if (isHeicLike(f)) {
+      alert(PHOTO_DECODE_MSG);
+      input.value = '';
+      label.textContent = 'クリックまたはドラッグ＆ドロップ';
+      area.classList.remove('file-selected');
+    } else {
+      // JPEG/PNGなのに圧縮だけ失敗した場合は、元の写真のまま送る（10MBまで）
+      if (f.size > 10 * 1024 * 1024) {
+        alert('写真のサイズが大きすぎます（10MBまで）。別の写真をお選びください。');
+        input.value = '';
+        label.textContent = 'クリックまたはドラッグ＆ドロップ';
+        area.classList.remove('file-selected');
+      } else {
+        preparedPhoto = f;
+        label.textContent = `✓ ${f.name}（${(f.size / 1024 / 1024).toFixed(1)} MB）`;
+        area.classList.add('file-selected');
+      }
+    }
+  }
+  saveDraftSoon();
 }
 
 // ひらがな／カタカナ → ローマ字（Supabase Storage キーはASCIIのみ対応のため）
@@ -1042,7 +1195,7 @@ function buildFileName(type, ext, speakerName, unit, date) {
 // type: ファイル種別名（ファイル名に使用）'顔写真'|'資料01'|'資料02'
 // idPrefix: DOM要素のIDプレフィックス 'photo'|'material'|'material2'
 async function uploadToStorage(file, speakerName, type, idPrefix) {
-  const isImage = file.type.startsWith('image/');
+  const isImage = type === '顔写真';
   const unit    = document.getElementById('speakerUnit')?.value.trim() || urlUnit;
   const date    = urlDate;
   const progressBar = idPrefix ? document.getElementById(idPrefix + '-progress-bar') : null;
@@ -1053,8 +1206,16 @@ async function uploadToStorage(file, speakerName, type, idPrefix) {
 
   let uploadFile = file;
   if (isImage) {
-    if (label) label.textContent = '🔄 圧縮中...';
-    uploadFile = await compressImage(file, 700);
+    if (preparedPhoto && preparedPhoto.size) {
+      uploadFile = preparedPhoto; // 選択時に圧縮済み
+    } else {
+      if (label) label.textContent = '🔄 圧縮中...';
+      try { uploadFile = await compressImage(file, 700); }
+      catch (e) {
+        if (isHeicLike(file)) throw new Error(PHOTO_DECODE_MSG);
+        uploadFile = file;
+      }
+    }
     const sizeMB = (uploadFile.size / 1024 / 1024).toFixed(2);
     if (label) label.textContent = `✓ 圧縮完了（${sizeMB} MB）`;
     if (progressBar) progressBar.style.width = '50%';
@@ -1062,8 +1223,28 @@ async function uploadToStorage(file, speakerName, type, idPrefix) {
 
   const ext      = isImage ? 'jpg' : file.name.split('.').pop();
   const fileName = buildFileName(type, ext, speakerName, unit, date);
-  const { error } = await db.storage.from('speaker-files').upload(fileName, uploadFile, { upsert: true });
-  if (error) throw new Error('アップロード失敗: ' + error.message);
+  // スマホの電波が不安定でも通るよう、最大3回まで再試行する（1回あたり最長90秒）
+  let lastErr = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await Promise.race([
+        db.storage.from('speaker-files').upload(fileName, uploadFile, { upsert: true, contentType: isImage ? 'image/jpeg' : (uploadFile.type || undefined) }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 90000)),
+      ]);
+      if (res.error) throw new Error(res.error.message);
+      lastErr = null; break;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 3) {
+        if (label) label.textContent = `⚠ 通信を再試行しています（${attempt}/2）...`;
+        await new Promise(r => setTimeout(r, attempt * 1500));
+      }
+    }
+  }
+  if (lastErr) {
+    const net = /fetch|network|load failed|timeout|aborted/i.test(String(lastErr.message));
+    throw new Error('アップロード失敗: ' + (net ? '通信が途切れました。電波の良い場所で、もう一度「送信する」を押してください（入力内容は残っています）。' : lastErr.message));
+  }
 
   if (progressBar) progressBar.style.width = '100%';
   const { data } = db.storage.from('speaker-files').getPublicUrl(fileName);
@@ -1195,7 +1376,7 @@ function openConfirmationMail(payload, extraUrls) {
 
 // 送信
 async function submitForm() {
-  if (!validatePage3()) return;
+  if (!validatePage3()) { showValidationFailure('page3'); return; }
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -1338,6 +1519,7 @@ async function submitForm() {
       if (error) throw new Error(error.message);
     }
     document.getElementById('loadingOverlay').classList.remove('show');
+    clearDraft();
     document.querySelectorAll('#page1,#page2,#page3').forEach(el => el.classList.remove('active'));
     document.getElementById('done').classList.add('active');
     document.getElementById('progLabel').textContent = '完了';
