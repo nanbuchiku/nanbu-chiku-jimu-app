@@ -1,4 +1,4 @@
-import { CHAPTERS, ALL_CHAPTER, SEMINAR_TYPES } from './constants';
+import { CHAPTERS, ALL_CHAPTER, SEMINAR_TYPES, KISO_START_DATE, KISO_CHAPTER_TITLES } from './constants';
 
 const FALLBACK_CHAPTER = { id:"", name:"不明", short:"?", color:"#98A2B3", accent:"#B0BEC5", light:"#FAFAFA", day:-1, dayName:"不明", venue:"", time:"" };
 export const getChapter = id => (id === ALL_CHAPTER.id ? ALL_CHAPTER : CHAPTERS.find(c => c.id === id)) || FALLBACK_CHAPTER;
@@ -323,4 +323,26 @@ export function getSpeakerDeadlineFlags(sp, today) {
     });
   });
   return flags;
+}
+
+
+// 基礎講座の「第◯講」を単会ごとに算出する。{ レコードid: 講番号 } を返す。
+// ルール：各単会で KISO_START_DATE 以降の基礎講座を日付順に数え、第1講から始める
+//   ・目次は KISO_CHAPTER_TITLES の件数で循環（18講の次は第1講）
+//   ・同じ単会・同じ日付のレコードが複数あっても1回として数える（重複レコード対策）
+//   ・中止（cancelled）は数えない／休会（kyukai）は講座が1回進む扱いで数える
+export function computeKisoNumbers(speakers) {
+  const byChapter = {};
+  for (const sp of speakers || []) {
+    if (sp.seminarType !== 'kiso' || !sp.seminarDate || sp.seminarDate < KISO_START_DATE) continue;
+    if (sp.status === 'cancelled') continue;
+    (byChapter[sp.chapterId] ||= []).push(sp);
+  }
+  const result = {};
+  const cycle = KISO_CHAPTER_TITLES.length;
+  for (const list of Object.values(byChapter)) {
+    const dates = [...new Set(list.map(sp => sp.seminarDate))].sort();
+    for (const sp of list) result[sp.id] = (dates.indexOf(sp.seminarDate) % cycle) + 1;
+  }
+  return result;
 }

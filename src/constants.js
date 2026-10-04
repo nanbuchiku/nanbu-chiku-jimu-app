@@ -46,6 +46,9 @@ export const SEMINAR_TYPES = [
 
 export const DISTRICT_ID = '11111111-1111-1111-1111-111111111111';
 
+// 基礎講座の「第◯講」採番の起点日。この日以降の基礎講座を、単会ごとに第1講から数える。
+export const KISO_START_DATE = '2026-09-01';
+
 // 倫理経営基礎講座テキストの目次（5単会共通・第1〜18講で循環）
 // 配列インデックス0が第1講。
 export const KISO_CHAPTER_TITLES = [
