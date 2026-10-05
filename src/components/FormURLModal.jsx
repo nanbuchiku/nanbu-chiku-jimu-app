@@ -151,8 +151,11 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
       lodging: isNew ? form.lodging : toBinaryLodging(sp.lodging),
       receipt: isNew ? form.receiptNeeded : (sp.receiptNeeded || '要'),
     });
+    // 講師が送信した直後の確認メールで、単会にもCCするための単会代表メール
+    // （講師は未ログインでDBの設定を読めないため、URLに入れて渡す）
+    if (chEmail) params.set('chmail', chEmail);
     return `${BASE}?${params.toString()}`;
-  }, [isNew, form, sp, ch]);
+  }, [isNew, form, sp, ch, chEmail]);
 
   const displayName  = isNew ? form.speakerName : sp.speakerName;
   const displayDate  = isNew ? form.seminarDate : sp.seminarDate;

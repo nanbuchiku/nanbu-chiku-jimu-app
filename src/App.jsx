@@ -22,6 +22,10 @@ import RecordCompareModal from './components/RecordCompareModal';
 import LoginPage from './components/LoginPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
 
+// 講師フォームの確認メールで単会へCCするため、単会の代表メールをメール送信側(GAS)へ預ける
+const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
+const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
+
 // 単会設定のデフォルト値（localStorage / Supabase Storage に保存済みデータがない場合のフォールバック）
 const DEFAULT_CHAPTER_SETTINGS = {
   todawarabi: {
@@ -243,6 +247,7 @@ export default function App() {
       return merged;
     } catch { return DEFAULT_CHAPTER_SETTINGS; }
   });
+  const [settingsLoaded, setSettingsLoaded]= useState(false); // DBから単会設定を読み込み済みか
   const [settingsOpen,   setSettingsOpen]  = useState(false);
   const [settingsSaving, setSettingsSaving]= useState(false);
   const [pwModal, setPwModal] = useState(false);
@@ -363,9 +368,25 @@ export default function App() {
         };
       });
       setChSettings(merged);
+      setSettingsLoaded(true);
       try { localStorage.setItem('chapterSettings', JSON.stringify(merged)); } catch {}
     } catch {}
   }, []);
+
+  // 単会の代表メールが変わったときだけ、メール送信側(GAS)へ預け直す。
+  // （講師フォームは未ログインでDBの設定を読めないため、古いURLの講師でも単会へCCできるようにする）
+  useEffect(() => {
+    if (!settingsLoaded || !MAIL_SEND_URL || !MAIL_SEND_TOKEN) return;
+    const emails = {};
+    CHAPTERS.forEach(ch => { emails[ch.id] = (chapterSettings[ch.id]?.chapterEmail || '').trim(); });
+    const sig = JSON.stringify(emails);
+    let last = null; try { last = localStorage.getItem('chEmailSynced'); } catch {}
+    if (last === sig) return;
+    fetch(MAIL_SEND_URL, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ token: MAIL_SEND_TOKEN, action: 'sync_chapter_emails', emails }),
+    }).then(r => r.json()).then(d => { if (d?.ok) { try { localStorage.setItem('chEmailSynced', sig); } catch {} } }).catch(() => {});
+  }, [settingsLoaded, chapterSettings]);
 
   const saveChapterSettings = useCallback(async (chapterId, data) => {
     setSettingsSaving(true);

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, memo } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
 import { getChapter, getSeminarType, formatDate, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 import DocumentView, { elementToPdfBase64, makePdfFilename } from './DocumentView';
@@ -20,6 +20,18 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
   const [freeBody,    setFreeBody]    = useState("");
   const [sending, setSending] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
+  // 差出人として使えるアドレス（合同事務局のGmailに「他のメールアドレス」として登録済みのもの）。null=確認前／確認できない
+  const [aliases, setAliases] = useState(null);
+  useEffect(() => {
+    if (!MAIL_SEND_URL || !MAIL_SEND_TOKEN || !chEmail) return;
+    let cancelled = false;
+    fetch(MAIL_SEND_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: MAIL_SEND_TOKEN, action: 'aliases' }) })
+      .then(r => r.json()).then(d => { if (!cancelled && d?.ok && Array.isArray(d.aliases)) setAliases(d.aliases.map(a => String(a).toLowerCase())); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [chEmail]);
+  // true=単会アドレスで送れる／false=送れない（合同事務局から送り、返信先とCCを単会にする）／null=不明
+  const canSendAsChapter = aliases ? aliases.includes(chEmail.toLowerCase()) : null;
   // 確認書送付メールでは、確認書（講師依頼確認書）をPDFにして自動で添付する。
   // PDFは確認書画面と同じ描画を画面外に置いて変換する（基礎講座・経営者の集い等は前夜分とMS分の2枚）。
   const [attachPdf, setAttachPdf] = useState(true);
@@ -299,7 +311,9 @@ ${sig}`,
       });
       const data = await res.json().catch(() => null);
       if (!data?.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-      showToast?.(`${ch.name}単会から送信しました ✓`);
+      showToast?.(data.sentAs === 'office'
+        ? `合同事務局のアドレスから送信しました（返信先・CC：${ch.name}単会）✓`
+        : `${ch.name}単会から送信しました ✓`);
       onDone();
     } catch (e) {
       showToast?.('⚠ 送信に失敗しました: ' + (e.message || ''));
@@ -377,7 +391,10 @@ ${sig}`,
 
         {chEmail && (
           <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#78909C", marginTop:8 }}>
-            {MAIL_SEND_URL ? <>差出人：<strong style={{ color:"#2E7D32" }}>{ch.name}単会（{chEmail}）</strong>　CC：{chEmail}</> : <>CC：{chEmail}（{ch.name}単会）</>}
+            {!MAIL_SEND_URL ? <>CC：{chEmail}（{ch.name}単会）</>
+              : canSendAsChapter === false ? <>差出人：<strong style={{ color:"#E65100" }}>南部地区合同事務局（rinri.nanbu@gmail.com）</strong>　返信先・CC：{ch.name}単会（{chEmail}）<div style={{ color:"#E65100", marginTop:2 }}>※ {chEmail} は差出人として登録されていないため、合同事務局のアドレスから送ります。講師の返信は{ch.name}単会に届きます。</div></>
+              : canSendAsChapter === true ? <>差出人：<strong style={{ color:"#2E7D32" }}>{ch.name}単会（{chEmail}）</strong>　CC：{chEmail}</>
+              : <>差出人：{ch.name}単会（{chEmail}）　CC：{chEmail}<div style={{ marginTop:2 }}>※ {chEmail} が差出人として登録されていない場合は、合同事務局のアドレスから送り、返信先とCCを{ch.name}単会にします。</div></>}
           </div>
         )}
 
@@ -385,7 +402,9 @@ ${sig}`,
           confirmingSend ? (
             <div style={{ marginTop:10, background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:8, padding:"10px 12px" }}>
               <div style={{ fontSize:"clamp(12px,1.6vw,15px)", fontWeight:700, color:"#7A4A00", marginBottom:8 }}>
-                ↑ 上の件名・本文の内容で、{ch.name}単会（{chEmail}）から送信します。よろしいですか？
+                {canSendAsChapter === false
+                  ? <>↑ 上の件名・本文の内容で、合同事務局のアドレスから送信します（返信先・CC：{ch.name}単会）。よろしいですか？</>
+                  : <>↑ 上の件名・本文の内容で、{ch.name}単会（{chEmail}）から送信します。よろしいですか？</>}
               </div>
               <div style={{ display:"flex", gap:8 }}>
                 <button style={{ flex:1, background:"#fff", color:"#7A4A00", border:"1px solid #FFB74D", borderRadius:8, padding:"10px", fontSize:"clamp(12px,1.6vw,15px)", fontWeight:700, cursor:"pointer" }}
@@ -398,7 +417,7 @@ ${sig}`,
             <button
               style={{ width:"100%", marginTop:10, background:"#2E7D32", color:"#fff", border:"none", borderRadius:8, padding:"13px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:800, cursor: !sp.email ? "not-allowed" : "pointer", opacity: sp.email ? 1 : .5 }}
               onClick={sendViaChapter} disabled={!sp.email}>
-              ✉ {ch.name}単会（{chEmail}）から直接送信
+              {canSendAsChapter === false ? <>✉ 合同事務局から送信（返信先・CC：{ch.name}単会）</> : <>✉ {ch.name}単会（{chEmail}）から直接送信</>}
             </button>
           )
         ) : (
@@ -419,7 +438,7 @@ ${sig}`,
             {showOther && (
               <div style={{ marginTop:8, border:"1px solid #EF9A9A", background:"#FFF5F5", borderRadius:8, padding:"10px 12px" }}>
                 <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#B71C1C", lineHeight:1.6, marginBottom:8 }}>
-                  ⚠ メールアプリで開くと、<strong>このパソコンの標準アカウント（個人のアドレス等）</strong>から送信されます。{ch.name}単会からは送られません。通常は上の「{ch.name}単会から直接送信」をお使いください。
+                  ⚠ メールアプリで開くと、<strong>このパソコンの標準アカウント（個人のアドレス等）</strong>から送信されます。{ch.name}単会からは送られません。通常は上の送信ボタンをお使いください。
                 </div>
                 <div style={{ display:"flex", gap:8 }}>
                   <button style={{ ...BC, flex:1, opacity: sp.email ? 1 : .4 }} disabled={!sp.email} onClick={() => { window.open(`mailto:${sp.email}?${chEmail ? `cc=${encodeURIComponent(chEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank"); onDone(); }}>✉ メールアプリで開く（このパソコンのアカウント）</button>

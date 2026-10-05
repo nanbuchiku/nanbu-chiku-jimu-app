@@ -638,17 +638,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try { restoreDraft(); } catch (e) { console.error(e); }
   }
 
-  // 単会設定からメールアドレスを取得（確認書メールのCC用のみ。
-  // 画面上の連絡先表示は合同事務局アドレスのまま変えない）
-  if (chapterId) {
-    (async () => {
-      try {
-        const { data } = await db.from('chapter_settings').select('settings').eq('chapter_id', chapterId).single();
-        const email = data?.settings?.chapterEmail;
-        if (email) NANBU_MAIL = email;
-      } catch {}
-    })();
-  }
 });
 
 // 更新フォーム: 既存回答を取得して事前入力
@@ -1265,7 +1254,10 @@ function extractStaffNotes(notes) {
 // 講師依頼確認書メールを自動で開く（宛先：講師／CC：合同事務局＋単会）
 const OFFICE_MAIL = 'rinri.nanbu@gmail.com'; // 南部地区合同事務局（固定）
 const MAIL_RECEIPT_URL = 'https://script.google.com/macros/s/AKfycbyiYqXn7fAUy-Tr7N4cojiDa7-ERu3QpAjkqHE5avfww-FBtWI3GbLSRRiss82bDzg/exec'; // 合同事務局アカウントから送信するGAS（gas/rinri_mail_send.gs）
-let NANBU_MAIL = OFFICE_MAIL; // 単会メール（chapter_settingsから取得。無い場合は事務局で代用）
+// 単会の代表メール。フォームURLの chmail に事務局アプリが入れて渡す（講師は未ログインのため、DBの設定は直接読めない）。
+// 渡されていない古いURLでは、メール送信側(GAS)が単会IDから補ってCCに入れる。
+const urlChMail = (urlParams.get('chmail') || '').trim();
+let NANBU_MAIL = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(urlChMail) ? urlChMail : OFFICE_MAIL;
 
 function openConfirmationMail(payload, extraUrls) {
   const val   = id   => document.getElementById(id)?.value.trim() || '';
@@ -1366,7 +1358,7 @@ function openConfirmationMail(payload, extraUrls) {
   fetch(MAIL_RECEIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'form_receipt', to, cc: ccList, subject, body: lines.join('\n') }),
+    body: JSON.stringify({ action: 'form_receipt', to, cc: ccList, chapter_id: chapterId, subject, body: lines.join('\n') }),
   }).then(r => r.json()).then(d => {
     if (!d || !d.ok) throw new Error((d && d.error) || 'send failed');
     if (doneMsg) doneMsg.insertAdjacentHTML('afterbegin',

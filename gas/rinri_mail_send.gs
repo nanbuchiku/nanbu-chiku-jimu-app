@@ -77,6 +77,15 @@ function doPost(e) {
       return jsonResponse_({ ok: false, error: 'unauthorized' });
     }
 
+    // アプリが、各単会の代表メールアドレスを預けるための窓口（講師フォームの確認メールで単会にCCするため）
+    if (payload.action === 'sync_chapter_emails') {
+      return jsonResponse_(syncChapterEmails_(payload));
+    }
+    // 差出人として使えるアドレス（このアカウントのGmailに「他のメールアドレス」として登録済みのもの）の一覧
+    if (payload.action === 'aliases') {
+      return jsonResponse_({ ok: true, aliases: GmailApp.getAliases() });
+    }
+
     var to      = String(payload.to || '').trim();
     var cc      = String(payload.cc || '').trim();
     var subject = String(payload.subject || '').trim();
@@ -90,7 +99,14 @@ function doPost(e) {
 
     var options = { name: senderName || '倫理法人会 南部地区合同事務局' };
     if (cc) options.cc = cc;
-    if (from) options.from = from;
+    // 差出人は、Gmailに「他のメールアドレス」として登録済みのアドレスしか指定できない（Outlook等の未登録アドレスは不可）。
+    // 未登録の場合は失敗させず、合同事務局のアドレスから送り、返信先（Reply-To）を単会アドレスにする。
+    var sentAs = 'office';
+    if (from) {
+      var aliases = GmailApp.getAliases().map(function (a) { return String(a).toLowerCase(); });
+      if (aliases.indexOf(from.toLowerCase()) >= 0) { options.from = from; sentAs = 'chapter'; }
+      else { options.replyTo = from; }
+    }
 
     // PDF等の添付ファイル（base64エンコード済みのデータを受け取り、Blobに戻して添付する）
     // 複数添付は payload.attachments=[{base64, filename, mimeType}]、単数は従来の attachmentBase64 系
@@ -108,7 +124,7 @@ function doPost(e) {
 
     GmailApp.sendEmail(to, subject, body, options);
 
-    return jsonResponse_({ ok: true });
+    return jsonResponse_({ ok: true, sentAs: sentAs });
   } catch (err) {
     return jsonResponse_({ ok: false, error: String(err) });
   }
@@ -119,8 +135,19 @@ function sendFormReceipt_(p) {
   var re = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
   if (!re.test(to)) return { ok: false, error: 'invalid to' };
 
-  var cc = String(p.cc || '').split(',').map(function (s) { return s.trim(); })
-    .filter(function (s) { return re.test(s); }).slice(0, 3).join(',');
+  var ccArr = String(p.cc || '').split(',').map(function (s) { return s.trim(); });
+  // フォームから単会アドレスが渡されなかった場合（古いURL）は、アプリから預かった一覧で補う
+  var chId = String(p.chapter_id || '').trim();
+  if (/^[a-z_]{1,30}$/.test(chId)) {
+    var chMail = getChapterEmails_()[chId];
+    if (chMail) ccArr.push(chMail);
+  }
+  var seen = {};
+  var cc = ccArr.filter(function (s) {
+    var k = s.toLowerCase();
+    if (!re.test(s) || seen[k] || k === to.toLowerCase()) return false;
+    seen[k] = true; return true;
+  }).slice(0, 3).join(',');
 
   var subject = String(p.subject || '').trim();
   if (subject.indexOf('【講師依頼確認書】') !== 0 || subject.length > 150) {
@@ -142,6 +169,26 @@ function sendFormReceipt_(p) {
   if (cc) options.cc = cc;
   GmailApp.sendEmail(to, subject, body, options);
   return { ok: true };
+}
+
+function getChapterEmails_() {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('CHAPTER_EMAILS') || '{}') || {}; }
+  catch (err) { return {}; }
+}
+
+// 単会ID→代表メールアドレスを、既存の一覧に上書き・追加（空欄の単会は削除）して保存する
+function syncChapterEmails_(p) {
+  var re = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+  var emails = p.emails || {};
+  var cur = getChapterEmails_();
+  Object.keys(emails).forEach(function (id) {
+    if (!/^[a-z_]{1,30}$/.test(id)) return;
+    var v = String(emails[id] || '').trim();
+    if (!v) { delete cur[id]; }
+    else if (re.test(v)) { cur[id] = v; }
+  });
+  PropertiesService.getScriptProperties().setProperty('CHAPTER_EMAILS', JSON.stringify(cur));
+  return { ok: true, count: Object.keys(cur).length };
 }
 
 function jsonResponse_(obj) {
