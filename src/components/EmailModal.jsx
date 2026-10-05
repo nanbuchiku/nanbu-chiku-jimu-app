@@ -2,6 +2,8 @@ import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from '
 import { getChapter, getSeminarType, formatDate, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 import DocumentView, { elementToPdfBase64, makePdfFilename } from './DocumentView';
+import { db } from '../lib/supabase';
+import { MAX_FILES, DIRECT_BUDGET, fmtSize, prepareAttachment, planAttachments, fileToBase64, uploadForLink } from '../lib/mailAttachments';
 
 // 単会自身のメールアドレスを差出人として送信するGASウェブアプリ（未設定ならこの機能は表示しない）
 // ※ from に単会メールを指定するには、事前に rinri.nanbu@gmail.com のGmail設定で
@@ -10,7 +12,7 @@ import DocumentView, { elementToPdfBase64, makePdfFilename } from './DocumentVie
 const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
 const MAIL_SEND_TOKEN = import.meta.env.VITE_MAIL_SEND_TOKEN || '';
 
-export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast }) {
+export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onDone, chapterSettings, showToast, onSaveSettings, scopeChapter }) {
   const ch = getChapter(sp.chapterId);
   const chSettings = chapterSettings?.[sp.chapterId] || {};
   const chEmail = chSettings.chapterEmail || '';
@@ -20,6 +22,14 @@ export default memo(function EmailModal({ speaker: sp, defaultType, onClose, onD
   const [freeBody,    setFreeBody]    = useState("");
   const [sending, setSending] = useState(false);
   const [confirmingSend, setConfirmingSend] = useState(false);
+  // フリーメール：単会ごとのテンプレート（単会設定 chapter_settings の mailTemplates に保存）と、写真・動画の添付
+  const templates = useMemo(() => Array.isArray(chSettings.mailTemplates) ? chSettings.mailTemplates : [], [chSettings.mailTemplates]);
+  // 単会のログインは自分の単会のテンプレートだけ編集できる。管理者（合同事務局）は全単会
+  const canEditTemplates = !scopeChapter || scopeChapter === sp.chapterId;
+  const [tplId, setTplId] = useState('');
+  const [savingTplName, setSavingTplName] = useState(null); // null=名前入力欄は閉じている
+  const [attachItems, setAttachItems] = useState([]);
+  const [attachBusy, setAttachBusy] = useState(false);
   // 差出人として使えるアドレス（合同事務局のGmailに「他のメールアドレス」として登録済みのもの）。null=確認前／確認できない
   const [aliases, setAliases] = useState(null);
   useEffect(() => {
@@ -278,8 +288,55 @@ ${sig}`,
   }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel, isMsType, eventVenue, eventAddress, eventTimeText, attachPdf]);
 
   const isFree  = mailType === "free";
-  const subject = isFree ? freeSubject : TEMPLATES[mailType].subject;
-  const body    = isFree ? freeBody    : TEMPLATES[mailType].body;
+  // フリーメールの差し込み：{講師名} {日付} {単会名} {講話テーマ} を、この講師の情報に置き換える
+  const expandVars = (t) => String(t || '')
+    .replace(/\{講師名\}/g, sp.speakerName || '')
+    .replace(/\{日付\}/g, formatDate(sp.seminarDate))
+    .replace(/\{単会名\}/g, ch.name || '')
+    .replace(/\{講話テーマ\}/g, sp.topic || '');
+  const subject = isFree ? expandVars(freeSubject) : TEMPLATES[mailType].subject;
+  const body    = isFree ? expandVars(freeBody)    : TEMPLATES[mailType].body;
+
+  const applyTemplate = (id) => {
+    const t = templates.find(x => x.id === id);
+    if (!t) { setTplId(''); return; }
+    if ((freeSubject.trim() || freeBody.trim()) && !window.confirm('今の入力内容は、テンプレートの内容に置き換わります。よろしいですか？')) return;
+    setTplId(id); setFreeSubject(t.subject || ''); setFreeBody(t.body || '');
+  };
+  const saveTemplate = (name) => {
+    const n = (name || '').trim();
+    if (!n) return;
+    if (!freeSubject.trim() && !freeBody.trim()) { showToast?.('⚠ 件名か本文を入力してから保存してください'); return; }
+    const exist = templates.find(t => t.name === n);
+    if (!exist && templates.length >= 30) { showToast?.('⚠ テンプレートは30件までです。不要なものを削除してください'); return; }
+    if (exist && !window.confirm(`テンプレート「${n}」を、今の内容で上書きします。よろしいですか？`)) return;
+    const id = exist ? exist.id : 't' + Date.now().toString(36);
+    const next = exist ? templates.map(t => t.id === id ? { ...t, subject: freeSubject, body: freeBody } : t)
+                       : [...templates, { id, name: n, subject: freeSubject, body: freeBody }];
+    onSaveSettings?.(sp.chapterId, { ...chSettings, mailTemplates: next });
+    setTplId(id); setSavingTplName(null);
+  };
+  const deleteTemplate = () => {
+    const t = templates.find(x => x.id === tplId);
+    if (!t || !window.confirm(`テンプレート「${t.name}」を削除します。よろしいですか？`)) return;
+    onSaveSettings?.(sp.chapterId, { ...chSettings, mailTemplates: templates.filter(x => x.id !== tplId) });
+    setTplId('');
+  };
+  const onPickFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    const room = Math.max(0, MAX_FILES - attachItems.length);
+    if (files.length > room) showToast?.(`⚠ 写真・動画は${MAX_FILES}つまでです（${files.length - room}つは追加しませんでした）`);
+    setAttachBusy(true);
+    const added = [];
+    for (const f of files.slice(0, room)) {
+      try { added.push(await prepareAttachment(f)); } catch (err) { showToast?.('⚠ ' + err.message); }
+    }
+    setAttachItems(prev => [...prev, ...added].slice(0, MAX_FILES));
+    setAttachBusy(false);
+  };
+  const attachPlan = useMemo(() => planAttachments(attachItems), [attachItems]);
 
   const wantPdf = !!MAIL_SEND_URL && attachPdf && mailType === 'confirm_doc';
 
@@ -300,12 +357,26 @@ ${sig}`,
           attachments.push({ base64: msB64, filename: makePdfFilename(sp, '_MS'), mimeType: 'application/pdf' });
         }
       }
+      // フリーメールの写真・動画：メールに収まるものは添付、大きな動画は保存先にあげてリンクを本文に入れる
+      let sendBody = body;
+      if (isFree && attachItems.length) {
+        const plan = planAttachments(attachItems);
+        attachments = attachments || [];
+        for (const it of plan.direct) {
+          attachments.push({ base64: await fileToBase64(it.file), filename: it.name, mimeType: it.file.type || (it.kind === 'image' ? 'image/jpeg' : 'video/mp4') });
+        }
+        if (plan.link.length) {
+          const lines = [];
+          for (const it of plan.link) lines.push(`・${it.name}（${fmtSize(it.size)}）\n  ${await uploadForLink(db, it, sp.chapterId, sp.seminarDate)}`);
+          sendBody = `${body}\n\n▼ 動画など大きなファイルは、下記のリンクからご覧・ダウンロードいただけます。\n${lines.join('\n')}`;
+        }
+      }
       const res = await fetch(MAIL_SEND_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           token: MAIL_SEND_TOKEN, to: sp.email, cc: chEmail,
-          subject, body, from: chEmail, senderName: `倫理法人会 ${ch.name}単会`,
+          subject, body: sendBody, from: chEmail, senderName: `倫理法人会 ${ch.name}単会`,
           ...(attachments ? { attachments } : {}),
         }),
       });
@@ -321,7 +392,7 @@ ${sig}`,
       setSending(false);
       setConfirmingSend(false);
     }
-  }, [sp, chEmail, subject, body, ch.name, showToast, onDone, wantPdf, hasNextDayMs]);
+  }, [sp, chEmail, subject, body, ch.name, showToast, onDone, wantPdf, hasNextDayMs, isFree, attachItems]);
 
   // 誤送信防止のため、送信ボタンを押すと上の件名・本文を表示したまま
   // その場で「本当に送信するか」を尋ねる（内容を隠さない）
@@ -357,6 +428,35 @@ ${sig}`,
           )}
         </div>
 
+        {isFree && (
+          <div style={{ border:"1px solid #D0D7E2", background:"#F8FAFF", borderRadius:8, padding:"9px 11px", marginBottom:10 }}>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", fontWeight:700, marginBottom:6 }}>📑 {ch.name}単会のテンプレート</div>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+              <select style={{ ...INP, flex:"1 1 180px", fontSize:"clamp(12px,1.4vw,14px)" }} value={tplId} onChange={e => applyTemplate(e.target.value)}>
+                <option value="">{templates.length ? '（テンプレートを選ぶ）' : '（保存済みのテンプレートはありません）'}</option>
+                {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              {canEditTemplates && savingTplName === null && (
+                <button style={{ ...BC, whiteSpace:"nowrap" }} onClick={() => setSavingTplName(templates.find(t => t.id === tplId)?.name || '')}>💾 今の内容を保存</button>
+              )}
+              {canEditTemplates && tplId && savingTplName === null && (
+                <button style={{ ...BC, whiteSpace:"nowrap", color:"#B71C1C" }} onClick={deleteTemplate}>🗑 削除</button>
+              )}
+            </div>
+            {canEditTemplates && savingTplName !== null && (
+              <div style={{ display:"flex", gap:6, marginTop:6, flexWrap:"wrap" }}>
+                <input style={{ ...INP, flex:"1 1 180px", fontSize:"clamp(12px,1.4vw,14px)" }} placeholder="テンプレートの名前（例：講話後のお礼）" value={savingTplName} onChange={e => setSavingTplName(e.target.value)} autoFocus />
+                <button style={{ ...BP, whiteSpace:"nowrap" }} disabled={!savingTplName.trim()} onClick={() => saveTemplate(savingTplName)}>保存する</button>
+                <button style={{ ...BC, whiteSpace:"nowrap" }} onClick={() => setSavingTplName(null)}>やめる</button>
+              </div>
+            )}
+            {!canEditTemplates && <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#98A2B3", marginTop:6 }}>※ ログイン中の単会以外のテンプレートは、選ぶだけで、保存・削除はできません。</div>}
+            <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#78909C", marginTop:6, lineHeight:1.6 }}>
+              差し込み：<code>{'{講師名}'}</code> <code>{'{日付}'}</code> <code>{'{単会名}'}</code> <code>{'{講話テーマ}'}</code>（送るとき、この講師の情報に置き換わります）
+            </div>
+          </div>
+        )}
+
         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#78909C", marginBottom:3, fontWeight:600 }}>件名</div>
         {isFree
           ? <input style={{ ...INP, width:"100%", marginBottom:10 }} placeholder="件名を入力..." value={freeSubject} onChange={e => setFreeSubject(e.target.value)} />
@@ -368,6 +468,46 @@ ${sig}`,
           ? <textarea style={{ ...INP, width:"100%", minHeight:180, resize:"vertical", fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8 }} placeholder="本文を入力..." value={freeBody} onChange={e => setFreeBody(e.target.value)} />
           : <pre style={{ background:"#F5F5F5", borderRadius:8, padding:12, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.8, whiteSpace:"pre-wrap", maxHeight:220, overflowY:"auto" }}>{body}</pre>
         }
+
+        {isFree && /\{(講師名|日付|単会名|講話テーマ)\}/.test(freeSubject + freeBody) && (
+          <div style={{ marginTop:8, border:"1px dashed #B0BEC5", borderRadius:8, padding:"8px 10px", background:"#FAFAFA" }}>
+            <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#78909C", fontWeight:700, marginBottom:4 }}>👁 実際に送られる内容（差し込み後）</div>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, marginBottom:4 }}>{subject}</div>
+            <pre style={{ margin:0, fontSize:"clamp(12px,1.4vw,14px)", lineHeight:1.7, whiteSpace:"pre-wrap" }}>{body}</pre>
+          </div>
+        )}
+
+        {isFree && (
+          <div style={{ marginTop:10, border:"1px solid #D0D7E2", borderRadius:8, padding:"9px 11px" }}>
+            <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", fontWeight:700, marginBottom:6 }}>📷 講話の様子の写真・動画（{MAX_FILES}つまで）</div>
+            {!(MAIL_SEND_URL && chEmail) ? (
+              <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#B71C1C" }}>⚠ 添付つきで送るには、{ch.name}単会のメールアドレスを設定画面で登録してください。</div>
+            ) : (
+              <>
+                <input type="file" multiple accept="image/*,video/*" disabled={attachBusy || attachItems.length >= MAX_FILES} onChange={onPickFiles}
+                  style={{ fontSize:"clamp(12px,1.4vw,14px)" }} />
+                {attachBusy && <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#5C35CC", marginTop:4 }}>⏳ 読み込み中...</div>}
+                {attachItems.map(it => {
+                  const viaLink = attachPlan.link.some(l => l.id === it.id);
+                  return (
+                    <div key={it.id} style={{ display:"flex", gap:8, alignItems:"center", marginTop:6, fontSize:"clamp(12px,1.4vw,14px)" }}>
+                      <span>{it.kind === 'image' ? '🖼' : '🎬'}</span>
+                      <span style={{ flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{it.name}</span>
+                      <span style={{ color:"#78909C" }}>{fmtSize(it.size)}</span>
+                      <span style={{ color: viaLink ? "#E65100" : "#2E7D32", fontWeight:700, whiteSpace:"nowrap" }}>{viaLink ? 'リンクで共有' : 'メールに添付'}</span>
+                      <button style={{ ...BC, padding:"2px 8px" }} onClick={() => setAttachItems(prev => prev.filter(x => x.id !== it.id))}>✕</button>
+                    </div>
+                  );
+                })}
+                <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#78909C", marginTop:6, lineHeight:1.6 }}>
+                  写真は自動で縮小して添付します。動画は、メールに付けられる合計 {fmtSize(DIRECT_BUDGET)} までは添付し、それを超えるものは、ダウンロード用リンクを本文に入れて送ります（50MBまで）。
+                  {attachPlan.link.length > 0 && <div style={{ color:"#E65100", marginTop:2 }}>※ リンクは、URLを知っている人なら誰でも見られます。送る相手以外には共有しないでください。</div>}
+                  <div>※ 添付は、下の「直接送信」で送るときだけ付きます（メールアプリで開く・コピーでは付きません）。</div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {mailType === 'confirm_doc' && MAIL_SEND_URL && (
           <label style={{ display:"flex", alignItems:"center", gap:8, marginTop:8, fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", cursor:"pointer" }}>
