@@ -441,6 +441,7 @@ ${sig}`;
             </div>
             <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginTop:6 }}>
               差出人：{SENDER_EMAIL}（合同事務局）{chEmail && <>　CC：{chEmail}（{ch?.name}単会）</>}
+              {!chEmail && <div style={{ color:"#B71C1C", marginTop:2 }}>⚠ {ch?.name}単会のメールアドレスが未設定のため、単会にはCCされません（設定画面で登録してください）</div>}
               {!MAIL_SEND_URL && <div style={{ color:"#B71C1C", marginTop:2 }}>⚠ 下のボタンはブラウザが合同事務局アカウントにログイン済みの場合のみ、そのアカウントから送信されます。ログインしていない場合は自分個人のアカウントから送信されてしまうのでご注意ください。</div>}
             </div>
 

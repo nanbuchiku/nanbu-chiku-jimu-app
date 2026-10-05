@@ -51,7 +51,7 @@ function getSmartMail(sp, today) {
   return { label:"📣 宣伝案内", type:"promo", bg:"#1565C0" };
 }
 
-export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate, onTasks, onMerge }) {
+export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate, onTasks, onMerge, chapterSettings }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
@@ -661,6 +661,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           url={fileModal.url}
           name={fileModal.name}
           speaker={fileModal.speaker}
+          chapterEmail={chapterSettings?.[fileModal.speaker?.chapterId]?.chapterEmail || ''}
           onClose={() => setFileModal(null)}
         />
       )}

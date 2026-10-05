@@ -256,7 +256,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                   const unitName = ch2.name + "倫理法人会";
                   const subject = `【${unitName}】${sp.speakerName || ""}様 講師依頼確認書`;
                   const body = `${sp.speakerName || ""}様\n\nお世話になっております。${unitName}です。\nこの度は講師依頼フォームへのご入力にご協力いただき、誠にありがとうございました。\n講師依頼確認書をPDFにてお送りいたします。\n内容にお気づきの点がございましたら、本メールへご返信ください。\nどうぞよろしくお願いいたします。`;
-                  const mailto = `mailto:${encodeURIComponent(sp.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  const mailto = `mailto:${encodeURIComponent(sp.email)}?${chSettings.chapterEmail ? `cc=${encodeURIComponent(chSettings.chapterEmail)}&` : ''}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                   await downloadPdf(activeDocId, makePdfFilename(sp));
                   setTimeout(() => { window.location.href = mailto; }, 500);
                 }}

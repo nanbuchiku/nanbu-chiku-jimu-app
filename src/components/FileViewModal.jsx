@@ -20,10 +20,12 @@ function downloadFile(url, filename) {
   document.body.removeChild(a);
 }
 
-export default function FileViewModal({ url, name, speaker, onClose }) {
+export default function FileViewModal({ url, name, speaker, chapterEmail, onClose }) {
   const [copied, setCopied] = useState(false);
   const [driveToast, setDriveToast] = useState(false);
   const ch = speaker ? getChapter(speaker.chapterId) : null;
+  // 事務局への転送メールのCC：事務局側の固定CCに加えて、その講師の単会の代表メールも入れる（重複は除く）
+  const ccList = [...new Set([JIMU.cc, chapterEmail].map(a => (a || '').trim()).filter(Boolean))];
   const fileExt = (url?.split('?')[0].split('.').pop() || '').toLowerCase();
   const typeLabel =
     /顔写真|photo/i.test(name || '')  ? '顔写真' :
@@ -69,7 +71,7 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
 倫理法人会 南部地区合同事務局
 ━━━━━━━━━━━━━━━━━`;
     const params = [
-      JIMU.cc ? `cc=${encodeURIComponent(JIMU.cc)}` : '',
+      ccList.length ? `cc=${encodeURIComponent(ccList.join(','))}` : '',
       `subject=${encodeURIComponent(subject)}`,
       `body=${encodeURIComponent(body)}`,
     ].filter(Boolean).join('&');
@@ -146,7 +148,8 @@ export default function FileViewModal({ url, name, speaker, onClose }) {
         {speaker && JIMU.email && (
           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:'#78909C', marginBottom:8, padding:'5px 9px', background:'#FFF3E0', borderRadius:4, lineHeight:1.6 }}>
             <div>📮 To：{JIMU.email}</div>
-            {JIMU.cc && <div>📋 CC：{JIMU.cc}</div>}
+            {ccList.length > 0 && <div>📋 CC：{ccList.join('、')}</div>}
+            {speaker && !chapterEmail && <div style={{ color:'#B71C1C' }}>⚠ {ch?.name}単会のメールアドレスが未設定のため、単会にはCCされません（設定画面で登録してください）</div>}
           </div>
         )}
 
