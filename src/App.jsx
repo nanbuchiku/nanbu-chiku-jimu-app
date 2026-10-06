@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, taskFromDB, taskToDB, emailFromDB, safeInsertTask, safeInsertTasks, safeUpdateTask } from './lib/supabase';
-import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr, computeKisoNumbers } from './utils';
+import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr } from './utils';
 import { OV, MOD, MH, BC, BG, BP } from './styles';
 import { initFontScale, applyFontScale, SCALE_OPTIONS, getCurrentScale } from './lib/fontScale';
 import Dashboard from './components/Dashboard';
@@ -289,19 +289,6 @@ export default function App() {
   const speakersRef = useRef(speakers);
   useEffect(() => { speakersRef.current = speakers; }, [speakers]);
 
-  // 基礎講座の「第◯講」を採番ルール（computeKisoNumbers）どおりに保つ。
-  // DBの値とずれているレコードだけ kiso_number を直接更新する（他の列は触らない）。
-  // 同じ(id, 番号)の組は1セッションで1回しか試行しない（DB側と食い違っても無限ループにしない）。
-  const kisoSyncedRef = useRef(new Set());
-  useEffect(() => {
-    if (loading || !lastUpdated || !speakers.length) return; // キャッシュ表示中は補正しない（最新取得後のみ）
-    const want = computeKisoNumbers(speakers);
-    const diffs = speakers.filter(sp => want[sp.id] != null && sp.kisoNumber !== want[sp.id] && !kisoSyncedRef.current.has(`${sp.id}:${want[sp.id]}`));
-    if (!diffs.length) return;
-    diffs.forEach(sp => kisoSyncedRef.current.add(`${sp.id}:${want[sp.id]}`));
-    setSpeakers(prev => prev.map(s => (want[s.id] != null ? { ...s, kisoNumber: want[s.id] } : s)));
-    diffs.forEach(sp => { db.from('speakers').update({ kiso_number: want[sp.id] }).eq('id', sp.id).then(() => {}, () => {}); });
-  }, [speakers, loading, lastUpdated]);
   const tasksRef = useRef(tasks);
   useEffect(() => { tasksRef.current = tasks; }, [tasks]);
 

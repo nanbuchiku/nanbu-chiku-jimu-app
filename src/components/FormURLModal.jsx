@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
-import { CHAPTERS, SEMINAR_TYPES } from '../constants';
+import { CHAPTERS, SEMINAR_TYPES, KISO_CHAPTER_TITLES } from '../constants';
 import { getChapter, formatDate, getSeminarType, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 import { printFaxForm } from '../faxPrint';
@@ -34,7 +34,7 @@ function getMailLabel(fromEmail) {
 const DRAFT_KEY = 'formurl_draft_v1';
 const EMPTY_FORM = {
   chapterId: 'kawaguchi', speakerName: '', speakerUnit: '',
-  seminarDate: '', seminarType: 'ms', role: '', email: '', lodging: '不要', receiptNeeded: '要',
+  seminarDate: '', seminarType: 'ms', role: '', email: '', lodging: '不要', receiptNeeded: '要', kisoNumber: '',
 };
 function loadDraft() {
   try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY)); return d && typeof d === 'object' ? d : null; }
@@ -60,6 +60,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     receiptNeeded: draft?.receiptNeeded ?? (spProp?.receiptNeeded || '要'),
     venue:       draft?.venue       ?? spProp?.venue       ?? '',
     eventTime:   draft?.eventTime   ?? spProp?.eventTime   ?? '',
+    kisoNumber:  draft?.kisoNumber  ?? (spProp?.kisoNumber ? String(spProp.kisoNumber) : ''),
   });
   const [restored, setRestored] = useState(!!draft);
   const [generated, setGenerated] = useState(!isNew);
@@ -86,11 +87,10 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
   }, [hasInput, onClose]);
 
   const sp = isNew ? { ...form, id: createdId || '' } : spProp;
-  const canGenerate = !isNew || (isKyukai ? !!form.seminarDate : (form.speakerName && form.seminarDate && form.email));
+  const canGenerate = !isNew || (isKyukai ? !!form.seminarDate : (form.speakerName && form.seminarDate && form.email && (form.seminarType !== 'kiso' || form.kisoNumber)));
 
   // 休会登録：実在の講師がいないため、URL生成・メール送信をせず
-  // 「休会」レコードだけを直接作成して閉じる。基礎講座の場合も通常どおり
-  // 講座番号（kiso_number）を消費して次回に正しく引き継ぐ。
+  // 「休会」レコードだけを直接作成して閉じる。講の番号は付けない。
   const handleRegisterKyukai = useCallback(async () => {
     if (!form.seminarDate) return;
     setCreating(true);
@@ -113,6 +113,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
         seminarDate: form.seminarDate, seminarType: form.seminarType, role: form.role, email: form.email,
         lodging: form.lodging, receiptNeeded: form.receiptNeeded,
         venue: form.venue, eventTime: form.eventTime,
+        ...(form.seminarType === 'kiso' && form.kisoNumber ? { kisoNumber: Number(form.kisoNumber) } : {}),
       };
       if (createdId) {
         await updateSpeaker?.(createdId, fields);
@@ -342,6 +343,15 @@ ${sig}`;
                 })()}
               </div>
 
+              {!isKyukai && isKiso && (
+                <div style={{ gridColumn:"1/-1" }}>
+                  <label style={LB}>基礎講座のテキスト（第○講） *</label>
+                  <select style={{ ...INP2, borderColor: form.kisoNumber ? "#CE93D8" : "#E53935" }} value={form.kisoNumber} onChange={e => setForm(f => ({ ...f, kisoNumber: e.target.value }))}>
+                    <option value="">選択してください</option>
+                    {KISO_CHAPTER_TITLES.map((t, i) => <option key={i} value={String(i + 1)}>第{i + 1}講　{t}</option>)}
+                  </select>
+                </div>
+              )}
               {!isKyukai && !isMs && !isKiso && (
                 <>
                   <div style={{ gridColumn:"1/-1" }}>
@@ -401,6 +411,17 @@ ${sig}`;
                 <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#7E57C2", marginTop:2 }}>{ch?.name}単会　{displayDate ? formatDate(displayDate) : '日程未定'}</div>
               </div>
             </div>
+            {!isNew && isKiso && (
+              <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", marginBottom:12, border:`1px solid ${form.kisoNumber ? "#CE93D8" : "#E53935"}` }}>
+                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#9C27B0", fontWeight:700, marginBottom:4 }}>基礎講座のテキスト（第○講）※選ぶと自動で保存されます</div>
+                <select style={{ width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:"clamp(12px,1.4vw,14px)", background:"#fff" }}
+                  value={form.kisoNumber}
+                  onChange={e => { const v = e.target.value; setForm(f => ({ ...f, kisoNumber: v })); updateSpeaker?.(sp.id, { kisoNumber: v ? Number(v) : null }); }}>
+                  <option value="">選択してください</option>
+                  {KISO_CHAPTER_TITLES.map((t, i) => <option key={i} value={String(i + 1)}>第{i + 1}講　{t}</option>)}
+                </select>
+              </div>
+            )}
             <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", marginBottom:12, border:"1px solid #CE93D8" }}>
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#9C27B0", fontWeight:700, marginBottom:4 }}>フォームURL</div>
               <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#37474F", wordBreak:"break-all", lineHeight:1.6 }}>{formUrl}</div>

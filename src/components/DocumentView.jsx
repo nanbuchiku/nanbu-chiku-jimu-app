@@ -532,7 +532,7 @@ export default memo(function DocumentView({ speakers, docSpeaker, setDocSpeaker,
                     </DocSection>
                     <DocSection title="③ 倫理経営基礎講座 内容" color={c1}>
                       <DocRow label="テキスト"
-                        value={sp.kisoNumber ? `第${sp.kisoNumber}講　${KISO_CHAPTER_TITLES[sp.kisoNumber - 1] || ""}` : "（自動採番待ち）"}
+                        value={sp.kisoNumber ? `第${sp.kisoNumber}講　${KISO_CHAPTER_TITLES[sp.kisoNumber - 1] || ""}` : "（第○講が未選択です。講師フォーム作成画面で選んでください）"}
                         color={c1} />
                     </DocSection>
                   </>

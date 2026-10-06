@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, memo } from 'react';
-import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
+import { CHAPTERS, STATUS, SEMINAR_TYPES, KISO_CHAPTER_TITLES } from '../constants';
 import { getChapter, getSeminarType, toDateStr, extractMaterialLinks, extractPhotoLinks, buildSpeakerStoragePath, extractStaffNotes, hasNextDayMs as getHasNextDayMs } from '../utils';
 import { OV, MOD, MH, BP, BC, INP } from '../styles';
 import { db } from '../lib/supabase';
@@ -70,6 +70,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
 
   const set = (k, v) => {
     setErr("");
+    if (k === 'kisoNumber') v = v ? Number(v) : null;
     if (k === 'chapterId') { try { localStorage.setItem('form_lastChapter', v); } catch {} }
     setForm(f => {
       const next = { ...f, [k]: v };
@@ -379,6 +380,7 @@ export default memo(function SpeakerForm({ initial, speakers, onSave, onClose, s
             { l:"種別 *",      k:"seminarType", t:"stype" },
             { l:"単会",        k:"chapterId",   t:"select", o: CHAPTERS.map(c => ({ v:c.id, l:c.name })) },
             { l: form.seminarType === "kiso" ? "基礎講座日 *" : "開催日 *", k:"seminarDate", t:"date" },
+            ...(form.seminarType === "kiso" ? [{ l:"基礎講座のテキスト（第○講）", k:"kisoNumber", t:"select", o:[{ v:"", l:"選択してください" }, ...KISO_CHAPTER_TITLES.map((t, i) => ({ v:i + 1, l:`第${i + 1}講　${t}` }))] }] : []),
             { l:"講師名 *",    k:"speakerName", t:"text",  p:"山田 太郎" },
             { l:"ふりがな",    k:"speakerKana", t:"text",  p:"やまだ たろう" },
             { l:"所属法人会名",    k:"speakerUnit",  t:"text",  p:"川口倫理法人会" },
