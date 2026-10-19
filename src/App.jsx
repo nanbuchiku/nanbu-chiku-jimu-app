@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { CHAPTERS, DISTRICT_ID } from './constants';
-import { db, fromDB, toDB, taskFromDB, taskToDB, emailFromDB, safeInsertTask, safeInsertTasks, safeUpdateTask } from './lib/supabase';
+import { db, fromDB, toDB, toDBPatch, taskFromDB, taskToDB, emailFromDB, safeInsertTask, safeInsertTasks, safeUpdateTask } from './lib/supabase';
+import { diffFields, mergeSpeakerChecks } from './lib/speakerPatch';
 import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr } from './utils';
 import { OV, MOD, MH, BC, BG, BP } from './styles';
 import { initFontScale, applyFontScale, SCALE_OPTIONS, getCurrentScale } from './lib/fontScale';
@@ -286,6 +287,7 @@ export default function App() {
   const today     = useMemo(() => realToday(), []);
   const weekDates = useMemo(() => getWeekDates(today, weekOffset), [today, weekOffset]);
 
+  const editBaseRef = useRef(null); // 編集画面を開いた時点の講師の内容（保存時に、変えた項目だけを見分けるため）
   const speakersRef = useRef(speakers);
   useEffect(() => { speakersRef.current = speakers; }, [speakers]);
 
@@ -474,8 +476,23 @@ export default function App() {
       if (photoChanged) checks._photoUpdatedAt = nowIso;
       updated = { ...updated, speakerChecks: checks };
     }
+    // 保存するのは、変えた項目だけ（全項目を書くと、古い画面のコピーが、講師のフォーム入力を空で上書きする）。
+    const writePatch = { ...patch };
+    if (flyerChanged) writePatch.speakerChecks = updated.speakerChecks;
+    // チェック記録（speakerChecks）は、講師フォームが「入力済み」の印などを足すので、保存の直前にDBの最新を読み、
+    // 自分が変えたキーだけを重ねる（古い画面の内容で、他のキーを消さない）
+    if ('speakerChecks' in writePatch) {
+      try {
+        const { data: fresh } = await db.from('speakers').select('speaker_checks').eq('id', id).single();
+        if (fresh) {
+          const merged = mergeSpeakerChecks(fresh.speaker_checks, sp.speakerChecks, writePatch.speakerChecks);
+          writePatch.speakerChecks = merged;
+          updated = { ...updated, speakerChecks: merged };
+        }
+      } catch {}
+    }
     setSpeakers(prev => prev.map(s => s.id === id ? updated : s));
-    const { error } = await db.from('speakers').update(toDB(updated)).eq('id', id);
+    const { error } = await db.from('speakers').update(toDBPatch(writePatch)).eq('id', id);
     if (error) {
       setSpeakers(prev => prev.map(s => s.id === id ? sp : s));
       showToast("⚠ 保存に失敗しました");
@@ -588,9 +605,25 @@ export default function App() {
     let savedSp = null;
     try {
       if (data.id) {
-        const { error } = await db.from('speakers').update(toDB(data)).eq('id', data.id);
+        // 編集画面を開いた時点の内容と比べて、変えた項目だけを保存する
+        // （画面が古くても、講師がフォームで入力した内容を、空で上書きしない）
+        const base = editBaseRef.current && editBaseRef.current.id === data.id ? editBaseRef.current : null;
+        const patch = base ? diffFields(base, data) : null;
+        if (patch && Object.keys(patch).length === 0) { showToast("変更はありませんでした"); setShowForm(false); setEditSpeaker(null); return; }
+        if (patch && 'speakerChecks' in patch) {
+          try {
+            const { data: fresh } = await db.from('speakers').select('speaker_checks').eq('id', data.id).single();
+            if (fresh) patch.speakerChecks = mergeSpeakerChecks(fresh.speaker_checks, base.speakerChecks, patch.speakerChecks);
+          } catch {}
+        }
+        const { error } = patch
+          ? await db.from('speakers').update(toDBPatch(patch)).eq('id', data.id)
+          : await db.from('speakers').update(toDB(data)).eq('id', data.id);
         if (error) { showToast("⚠ 保存に失敗しました"); return; }
-        setSpeakers(prev => prev.map(s => s.id === data.id ? data : s));
+        // 保存後は、その行をDBの最新に入れ替える（画面を最新にしておく）
+        let latest = data;
+        try { const { data: row } = await db.from('speakers').select('*').eq('id', data.id).single(); if (row) latest = fromDB(row); } catch {}
+        setSpeakers(prev => prev.map(s => s.id === data.id ? latest : s));
       } else {
         const newSp = { ...data, id: `s${Date.now()}`, lineNotified: false };
         const { data: inserted, error } = await db.from('speakers').insert(toDB(newSp)).select().single();
@@ -695,7 +728,7 @@ ${ch.name}単会事務局`;
     setFilterCh(v); try { localStorage.setItem('spFilterCh', v); } catch {}
   }, [userRole]);
   const onSetFilterSt = useCallback(v => { setFilterSt(v); try { localStorage.setItem('spFilterSt', v); } catch {} }, []);
-  const onEditSpeaker = useCallback(sp => { setEditSpeaker(sp); setShowForm(true); }, []);
+  const onEditSpeaker = useCallback(sp => { editBaseRef.current = sp; setEditSpeaker(sp); setShowForm(true); }, []);
   const onAddSpeaker  = useCallback(() => { setEditSpeaker(scopeChapter ? { chapterId: scopeChapter } : null); setShowForm(true); }, [scopeChapter]);
 
   const onToggleTask = useCallback(async id => {

@@ -1504,6 +1504,28 @@ async function submitForm() {
         p_ms_topic:       payload.ms_topic,
       });
       if (error) throw new Error(error.message);
+      // 保存の関数は、IDに一致する行がないと、エラーにならず「何も書き換えない」まま成功を返す。
+      // そのため、保存後に読み直して、入力が本当にDBに入ったかを確認し、入っていなければ新しい行として登録して、入力を失わないようにする。
+      try {
+        const { data: rows, error: getErr } = await db.rpc('get_speaker_for_form', { p_id: speakerId });
+        if (!getErr) {
+          const row = Array.isArray(rows) ? rows[0] : rows;
+          const landed = !!row && String(row.topic || '') === String(payload.topic || '');
+          if (!landed) {
+            const fb = Object.assign({}, payload, {
+              id: 's' + Date.now(), status: 'confirmed',
+              request_date: new Date().toISOString().slice(0, 10),
+              speaker_checks: { form_recvd: { done: true, at: new Date().toISOString() } },
+            });
+            const { error: insErr } = await db.from('speakers').insert(fb);
+            if (insErr) throw new Error('入力内容を保存できませんでした: ' + insErr.message);
+            console.warn('依頼IDの行に保存できなかったため、新しい行として登録しました', speakerId);
+          }
+        }
+      } catch (verifyErr) {
+        if (/入力内容を保存できませんでした/.test(String(verifyErr.message))) throw verifyErr;
+        console.error('保存後の確認に失敗（保存自体は成功扱い）', verifyErr);
+      }
     } else {
       // 新規依頼はRLSでanonのINSERTのみ許可（既存データを読み書きしないため直接テーブルアクセスでも安全）
       payload.id = 's' + Date.now();

@@ -36,6 +36,32 @@ export const toDB = o => ({
   ms_topic: o.msTopic || null, event_time: o.eventTime || null,
 });
 
+// 画面側の項目名 → DBの列名。一部の項目だけを保存するとき（toDBPatch）に使う
+const COLUMN_OF = {
+  id:'id', chapterId:'chapter_id', seminarType:'seminar_type', speakerName:'speaker_name', speakerKana:'speaker_kana',
+  speakerUnit:'speaker_unit', company:'company', role:'role', companyRole:'company_role', seminarDate:'seminar_date',
+  topic:'topic', status:'status', phone:'phone', email:'email', requestDate:'request_date', notes:'notes', venue:'venue',
+  lineNotified:'line_notified', materialUrl:'material_url', materialName:'material_name', lodging:'lodging',
+  printRequired:'print_required', speakerChecks:'speaker_checks', calendarAdded:'calendar_added',
+  drinksAlcohol:'drinks_alcohol', shioriArticle:'shiori_article', postNotes:'post_notes',
+  formRequestedAt:'form_requested_at', kisoNumber:'kiso_number', receiptNeeded:'receipt_needed',
+  msTopic:'ms_topic', eventTime:'event_time',
+};
+const NULL_IF_EMPTY = new Set(['formRequestedAt', 'kisoNumber', 'receiptNeeded', 'msTopic', 'eventTime']);
+
+// 渡された項目だけをDBの列にして返す（toDBと同じ変換）。
+// 講師の行を保存するときは、全項目ではなく、変えた項目だけを送るために使う。
+// （古い画面のコピーで全項目を書き戻すと、講師がフォームで入力した内容を空で上書きしてしまうため）
+export const toDBPatch = (patch) => {
+  const out = {};
+  Object.entries(patch || {}).forEach(([k, v]) => {
+    const col = COLUMN_OF[k];
+    if (!col || v === undefined) return;
+    out[col] = k === 'speakerChecks' ? (v || {}) : NULL_IF_EMPTY.has(k) ? (v || null) : v;
+  });
+  return out;
+};
+
 export const taskFromDB = r => ({
   id: r.id, chapterId: r.chapter_id, title: r.title, dueDate: r.due_date,
   done: r.done, priority: r.priority, completedAt: r.completed_at,
