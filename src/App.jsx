@@ -20,6 +20,8 @@ import SpeakerForm from './components/SpeakerForm';
 import ErrorBoundary from './components/ErrorBoundary';
 import SettingsModal from './components/SettingsModal';
 import RecordCompareModal from './components/RecordCompareModal';
+import FormInboxModal from './components/FormInboxModal';
+import { markLatest, reflectionStatus, buildApplyPatch, buildNewRow } from './lib/formInbox';
 import LoginPage from './components/LoginPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
 
@@ -249,6 +251,11 @@ export default function App() {
     } catch { return DEFAULT_CHAPTER_SETTINGS; }
   });
   const [settingsLoaded, setSettingsLoaded]= useState(false); // DBから単会設定を読み込み済みか
+  // 回答の受信箱（講師フォームの入力の保管表 form_submissions）
+  const [submissions, setSubmissions] = useState([]);
+  const [subsError,   setSubsError]   = useState(null);
+  const [subsLoading, setSubsLoading] = useState(false);
+  const [inboxOpen,   setInboxOpen]   = useState(false);
   const [settingsOpen,   setSettingsOpen]  = useState(false);
   const [settingsSaving, setSettingsSaving]= useState(false);
   const [pwModal, setPwModal] = useState(false);
@@ -516,6 +523,34 @@ export default function App() {
       return false;
     }
   }, [showToast]);
+
+  // ── 回答の受信箱 ──
+  const loadSubmissions = useCallback(async () => {
+    setSubsLoading(true);
+    try {
+      const { data, error } = await db.from('form_submissions').select('*').order('submitted_at', { ascending: false }).limit(300);
+      if (error) { setSubsError(error.message); setSubmissions([]); }
+      else { setSubsError(null); setSubmissions(data || []); }
+    } catch (e) { setSubsError(String(e?.message || e)); }
+    finally { setSubsLoading(false); }
+  }, []);
+  // 講師データを読み込んだら、受信箱も読み直す（未反映の件数をボタンに出すため）
+  useEffect(() => { if (authUser && lastUpdated) loadSubmissions(); }, [authUser, lastUpdated, loadSubmissions]);
+  const scopedSubmissions = useMemo(() => scopeChapter ? submissions.filter(s => s.chapter_id === scopeChapter) : submissions, [submissions, scopeChapter]);
+  const inboxPending = useMemo(() => markLatest(scopedSubmissions).filter(s => s.latest).filter(s => {
+    const st = reflectionStatus(s, speakers).status; return st === 'stale' || st === 'missing';
+  }).length, [scopedSubmissions, speakers]);
+  const applySubmission = useCallback(async (sub) => {
+    const { status, row } = reflectionStatus(sub, speakersRef.current);
+    if (status === 'ok') { showToast('すでに反映されています ✓'); return; }
+    if (status === 'stale' && row) {
+      const ok = await updateSpeaker(row.id, buildApplyPatch(sub, row));
+      if (ok) showToast(`${row.speakerName || ''} 様の行に、フォームの入力を反映しました ✓`);
+    } else {
+      const ok = await createSpeakerStub(buildNewRow(sub));
+      if (ok) showToast(`${sub.speaker_name || ''} 様の行を作って、フォームの入力を反映しました ✓`);
+    }
+  }, [updateSpeaker, createSpeakerStub, showToast]);
 
   // 削除前に必ずスナップショットを speaker_archive へ保存しておく（誤削除からの復元用）。
   // ここが失敗しても削除自体は続行する（バックアップ機能のためにユーザー操作をブロックしない）。
@@ -1306,7 +1341,7 @@ ${ch.name}単会事務局`;
           <ErrorBoundary key={tab}>
             {tab === "dashboard" && <Dashboard speakers={scopedSpeakers} tasks={scopedTasks} weekDates={weekDates} today={today} onView={onViewDoc} setTab={setTab} onFormUrl={setFormUrlModal} onGoSpeakers={onGoSpeakers} onAddForDate={onAddSpeakerForDate} updateSpeaker={updateSpeaker} showToast={showToast} chapterSettings={chapterSettings} onOpenSettings={() => setSettingsOpen(true)} scopeChapter={scopeChapter} currentUserName={currentUserName} showTutorial={showTutorial} onCloseTutorial={closeTutorial} />}
             {tab === "calendar"  && <CalendarView speakers={speakers} weekDates={weekDates} weekOffset={weekOffset} setWeekOffset={setWeekOffset} today={today} onSpeaker={onViewDoc} onAddForDate={onAddSpeakerForDate} scopeChapter={scopeChapter} />}
-            {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} onTasks={onOpenSpeakerTasks} onMerge={requestMerge} chapterSettings={chapterSettings} />}
+            {tab === "speakers"  && <SpeakersView speakers={scopedSpeakers} filterCh={filterCh} filterSt={filterSt} setFilterCh={onSetFilterCh} setFilterSt={onSetFilterSt} today={today} onEdit={onEditSpeaker} onDelete={deleteSpeaker} onDoc={onViewDoc} onEmail={setEmailModal} onFormUrl={setFormUrlModal} onLine={openLine} updateSpeaker={updateSpeaker} showToast={showToast} showConfirm={showConfirm} onAdd={onAddSpeaker} onDuplicate={onDuplicateSpeaker} onTasks={onOpenSpeakerTasks} onMerge={requestMerge} chapterSettings={chapterSettings} inboxPending={inboxPending} onOpenInbox={() => { setInboxOpen(true); loadSubmissions(); }} />}
             {tab === "document"  && <DocumentView speakers={speakers} docSpeaker={docSpeaker} setDocSpeaker={setDocSpeaker} today={today} chapterSettings={chapterSettings} showToast={showToast} showConfirm={showConfirm} />}
             {tab === "tasks"     && <TasksView tasks={scopedTasks} emails={emails} today={today} newTask={newTask} setNewTask={setNewTask} onToggle={onToggleTask} onDelete={onDeleteTask} onAdd={onAddTask} onAddBatch={onAddBatchTask} onUpdate={onUpdateTask} onDeleteDone={onDeleteDoneTasks} onAddTaskDirect={onAddTaskDirect} onAddTaskBatchDirect={onAddTaskBatchDirect} showToast={showToast} lockChapterId={scopeChapter} />}
             {tab === "sptasks"   && <SpeakerTasksView speakers={scopedSpeakers} today={today} updateSpeaker={updateSpeaker} showToast={showToast} onEmail={setEmailModal} onEdit={onEditSpeaker} currentUserName={currentUserName} focusId={focusSpeakerId} onFocusHandled={() => setFocusSpeakerId(null)} />}
@@ -1463,6 +1498,7 @@ ${ch.name}単会事務局`;
       })()}
       {settingsOpen && <SettingsModal chapterSettings={chapterSettings} onSave={saveChapterSettings} onClose={() => setSettingsOpen(false)} saving={settingsSaving} lockChapterId={scopeChapter} />}
       {showForm && <SpeakerForm key={editSpeaker?.id || 'new'} initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} onEditExisting={onEditSpeaker} onGoToList={() => { onCloseForm(); setTab('speakers'); }} />}
+      {inboxOpen && <FormInboxModal submissions={scopedSubmissions} error={subsError} loading={subsLoading} speakers={speakers} onApply={applySubmission} onReload={loadSubmissions} onClose={() => setInboxOpen(false)} />}
       {emailModal && <EmailModal speaker={emailModal.speaker || emailModal} defaultType={emailModal.defaultType} onClose={onCloseEmail} onDone={onDoneEmail} chapterSettings={chapterSettings} showToast={showToast} onSaveSettings={saveChapterSettings} scopeChapter={scopeChapter} />}
       {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} onCreateSpeaker={createSpeakerStub} />}
 

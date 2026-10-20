@@ -1482,6 +1482,18 @@ async function submitForm() {
     }
     if (extraUrls.length) payload.notes += '\n\n' + extraUrls.join('\n');
 
+    // 講師の入力を、保管表(form_submissions)にも必ず1通保存する。
+    // 講師の行への反映がうまくいかなくても、入力そのものは残り、事務局のアプリの「回答の受信箱」から反映し直せる。
+    // （保管に失敗しても、講師の送信は止めない）
+    const newRowId = 's' + Date.now();
+    try {
+      const { error: logErr } = await db.from('form_submissions').insert({
+        speaker_id: speakerId || newRowId, chapter_id: chapterId || null, seminar_date: urlDate || null,
+        seminar_type: urlType || 'ms', speaker_name: urlName || null, payload: Object.assign({}, payload),
+      });
+      if (logErr) console.warn('入力の保管に失敗（送信は続行）', logErr.message);
+    } catch (logEx) { console.warn('入力の保管に失敗（送信は続行）', logEx); }
+
     if (speakerId) {
       payload.status = 'confirmed';
       const staffNotes = extractStaffNotes(existingData?.notes || '');
@@ -1528,7 +1540,7 @@ async function submitForm() {
       }
     } else {
       // 新規依頼はRLSでanonのINSERTのみ許可（既存データを読み書きしないため直接テーブルアクセスでも安全）
-      payload.id = 's' + Date.now();
+      payload.id = newRowId;
       const { error } = await db.from('speakers').insert(payload);
       if (error) throw new Error(error.message);
     }

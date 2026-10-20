@@ -51,7 +51,7 @@ function getSmartMail(sp, today) {
   return { label:"📣 宣伝案内", type:"promo", bg:"#1565C0" };
 }
 
-export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate, onTasks, onMerge, chapterSettings }) {
+export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFilterCh, setFilterSt, today, onEdit, onDelete, onDoc, onEmail, onFormUrl, onLine, updateSpeaker, showToast, showConfirm, onAdd, onDuplicate, onTasks, onMerge, chapterSettings, inboxPending = 0, onOpenInbox }) {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState(() => { try { return localStorage.getItem('sp_dateRange') || "all"; } catch { return "all"; } });
@@ -266,6 +266,12 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           )}
           <button style={{ ...BC }} onClick={() => window.print()} title="印刷">🖨 印刷</button>
           <button style={{ ...BC, background:"#E8EAF6", color:"#061B44", fontWeight:700 }} onClick={() => setShowFaxModal(true)} title="FAX用 講師依頼確認書を印刷">📠 FAX</button>
+          {onOpenInbox && (
+            <button style={{ ...BC, ...(inboxPending ? { background:"#FFEBEE", color:"#B71C1C", borderColor:"#EF9A9A", fontWeight:800 } : {}) }}
+              onClick={onOpenInbox} title="講師がフォームで送った入力の一覧（講師の行に入っていないものを、反映し直せます）">
+              📥 回答の受信箱{inboxPending ? `（未反映 ${inboxPending}）` : ''}
+            </button>
+          )}
           <button style={{ ...BP }} onClick={onAdd}>＋ 新規登録</button>
         </div>
       </div>
