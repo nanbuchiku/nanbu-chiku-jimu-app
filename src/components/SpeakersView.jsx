@@ -269,7 +269,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
           {onOpenInbox && (
             <button style={{ ...BC, ...(inboxPending ? { background:"#FFEBEE", color:"#B71C1C", borderColor:"#EF9A9A", fontWeight:800 } : {}) }}
               onClick={onOpenInbox} title="講師がフォームで送った入力の一覧（講師の行に入っていないものを、反映し直せます）">
-              📥 回答の受信箱{inboxPending ? `（未反映 ${inboxPending}）` : ''}
+              📋 フォーム回答の一覧{inboxPending ? `（未反映 ${inboxPending}）` : ''}
             </button>
           )}
           <button style={{ ...BP }} onClick={onAdd}>＋ 新規登録</button>

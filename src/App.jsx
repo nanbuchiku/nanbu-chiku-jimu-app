@@ -251,7 +251,7 @@ export default function App() {
     } catch { return DEFAULT_CHAPTER_SETTINGS; }
   });
   const [settingsLoaded, setSettingsLoaded]= useState(false); // DBから単会設定を読み込み済みか
-  // 回答の受信箱（講師フォームの入力の保管表 form_submissions）
+  // フォーム回答の一覧（講師フォームの入力の保管表 form_submissions）
   const [submissions, setSubmissions] = useState([]);
   const [subsError,   setSubsError]   = useState(null);
   const [subsLoading, setSubsLoading] = useState(false);
@@ -524,7 +524,7 @@ export default function App() {
     }
   }, [showToast]);
 
-  // ── 回答の受信箱 ──
+  // ── フォーム回答の一覧 ──
   const loadSubmissions = useCallback(async () => {
     setSubsLoading(true);
     try {
@@ -534,7 +534,7 @@ export default function App() {
     } catch (e) { setSubsError(String(e?.message || e)); }
     finally { setSubsLoading(false); }
   }, []);
-  // 講師データを読み込んだら、受信箱も読み直す（未反映の件数をボタンに出すため）
+  // 講師データを読み込んだら、フォーム回答の一覧も読み直す（未反映の件数をボタンに出すため）
   useEffect(() => { if (authUser && lastUpdated) loadSubmissions(); }, [authUser, lastUpdated, loadSubmissions]);
   const scopedSubmissions = useMemo(() => scopeChapter ? submissions.filter(s => s.chapter_id === scopeChapter) : submissions, [submissions, scopeChapter]);
   const inboxPending = useMemo(() => markLatest(scopedSubmissions).filter(s => s.latest).filter(s => {

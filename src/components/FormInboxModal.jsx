@@ -3,7 +3,7 @@ import { OV, MOD, MH, BP, BC } from '../styles';
 import { getChapter, formatDate } from '../utils';
 import { markLatest, reflectionStatus } from '../lib/formInbox';
 
-// 回答の受信箱：講師がフォームで送った入力（保管表 form_submissions）を一覧にし、
+// フォーム回答の一覧：講師がフォームで送った入力（保管表 form_submissions）を一覧にし、
 // 講師の行に入っていないもの（未反映）を見つけて、ワンクリックで反映し直せる画面。
 const STATUS_LABEL = {
   ok:      { text: '反映済み',       color: '#2E7D32', bg: '#E8F5E9' },
@@ -31,9 +31,9 @@ export default function FormInboxModal({ submissions, error, loading, speakers, 
 
   return (
     <div style={OV} onClick={onClose} role="presentation">
-      <div role="dialog" aria-modal="true" aria-label="回答の受信箱" onClick={e => e.stopPropagation()}
+      <div role="dialog" aria-modal="true" aria-label="フォーム回答の一覧" onClick={e => e.stopPropagation()}
         style={{ ...MOD, maxWidth: 760, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ ...MH, marginBottom: 6 }}>📥 回答の受信箱（講師フォームの入力）</div>
+        <div style={{ ...MH, marginBottom: 6 }}>📋 フォーム回答の一覧（講師フォームの入力）</div>
         <div style={{ fontSize: 'clamp(12px,1.4vw,14px)', color: '#667085', lineHeight: 1.6, marginBottom: 10 }}>
           講師がフォームで送った入力は、すべてここに残ります。<strong style={{ color: '#B71C1C' }}>「未反映」</strong>は、講師の行に入っていない回答です。「講師の行に反映」を押すと、入力どおりに入ります。
         </div>
@@ -48,7 +48,7 @@ export default function FormInboxModal({ submissions, error, loading, speakers, 
 
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {error ? (
-            <div style={{ color: '#B71C1C', fontSize: 'clamp(12px,1.4vw,14px)', padding: 12 }}>⚠ 受信箱を読み込めませんでした（{error}）。データベースの準備（安全網のSQL）がまだの可能性があります。</div>
+            <div style={{ color: '#B71C1C', fontSize: 'clamp(12px,1.4vw,14px)', padding: 12 }}>⚠ フォーム回答の一覧を読み込めませんでした（{error}）。データベースの準備（安全網のSQL）がまだの可能性があります。</div>
           ) : shown.length === 0 ? (
             <div style={{ color: '#2E7D32', fontSize: 'clamp(13px,1.6vw,15px)', padding: 16, textAlign: 'center' }}>
               {onlyPending ? '✓ 未反映の回答はありません' : '回答はまだありません'}

@@ -1,4 +1,4 @@
-// 「回答の受信箱」：講師フォームの入力の保管表(form_submissions)と、講師の行(speakers)を突き合わせる処理。
+// 「フォーム回答の一覧」：講師フォームの入力の保管表(form_submissions)と、講師の行(speakers)を突き合わせる処理。
 import { fromDB } from './supabase';
 import { extractStaffNotes } from '../utils';
 
