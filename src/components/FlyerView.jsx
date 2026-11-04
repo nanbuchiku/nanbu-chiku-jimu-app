@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from '
 import JSZip from 'jszip';
 import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
-import { getSeminarType, parseDate, isKyukaiRecord } from '../utils';
+import { getSeminarType, parseDate, isKyukaiRecord, extractSummary, extractMsSummary } from '../utils';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
 import mascotSleep from '../assets/mascot-sleep.png';
 
@@ -308,7 +308,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
     finally { setSavingDrive(false); }
   }, [buildExcelBuffer, selMonth, showToast]);
 
-  // ── Canva流し込み（横持ち・最大4講師/行・顔写真埋め込み）─────────────
+  // ── Canva流し込み（講師1人につき1行・要約入り・顔写真埋め込み）──────────
   // 選択対象（選択中の月の講師フラット一覧）
   const canvaSpeakers = useMemo(
     () => flyerData.flatMap(({ ch, sps }) => sps.filter(sp => !isKyukaiRecord(sp)).map(sp => ({ ...sp, _chName: ch.name }))),
@@ -317,24 +317,71 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
 
   const buildCanvaBuffer = useCallback(async (sel) => {
     const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet('Canva流し込み用');
-    const COMMON = ['単会名','セミナー種別','開催月','曜日共通','ページタイトル','会場','参加費','備考'];
-    const PF = ['開催日','開催日フル','曜日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真'];
-    const headers = [...COMMON];
-    for (let i = 1; i <= 4; i++) PF.forEach(f => headers.push(`講師${i}_${f}`));
-    const headerRow = ws.addRow(headers);
-    headerRow.height = 24;
-    headerRow.eachCell(cell => {
-      cell.font = { name:'Yu Gothic', size:11, bold:true, color:{ argb:'FFFFFFFF' } };
-      cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF061B44' } };
-      cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
-    });
-
     const [y, m] = selMonth.split('-').map(Number);
     const WD = ['日','月','火','水','木','金','土'];
     const fmtMd = ds => { const d = new Date(ds); return `${d.getMonth()+1}/${d.getDate()}`; };
     const fmtFull = ds => { const d = new Date(ds); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; };
     const fmtWd = ds => { const d = new Date(ds); return WD[d.getDay()] + '曜日'; };
+    const styleHeader = row => {
+      row.height = 24;
+      row.eachCell(cell => {
+        cell.font = { name:'Yu Gothic', size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+        cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF061B44' } };
+        cell.alignment = { vertical:'middle', horizontal:'center', wrapText:true };
+      });
+    };
+    const photoJobs = [];
+
+    // ① 流し込み用：講師1人につき1行（列名がそのままCanvaのタグ名になる）
+    const ws = wb.addWorksheet('Canva流し込み用');
+    const COLS = [
+      ['単会名',14], ['セミナー種別',18], ['開催月',12], ['ページタイトル',26], ['開催日',9], ['開催日フル',16], ['曜日',8],
+      ['講師名',18], ['ふりがな',20], ['所属法人会名',18], ['法人会役職',14], ['勤務先',22], ['勤務先役職名',16],
+      ['テーマ',30], ['要約',60], ['翌朝MSテーマ',30], ['翌朝MS要約',60], ['会場',24], ['参加費',10], ['顔写真',15], ['顔写真URL',20],
+    ];
+    const PHOTO_COL0 = COLS.findIndex(c => c[0] === '顔写真');
+    styleHeader(ws.addRow(COLS.map(c => c[0])));
+    ws.views = [{ state:'frozen', ySplit:1 }];
+    COLS.forEach(([, width], i) => { ws.getColumn(i + 1).width = width; });
+    sel.forEach(sp => {
+      const chObj = CHAPTERS.find(c => c.id === sp.chapterId);
+      const stype = getSeminarType(sp.seminarType);
+      const ds = sp.seminarDate;
+      const summary = extractSummary(sp.notes);
+      const msSummary = extractMsSummary(sp.notes);
+      const row = ws.addRow([
+        chObj?.name || '', stype.label, `${y}年${m}月`, `${chObj?.name || ''} ${stype.label} ${y}年${m}月`,
+        ds ? fmtMd(ds) : '', ds ? fmtFull(ds) : '', ds ? fmtWd(ds) : (chObj?.dayName || ''),
+        sp.speakerName || '', sp.speakerKana || '', sp.speakerUnit || '', sp.role || '', sp.company || '', sp.companyRole || '',
+        sp.topic || '', summary, sp.msTopic || '', msSummary, sp.venue || chObj?.venue || '', '参加無料', '', sp.materialUrl || '',
+      ]);
+      // 要約は折り返して全文が見える高さにする（要約の列は1行に全角約30字）
+      const lines = Math.max(...[summary, msSummary].map(t => t.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 30)), 0)));
+      row.height = Math.max(96, lines * 17);
+      row.alignment = { vertical:'middle', wrapText:true };
+      if (sp.materialUrl) photoJobs.push({ ws, url: sp.materialUrl, rowNum: row.number, colIdx0: PHOTO_COL0 });
+    });
+
+    // ② 使い方シート
+    const wsHelp = wb.addWorksheet('使い方');
+    wsHelp.getColumn(1).width = 22;
+    wsHelp.getColumn(2).width = 70;
+    [
+      ['Canva流し込み専用フォーマット',''],
+      ['形式','「Canva流し込み用」シートは、講師1人につき1行です。'],
+      ['Canvaで使うタグ例','{{講師名}} / {{テーマ}} / {{要約}} / {{開催日}}'],
+      ['翌朝MSの列','前夜＋翌朝MSの講師で、翌朝MS用のテーマ・要約が別にあるときだけ入ります。'],
+      ['顔写真','顔写真の列にはセルに画像を埋め込んでいます。Canvaの一括作成で画像URLが必要な場合は、顔写真URLの列をご利用ください。'],
+      ['4名を1枚に載せる場合','「4名横並び（旧形式）」シートは、{{講師1_講師名}} のように1行に最大4名を並べた、従来の形式です（要約は入りません）。'],
+    ].forEach(r => wsHelp.addRow(r));
+
+    // ③ 従来の形式（1枚のチラシに最大4名を別々に差し込むテンプレート用）
+    const wsOld = wb.addWorksheet('4名横並び（旧形式）');
+    const COMMON = ['単会名','セミナー種別','開催月','曜日共通','ページタイトル','会場','参加費','備考'];
+    const PF = ['開催日','開催日フル','曜日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真'];
+    const headers = [...COMMON];
+    for (let i = 1; i <= 4; i++) PF.forEach(f => headers.push(`講師${i}_${f}`));
+    styleHeader(wsOld.addRow(headers));
 
     // 単会×種別でグループ化
     const groups = {};
@@ -342,8 +389,6 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
       const key = `${sp.chapterId}__${sp.seminarType || 'ms'}`;
       (groups[key] = groups[key] || []).push(sp);
     });
-
-    const photoJobs = [];
     Object.keys(groups).forEach(key => {
       const list = groups[key].sort((a, b) => (a.seminarDate || '').localeCompare(b.seminarDate || ''));
       const chObj = CHAPTERS.find(c => c.id === list[0].chapterId);
@@ -364,63 +409,39 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
           );
         });
         for (let k = chunk.length; k < 4; k++) PF.forEach(() => vals.push(''));
-        const row = ws.addRow(vals);
+        const row = wsOld.addRow(vals);
         row.height = 96;
         row.alignment = { vertical:'middle', wrapText:true };
         chunk.forEach((sp, idx) => {
-          if (sp.materialUrl) photoJobs.push({ url: sp.materialUrl, rowNum: row.number, colIdx0: 8 + idx * 11 + 10 });
+          if (sp.materialUrl) photoJobs.push({ ws: wsOld, url: sp.materialUrl, rowNum: row.number, colIdx0: 8 + idx * 11 + 10 });
         });
       }
     });
-
-    // 顔写真を取得してセルに埋め込み
-    await Promise.all(photoJobs.map(async job => {
-      try {
-        const res = await fetch(job.url);
-        const buf = await res.arrayBuffer();
-        let ext = (job.url.split('.').pop().split('?')[0] || 'jpeg').toLowerCase();
-        if (ext === 'jpg') ext = 'jpeg';
-        if (!['jpeg','png','gif'].includes(ext)) ext = 'jpeg';
-        const imgId = wb.addImage({ buffer: buf, extension: ext });
-        ws.addImage(imgId, { tl: { col: job.colIdx0 + 0.1, row: job.rowNum - 1 + 0.1 }, ext: { width: 90, height: 90 }, editAs: 'oneCell' });
-      } catch {}
-    }));
-
-    // 列幅
-    ws.columns.forEach(col => { col.width = 15; });
-    ws.getColumn(5).width = 26; // ページタイトル
-    ws.getColumn(6).width = 24; // 会場
+    wsOld.columns.forEach(col => { col.width = 15; });
+    wsOld.getColumn(5).width = 26; // ページタイトル
+    wsOld.getColumn(6).width = 24; // 会場
     for (let i = 0; i < 4; i++) {
-      ws.getColumn(8 + i * 11 + 10 + 1).width = 15; // 顔写真列
-      ws.getColumn(8 + i * 11 + 9 + 1).width = 26;  // テーマ列
+      wsOld.getColumn(8 + i * 11 + 10 + 1).width = 15; // 顔写真列
+      wsOld.getColumn(8 + i * 11 + 9 + 1).width = 26;  // テーマ列
     }
 
-    // 元データシート（縦持ち）
-    const ws2 = wb.addWorksheet('元データ');
-    ws2.addRow(['単会名','セミナー種別','曜日','開催日','講師名','ふりがな','所属法人会名','法人会役職','勤務先','勤務先役職名','テーマ','顔写真URL']);
-    ws2.getRow(1).font = { bold:true };
-    sel.slice().sort((a,b)=>(a.seminarDate||'').localeCompare(b.seminarDate||'')).forEach(sp => {
-      const chObj = CHAPTERS.find(c => c.id === sp.chapterId);
-      ws2.addRow([
-        chObj?.name || '', getSeminarType(sp.seminarType).label, sp.seminarDate ? fmtWd(sp.seminarDate) : '',
-        sp.seminarDate || '', sp.speakerName || '', sp.speakerKana || '', sp.speakerUnit || '',
-        sp.role || '', sp.company || '', sp.companyRole || '', sp.topic || '', sp.materialUrl || '',
-      ]);
-    });
-    ws2.columns.forEach(c => { c.width = 16; });
-
-    // 使い方シート
-    const ws3 = wb.addWorksheet('使い方');
-    ws3.getColumn(2).width = 70;
-    [
-      ['Canva流し込み専用フォーマット',''],
-      ['目的','1枚のチラシに最大4名の講師情報を別々に差し込むため、横持ちデータに変換しています。'],
-      ['Canvaで使うタグ例','{{講師1_講師名}} / {{講師1_テーマ}} / {{講師1_開催日}}'],
-      ['講師2','{{講師2_講師名}} / {{講師2_テーマ}} / {{講師2_開催日}}'],
-      ['講師3','{{講師3_講師名}} / {{講師3_テーマ}} / {{講師3_開催日}}'],
-      ['講師4','{{講師4_講師名}} / {{講師4_テーマ}} / {{講師4_開催日}}'],
-      ['顔写真','「Canva流し込み用」シートの顔写真列にはセルに画像を埋め込んでいます。Canvaの一括作成で画像URLが必要な場合は「元データ」シートの顔写真URLをご利用ください。'],
-    ].forEach(r => ws3.addRow(r));
+    // 顔写真を取得してセルに埋め込み（同じ写真は1回だけ取得する）
+    const imageIds = {};
+    const imageOf = url => imageIds[url] || (imageIds[url] = (async () => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const buf = await res.arrayBuffer();
+      let ext = (url.split('.').pop().split('?')[0] || 'jpeg').toLowerCase();
+      if (ext === 'jpg') ext = 'jpeg';
+      if (!['jpeg','png','gif'].includes(ext)) ext = 'jpeg';
+      return wb.addImage({ buffer: buf, extension: ext });
+    })());
+    await Promise.all(photoJobs.map(async job => {
+      try {
+        const imgId = await imageOf(job.url);
+        job.ws.addImage(imgId, { tl: { col: job.colIdx0 + 0.1, row: job.rowNum - 1 + 0.1 }, ext: { width: 90, height: 90 }, editAs: 'oneCell' });
+      } catch {}
+    }));
 
     return await wb.xlsx.writeBuffer();
   }, [selMonth]);
@@ -599,7 +620,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
             <div role="dialog" aria-modal="true" onClick={e => e.stopPropagation()} style={{ ...MOD, maxWidth:560 }}>
               <div style={{ ...MH }}>🎨 Canva流し込み出力（{selMonth.replace("-","年")}月）</div>
               <div style={{ fontSize:FS_SM, color:"#667085", marginBottom:10 }}>
-                出力する講師を選んでください。単会名の「全選択」で単会ごと、個別チェックで講師ごとに選べます。顔写真は画像としてセルに挿入されます。
+                出力する講師を選んでください。単会名の「全選択」で単会ごと、個別チェックで講師ごとに選べます。講師1人につき1行で、要約も入ります。顔写真は画像としてセルに挿入されます。
               </div>
               <div style={{ display:"flex", gap:8, marginBottom:10 }}>
                 <button style={{ ...BC, fontWeight:700 }} onClick={() => setCanvaSel(new Set(canvaSpeakers.map(s => s.id)))}>全選択</button>
