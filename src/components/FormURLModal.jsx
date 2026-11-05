@@ -43,10 +43,12 @@ function loadDraft() {
 // 前泊要否は誤解を避けるため講師本人には選ばせず、事務局が決める。既存講師の値も要/不要の二値に丸める。
 const toBinaryLodging = v => (v && v !== '不要' && v !== 'なし') ? '要' : '不要';
 
-export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, onCreateSpeaker }) {
+export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, onCreateSpeaker, onFindSame, onGoToList }) {
   const isNew = !spProp;
   const [createdId, setCreatedId] = useState(null);
   const [creating, setCreating] = useState(false);
+  // 同じ単会・開催日・講師名の行がすでにあるときの、その行
+  const [sameRow, setSameRow] = useState(null);
   const draft = isNew ? loadDraft() : null;
   const [form, setForm] = useState({
     chapterId:   draft?.chapterId   ?? spProp?.chapterId   ?? 'kawaguchi',
@@ -75,6 +77,9 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     if (!isNew) return;
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch {}
   }, [isNew, form]);
+
+  // 単会・開催日・講師名を変えたら、前回の判定は取り消す
+  useEffect(() => { setSameRow(null); }, [form.chapterId, form.seminarDate, form.speakerName]);
 
   const hasInput = isNew && (form.speakerName || form.speakerUnit || form.seminarDate || form.role || form.email);
   const clearDraft = useCallback(() => { try { localStorage.removeItem(DRAFT_KEY); } catch {} }, []);
@@ -115,18 +120,26 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
         venue: form.venue, eventTime: form.eventTime,
         ...(form.seminarType === 'kiso' && form.kisoNumber ? { kisoNumber: Number(form.kisoNumber) } : {}),
       };
-      if (createdId) {
-        await updateSpeaker?.(createdId, fields);
-      } else {
-        setCreating(true);
-        const newId = `s${Date.now()}`;
-        const ok = await onCreateSpeaker?.({ ...fields, id: newId, status: 'pending', requestDate: new Date().toISOString().slice(0, 10) });
+      setCreating(true);
+      try {
+        // 同じ講師の行を増やさない（URLを作り直すたびに行が増え、本物の行を誤って消す原因になっていた）
+        const same = await onFindSame?.(fields, createdId);
+        if (same) { setSameRow(same); return; }
+        if (createdId) {
+          const ok = await updateSpeaker?.(createdId, fields);
+          if (!ok) return;
+        } else {
+          const newId = `s${Date.now()}`;
+          const ok = await onCreateSpeaker?.({ ...fields, id: newId, status: 'pending', requestDate: new Date().toISOString().slice(0, 10) });
+          if (!ok) return; // 行を作れなかったら、行のないURLを出さない
+          setCreatedId(newId);
+        }
+      } finally {
         setCreating(false);
-        if (ok) setCreatedId(newId);
       }
     }
     setGenerated(true);
-  }, [isNew, canGenerate, form, createdId, updateSpeaker, onCreateSpeaker]);
+  }, [isNew, canGenerate, form, createdId, updateSpeaker, onCreateSpeaker, onFindSame]);
 
   // 既存講師にフォームURLを何らかの方法で送ったら「フォーム入力依頼中」にする。
   // 講師が実際にフォームを送信すると form.html 側でこのフラグをクリアするので上書きされる。
@@ -393,6 +406,14 @@ ${sig}`;
                 </div>
               </>}
             </div>
+            {sameRow && !isKyukai && (
+              <div role="alert" ref={el => el?.scrollIntoView({ block:'nearest' })} style={{ marginTop:16, background:"#FFEBEE", border:"2px solid #B71C1C", borderRadius:8, padding:"12px 14px", color:"#B71C1C", fontSize:"clamp(13px,1.6vw,15px)", lineHeight:1.7 }}>
+                <div style={{ fontWeight:800 }}>⚠ {getChapter(sameRow.chapterId)?.name}単会　{formatDate(sameRow.seminarDate)}　{sameRow.speakerName} 氏の行がすでにあります。</div>
+                <div style={{ fontWeight:700 }}>新しくフォームを作成するには、講師管理画面から {sameRow.speakerName} 氏の行を削除してください。</div>
+                <div style={{ color:"#37474F", marginTop:4, fontSize:"clamp(12px,1.4vw,14px)" }}>同じURLを送り直すだけなら、その行の「その他 ▼」を開いて「📝 フォーム送付」を押してください。</div>
+                {onGoToList && <button style={{ marginTop:8, background:"#fff", color:"#B71C1C", border:"1px solid #B71C1C", borderRadius:6, padding:"6px 12px", fontWeight:700, cursor:"pointer", fontSize:"clamp(12px,1.4vw,14px)" }} onClick={onGoToList}>講師管理画面を開く</button>}
+              </div>
+            )}
             <button
               style={{ marginTop:16, width:"100%", background: (canGenerate && !creating) ? (isKyukai ? "#E65100" : "#7E57C2") : "#B0BEC5", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, cursor: (canGenerate && !creating) ? "pointer" : "not-allowed" }}
               disabled={!canGenerate || creating}

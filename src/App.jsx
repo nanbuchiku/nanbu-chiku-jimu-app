@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, toDBPatch, taskFromDB, taskToDB, emailFromDB, safeInsertTask, safeInsertTasks, safeUpdateTask } from './lib/supabase';
 import { diffFields, mergeSpeakerChecks } from './lib/speakerPatch';
-import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr } from './utils';
+import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr, hasNextDayMs } from './utils';
+import { findSameSpeaker, hasSpeakerAnswer } from './lib/speakerGuard';
 import { OV, MOD, MH, BC, BG, BP } from './styles';
 import { initFontScale, applyFontScale, SCALE_OPTIONS, getCurrentScale } from './lib/fontScale';
 import Dashboard from './components/Dashboard';
@@ -24,6 +25,11 @@ import FormInboxModal from './components/FormInboxModal';
 import { markLatest, reflectionStatus, buildApplyPatch, buildNewRow } from './lib/formInbox';
 import LoginPage from './components/LoginPage';
 import ResetPasswordPage from './components/ResetPasswordPage';
+
+// 削除の確認画面に出す、対象の行の表示（誰を消すのかを必ず見せる）
+const speakerDeleteLabel = sp =>
+  `${getChapter(sp.chapterId)?.name || ''}単会　${sp.seminarDate ? formatDate(sp.seminarDate) : '日付未定'}　${sp.speakerName || '（名前なし）'} 様`;
+const ANSWER_WARNING = 'この行には、講師のフォーム回答や入力内容が入っています。削除すると一覧から消えます。';
 
 // 講師フォームの確認メールで単会へCCするため、単会の代表メールをメール送信側(GAS)へ預ける
 const MAIL_SEND_URL   = import.meta.env.VITE_MAIL_SEND_URL || '';
@@ -524,6 +530,18 @@ export default function App() {
     }
   }, [showToast]);
 
+  // 依頼URLの作成前に、同じ単会・開催日・講師名の行がないかをDBの最新で確かめる
+  // （読めないときだけ、画面が持っている内容で判定する）
+  const findExistingSpeaker = useCallback(async (q, excludeId) => {
+    let rows = speakersRef.current;
+    try {
+      const { data, error } = await db.from('speakers').select('*')
+        .eq('district_id', DISTRICT_ID).eq('chapter_id', q.chapterId).eq('seminar_date', q.seminarDate);
+      if (!error && data) rows = data.map(fromDB);
+    } catch {}
+    return findSameSpeaker(rows, q, excludeId);
+  }, []);
+
   // ── フォーム回答の一覧 ──
   const loadSubmissions = useCallback(async () => {
     setSubsLoading(true);
@@ -563,7 +581,7 @@ export default function App() {
     } catch {}
   }, []);
 
-  const deleteSpeakerIds = useCallback(async (ids) => {
+  const runDeleteSpeakerIds = useCallback(async (ids) => {
     const removed = [];
     for (const id of ids) {
       const sp = speakersRef.current.find(s => s.id === id);
@@ -585,6 +603,20 @@ export default function App() {
     }
     setCompareModal(null);
   }, [archiveSpeakerBackup, showToast]);
+
+  // 比較画面からの削除：回答入りの行が含まれるときは、消す前に確認する
+  const deleteSpeakerIds = useCallback(async (ids) => {
+    const answered = ids.map(id => speakersRef.current.find(s => s.id === id)).filter(hasSpeakerAnswer);
+    if (answered.length === 0) { await runDeleteSpeakerIds(ids); return; }
+    const targets = ids.map(id => speakersRef.current.find(s => s.id === id)).filter(Boolean);
+    setConfirm({
+      msg: targets.map(speakerDeleteLabel).join('\n') + '\nを削除しますか？',
+      warning: ANSWER_WARNING,
+      okLabel: '回答ごと削除する',
+      danger: true,
+      onOk: () => runDeleteSpeakerIds(ids),
+    });
+  }, [runDeleteSpeakerIds]);
 
   const mergeSpeakers = useCallback(async (merged, keepId, dropId) => {
     const dropSp = speakersRef.current.find(s => s.id === dropId);
@@ -620,7 +652,8 @@ export default function App() {
       setCompareModal({ recordA: sp, recordB: dup, mode: 'duplicate' });
       return;
     }
-    showConfirm("この講師データを削除しますか？", async () => {
+    const answered = hasSpeakerAnswer(sp);
+    const runDelete = async () => {
       await archiveSpeakerBackup(sp, '削除');
       const { error } = await db.from('speakers').delete().eq('id', id);
       if (error) { showToast("⚠ 削除に失敗しました"); return; }
@@ -632,8 +665,16 @@ export default function App() {
           if (!re) { setSpeakers(prev => [...prev, sp].sort((a,b) => (a.seminarDate||"").localeCompare(b.seminarDate||""))); showToast("削除を取り消しました ✓"); }
         }
       });
+    };
+    setConfirm({
+      msg: `${sp ? speakerDeleteLabel(sp) : 'この講師データ'}\nを削除しますか？` +
+        (sp && hasNextDayMs(sp.seminarType) ? '\n（翌朝MSの分も一緒に消えます）' : ''),
+      warning: answered ? ANSWER_WARNING : null,
+      okLabel: answered ? '回答ごと削除する' : null,
+      danger: true,
+      onOk: runDelete,
     });
-  }, [showConfirm, showToast, archiveSpeakerBackup]);
+  }, [showToast, archiveSpeakerBackup]);
 
   const addOrUpdateSpeaker = useCallback(async data => {
     setIsSaving(true);
@@ -1092,7 +1133,7 @@ ${ch.name}単会事務局`;
         else if (formUrlModal !== undefined) { setFormUrlModal(undefined); }
         return;
       }
-      if (e.key === "Enter" && confirm && !["INPUT","SELECT","TEXTAREA","BUTTON"].includes(document.activeElement?.tagName)) {
+      if (e.key === "Enter" && confirm && !confirm.warning && !["INPUT","SELECT","TEXTAREA","BUTTON"].includes(document.activeElement?.tagName)) {
         e.preventDefault();
         confirm.onOk(); setConfirm(null);
         return;
@@ -1500,7 +1541,7 @@ ${ch.name}単会事務局`;
       {showForm && <SpeakerForm key={editSpeaker?.id || 'new'} initial={editSpeaker} speakers={speakers} onSave={addOrUpdateSpeaker} onClose={onCloseForm} saving={isSaving} onEditExisting={onEditSpeaker} onGoToList={() => { onCloseForm(); setTab('speakers'); }} />}
       {inboxOpen && <FormInboxModal submissions={scopedSubmissions} error={subsError} loading={subsLoading} speakers={speakers} onApply={applySubmission} onReload={loadSubmissions} onClose={() => setInboxOpen(false)} />}
       {emailModal && <EmailModal speaker={emailModal.speaker || emailModal} defaultType={emailModal.defaultType} onClose={onCloseEmail} onDone={onDoneEmail} chapterSettings={chapterSettings} showToast={showToast} onSaveSettings={saveChapterSettings} scopeChapter={scopeChapter} />}
-      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} onCreateSpeaker={createSpeakerStub} />}
+      {formUrlModal !== undefined && <FormURLModal speaker={formUrlModal} onClose={onCloseFormUrl} showToast={showToast} chapterSettings={chapterSettings} updateSpeaker={updateSpeaker} onCreateSpeaker={createSpeakerStub} onFindSame={findExistingSpeaker} onGoToList={() => { setFormUrlModal(undefined); setTab('speakers'); }} />}
 
       {lineModal && (
         <div style={OV} onClick={() => setLineModal(null)} role="presentation">
@@ -1528,13 +1569,16 @@ ${ch.name}単会事務局`;
       )}
 
       {confirm && (
-        <div style={OV} role="presentation">
-          <div role="alertdialog" aria-modal="true" aria-label="確認" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth:360, width:"100%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
+        <div style={{ ...OV, zIndex: (OV.zIndex || 0) + 100 }} role="presentation">
+          <div role="alertdialog" aria-modal="true" aria-label="確認" style={{ background:"#fff", borderRadius:10, padding:"24px 28px", maxWidth: confirm.danger ? 460 : 360, width:"100%", boxShadow:"0 8px 32px rgba(0,0,0,.18)" }}>
             <div style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#061B44", marginBottom:14 }}>⚠ 確認</div>
-            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#37474F", marginBottom:20 }}>{confirm.msg}</div>
+            <div style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#37474F", marginBottom:20, whiteSpace:"pre-line", lineHeight:1.7 }}>{confirm.msg}</div>
+            {confirm.warning && (
+              <div style={{ background:"#FFEBEE", border:"2px solid #B71C1C", borderRadius:8, padding:"10px 12px", marginBottom:16, color:"#B71C1C", fontWeight:700, fontSize:"clamp(13px,1.6vw,15px)", lineHeight:1.6 }}>⚠ {confirm.warning}</div>
+            )}
             <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
               <button style={BC} onClick={() => setConfirm(null)}>キャンセル</button>
-              <button style={{ ...BP, background: confirm.okLabel ? "#061B44" : "#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>{confirm.okLabel || "削除する"}</button>
+              <button style={{ ...BP, background: (confirm.okLabel && !confirm.danger) ? "#061B44" : "#B71C1C" }} onClick={() => { confirm.onOk(); setConfirm(null); }}>{confirm.okLabel || "削除する"}</button>
             </div>
           </div>
         </div>
