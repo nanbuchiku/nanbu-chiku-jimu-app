@@ -43,6 +43,38 @@ function loadDraft() {
 // 前泊要否は誤解を避けるため講師本人には選ばせず、事務局が決める。既存講師の値も要/不要の二値に丸める。
 const toBinaryLodging = v => (v && v !== '不要' && v !== 'なし') ? '要' : '不要';
 
+// 基礎講座の第◯講を選ぶボタン。押すと、すぐ下に第1〜18講の選択肢が開く
+function KisoNumberPicker({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const n = Number(value) || 0;
+  const label = n ? `第${n}講　${KISO_CHAPTER_TITLES[n - 1] || ''}` : '選択してください';
+  return (
+    <div>
+      <div style={{ fontSize:"clamp(13px,1.6vw,15px)", fontWeight:800, color:"#4527A0", marginBottom:5 }}>基礎講座のテキストは第　何講？ <span style={{ color:"#E53935" }}>*</span></div>
+      <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(o => !o)}
+        style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", gap:8, background:"#fff", color: n ? "#263238" : "#B71C1C", border:`2px solid ${n ? "#7E57C2" : "#E53935"}`, borderRadius:8, padding:"10px 12px", fontSize:"clamp(13px,1.6vw,15px)", fontWeight:700, cursor:"pointer", textAlign:"left" }}>
+        <span>{label}</span><span aria-hidden="true">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div role="listbox" aria-label="基礎講座のテキスト" style={{ marginTop:4, background:"#fff", border:"1px solid #B39DDB", borderRadius:8, maxHeight:260, overflowY:"auto" }}>
+          {KISO_CHAPTER_TITLES.map((title, i) => {
+            const selected = n === i + 1;
+            return (
+              <button type="button" role="option" aria-selected={selected} key={i} onClick={() => { onChange(String(i + 1)); setOpen(false); }}
+                style={{ display:"block", width:"100%", background: selected ? "#EDE7F6" : "#fff", color:"#263238", border:"none", borderBottom:"1px solid #F1F5F9", padding:"9px 12px", fontSize:"clamp(12px,1.5vw,14px)", fontWeight: selected ? 800 : 500, textAlign:"left", cursor:"pointer" }}>
+                第{i + 1}講　{title}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ marginTop:6, background:"#FFF3E0", border:"1px solid #FFB74D", borderRadius:6, padding:"7px 10px", fontSize:"clamp(12px,1.5vw,14px)", fontWeight:700, color:"#7A4A00" }}>
+        注意：モーニングセミナーの確認書も同時に作成されます。
+      </div>
+    </div>
+  );
+}
+
 export default memo(function FormURLModal({ speaker: spProp, onClose, showToast, chapterSettings, updateSpeaker, onCreateSpeaker, onFindSame, onGoToList }) {
   const isNew = !spProp;
   const [createdId, setCreatedId] = useState(null);
@@ -330,7 +362,7 @@ ${sig}`;
               </div>
               <div style={{ gridColumn:"1/-1" }}>
                 <label style={LB}>セミナー種別</label>
-                {!isKyukai && (
+                {!isKyukai && !isKiso && (
                   <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#7E57C2", marginBottom:5, lineHeight:1.5 }}>
                     基礎講座の講師依頼は同時にMS依頼書も作成されます。MS依頼書の作成は不要です。
                   </div>
@@ -358,11 +390,7 @@ ${sig}`;
 
               {!isKyukai && isKiso && (
                 <div style={{ gridColumn:"1/-1" }}>
-                  <label style={LB}>基礎講座のテキスト（第○講） *</label>
-                  <select style={{ ...INP2, borderColor: form.kisoNumber ? "#CE93D8" : "#E53935" }} value={form.kisoNumber} onChange={e => setForm(f => ({ ...f, kisoNumber: e.target.value }))}>
-                    <option value="">選択してください</option>
-                    {KISO_CHAPTER_TITLES.map((t, i) => <option key={i} value={String(i + 1)}>第{i + 1}講　{t}</option>)}
-                  </select>
+                  <KisoNumberPicker value={form.kisoNumber} onChange={v => setForm(f => ({ ...f, kisoNumber: v }))} />
                 </div>
               )}
               {!isKyukai && !isMs && !isKiso && (
@@ -433,14 +461,9 @@ ${sig}`;
               </div>
             </div>
             {!isNew && isKiso && (
-              <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", marginBottom:12, border:`1px solid ${form.kisoNumber ? "#CE93D8" : "#E53935"}` }}>
-                <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#9C27B0", fontWeight:700, marginBottom:4 }}>基礎講座のテキスト（第○講）※選ぶと自動で保存されます</div>
-                <select style={{ width:"100%", border:"1px solid #CE93D8", borderRadius:6, padding:"7px 9px", fontSize:"clamp(12px,1.4vw,14px)", background:"#fff" }}
-                  value={form.kisoNumber}
-                  onChange={e => { const v = e.target.value; setForm(f => ({ ...f, kisoNumber: v })); updateSpeaker?.(sp.id, { kisoNumber: v ? Number(v) : null }); }}>
-                  <option value="">選択してください</option>
-                  {KISO_CHAPTER_TITLES.map((t, i) => <option key={i} value={String(i + 1)}>第{i + 1}講　{t}</option>)}
-                </select>
+              <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", marginBottom:12, border:"1px solid #CE93D8" }}>
+                <KisoNumberPicker value={form.kisoNumber} onChange={v => { setForm(f => ({ ...f, kisoNumber: v })); updateSpeaker?.(sp.id, { kisoNumber: Number(v) }); }} />
+                <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#9C27B0", marginTop:5 }}>※選ぶと自動で保存されます</div>
               </div>
             )}
             <div style={{ background:"#fff", borderRadius:8, padding:"10px 12px", marginBottom:12, border:"1px solid #CE93D8" }}>
