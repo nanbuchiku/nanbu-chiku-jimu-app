@@ -6,3 +6,9 @@ dist
 .env.*
 _*.mjs
 .claude/launch.json
+
+# 実データを含む一度きりのスクリプト（公開リポジトリに入れない）
+migrate_to_new_supabase.sql
+scripts/restore_docs.mjs
+scripts/restore_photos.mjs
+scripts/migrate_files.mjs
