@@ -1,6 +1,6 @@
 import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isKyukaiRecord, hasNextDayMs, getSeminarType, getChapter } from '../utils';
+import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isKyukaiRecord, hasNextDayMs, getSeminarType, getChapter, msTitleOf, hasSeparateMsTitle } from '../utils';
 import { BP, BC } from '../styles';
 import mascotSleep from '../assets/mascot-sleep.png';
 
@@ -44,7 +44,8 @@ function SpeakerHoverCard({ sp, rect }) {
       padding:"10px 12px", pointerEvents:"none", fontSize:"clamp(11px,1.3vw,13px)",
     }}>
       <div style={{ fontWeight:800, color:"#061B44", marginBottom:2 }}>{sp.speakerName || "（名前未入力）"}</div>
-      {sp.topic && <div style={{ color:"#667085", marginBottom:6 }}>「{sp.topic}」</div>}
+      {(sp._msDay ? msTitleOf(sp) : sp.topic) && <div style={{ color:"#667085", marginBottom:6 }}>「{sp._msDay ? msTitleOf(sp) : sp.topic}」</div>}
+      {!sp._msDay && hasSeparateMsTitle(sp) && <div style={{ color:"#4527A0", marginBottom:6 }}>翌朝MS「{sp.msTopic}」</div>}
 
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
         <span style={{ fontWeight:700, color:"#37474F" }}>7点セット</span>
@@ -219,7 +220,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       <>
                         {sp._msDay && <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color: ch.color, fontWeight:700 }}>MS（{sp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(sp.seminarType).label}翌日）</div>}
                         <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:600, color:"#263238", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{sp.speakerName}</div>
-                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", lineHeight:1.3 }}>「{sp.topic}」</div>
+                        <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden", lineHeight:1.3 }}>「{sp._msDay ? msTitleOf(sp) : sp.topic}」</div>
                         <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"1px 4px", borderRadius:8, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9", display:"inline-block", whiteSpace:"nowrap" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         {spList.length > 1 && (
                           <span title={spList.slice(1).map(s => s.speakerName).join('、')} style={{ fontSize:"clamp(11px,1.3vw,13px)", padding:"1px 4px", borderRadius:8, fontWeight:700, color:"#fff", background:"#78909C", display:"inline-block", whiteSpace:"nowrap", marginLeft:3 }}>+{spList.length - 1}件</span>
@@ -248,7 +249,10 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       {isKyukaiEve ? (
                         <KyukaiMark size={14} fontSize="clamp(10px,1.2vw,12px)" />
                       ) : (
-                        <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#37474F", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveSp.speakerName}</div>
+                        <>
+                          <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#37474F", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveSp.speakerName}</div>
+                          {eveSp.topic && <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#667085", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>「{eveSp.topic}」</div>}
+                        </>
                       )}
                     </div>
                   );
@@ -329,7 +333,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       <>
                       {sp._msDay && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#061B44", fontWeight:700, marginBottom:1 }}>MS（{sp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(sp.seminarType).label}翌日）</div>}
                       <div style={{ fontSize:"clamp(12px,1.4vw,14px)", fontWeight:700, color: ch.color }}>{sp.speakerName}</div>
-                      <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginTop:1 }}>「{sp.topic}」</div>
+                      <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085", marginTop:1 }}>「{sp._msDay ? msTitleOf(sp) : sp.topic}」</div>
                       <span style={{ fontSize:"clamp(12px,1.4vw,14px)", padding:"2px 6px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                       </>
                       )}
@@ -357,6 +361,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                         <>
                           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:700 }}>{kisoSp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(kisoSp.seminarType).label}</div>
                           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#1B5E20", fontWeight:600 }}>{kisoSp.speakerName}</div>
+                          {kisoSp.topic && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085" }}>「{kisoSp.topic}」</div>}
                         </>
                       )}
                     </div>

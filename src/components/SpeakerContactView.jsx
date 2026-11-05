@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
 import { CHAPTERS } from '../constants';
-import { getChapter, formatDate, toDateStr, parseDate } from '../utils';
+import { getChapter, formatDate, toDateStr, parseDate, hasSeparateMsTitle } from '../utils';
 import { BP, BC, SEL, INP, CARD } from '../styles';
 
 const CONTACT_TYPES = [
@@ -164,6 +164,7 @@ export default memo(function SpeakerContactView({ speakers, today, onEmail, onLi
                     <span style={{ color: ch?.color, fontWeight:600 }}>{ch?.name}</span>
                     <span>{sp.seminarDate ? formatDate(sp.seminarDate) : "日程未定"}</span>
                     {sp.topic && <span>「{sp.topic}」</span>}
+                    {hasSeparateMsTitle(sp) && <span style={{ color:"#4527A0" }}>翌朝MS「{sp.msTopic}」</span>}
                   </div>
                 </div>
 

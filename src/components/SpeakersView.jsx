@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime, hasNextDayMs, isKyukaiRecord } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime, hasNextDayMs, isKyukaiRecord, msTitleOf, hasSeparateMsTitle, nextDateStr } from '../utils';
 
 const METHOD_LABELS = { mail: "メール", line: "LINE", fax: "ファックス" };
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
@@ -169,6 +169,23 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
     return keys;
   }, [speakers]);
 
+  // 前夜の行に入っている翌朝MSのタイトルを、翌朝の本物のMS行でも引けるようにする索引
+  const msTitleFromEve = useMemo(() => {
+    const map = new Map();
+    speakers.forEach(s => {
+      if (hasNextDayMs(s.seminarType) && s.seminarDate && s.speakerName) {
+        map.set(`${s.chapterId}__${(s.speakerName || '').trim()}__${nextDateStr(s.seminarDate)}`, msTitleOf(s));
+      }
+    });
+    return map;
+  }, [speakers]);
+
+  // その行（またはカード）に出すタイトル
+  const titleFor = useCallback(sp => {
+    if (sp._virtualType === 'ms') return msTitleOf(sp);
+    return sp.topic || (sp.seminarType === 'ms' ? (msTitleFromEve.get(`${sp.chapterId}__${(sp.speakerName || '').trim()}__${sp.seminarDate}`) || '') : '');
+  }, [msTitleFromEve]);
+
   // 基礎講座・経営者の集いは前夜開催で、翌朝のモーニングセミナー分の確認書も同時に作られる。
   // 実データは1件のままだが、表示上は「前夜の講話」と「翌朝のMS」の2枚に分けて見せる
   // （id・実データはどちらも同じ元レコードを指すため、編集・削除・メール等の操作は元レコードに正しく反映される）。
@@ -206,14 +223,14 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
       const ch = getChapter(sp.chapterId);
       const displayDate = sp._virtualDate || sp.seminarDate;
       const displayType = sp._virtualType || sp.seminarType;
-      return [displayDate, ch.name, getSeminarType(displayType || "ms").label, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.role, sp.company, sp.companyRole, sp.topic, STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.materialName || "", sp.drinksAlcohol || "", sp.shioriArticle || "", sp.postNotes || "", extractStaffNotes(sp.notes)];
+      return [displayDate, ch.name, getSeminarType(displayType || "ms").label, sp.speakerName, sp.speakerKana, sp.speakerUnit, sp.role, sp.company, sp.companyRole, titleFor(sp), STATUS[sp.status]?.label || sp.status, sp.email, sp.phone, sp.lodging || "不要", sp.printRequired || "不要", sp.materialUrl || "", sp.materialName || "", sp.drinksAlcohol || "", sp.shioriArticle || "", sp.postNotes || "", extractStaffNotes(sp.notes)];
     });
     const csv = [headers, ...rows].map(r => r.map(v => `"${(v||"").replace(/"/g,'""')}"`).join(",")).join("\n");
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"})), download:`講師一覧_${new Date().toISOString().slice(0,10)}.csv` });
     a.click();
     URL.revokeObjectURL(a.href);
     showToast(`CSVをエクスポートしました 📥（${rows.length}件）`);
-  }, [displayList, showToast]);
+  }, [displayList, showToast, titleFor]);
 
   const todayStr = useMemo(() => toDateStr(today), [today]);
 
@@ -414,7 +431,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                 <div style={{ flex:"1 1 150px", minWidth:0 }}>
                   <div style={{ fontSize:"clamp(11px,1.5vw,14px)", color:"#98A2B3", fontWeight:600, marginBottom:2 }}>テーマ</div>
                   {(() => {
-                    const displayTopic = (sp._virtualType === 'ms' ? (sp.msTopic || sp.topic) : sp.topic);
+                    const displayTopic = titleFor(sp);
                     return <div style={{ fontSize:"clamp(14px,2vw,20px)", color:"#263238", fontWeight:700 }}>{displayTopic ? `「${displayTopic}」` : <span style={{ color:"#B0BEC5", fontWeight:400 }}>未定</span>}</div>;
                   })()}
                 </div>
@@ -606,7 +623,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                     {[sp.speakerUnit, sp.role].filter(Boolean).join("　")}
                     {(sp.company || sp.companyRole) && <div style={{ color:"#78909C" }}>{[sp.company, sp.companyRole].filter(Boolean).join("　")}</div>}
                   </td>
-                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{sp.topic ? `「${sp.topic}」` : ""}</td>
+                  <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{titleFor(sp) ? `「${titleFor(sp)}」` : ""}{hasSeparateMsTitle(sp) && <div>翌朝MS「{sp.msTopic}」</div>}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{STATUS[sp.status]?.label || sp.status}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{[sp.materialUrl && "写真", extractMaterialLinks(sp.notes).length && "資料"].filter(Boolean).join("・") || "未受領"}</td>
                   <td style={{ padding:"5px 7px", borderBottom:"1px solid #F1F5F9" }}>{sp.lodging || "不要"}</td>

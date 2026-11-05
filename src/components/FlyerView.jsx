@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from '
 import JSZip from 'jszip';
 import ExcelJS from 'exceljs';
 import { CHAPTERS, JIMU } from '../constants';
-import { getSeminarType, parseDate, isKyukaiRecord, extractSummary, extractMsSummary } from '../utils';
+import { getSeminarType, parseDate, isKyukaiRecord, extractSummary, extractMsSummary, hasSeparateMsTitle } from '../utils';
 import { OV, MOD, MH, CARD, BP, BC, BG, INP, TBL, TH, TD, SEL, PILL, FS_XS, FS_SM, FS_MD, FS_LG } from '../styles';
 import mascotSleep from '../assets/mascot-sleep.png';
 
@@ -518,6 +518,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
           lines.push(`  所属法人会：${sp.speakerUnit || "―"}　${sp.role || ""}`);
           lines.push(`  勤務先：${sp.company || "―"}　${sp.companyRole || ""}`);
           lines.push(`  テーマ：「${sp.topic || "未定"}」`);
+          if (hasSeparateMsTitle(sp)) lines.push(`  翌朝MSテーマ：「${sp.msTopic}」`);
           lines.push(`  写真：${sp.materialUrl || "※未受領"}`);
         });
       }
@@ -556,6 +557,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
           lines.push(`  勤務先：${sp.company || "―"}`);
           lines.push(`  勤務先役職名：${sp.companyRole || "―"}`);
           lines.push(`  テーマ：「${sp.topic || "未定"}」`);
+          if (hasSeparateMsTitle(sp)) lines.push(`  翌朝MSテーマ：「${sp.msTopic}」`);
           if (sp.materialUrl) {
             const ext = sp.materialUrl.split('.').pop().split('?')[0] || 'jpg';
             const dlName = `${(sp.seminarDate || '').replace(/-/g,'')}_${ch.name}_${sp.speakerName || ''}_顔写真.${ext}`;
@@ -799,7 +801,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                       <td style={{ ...TD, fontSize:FS_SM }}>{sp.role || none}</td>
                       <td style={{ ...TD, fontSize:FS_SM }}>{sp.company || none}</td>
                       <td style={{ ...TD, fontSize:FS_SM }}>{sp.companyRole || none}</td>
-                      <td style={{ ...TD, fontSize:FS_SM, maxWidth:160 }}>{sp.topic ? `「${sp.topic}」` : none}</td>
+                      <td style={{ ...TD, fontSize:FS_SM, maxWidth:160 }}>{sp.topic ? `「${sp.topic}」` : none}{hasSeparateMsTitle(sp) && <div style={{ color:"#4527A0", marginTop:2 }}>翌朝MS「{sp.msTopic}」</div>}</td>
                       <td style={TD}>
                         {sp.materialUrl ? (
                           <a href={sp.materialUrl} target="_blank" rel="noreferrer" style={{ fontSize:FS_SM, color:"#1565C0", display:"flex", alignItems:"center", gap:6, textDecoration:"none", whiteSpace:"nowrap" }}>
@@ -849,6 +851,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
                               `  開催日：${sp.seminarDate}`,
                               `  講師：${sp.speakerName}　${[sp.speakerUnit, sp.role, sp.company, sp.companyRole].filter(Boolean).join("　")}`,
                               `  テーマ：「${sp.topic}」`,
+                              ...(hasSeparateMsTitle(sp) ? [`  翌朝MSテーマ：「${sp.msTopic}」`] : []),
                               `  写真：${sp.materialUrl || "※未受領"}`,
                             ];
                             navigator.clipboard?.writeText(lines.join("\n")).catch(() => {});

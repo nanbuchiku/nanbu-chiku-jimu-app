@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS, STATUS, SEMINAR_TYPES } from '../constants';
-import { getChapter, getSeminarType, toDateStr, parseDate, formatDate, formatDateTime, isTaskDone, getTaskMeta } from '../utils';
+import { getChapter, getSeminarType, toDateStr, parseDate, formatDate, formatDateTime, isTaskDone, getTaskMeta, hasNextDayMs, nextDateStr, msTitleOf, hasSeparateMsTitle } from '../utils';
 import { CARD, BSM, PILL, OV, MOD, MH, BC, BP, FS_MD, FS_SM, FS_XS } from '../styles';
 
 // id は講師タスク管理（utils.js buildSpeakerTasks）の「宿泊」カテゴリと共通のキー。
@@ -403,6 +403,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       {isToday && <span style={{ fontSize:"clamp(11px,1.4vw,13px)", background:"#B71C1C", color:"#fff", padding:"1px 5px", borderRadius:8, fontWeight:700 }}>今日！</span>}
                       <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:600 }}>{sp.speakerName}</span>
                       <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#667085", background:"#F1F5F9", padding:"2px 7px", borderRadius:12 }}>「{sp.topic}」</span>
+                      {hasSeparateMsTitle(sp) && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#4527A0", background:"#EDE7F6", padding:"2px 7px", borderRadius:12 }}>翌朝MS「{sp.msTopic}」</span>}
                       <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:12, fontWeight:600, color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                       <button style={BSM} onClick={() => onView(sp)}>確認書</button>
                     </div>
@@ -581,7 +582,12 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                   🌅 モーニングセミナー（毎週{ch.dayName}）
                 </div>
                 {msDates.map(dateStr => {
-                  const sp = monthSpeakers.find(s => (!s.seminarType || s.seminarType === "ms") && s.seminarDate === dateStr);
+                  // 本物のMSの行がなければ、前夜（基礎講座・集いなど）の翌朝MSとして表示する
+                  const realMs = monthSpeakers.find(s => (!s.seminarType || s.seminarType === "ms") && s.seminarDate === dateStr);
+                  const eve = speakers.find(s => s.chapterId === ch.id && s.status !== "cancelled" && hasNextDayMs(s.seminarType) && s.seminarDate && nextDateStr(s.seminarDate) === dateStr);
+                  const eveMs = realMs ? null : eve;
+                  const sp = realMs || eve;
+                  const rowTopic = realMs?.topic || (eve ? msTitleOf(eve) : '');
                   const dt = parseDate(dateStr);
                   return (
                     <div key={dateStr} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 9px", borderBottom:"1px solid #F5F5F5", background: sp ? "#FAFAFA" : "#FFEBEE", borderRadius:4, marginBottom:3, cursor: sp ? "pointer" : "default" }}
@@ -592,7 +598,8 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                       {sp ? (
                         <>
                           <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>{sp.speakerName || <span style={{ color:"#E65100" }}>名前未入力</span>}</span>
-                          {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#667085", background:"#F1F5F9", padding:"2px 7px", borderRadius:10, flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
+                          {eveMs && <span style={{ fontSize:"clamp(12px,1.5vw,14px)", color:"#4527A0", fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>{getSeminarType(eveMs.seminarType).short}の翌朝</span>}
+                          {rowTopic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#667085", background:"#F1F5F9", padding:"2px 7px", borderRadius:10, flex:1, minWidth:0, wordBreak:"break-word" }}>「{rowTopic}」</span>}
                           <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         </>
                       ) : (
@@ -626,6 +633,7 @@ export default memo(function Dashboard({ speakers, tasks, weekDates, today, onVi
                           <span style={{ fontSize:"clamp(13px,1.8vw,16px)", fontWeight:700, color:"#fff", background: stype.color, padding:"2px 7px", borderRadius:10, whiteSpace:"nowrap", flexShrink:0 }}>{stype.short}</span>
                           <span style={{ fontSize:"clamp(14px,2vw,18px)", fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}>{sp.speakerName}</span>
                           {sp.topic && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#667085", flex:1, minWidth:0, wordBreak:"break-word" }}>「{sp.topic}」</span>}
+                          {hasSeparateMsTitle(sp) && <span style={{ fontSize:"clamp(13px,1.8vw,16px)", color:"#4527A0", flex:1, minWidth:0, wordBreak:"break-word" }}>翌朝MS「{sp.msTopic}」</span>}
                           <span style={{ fontSize:"clamp(13px,1.8vw,16px)", padding:"2px 7px", borderRadius:10, fontWeight:600, whiteSpace:"nowrap", flexShrink:0, marginLeft:"auto", color: STATUS[sp.status]?.color ?? "#98A2B3", background: STATUS[sp.status]?.bg ?? "#F1F5F9" }}>{STATUS[sp.status]?.label ?? sp.status}</span>
                         </div>
                       );

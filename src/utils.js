@@ -12,6 +12,17 @@ export const getSeminarType = id => {
 // カレンダー・メール文・確認書など、日付/曜日/翌日MSの有無を扱う箇所は必ずこれを使う。
 // 新しい前夜開催タイプを増やす場合は SEMINAR_TYPES 側に nextDayMs:true を足すだけでよい。
 export const hasNextDayMs = seminarType => !!getSeminarType(seminarType).nextDayMs;
+// 開催日の翌日（前夜開催の翌朝MSの日付）
+export const nextDateStr = dateStr => {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+// 前夜＋翌朝MSの組み合わせで、翌朝MSに使うタイトル（別に入力がなければ前夜と同じ）
+export const msTitleOf = sp => (sp?.msTopic || '').trim() || sp?.topic || '';
+// 翌朝MSのタイトルが前夜と別に入力されているか
+export const hasSeparateMsTitle = sp =>
+  !!sp && hasNextDayMs(sp.seminarType) && !!(sp.msTopic || '').trim() && (sp.msTopic || '').trim() !== (sp.topic || '').trim();
 export const realToday = () => new Date();
 export const toDateStr = d => {
   const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : d;
