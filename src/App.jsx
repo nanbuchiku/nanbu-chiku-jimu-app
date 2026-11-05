@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { CHAPTERS, DISTRICT_ID } from './constants';
 import { db, fromDB, toDB, toDBPatch, taskFromDB, taskToDB, emailFromDB, safeInsertTask, safeInsertTasks, safeUpdateTask } from './lib/supabase';
 import { diffFields, mergeSpeakerChecks } from './lib/speakerPatch';
-import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr, hasNextDayMs } from './utils';
+import { getChapter, formatDate, getWeekDates, realToday, buildSpeakerTasks, toDateStr, hasNextDayMs, titleBoxLines } from './utils';
 import { findSameSpeaker, hasSpeakerAnswer } from './lib/speakerGuard';
 import { OV, MOD, MH, BC, BG, BP } from './styles';
 import { initFontScale, applyFontScale, SCALE_OPTIONS, getCurrentScale } from './lib/fontScale';
@@ -775,7 +775,7 @@ export default function App() {
 ${appeals[idx]}
 
 ┏━━━━━━━━━━━━━━━┓
-　演題「${sp.topic || '（未定）'}」
+${titleBoxLines(sp).map(l => `　${l}`).join('\n')}
 ┗━━━━━━━━━━━━━━━┛
 ${summaryBlock}${photoLine}
 

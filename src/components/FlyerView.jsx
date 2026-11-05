@@ -512,7 +512,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
             lines.push(`  🚫 休会`);
             return;
           }
-          if (sps.length > 1) lines.push(`  ▷ 第${i + 1}講`);
+          if (sps.length > 1) lines.push(`  ▷ ${sp.seminarType === 'kiso' && sp.kisoNumber ? `基礎講座 第${sp.kisoNumber}講` : `${i + 1}人目`}`);
           lines.push(`  開催日：${sp.seminarDate}`);
           lines.push(`  講師：${sp.speakerName}（${sp.speakerKana || "ふりがな未入力"}）`);
           lines.push(`  所属法人会：${sp.speakerUnit || "―"}　${sp.role || ""}`);
@@ -548,7 +548,7 @@ export default memo(function FlyerView({ speakers, today, showToast, updateSpeak
             lines.push(`  🚫 休会`);
             return;
           }
-          if (sps.length > 1) lines.push(`  ◆ 第${i + 1}講`);
+          if (sps.length > 1) lines.push(`  ◆ ${sp.seminarType === 'kiso' && sp.kisoNumber ? `基礎講座 第${sp.kisoNumber}講` : `${i + 1}人目`}`);
           lines.push(`  開催日：${sp.seminarDate}`);
           lines.push(`  講師名：${sp.speakerName}`);
           lines.push(`  ふりがな：${sp.speakerKana || "―"}`);

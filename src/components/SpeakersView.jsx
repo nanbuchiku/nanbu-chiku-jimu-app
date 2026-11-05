@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime, hasNextDayMs, isKyukaiRecord, msTitleOf, hasSeparateMsTitle, nextDateStr } from '../utils';
+import { getChapter, getSeminarType, toDateStr, extractStaffNotes, extractMaterialLinks, extractPhotoLinks, parseDate, buildMonthRanges, isTaskDone, getTaskMeta, formatDateTime, hasNextDayMs, isKyukaiRecord, msTitleOf, hasSeparateMsTitle, nextDateStr, eveTitleOf, kisoTextOf } from '../utils';
+import { normalizeName } from '../lib/speakerGuard';
 
 const METHOD_LABELS = { mail: "メール", line: "LINE", fax: "ファックス" };
 import { BP, BC, SEL, INP, OV, MOD, MH } from '../styles';
@@ -183,6 +184,7 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
   // その行（またはカード）に出すタイトル
   const titleFor = useCallback(sp => {
     if (sp._virtualType === 'ms') return msTitleOf(sp);
+    if (sp.seminarType === 'kiso') return eveTitleOf(sp);
     return sp.topic || (sp.seminarType === 'ms' ? (msTitleFromEve.get(`${sp.chapterId}__${(sp.speakerName || '').trim()}__${sp.seminarDate}`) || '') : '');
   }, [msTitleFromEve]);
 
@@ -432,7 +434,16 @@ export default memo(function SpeakersView({ speakers, filterCh, filterSt, setFil
                   <div style={{ fontSize:"clamp(11px,1.5vw,14px)", color:"#98A2B3", fontWeight:600, marginBottom:2 }}>テーマ</div>
                   {(() => {
                     const displayTopic = titleFor(sp);
-                    return <div style={{ fontSize:"clamp(14px,2vw,20px)", color:"#263238", fontWeight:700 }}>{displayTopic ? `「${displayTopic}」` : <span style={{ color:"#B0BEC5", fontWeight:400 }}>未定</span>}</div>;
+                    const isKisoEve = sp.seminarType === 'kiso' && sp._virtualType !== 'ms';
+                    // 基礎講座の前夜は第◯講が確認書のタイトル。講師が入れた講話タイトルが別にあれば下に添える
+                    const kisoSub = isKisoEve && sp.kisoNumber && sp.topic && normalizeName(sp.topic) !== normalizeName(kisoTextOf(sp)) ? sp.topic : '';
+                    return (
+                      <>
+                        <div style={{ fontSize:"clamp(14px,2vw,20px)", color:"#263238", fontWeight:700 }}>{displayTopic ? `「${displayTopic}」` : <span style={{ color:"#B0BEC5", fontWeight:400 }}>未定</span>}</div>
+                        {kisoSub && <div style={{ fontSize:"clamp(12px,1.6vw,15px)", color:"#667085", marginTop:2 }}>「{kisoSub}」</div>}
+                        {isKisoEve && !sp.kisoNumber && <div style={{ fontSize:"clamp(11px,1.4vw,13px)", color:"#E65100", fontWeight:700, marginTop:2 }}>⚠ 第◯講が未選択です</div>}
+                      </>
+                    );
                   })()}
                 </div>
 

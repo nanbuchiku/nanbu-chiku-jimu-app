@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
-import { getChapter, getSeminarType, formatDate, hasNextDayMs as getHasNextDayMs } from '../utils';
+import { getChapter, getSeminarType, formatDate, hasNextDayMs as getHasNextDayMs, titleBoxLines, titlesInSentence, titlesPlain } from '../utils';
 import { OV, MOD, MH, BP, BC, BG, INP } from '../styles';
 import DocumentView, { elementToPdfBase64, makePdfFilename } from './DocumentView';
 import { db } from '../lib/supabase';
@@ -227,7 +227,7 @@ ${sig}`,
 ${appeals[pi]}
 
 ┏━━━━━━━━━━━━━━━━━┓
-　演題「${sp.topic || '（未定）'}」
+${titleBoxLines(sp).map(l => `　${l}`).join('\n')}
 ┗━━━━━━━━━━━━━━━━━┛
 ${summary ? `\n【講話内容】\n${summary}\n` : ''}${photoBlock}
 🎤 ${sp.speakerName} 様${sp.company ? `（${sp.company}${sp.companyRole ? `　${sp.companyRole}` : ""}）` : ""}${affiliation ? `\n（倫理法人会：${affiliation}）` : ""}
@@ -273,7 +273,7 @@ ${sig}`,
 開催日：${formatDate(sp.seminarDate)}
 
 ${sp.speakerName}様の貴重なお話は、参加者一同にとって大変心に響くものでございました。
-「${sp.topic}」というテーマのもと、深い洞察と温かいお人柄が伝わる講話に、会場全体が感動に包まれました。
+${titlesInSentence(sp)}というテーマのもと、深い洞察と温かいお人柄が伝わる講話に、会場全体が感動に包まれました。
 
 お忙しい中、お時間をいただきましたこと、改めて心より感謝申し上げます。
 またの機会にも、ぜひよろしくお願いいたします。
@@ -285,7 +285,7 @@ ${sig}`,
       subject: "",
       body: "",
     },
-  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel, isMsType, eventVenue, eventAddress, eventTimeText, attachPdf]);
+  }), [sp.speakerName, sp.seminarDate, sp.topic, sp.msTopic, sp.kisoNumber, sp.company, sp.companyRole, sp.speakerUnit, sp.role, sp.lodging, sp.seminarType, sp.venue, sp.eventTime, ch, chSettings, matDL, sig, summary, photoBlock, promoIdx, parsedNotes, isKiso, isTsudoiType, needsLodging, kisoMsDateStr, eventLabel, isMsType, eventVenue, eventAddress, eventTimeText, attachPdf]);
 
   const isFree  = mailType === "free";
   // フリーメールの差し込み：{講師名} {日付} {単会名} {講話テーマ} を、この講師の情報に置き換える
@@ -293,7 +293,7 @@ ${sig}`,
     .replace(/\{講師名\}/g, sp.speakerName || '')
     .replace(/\{日付\}/g, formatDate(sp.seminarDate))
     .replace(/\{単会名\}/g, ch.name || '')
-    .replace(/\{講話テーマ\}/g, sp.topic || '');
+    .replace(/\{講話テーマ\}/g, titlesPlain(sp));
   const subject = isFree ? expandVars(freeSubject) : TEMPLATES[mailType].subject;
   const body    = isFree ? expandVars(freeBody)    : TEMPLATES[mailType].body;
 

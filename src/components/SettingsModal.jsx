@@ -160,7 +160,7 @@ export default function SettingsModal({ chapterSettings, onSave, onClose, saving
           </Row>
           <div style={{ background:"#F1F5F9", border:"1px solid #D9E1EE", borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
             <div style={{ fontSize:"clamp(11px,1.3vw,13px)", color:"#667085", marginBottom:6 }}>
-              ℹ 「第◯講」は2026年9月より5単会共通で自動採番されます（各単会での個別設定は不要）。目次は以下の通りです。
+              ℹ 「第◯講」は、各単会で2026年9月を第1講として数えます。依頼作成画面と講師編集画面で、事務局が選びます。目次は以下の通りです。
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"2px 12px" }}>
               {KISO_CHAPTER_TITLES.map((title, i) => (

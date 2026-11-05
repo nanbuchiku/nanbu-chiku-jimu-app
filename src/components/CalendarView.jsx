@@ -1,6 +1,6 @@
 import React, { useMemo, useState, memo } from 'react';
 import { CHAPTERS, STATUS } from '../constants';
-import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isKyukaiRecord, hasNextDayMs, getSeminarType, getChapter, msTitleOf, hasSeparateMsTitle } from '../utils';
+import { isSameDay, toDateStr, getSevenSetProgress, buildSpeakerTasks, isTaskDone, isKyukaiRecord, hasNextDayMs, getSeminarType, getChapter, msTitleOf, hasSeparateMsTitle, eveTitleOf } from '../utils';
 import { BP, BC } from '../styles';
 import mascotSleep from '../assets/mascot-sleep.png';
 
@@ -251,7 +251,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                       ) : (
                         <>
                           <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#37474F", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{eveSp.speakerName}</div>
-                          {eveSp.topic && <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#667085", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>「{eveSp.topic}」</div>}
+                          {eveTitleOf(eveSp) && <div style={{ fontSize:"clamp(10px,1.2vw,12px)", color:"#667085", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>「{eveTitleOf(eveSp)}」</div>}
                         </>
                       )}
                     </div>
@@ -361,7 +361,7 @@ export default memo(function CalendarView({ speakers, weekDates, weekOffset, set
                         <>
                           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#2E7D32", fontWeight:700 }}>{kisoSp.seminarType === 'kiso' ? '基礎講座' : getSeminarType(kisoSp.seminarType).label}</div>
                           <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#1B5E20", fontWeight:600 }}>{kisoSp.speakerName}</div>
-                          {kisoSp.topic && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085" }}>「{kisoSp.topic}」</div>}
+                          {eveTitleOf(kisoSp) && <div style={{ fontSize:"clamp(12px,1.4vw,14px)", color:"#667085" }}>「{eveTitleOf(kisoSp)}」</div>}
                         </>
                       )}
                     </div>

@@ -1,4 +1,4 @@
-import { CHAPTERS, ALL_CHAPTER, SEMINAR_TYPES } from './constants';
+import { CHAPTERS, ALL_CHAPTER, SEMINAR_TYPES, KISO_CHAPTER_TITLES } from './constants';
 
 const FALLBACK_CHAPTER = { id:"", name:"不明", short:"?", color:"#98A2B3", accent:"#B0BEC5", light:"#FAFAFA", day:-1, dayName:"不明", venue:"", time:"" };
 export const getChapter = id => (id === ALL_CHAPTER.id ? ALL_CHAPTER : CHAPTERS.find(c => c.id === id)) || FALLBACK_CHAPTER;
@@ -20,6 +20,37 @@ export const nextDateStr = dateStr => {
 };
 // 前夜＋翌朝MSの組み合わせで、翌朝MSに使うタイトル（別に入力がなければ前夜と同じ）
 export const msTitleOf = sp => (sp?.msTopic || '').trim() || sp?.topic || '';
+// 基礎講座のテキスト名（第◯講）。番号が未選択なら空
+export const kisoTextOf = sp => {
+  if (!sp?.kisoNumber) return '';
+  const title = KISO_CHAPTER_TITLES[sp.kisoNumber - 1];
+  return `第${sp.kisoNumber}講${title ? `　${title}` : ''}`;
+};
+// 前夜の確認書に出るタイトル（基礎講座は第◯講のテキスト名）
+export const eveTitleOf = sp => (sp?.seminarType === 'kiso' ? (kisoTextOf(sp) || sp?.topic || '') : (sp?.topic || ''));
+// 前夜と翌朝MSでタイトルが違うときだけ、両方を返す
+export const titlePairOf = sp => {
+  if (!sp || !hasNextDayMs(sp.seminarType)) return null;
+  const eve = eveTitleOf(sp), ms = msTitleOf(sp);
+  return eve && ms && eve !== ms ? { eve, ms } : null;
+};
+// メール・LINEの演題の行
+export const titleBoxLines = sp => {
+  const pair = titlePairOf(sp);
+  if (!pair) return [`演題「${sp?.topic || eveTitleOf(sp) || '（未定）'}」`];
+  return [`${getSeminarType(sp.seminarType).label}「${pair.eve}」`, `モーニングセミナー「${pair.ms}」`];
+};
+// お礼メールの文中のタイトル
+export const titlesInSentence = sp => {
+  const pair = titlePairOf(sp);
+  if (!pair) return `「${sp?.topic || eveTitleOf(sp) || '（未定）'}」`;
+  return `${getSeminarType(sp.seminarType).label}の「${pair.eve}」、モーニングセミナーの「${pair.ms}」`;
+};
+// フリーメールの {講話テーマ} に入れる文字
+export const titlesPlain = sp => {
+  const pair = titlePairOf(sp);
+  return pair ? `${pair.eve}（前夜）／${pair.ms}（翌朝MS）` : (sp?.topic || eveTitleOf(sp) || '');
+};
 // 翌朝MSのタイトルが前夜と別に入力されているか
 export const hasSeparateMsTitle = sp =>
   !!sp && hasNextDayMs(sp.seminarType) && !!(sp.msTopic || '').trim() && (sp.msTopic || '').trim() !== (sp.topic || '').trim();
