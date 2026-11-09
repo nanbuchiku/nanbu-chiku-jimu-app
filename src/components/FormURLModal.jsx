@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { CHAPTERS, SEMINAR_TYPES, KISO_CHAPTER_TITLES } from '../constants';
-import { getChapter, formatDate, getSeminarType, hasNextDayMs as getHasNextDayMs } from '../utils';
+import { getChapter, formatDate, getSeminarType, hasNextDayMs as getHasNextDayMs, kisoTextOf } from '../utils';
 import { OV, MOD, MH, BC } from '../styles';
 import { printFaxForm } from '../faxPrint';
 
@@ -252,6 +252,9 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
     `【${ch?.name}単会 ${eventLabel}】講師依頼のご確認`,
   [ch, eventLabel]);
 
+  // 基礎講座は、使うテキスト（第◯講）を依頼メールに明記する
+  const kisoLine = isKiso ? `\nテキスト：${form.kisoNumber ? kisoTextOf({ kisoNumber: Number(form.kisoNumber) }) : '未定'}` : '';
+
   const mailBody = useMemo(() => {
     const photoLine = isKiso
       ? '① 講話タイトルのご連絡'
@@ -262,7 +265,7 @@ export default memo(function FormURLModal({ speaker: spProp, onClose, showToast,
 このたびは、${ch?.name}単会 ${eventLabel}の講師をお引き受けいただき、誠にありがとうございます。
 
 開催日：${displayDate ? formatDate(displayDate) : '　　　年　　月　　日'}（${scheduleNote}）
-会　場：${venueNote}${msDateLine}
+会　場：${venueNote}${kisoLine}${msDateLine}
 
 下記の内容をご確認・ご回答いただけますようお願いいたします。
 
@@ -279,7 +282,7 @@ ${formUrl}
 ご不明な点がございましたら、お気軽にご連絡ください。
 
 ${sig}`;
-  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel, scheduleNote, venueNote]);
+  }, [displayName, displayDate, ch, formUrl, matDL, sig, isKiso, msDateLine, eventLabel, scheduleNote, venueNote, kisoLine]);
 
   const copyUrl  = useCallback(() => { navigator.clipboard?.writeText(formUrl).catch(()=>{}); showToast('フォームURLをコピーしました 📋'); markSent(); }, [formUrl, showToast, markSent]);
   const copyMail = useCallback(() => { navigator.clipboard?.writeText(`件名：${mailSubject}\n\n${mailBody}`).catch(()=>{}); showToast('メール文をコピーしました 📧'); markSent(); clearDraft(); onClose(); }, [mailSubject, mailBody, showToast, markSent, clearDraft, onClose]);
