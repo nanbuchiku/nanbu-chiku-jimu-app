@@ -108,6 +108,7 @@ const USER_CHAPTER_MAP = {
   'hirosisisi72@gmail.com':      'todawarabi',     // 木之下寛（とだわらび）
   'wajta0713@gmail.com':         'todawarabi',     // 和知幸子（とだわらび）
   'tk@clean-city.co.jp':         'todawarabi',     // 小林達広（とだわらび）
+  'tae@ultra-communication.com': 'todawarabi',     // 深井多恵（とだわらび）
   'ogi67tkys41@gmail.com':       'asaka',          // 荻山隆義（朝霞）
   'shono@space-craft.jp':        'asaka',          // 正能秀昭（朝霞）
   'far.mor.baby@gmail.com':      'asaka',          // 小澤美智子（朝霞）
